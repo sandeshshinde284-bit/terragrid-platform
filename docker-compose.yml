@@ -1,0 +1,45 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: terragrid-postgres
+    environment:
+      POSTGRES_USER: terragrid_user
+      POSTGRES_PASSWORD: Diptisandesh@123
+      POSTGRES_DB: terragrid_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U terragrid_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - terragrid-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: terragrid-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - terragrid-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  terragrid-network:
+    driver: bridge

@@ -1,0 +1,507 @@
+openapi: 3.0.0
+info:
+  title: TerraGrid Critical Path APIs
+  description: Swagger documentation for NASA EONET, USGS Earthquake, and NOAA Weather APIs
+  version: 1.0.0
+  contact:
+    name: TerraGrid Team
+    url: https://terragrid.dev
+
+servers:
+  - url: https://eonet.gsfc.nasa.gov/api/v3
+    description: NASA EONET Server
+  - url: https://earthquake.usgs.gov/fdsnws/event/1
+    description: USGS Earthquake Server
+  - url: https://www.ncdc.noaa.gov/cdo-web/api/v2
+    description: NOAA Weather Server
+
+paths:
+  # ============= NASA EONET ENDPOINTS =============
+  /events:
+    get:
+      tags:
+        - NASA EONET
+      summary: Get Natural Disaster Events
+      description: Retrieve real-time natural disaster events including wildfires, floods, volcanoes, etc.
+      operationId: getEONETEvents
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of events to return
+          schema:
+            type: integer
+            default: 10
+            example: 5
+        - name: days
+          in: query
+          description: Number of days in the past to search
+          schema:
+            type: integer
+            default: 20
+            example: 7
+        - name: status
+          in: query
+          description: Filter by event status (open or closed)
+          schema:
+            type: string
+            enum: [open, closed]
+            example: open
+      responses:
+        '200':
+          description: List of disaster events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: "EONET_1234"
+                        title:
+                          type: string
+                          example: "Hurricane Nolo"
+                        description:
+                          type: string
+                          example: "Strong tropical storm"
+                        link:
+                          type: string
+                          format: url
+                        closed:
+                          type: string
+                          format: date-time
+                        geometries:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                                example: "Point"
+                              coordinates:
+                                type: array
+                                items:
+                                  type: number
+                                example: [77.1025, 28.7041]
+                              date:
+                                type: string
+                                format: date-time
+                        sources:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                              url:
+                                type: string
+                                format: url
+        '400':
+          description: Bad request
+        '503':
+          description: Service unavailable
+
+  # ============= USGS EARTHQUAKE ENDPOINTS =============
+  /query:
+    get:
+      tags:
+        - USGS Earthquake
+      summary: Query Earthquake Data
+      description: Retrieve earthquake data with magnitude, location, depth, and other seismic information
+      operationId: getEarthquakes
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of earthquakes to return
+          schema:
+            type: integer
+            default: 20
+            example: 10
+        - name: format
+          in: query
+          description: Response format
+          schema:
+            type: string
+            enum: [geojson, csv, quakeml, kml]
+            default: geojson
+            example: geojson
+        - name: starttime
+          in: query
+          description: Start time (ISO 8601 format)
+          schema:
+            type: string
+            format: date-time
+            example: "2026-09-20T00:00:00Z"
+        - name: endtime
+          in: query
+          description: End time (ISO 8601 format)
+          schema:
+            type: string
+            format: date-time
+            example: "2026-09-25T23:59:59Z"
+        - name: minmagnitude
+          in: query
+          description: Minimum magnitude
+          schema:
+            type: number
+            example: 1.0
+        - name: maxmagnitude
+          in: query
+          description: Maximum magnitude
+          schema:
+            type: number
+            example: 9.0
+        - name: latitude
+          in: query
+          description: Latitude of center point
+          schema:
+            type: number
+            example: 28.7041
+        - name: longitude
+          in: query
+          description: Longitude of center point
+          schema:
+            type: number
+            example: 77.1025
+        - name: maxradius
+          in: query
+          description: Radius in degrees
+          schema:
+            type: number
+            example: 1.0
+      responses:
+        '200':
+          description: GeoJSON FeatureCollection of earthquakes
+          content:
+            application/geo+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: "FeatureCollection"
+                  features:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          example: "Feature"
+                        geometry:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              example: "Point"
+                            coordinates:
+                              type: array
+                              items:
+                                type: number
+                              example: [77.1025, 28.7041, 10.0]
+                        properties:
+                          type: object
+                          properties:
+                            mag:
+                              type: number
+                              description: Magnitude
+                              example: 3.5
+                            place:
+                              type: string
+                              description: Location description
+                              example: "38 km WNW of Four Mile Road, Alaska"
+                            time:
+                              type: number
+                              description: Unix timestamp
+                              example: 1695571234000
+                            updated:
+                              type: number
+                              description: Last update timestamp
+                            url:
+                              type: string
+                              format: url
+                            detail:
+                              type: string
+                              format: url
+                            felt:
+                              type: integer
+                              description: Number of felt reports
+                            cdi:
+                              type: number
+                              description: Intensity
+                            mmi:
+                              type: number
+                              description: Modified Mercalli Intensity
+                            alert:
+                              type: string
+                              enum: [green, yellow, orange, red]
+                            status:
+                              type: string
+                              enum: [automatic, reviewed, deleted]
+                            tsunami:
+                              type: integer
+                              enum: [0, 1]
+                            sig:
+                              type: integer
+                              description: Significance
+                            net:
+                              type: string
+                              description: Network code
+                            code:
+                              type: string
+                              description: Event code
+                            ids:
+                              type: string
+                              description: Event IDs
+                            sources:
+                              type: string
+                              description: Data sources
+                            types:
+                              type: string
+                              description: Event types
+                            nst:
+                              type: integer
+                              description: Number of stations
+                            dmin:
+                              type: number
+                              description: Minimum distance
+                            rms:
+                              type: number
+                              description: RMS error
+                            gap:
+                              type: number
+                              description: Azimuthal gap
+                            magType:
+                              type: string
+                              description: Type of magnitude
+                            type:
+                              type: string
+                              description: Event type
+                            title:
+                              type: string
+                              example: "M 3.5 - 38 km WNW of Four Mile Road, Alaska"
+        '400':
+          description: Bad request
+        '503':
+          description: Service unavailable
+
+  # ============= NOAA WEATHER ENDPOINTS =============
+  /stations:
+    get:
+      tags:
+        - NOAA Weather
+      summary: Get Weather Stations
+      description: Retrieve weather observation stations for a given location or region
+      operationId: getWeatherStations
+      parameters:
+        - name: datasetid
+          in: query
+          description: Dataset ID (GHCND = Global Historical Climatology Network - Daily)
+          schema:
+            type: string
+            default: GHCND
+            example: GHCND
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            default: 25
+            example: 10
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            default: 0
+        - name: extent
+          in: query
+          description: Geographic extent as minLat,minLon,maxLat,maxLon (for Delhi region)
+          schema:
+            type: string
+            example: "28.4,77.0,28.9,77.3"
+        - name: locationid
+          in: query
+          description: Location ID (e.g., CITY:IN000008 for Delhi)
+          schema:
+            type: string
+            example: "CITY:IN000008"
+      responses:
+        '200':
+          description: List of weather stations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    type: object
+                    properties:
+                      resultset:
+                        type: object
+                        properties:
+                          offset:
+                            type: integer
+                          count:
+                            type: integer
+                          limit:
+                            type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        elevation:
+                          type: number
+                          description: Elevation in meters
+                          example: 200
+                        mindate:
+                          type: string
+                          format: date
+                          example: "2000-01-01"
+                        maxdate:
+                          type: string
+                          format: date
+                          example: "2026-09-25"
+                        latitude:
+                          type: number
+                          example: 28.63
+                        name:
+                          type: string
+                          example: "DELHI SADAR, IN"
+                        dcpstatus:
+                          type: string
+                          example: "Verified"
+                        id:
+                          type: string
+                          example: "GHCND:IN022021600"
+                        longitude:
+                          type: number
+                          example: 77.25
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized - Invalid API token
+        '503':
+          description: Service unavailable
+
+  /data:
+    get:
+      tags:
+        - NOAA Weather
+      summary: Get Weather Data
+      description: Retrieve weather observations (temperature, wind speed, humidity, precipitation)
+      operationId: getWeatherData
+      parameters:
+        - name: datasetid
+          in: query
+          description: Dataset ID
+          schema:
+            type: string
+            default: GHCND
+            example: GHCND
+        - name: stationid
+          in: query
+          description: Station ID (e.g., GHCND:IN022021600)
+          schema:
+            type: string
+            example: "GHCND:IN022021600"
+        - name: startdate
+          in: query
+          description: Start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2026-09-20"
+        - name: enddate
+          in: query
+          description: End date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: "2026-09-25"
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            default: 25
+            example: 100
+        - name: datatypeid
+          in: query
+          description: Data type (TMAX=max temp, TMIN=min temp, PRCP=precipitation, AWND=wind speed)
+          schema:
+            type: string
+            enum: [TMAX, TMIN, PRCP, AWND, SNOW, SNWD]
+            example: AWND
+      responses:
+        '200':
+          description: Weather observations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  metadata:
+                    type: object
+                    properties:
+                      resultset:
+                        type: object
+                        properties:
+                          offset:
+                            type: integer
+                          count:
+                            type: integer
+                          limit:
+                            type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                          example: "2026-09-25"
+                        datatype:
+                          type: string
+                          example: "AWND"
+                        station:
+                          type: string
+                          example: "GHCND:IN022021600"
+                        attributes:
+                          type: string
+                          description: Data quality flags
+                        value:
+                          type: number
+                          description: Observation value
+                          example: 3.5
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized - Invalid API token
+        '503':
+          description: Service unavailable
+
+components:
+  securitySchemes:
+    NOAAToken:
+      type: apiKey
+      in: header
+      name: token
+      description: NOAA API token for authentication
+
+security:
+  - NOAAToken: []
+
+tags:
+  - name: NASA EONET
+    description: Natural disaster events (wildfires, floods, volcanoes, etc.) - No authentication required
+  - name: USGS Earthquake
+    description: Seismic data including magnitude, location, depth - No authentication required
+  - name: NOAA Weather
+    description: Weather observations (temperature, wind, precipitation) - Requires API token

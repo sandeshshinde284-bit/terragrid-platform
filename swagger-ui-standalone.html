@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TerraGrid APIs - Swagger UI</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css">
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin: 0;
+            background: #fafafa;
+        }
+        .topbar {
+            background-color: #1a1a1a;
+            padding: 10px;
+            color: white;
+            text-align: center;
+        }
+        .info {
+            background-color: #e8f4f8;
+            padding: 15px;
+            margin: 10px;
+            border-left: 4px solid #0066cc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h2>🚀 TerraGrid Critical Path APIs - Swagger Documentation</h2>
+        <p>NASA EONET | USGS Earthquake | NOAA Weather</p>
+    </div>
+    
+    <div class="info">
+        ✅ <strong>Status:</strong> All APIs tested and working
+        <br/>
+        📍 <strong>Delhi Weather Token:</strong> TDwVaQPGqxIlxikIfxyKqeUecrnTCOcx
+    </div>
+
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js"></script>
+    
+    <script>
+        // Inline OpenAPI Spec
+        const swaggerSpec = {
+            "openapi": "3.0.0",
+            "info": {
+                "title": "TerraGrid Critical Path APIs",
+                "description": "Swagger documentation for NASA EONET, USGS Earthquake, and NOAA Weather APIs",
+                "version": "1.0.0",
+                "contact": {
+                    "name": "TerraGrid Team"
+                }
+            },
+            "servers": [
+                {
+                    "url": "https://eonet.gsfc.nasa.gov/api/v3",
+                    "description": "NASA EONET Server"
+                },
+                {
+                    "url": "https://earthquake.usgs.gov/fdsnws/event/1",
+                    "description": "USGS Earthquake Server"
+                },
+                {
+                    "url": "https://www.ncdc.noaa.gov/cdo-web/api/v2",
+                    "description": "NOAA Weather Server"
+                }
+            ],
+            "paths": {
+                "/events": {
+                    "get": {
+                        "tags": ["NASA EONET"],
+                        "summary": "Get Natural Disaster Events",
+                        "description": "Retrieve real-time natural disaster events including wildfires, floods, volcanoes, etc.",
+                        "operationId": "getEONETEvents",
+                        "parameters": [
+                            {
+                                "name": "limit",
+                                "in": "query",
+                                "description": "Maximum number of events to return",
+                                "schema": {
+                                    "type": "integer",
+                                    "default": 10,
+                                    "example": 5
+                                }
+                            },
+                            {
+                                "name": "days",
+                                "in": "query",
+                                "description": "Number of days in the past to search",
+                                "schema": {
+                                    "type": "integer",
+                                    "default": 20,
+                                    "example": 7
+                                }
+                            },
+                            {
+                                "name": "status",
+                                "in": "query",
+                                "description": "Filter by event status",
+                                "schema": {
+                                    "type": "string",
+                                    "enum": ["open", "closed"],
+                                    "example": "open"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "List of disaster events",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "events": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string",
+                                                                "example": "EONET_1234"
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "Hurricane Nolo"
+                                                            },
+                                                            "geometries": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "type": {
+                                                                            "type": "string",
+                                                                            "example": "Point"
+                                                                        },
+                                                                        "coordinates": {
+                                                                            "type": "array",
+                                                                            "items": {
+                                                                                "type": "number"
+                                                                            },
+                                                                            "example": [77.1025, 28.7041]
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "/query": {
+                    "get": {
+                        "tags": ["USGS Earthquake"],
+                        "summary": "Query Earthquake Data",
+                        "description": "Retrieve earthquake data with magnitude, location, depth, and other seismic information",
+                        "operationId": "getEarthquakes",
+                        "parameters": [
+                            {
+                                "name": "limit",
+                                "in": "query",
+                                "description": "Maximum number of earthquakes to return",
+                                "schema": {
+                                    "type": "integer",
+                                    "default": 20,
+                                    "example": 10
+                                }
+                            },
+                            {
+                                "name": "format",
+                                "in": "query",
+                                "description": "Response format",
+                                "schema": {
+                                    "type": "string",
+                                    "enum": ["geojson", "csv", "quakeml", "kml"],
+                                    "default": "geojson",
+                                    "example": "geojson"
+                                }
+                            },
+                            {
+                                "name": "minmagnitude",
+                                "in": "query",
+                                "description": "Minimum magnitude",
+                                "schema": {
+                                    "type": "number",
+                                    "example": 1.0
+                                }
+                            },
+                            {
+                                "name": "maxmagnitude",
+                                "in": "query",
+                                "description": "Maximum magnitude",
+                                "schema": {
+                                    "type": "number",
+                                    "example": 9.0
+                                }
+                            },
+                            {
+                                "name": "latitude",
+                                "in": "query",
+                                "description": "Latitude (Delhi: 28.7041)",
+                                "schema": {
+                                    "type": "number",
+                                    "example": 28.7041
+                                }
+                            },
+                            {
+                                "name": "longitude",
+                                "in": "query",
+                                "description": "Longitude (Delhi: 77.1025)",
+                                "schema": {
+                                    "type": "number",
+                                    "example": 77.1025
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "GeoJSON of earthquakes",
+                                "content": {
+                                    "application/geo+json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "FeatureCollection"
+                                                },
+                                                "features": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "geometry": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "coordinates": {
+                                                                        "type": "array",
+                                                                        "example": [77.1025, 28.7041, 10.0]
+                                                                    }
+                                                                }
+                                                            },
+                                                            "properties": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "mag": {
+                                                                        "type": "number",
+                                                                        "example": 3.5
+                                                                    },
+                                                                    "place": {
+                                                                        "type": "string",
+                                                                        "example": "38 km WNW of Four Mile Road, Alaska"
+                                                                    },
+                                                                    "title": {
+                                                                        "type": "string",
+                                                                        "example": "M 3.5 - Four Mile Road, Alaska"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "/stations": {
+                    "get": {
+                        "tags": ["NOAA Weather"],
+                        "summary": "Get Weather Stations",
+                        "description": "Retrieve weather observation stations (Delhi: 28.4-28.9°N, 77.0-77.3°E)",
+                        "operationId": "getWeatherStations",
+                        "parameters": [
+                            {
+                                "name": "datasetid",
+                                "in": "query",
+                                "description": "Dataset ID (GHCND = Global Historical Climatology Network)",
+                                "schema": {
+                                    "type": "string",
+                                    "default": "GHCND",
+                                    "example": "GHCND"
+                                }
+                            },
+                            {
+                                "name": "limit",
+                                "in": "query",
+                                "description": "Maximum number of results",
+                                "schema": {
+                                    "type": "integer",
+                                    "default": 25,
+                                    "example": 10
+                                }
+                            },
+                            {
+                                "name": "extent",
+                                "in": "query",
+                                "description": "Geographic extent (minLat,minLon,maxLat,maxLon)",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "28.4,77.0,28.9,77.3"
+                                }
+                            },
+                            {
+                                "name": "token",
+                                "in": "query",
+                                "description": "NOAA API Token",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "TDwVaQPGqxIlxikIfxyKqeUecrnTCOcx"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "List of weather stations",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "DELHI SADAR, IN"
+                                                            },
+                                                            "id": {
+                                                                "type": "string",
+                                                                "example": "GHCND:IN022021600"
+                                                            },
+                                                            "latitude": {
+                                                                "type": "number",
+                                                                "example": 28.63
+                                                            },
+                                                            "longitude": {
+                                                                "type": "number",
+                                                                "example": 77.25
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "401": {
+                                "description": "Unauthorized - Invalid API token"
+                            }
+                        }
+                    }
+                },
+                "/data": {
+                    "get": {
+                        "tags": ["NOAA Weather"],
+                        "summary": "Get Weather Data",
+                        "description": "Retrieve weather observations (temperature, wind speed, humidity, precipitation)",
+                        "operationId": "getWeatherData",
+                        "parameters": [
+                            {
+                                "name": "datasetid",
+                                "in": "query",
+                                "description": "Dataset ID",
+                                "schema": {
+                                    "type": "string",
+                                    "default": "GHCND"
+                                }
+                            },
+                            {
+                                "name": "stationid",
+                                "in": "query",
+                                "description": "Station ID (e.g., GHCND:IN022021600)",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "GHCND:IN022021600"
+                                }
+                            },
+                            {
+                                "name": "datatypeid",
+                                "in": "query",
+                                "description": "Data type (TMAX=max temp, TMIN=min temp, AWND=wind speed, PRCP=precipitation)",
+                                "schema": {
+                                    "type": "string",
+                                    "enum": ["TMAX", "TMIN", "PRCP", "AWND"],
+                                    "example": "AWND"
+                                }
+                            },
+                            {
+                                "name": "startdate",
+                                "in": "query",
+                                "description": "Start date (YYYY-MM-DD)",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "example": "2026-09-20"
+                                }
+                            },
+                            {
+                                "name": "enddate",
+                                "in": "query",
+                                "description": "End date (YYYY-MM-DD)",
+                                "schema": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "example": "2026-09-25"
+                                }
+                            },
+                            {
+                                "name": "limit",
+                                "in": "query",
+                                "description": "Maximum number of results",
+                                "schema": {
+                                    "type": "integer",
+                                    "default": 25,
+                                    "example": 100
+                                }
+                            },
+                            {
+                                "name": "token",
+                                "in": "query",
+                                "description": "NOAA API Token",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "TDwVaQPGqxIlxikIfxyKqeUecrnTCOcx"
+                                }
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "Weather observations",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "date": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2026-09-25"
+                                                            },
+                                                            "datatype": {
+                                                                "type": "string",
+                                                                "example": "AWND"
+                                                            },
+                                                            "station": {
+                                                                "type": "string",
+                                                                "example": "GHCND:IN022021600"
+                                                            },
+                                                            "value": {
+                                                                "type": "number",
+                                                                "description": "Wind speed in m/s",
+                                                                "example": 3.5
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "tags": [
+                {
+                    "name": "NASA EONET",
+                    "description": "Natural disaster events (wildfires, floods, volcanoes) - No authentication"
+                },
+                {
+                    "name": "USGS Earthquake",
+                    "description": "Seismic data including magnitude, location, depth - No authentication"
+                },
+                {
+                    "name": "NOAA Weather",
+                    "description": "Weather observations - Requires API token"
+                }
+            ]
+        };
+
+        window.onload = function () {
+            window.ui = SwaggerUIBundle({
+                spec: swaggerSpec,
+                dom_id: '#swagger-ui',
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                layout: "StandaloneLayout",
+                deepLinking: true,
+                preloadResolves: true
+            });
+        }
+    </script>
+</body>
+</html>
