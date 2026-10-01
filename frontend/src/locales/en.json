@@ -1,0 +1,122 @@
+{
+  "app": {
+    "title": "TERRAGRID INTELLIGENCE",
+    "subtitle": "AI-Powered Disaster Intelligence Platform"
+  },
+  "header": {
+    "refresh": "Refresh",
+    "syncing": "Syncing...",
+    "2d": "2D",
+    "3d": "3D",
+    "light": "Light",
+    "dark": "Dark",
+    "settings": "Settings",
+    "language": "Language"
+  },
+  "dashboard": {
+    "activeIncidents": "ACTIVE INCIDENTS",
+    "aiInsights": "AI INSIGHTS",
+    "totalAffectedArea": "Total Affected Area",
+    "totalPopulation": "Total Population",
+    "activeIncidentsCount": "Active Incidents"
+  },
+  "incidents": {
+    "title": "Incidents",
+    "type": "Type",
+    "location": "Location",
+    "status": "Status",
+    "detectionTime": "Detected",
+    "affectedArea": "Affected Area",
+    "population": "Population",
+    "threatScore": "Threat Score",
+    "trend": "Trend",
+    "forecast": "Forecast (6h)",
+    "viewDetails": "View Details",
+    "viewing": "Viewing",
+    "filter": "Filter",
+    "search": "Search incidents...",
+    "filterByType": "Type",
+    "filterByStatus": "Status",
+    "filterBySeverity": "Severity"
+  },
+  "map": {
+    "title": "Strategic Map",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "evacuationZones": "Evacuation Zones",
+    "emergencyRoutes": "Emergency Routes",
+    "isolatedAreas": "Isolated Areas",
+    "heatMap": "Heat Map",
+    "tacticalView": "2D Tactical View"
+  },
+  "analysis": {
+    "title": "Analysis",
+    "beforeAfter": "Before/After Timeline",
+    "trends": "Trends & Historical",
+    "areaGrowth": "Area Growth (km²)",
+    "populationAffected": "Population Affected",
+    "timelineLabel": "Timeline",
+    "selectIncident": "Select an incident to view timeline",
+    "hours": "Hours",
+    "satellite": "Satellite Imagery",
+    "comparison": "Comparison"
+  },
+  "askTheMap": {
+    "title": "Ask the Map",
+    "placeholder": "Ask me anything about the disaster zones...",
+    "send": "Send",
+    "examples": "Examples:",
+    "example1": "How many people are in evacuation zones?",
+    "example2": "Show me safe routes",
+    "example3": "What's the threat level in this area?"
+  },
+  "alerts": {
+    "title": "Alerts & Broadcasts",
+    "critical": "Critical",
+    "warning": "Warning",
+    "info": "Information",
+    "allAlerts": "All Alerts",
+    "disasterBrief": "AI Disaster Brief",
+    "noAlerts": "No new alerts",
+    "realTime": "Real-time Updates",
+    "lastUpdate": "Last update"
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "details": "Details",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "active": "Active",
+    "monitoring": "Monitoring",
+    "resolved": "Resolved",
+    "high": "HIGH",
+    "medium": "MEDIUM",
+    "low": "LOW",
+    "critical": "CRITICAL",
+    "fireEmoji": "🔥",
+    "floodEmoji": "💧",
+    "earthquakeEmoji": "🌍",
+    "hurricaneEmoji": "🌀",
+    "volcanoEmoji": "🌋",
+    "landslideEmoji": "⛰️"
+  },
+  "features": {
+    "realtimeData": "Real-time Multi-source Data",
+    "aiAnalysis": "Gemini AI Analysis",
+    "impactScore": "Impact Scoring",
+    "photoVerification": "Photo + Satellite Verification",
+    "evacuationZones": "Evacuation Zone Mapping",
+    "emergencyRoutes": "Emergency Route Planning",
+    "isolationDetection": "Isolation Detection",
+    "beforeAfter": "Before/After Timeline",
+    "historicalLearning": "Historical Learning & RAG",
+    "naturalLanguage": "Natural Language Queries",
+    "realtimeAlerts": "Real-time Alert Broadcasting",
+    "webSocket": "WebSocket Live Updates",
+    "aiDisasterBrief": "AI Disaster Brief",
+    "mapInteraction": "Interactive Map Features"
+  }
+}

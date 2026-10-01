@@ -1,31 +1,42 @@
 {
   "name": "terragrid-frontend",
+  "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix"
+    "type-check": "vue-tsc --noEmit",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "format": "prettier --write src/",
+    "test": "vitest"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "vue-router": "^4.2.5",
-    "pinia": "^2.1.6",
-    "axios": "^1.6.2",
-    "chart.js": "^4.4.1",
-    "leaflet": "^1.9.4",
-    "websocket": "^1.0.35"
+    "axios": "^1.6.0",
+    "date-fns": "^3.0.0",
+    "pinia": "^2.2.0",
+    "pino": "^8.17.0",
+    "pino-pretty": "^10.3.0",
+    "uuid": "^9.0.0",
+    "vue": "^3.5.42",
+    "vue-i18n": "^11.4.12",
+    "vue-router": "^4.3.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.4",
-    "vite": "^5.0.8",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "@vue/test-utils": "^2.5.1",
+    "autoprefixer": "^10.6.1",
     "eslint": "^8.56.0",
-    "@vue/eslint-config-standard": "^8.0.1"
-  },
-  "description": "",
-  "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+    "eslint-plugin-vue": "^9.20.0",
+    "postcss": "^8.5.28",
+    "prettier": "^3.9.9",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.3.3",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.2",
+    "vue-tsc": "^1.8.22"
+  }
 }

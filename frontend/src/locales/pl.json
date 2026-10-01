@@ -1,0 +1,122 @@
+{
+  "app": {
+    "title": "TERRAGRID INTELIGENCJA",
+    "subtitle": "Platforma Inteligencji Katastrof Zasilana Sztuczną Inteligencją"
+  },
+  "header": {
+    "refresh": "Odśwież",
+    "syncing": "Synchronizowanie...",
+    "2d": "2D",
+    "3d": "3D",
+    "light": "Jasny",
+    "dark": "Ciemny",
+    "settings": "Ustawienia",
+    "language": "Język"
+  },
+  "dashboard": {
+    "activeIncidents": "AKTYWNE INCYDENTY",
+    "aiInsights": "INSIGHTS AI",
+    "totalAffectedArea": "Całkowity Dotknięty Obszar",
+    "totalPopulation": "Populacja Całkowita",
+    "activeIncidentsCount": "Aktywne Incydenty"
+  },
+  "incidents": {
+    "title": "Incydenty",
+    "type": "Typ",
+    "location": "Lokalizacja",
+    "status": "Status",
+    "detectionTime": "Wykryty",
+    "affectedArea": "Dotknięty Obszar",
+    "population": "Populacja",
+    "threatScore": "Wynik Zagrożenia",
+    "trend": "Trend",
+    "forecast": "Prognoza (6h)",
+    "viewDetails": "Wyświetl Szczegóły",
+    "viewing": "Przeglądanie",
+    "filter": "Filtr",
+    "search": "Wyszukaj incydenty...",
+    "filterByType": "Typ",
+    "filterByStatus": "Status",
+    "filterBySeverity": "Poważność"
+  },
+  "map": {
+    "title": "Mapa Strategiczna",
+    "zoomIn": "Powiększ",
+    "zoomOut": "Zmniejsz",
+    "evacuationZones": "Strefy Ewakuacji",
+    "emergencyRoutes": "Drogi Dojazdowe Awaryjne",
+    "isolatedAreas": "Izolowane Obszary",
+    "heatMap": "Mapa Ciepła",
+    "tacticalView": "Widok Taktyczny 2D"
+  },
+  "analysis": {
+    "title": "Analiza",
+    "beforeAfter": "Oś Czasu Przed/Po",
+    "trends": "Trendy i Historia",
+    "areaGrowth": "Wzrost Obszaru (km²)",
+    "populationAffected": "Populacja Dotknięta",
+    "timelineLabel": "Oś Czasu",
+    "selectIncident": "Wybierz incydent, aby wyświetlić oś czasu",
+    "hours": "Godziny",
+    "satellite": "Obrazy Satelitarne",
+    "comparison": "Porównanie"
+  },
+  "askTheMap": {
+    "title": "Zapytaj Mapę",
+    "placeholder": "Zapytaj mnie o cokolwiek dotyczącego stref katastrof...",
+    "send": "Wyślij",
+    "examples": "Przykłady:",
+    "example1": "Ile osób znajduje się w strefach ewakuacji?",
+    "example2": "Pokaż mi bezpieczne trasy",
+    "example3": "Jaki jest poziom zagrożenia na tym obszarze?"
+  },
+  "alerts": {
+    "title": "Alerty i Transmisje",
+    "critical": "Krytyczny",
+    "warning": "Ostrzeżenie",
+    "info": "Informacja",
+    "allAlerts": "Wszystkie Alerty",
+    "disasterBrief": "Streszczenie Katastrofy AI",
+    "noAlerts": "Brak nowych alertów",
+    "realTime": "Aktualizacje w Czasie Rzeczywistym",
+    "lastUpdate": "Ostatnia aktualizacja"
+  },
+  "common": {
+    "close": "Zamknij",
+    "cancel": "Anuluj",
+    "confirm": "Potwierdź",
+    "details": "Szczegóły",
+    "loading": "Ładowanie...",
+    "error": "Błąd",
+    "success": "Sukces",
+    "active": "Aktywny",
+    "monitoring": "Monitorowanie",
+    "resolved": "Rozwiązany",
+    "high": "WYSOKI",
+    "medium": "ŚREDNI",
+    "low": "NISKI",
+    "critical": "KRYTYCZNY",
+    "fireEmoji": "🔥",
+    "floodEmoji": "💧",
+    "earthquakeEmoji": "🌍",
+    "hurricaneEmoji": "🌀",
+    "volcanoEmoji": "🌋",
+    "landslideEmoji": "⛰️"
+  },
+  "features": {
+    "realtimeData": "Dane Wieloźródłowe w Czasie Rzeczywistym",
+    "aiAnalysis": "Analiza AI Gemini",
+    "impactScore": "Wynik Wpływu",
+    "photoVerification": "Weryfikacja Zdjęcia + Satelita",
+    "evacuationZones": "Mapowanie Stref Ewakuacji",
+    "emergencyRoutes": "Planowanie Dróg Awaryjnych",
+    "isolationDetection": "Detekcja Izolacji",
+    "beforeAfter": "Oś Czasu Przed/Po",
+    "historicalLearning": "Uczenie Się Historyczne i RAG",
+    "naturalLanguage": "Zapytania w Języku Naturalnym",
+    "realtimeAlerts": "Transmisja Alertów w Czasie Rzeczywistym",
+    "webSocket": "Aktualizacje na Żywo WebSocket",
+    "aiDisasterBrief": "Streszczenie Katastrofy AI",
+    "mapInteraction": "Funkcje Mapy Interaktywnej"
+  }
+}

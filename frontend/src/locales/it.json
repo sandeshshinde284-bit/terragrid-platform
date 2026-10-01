@@ -1,0 +1,122 @@
+{
+  "app": {
+    "title": "TERRAGRID INTELLIGENZA",
+    "subtitle": "Piattaforma di Intelligence Disastri Alimentata da IA"
+  },
+  "header": {
+    "refresh": "Aggiorna",
+    "syncing": "Sincronizzazione...",
+    "2d": "2D",
+    "3d": "3D",
+    "light": "Chiaro",
+    "dark": "Scuro",
+    "settings": "Impostazioni",
+    "language": "Lingua"
+  },
+  "dashboard": {
+    "activeIncidents": "INCIDENTI ATTIVI",
+    "aiInsights": "INSIGHTS IA",
+    "totalAffectedArea": "Area Totale Interessata",
+    "totalPopulation": "Popolazione Totale",
+    "activeIncidentsCount": "Incidenti Attivi"
+  },
+  "incidents": {
+    "title": "Incidenti",
+    "type": "Tipo",
+    "location": "Ubicazione",
+    "status": "Stato",
+    "detectionTime": "Rilevato",
+    "affectedArea": "Area Interessata",
+    "population": "Popolazione",
+    "threatScore": "Punteggio di Minaccia",
+    "trend": "Tendenza",
+    "forecast": "Previsione (6h)",
+    "viewDetails": "Visualizza Dettagli",
+    "viewing": "Visualizzazione",
+    "filter": "Filtro",
+    "search": "Cerca incidenti...",
+    "filterByType": "Tipo",
+    "filterByStatus": "Stato",
+    "filterBySeverity": "Gravità"
+  },
+  "map": {
+    "title": "Mappa Strategica",
+    "zoomIn": "Ingrandisci",
+    "zoomOut": "Riduci",
+    "evacuationZones": "Zone di Evacuazione",
+    "emergencyRoutes": "Percorsi di Emergenza",
+    "isolatedAreas": "Aree Isolate",
+    "heatMap": "Mappa di Calore",
+    "tacticalView": "Vista Tattica 2D"
+  },
+  "analysis": {
+    "title": "Analisi",
+    "beforeAfter": "Timeline Prima/Dopo",
+    "trends": "Tendenze e Storico",
+    "areaGrowth": "Crescita dell'Area (km²)",
+    "populationAffected": "Popolazione Interessata",
+    "timelineLabel": "Timeline",
+    "selectIncident": "Seleziona un incidente per visualizzare la timeline",
+    "hours": "Ore",
+    "satellite": "Immagini Satellitari",
+    "comparison": "Confronto"
+  },
+  "askTheMap": {
+    "title": "Chiedi alla Mappa",
+    "placeholder": "Chiedimi qualsiasi cosa sulle zone di disastro...",
+    "send": "Invia",
+    "examples": "Esempi:",
+    "example1": "Quante persone sono nelle zone di evacuazione?",
+    "example2": "Mostrami i percorsi sicuri",
+    "example3": "Qual è il livello di minaccia in questa area?"
+  },
+  "alerts": {
+    "title": "Avvisi e Trasmissioni",
+    "critical": "Critico",
+    "warning": "Avvertenza",
+    "info": "Informazione",
+    "allAlerts": "Tutti gli Avvisi",
+    "disasterBrief": "Briefing Disastro IA",
+    "noAlerts": "Nessun nuovo avviso",
+    "realTime": "Aggiornamenti in Tempo Reale",
+    "lastUpdate": "Ultimo aggiornamento"
+  },
+  "common": {
+    "close": "Chiudi",
+    "cancel": "Annulla",
+    "confirm": "Conferma",
+    "details": "Dettagli",
+    "loading": "Caricamento...",
+    "error": "Errore",
+    "success": "Successo",
+    "active": "Attivo",
+    "monitoring": "Monitoraggio",
+    "resolved": "Risolto",
+    "high": "ALTO",
+    "medium": "MEDIO",
+    "low": "BASSO",
+    "critical": "CRITICO",
+    "fireEmoji": "🔥",
+    "floodEmoji": "💧",
+    "earthquakeEmoji": "🌍",
+    "hurricaneEmoji": "🌀",
+    "volcanoEmoji": "🌋",
+    "landslideEmoji": "⛰️"
+  },
+  "features": {
+    "realtimeData": "Dati Multi-fonte in Tempo Reale",
+    "aiAnalysis": "Analisi IA Gemini",
+    "impactScore": "Punteggio di Impatto",
+    "photoVerification": "Verifica Foto + Satellite",
+    "evacuationZones": "Mappatura Zone di Evacuazione",
+    "emergencyRoutes": "Pianificazione Percorsi di Emergenza",
+    "isolationDetection": "Rilevamento Isolamento",
+    "beforeAfter": "Timeline Prima/Dopo",
+    "historicalLearning": "Apprendimento Storico e RAG",
+    "naturalLanguage": "Query in Linguaggio Naturale",
+    "realtimeAlerts": "Trasmissione Avvisi in Tempo Reale",
+    "webSocket": "Aggiornamenti Live WebSocket",
+    "aiDisasterBrief": "Briefing Disastro IA",
+    "mapInteraction": "Funzioni Mappa Interattiva"
+  }
+}

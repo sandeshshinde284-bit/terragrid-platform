@@ -1,0 +1,122 @@
+{
+  "app": {
+    "title": "TERRAGRID INTELLIGENS",
+    "subtitle": "AI-Driven Disaster Intelligence Platform"
+  },
+  "header": {
+    "refresh": "Uppdatera",
+    "syncing": "Synkroniserar...",
+    "2d": "2D",
+    "3d": "3D",
+    "light": "Ljus",
+    "dark": "Mörk",
+    "settings": "Inställningar",
+    "language": "Språk"
+  },
+  "dashboard": {
+    "activeIncidents": "AKTIVA INCIDENTER",
+    "aiInsights": "AI-INSIKTER",
+    "totalAffectedArea": "Totalt Drabbat Område",
+    "totalPopulation": "Total Befolkning",
+    "activeIncidentsCount": "Aktiva Incidenter"
+  },
+  "incidents": {
+    "title": "Incidenter",
+    "type": "Typ",
+    "location": "Plats",
+    "status": "Status",
+    "detectionTime": "Upptäckt",
+    "affectedArea": "Drabbat Område",
+    "population": "Befolkning",
+    "threatScore": "Hotscore",
+    "trend": "Trend",
+    "forecast": "Prognos (6h)",
+    "viewDetails": "Visa Detaljer",
+    "viewing": "Visar",
+    "filter": "Filter",
+    "search": "Sök incidenter...",
+    "filterByType": "Typ",
+    "filterByStatus": "Status",
+    "filterBySeverity": "Allvarlighetsgrad"
+  },
+  "map": {
+    "title": "Strategisk Karta",
+    "zoomIn": "Zooma In",
+    "zoomOut": "Zooma Ut",
+    "evacuationZones": "Evakueringszoner",
+    "emergencyRoutes": "Nödrutter",
+    "isolatedAreas": "Isolerade Områden",
+    "heatMap": "Värmekarta",
+    "tacticalView": "Taktisk Vy 2D"
+  },
+  "analysis": {
+    "title": "Analys",
+    "beforeAfter": "Före/Efter-tidslinje",
+    "trends": "Trender och Historia",
+    "areaGrowth": "Områdeökning (km²)",
+    "populationAffected": "Befolkning Påverkad",
+    "timelineLabel": "Tidslinje",
+    "selectIncident": "Välj en incident för att se tidslinje",
+    "hours": "Timmar",
+    "satellite": "Satellitbilder",
+    "comparison": "Jämförelse"
+  },
+  "askTheMap": {
+    "title": "Fråga Kartan",
+    "placeholder": "Fråga mig något om katastrofzonerna...",
+    "send": "Skicka",
+    "examples": "Exempel:",
+    "example1": "Hur många människor är i evakueringszonerna?",
+    "example2": "Visa mig säkra vägar",
+    "example3": "Vad är hotnivån i det här området?"
+  },
+  "alerts": {
+    "title": "Varningar och Sändningar",
+    "critical": "Kritisk",
+    "warning": "Varning",
+    "info": "Information",
+    "allAlerts": "Alla Varningar",
+    "disasterBrief": "AI Katastrofsammanfattning",
+    "noAlerts": "Inga nya varningar",
+    "realTime": "Realtidsuppdateringar",
+    "lastUpdate": "Senaste uppdatering"
+  },
+  "common": {
+    "close": "Stäng",
+    "cancel": "Avbryt",
+    "confirm": "Bekräfta",
+    "details": "Detaljer",
+    "loading": "Läser in...",
+    "error": "Fel",
+    "success": "Framgång",
+    "active": "Aktiv",
+    "monitoring": "Övervakning",
+    "resolved": "Löst",
+    "high": "HÖG",
+    "medium": "MEDEL",
+    "low": "LÅG",
+    "critical": "KRITISK",
+    "fireEmoji": "🔥",
+    "floodEmoji": "💧",
+    "earthquakeEmoji": "🌍",
+    "hurricaneEmoji": "🌀",
+    "volcanoEmoji": "🌋",
+    "landslideEmoji": "⛰️"
+  },
+  "features": {
+    "realtimeData": "Realtids Multi-källa Data",
+    "aiAnalysis": "Gemini AI-analys",
+    "impactScore": "Påverkanscore",
+    "photoVerification": "Foto + Satellitverifikation",
+    "evacuationZones": "Evakueringszonkartläggning",
+    "emergencyRoutes": "Nödruttplanering",
+    "isolationDetection": "Isoleringsdetektering",
+    "beforeAfter": "Före/Efter-tidslinje",
+    "historicalLearning": "Historiskt Lärande och RAG",
+    "naturalLanguage": "Naturspråksfrågor",
+    "realtimeAlerts": "Realtidsvarningssändning",
+    "webSocket": "WebSocket Live-uppdateringar",
+    "aiDisasterBrief": "AI Katastrofsammanfattning",
+    "mapInteraction": "Interaktiv Kartkärna"
+  }
+}
