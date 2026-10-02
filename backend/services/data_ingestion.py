@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .nasa_eonet import NASAEONETService
 from .gdacs import GDACSService
+from .usgs_earthquake import USGSEarthquakeService
+from .noaa import NOAAService
 from .pubsub_service import PubSubService
 from .impact_analysis import ImpactAnalysisService
 
@@ -61,8 +63,24 @@ class DataIngestionService:
                 "status": "success"
             }
             
-            # Combine events
-            all_events = nasa_events + gdacs_events
+            # Fetch from USGS Earthquakes
+            logger.info("📡 Fetching from USGS Earthquakes...")
+            usgs_events = await USGSEarthquakeService.fetch_events(use_mock=use_mock)
+            results["sources"]["usgs_earthquakes"] = {
+                "count": len(usgs_events),
+                "status": "success"
+            }
+            
+            # Fetch from NOAA Weather
+            logger.info("📡 Fetching from NOAA Weather...")
+            noaa_events = await NOAAService.fetch_events(use_mock=use_mock)
+            results["sources"]["noaa_weather"] = {
+                "count": len(noaa_events),
+                "status": "success"
+            }
+            
+            # Combine events from all sources
+            all_events = nasa_events + gdacs_events + usgs_events + noaa_events
             results["total_events"] = len(all_events)
             
             # Process and store events
