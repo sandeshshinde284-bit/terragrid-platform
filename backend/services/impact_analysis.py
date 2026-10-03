@@ -73,6 +73,17 @@ class ImpactAnalysisService:
             # Get impact zones
             impact_zones = cls._get_impact_zones(lat, lon, affected_area)
             
+            # FEATURE 4 (Phase 2): Trigger external email alerts for critical threats
+            if risk_score >= 80:
+                try:
+                    from backend.services.notifications import notification_service
+                    from backend.services.evacuation_zones import EvacuationZoneService
+                    # Get zone data for the email
+                    zone_data = EvacuationZoneService.calculate_zones(event)
+                    notification_service.send_critical_alert(incident=event, zone_data=zone_data)
+                except Exception as notify_e:
+                    logger.error(f"Failed to send email alert: {str(notify_e)}")
+            
             return {
                 "affected_area_km2": round(affected_area, 2),
                 "affected_population": int(affected_population),
@@ -271,32 +282,32 @@ class ImpactAnalysisService:
         
         # Severity-based actions
         if risk_score >= 80:
-            actions.append("🚨 Immediate evacuation recommended")
-            actions.append("🏥 Deploy emergency medical teams")
-            actions.append("📡 Activate emergency broadcasting")
+            actions.append("Immediate evacuation recommended")
+            actions.append("Deploy emergency medical teams")
+            actions.append("Activate emergency broadcasting")
         elif risk_score >= 60:
-            actions.append("⚠️ Alert residents and prepare evacuation routes")
-            actions.append("🏥 Pre-position medical supplies")
-            actions.append("🛡️ Deploy rescue teams to staging areas")
+            actions.append("Alert residents and prepare evacuation routes")
+            actions.append("Pre-position medical supplies")
+            actions.append("Deploy rescue teams to staging areas")
         
         # Event-specific actions
         if event_type == "earthquake":
-            actions.append("🏢 Conduct structural damage assessments")
-            actions.append("🚚 Stage heavy equipment for debris removal")
+            actions.append("Conduct structural damage assessments")
+            actions.append("Stage heavy equipment for debris removal")
         elif event_type == "flood":
-            actions.append("💧 Deploy water purification systems")
-            actions.append("🏠 Activate temporary shelters")
+            actions.append("Deploy water purification systems")
+            actions.append("Activate temporary shelters")
         elif event_type == "fire":
-            actions.append("🔥 Create firebreaks and evacuation corridors")
-            actions.append("💨 Monitor air quality")
+            actions.append("Create firebreaks and evacuation corridors")
+            actions.append("Monitor air quality")
         elif event_type == "storm":
-            actions.append("📶 Protect critical infrastructure")
-            actions.append("⚡ Prepare generators and backup power")
+            actions.append("Protect critical infrastructure")
+            actions.append("Prepare generators and backup power")
         
         # Population-based actions
         if population > 1000000:
-            actions.append("🛂 Coordinate international humanitarian aid")
-            actions.append("📊 Establish incident command center")
+            actions.append("Coordinate international humanitarian aid")
+            actions.append("Establish incident command center")
         
         return actions[:4]  # Return top 4 actions
     

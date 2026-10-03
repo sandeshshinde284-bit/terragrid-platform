@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from .routes.disaster_data import router as disaster_router
 from .routes.polling import router as polling_router
 from .routes.zones import router as zones_router
+from .routes.websockets import router as ws_router
 
 load_dotenv()
 
@@ -45,6 +46,7 @@ app.add_middleware(
 app.include_router(disaster_router)
 app.include_router(polling_router)
 app.include_router(zones_router)
+app.include_router(ws_router)
 
 @app.get("/")
 def read_root():

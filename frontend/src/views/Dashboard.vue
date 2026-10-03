@@ -6,10 +6,15 @@
       <!-- Left: Incidents Panel -->
       <aside class="incidents-panel glass-panel">
         <div class="incidents-header">
-          <h3>
-            🌍 {{ $t('dashboard.activeIncidents') }}
-            <span v-if="isLoading" class="loading-indicator">⟳ Updating…</span>
-          </h3>
+          <div class="header-title-row">
+            <h3>
+              🌍 {{ $t('dashboard.activeIncidents') }}
+              <span v-if="isLoading" class="loading-indicator">⟳ Updating…</span>
+            </h3>
+            <span class="live-badge" :class="{ connected: isConnected }">
+              {{ isConnected ? '🟢 Live Updates' : '🔴 Offline' }}
+            </span>
+          </div>
           <div class="sort-controls">
             <select v-model="sortBy" class="sort-dropdown">
               <option value="threat">↓ Threat Score</option>
@@ -252,12 +257,14 @@ import { useAppStore } from '@/stores'
 import { useEventsStore } from '@/stores'
 import { useAlertsStore } from '@/stores'
 import { useMockMode } from '@/composables/useMockMode'
+import { useWebSocket } from '@/composables/useWebSocket'
 import type { IncidentLevel1 } from '@/types'
 
 const appStore = useAppStore()
 const eventsStore = useEventsStore()
 const alertsStore = useAlertsStore()
 const { isMockMode, fetchWithMockMode } = useMockMode()
+const { isConnected } = useWebSocket()
 
 const isLoading = ref(false)
 const apiError = ref<string | null>(null)
@@ -933,13 +940,38 @@ watch(sortBy, () => {
   display: none;
 }
 
-/* ===== SORT CONTROLS ===== */
+/* ===== SORT CONTROLS & HEADER ===== */
 .incidents-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.live-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+  border: 1px solid rgba(255, 59, 48, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.live-badge.connected {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
+  border: 1px solid rgba(52, 199, 89, 0.3);
 }
 
 .incidents-header h3 {

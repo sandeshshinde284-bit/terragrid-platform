@@ -4,6 +4,7 @@ Auto-refreshes incident data every 15 minutes using APScheduler
 """
 import logging
 import asyncio
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -23,7 +24,14 @@ class BackgroundPollingService:
         self.incident_history: List[Dict[str, Any]] = []
         self.polling_enabled: bool = True
         self.is_running: bool = False
-        self.refresh_interval_minutes: int = 15
+        
+        # Pull interval from .env (defaults to 15 if not set)
+        env_interval = os.getenv("POLLING_INTERVAL_MINUTES", "15")
+        try:
+            self.refresh_interval_minutes = int(env_interval)
+        except ValueError:
+            logger.warning(f"Invalid POLLING_INTERVAL_MINUTES '{env_interval}'. Defaulting to 15.")
+            self.refresh_interval_minutes = 15
     
     def start(self, data_ingestion_service) -> bool:
         """
@@ -36,7 +44,7 @@ class BackgroundPollingService:
             True if started successfully
         """
         if self.is_running:
-            logger.warning("⚠️ Polling service already running")
+            logger.warning("Polling service already running")
             return False
         
         try:
@@ -58,27 +66,27 @@ class BackgroundPollingService:
             # Run first refresh immediately
             asyncio.create_task(self._async_polling_job())
             
-            logger.info(f"✅ Background polling service started (interval: {self.refresh_interval_minutes} min)")
+            logger.info(f"Background polling service started (interval: {self.refresh_interval_minutes} min)")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Failed to start polling service: {str(e)}")
+            logger.error(f"Failed to start polling service: {str(e)}")
             return False
     
     def stop(self) -> bool:
         """Stop background polling service"""
         if not self.is_running:
-            logger.warning("⚠️ Polling service not running")
+            logger.warning("Polling service not running")
             return False
         
         try:
             self.scheduler.shutdown()
             self.is_running = False
             self.polling_enabled = False
-            logger.info("✅ Background polling service stopped")
+            logger.info("Background polling service stopped")
             return True
         except Exception as e:
-            logger.error(f"❌ Error stopping polling service: {str(e)}")
+            logger.error(f"Error stopping polling service: {str(e)}")
             return False
     
     def _polling_job(self):
@@ -93,16 +101,16 @@ class BackgroundPollingService:
             loop.run_until_complete(self._async_polling_job())
             loop.close()
         except Exception as e:
-            logger.error(f"❌ Polling job error: {str(e)}")
+            logger.error(f"Polling job error: {str(e)}")
     
     async def _async_polling_job(self):
         """Actual async polling logic"""
         if not self.polling_enabled:
-            logger.debug("⏸️ Polling disabled")
+            logger.debug("Polling disabled")
             return
         
         try:
-            logger.info("🔄 Background polling: Fetching latest incidents...")
+            logger.info("Background polling: Fetching latest incidents...")
             
             # Fetch latest incidents
             result = await self.data_ingestion_service.ingest_all_sources(use_mock=False)
@@ -126,7 +134,7 @@ class BackgroundPollingService:
             updated_val = changes['updated']
             removed_val = changes['removed']
             logger.info(
-                f"✅ Polling complete: {new_count} incidents "
+                f"Polling complete: {new_count} incidents "
                 f"({new_val} new, {updated_val} updated, {removed_val} removed)"
             )
             
@@ -135,8 +143,26 @@ class BackgroundPollingService:
             for source, info in sources.items():
                 logger.info(f"   {source}: {info.get('count', 0)} events")
             
+            # FEATURE 4: Broadcast real-time update via WebSocket
+            try:
+                from backend.services.websocket import manager
+                # Only broadcast if there are actual active connections to save overhead
+                if len(manager.active_connections) > 0:
+                    logger.info("Broadcasting updates via WebSocket...")
+                    await manager.broadcast_json({
+                        "type": "incidents_polled",
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "data": {
+                            "total_events": new_count,
+                            "changes": changes,
+                            "events": new_incidents[:50] # Send top 50 to avoid huge payloads
+                        }
+                    })
+            except Exception as ws_e:
+                logger.error(f"WebSocket broadcast failed: {str(ws_e)}")
+            
         except Exception as e:
-            logger.error(f"❌ Polling job failed: {str(e)}")
+            logger.error(f"Polling job failed: {str(e)}")
     
     def _detect_changes(self, new_incidents: List[Dict]) -> Dict[str, int]:
         """
@@ -211,12 +237,12 @@ class BackgroundPollingService:
     def enable_polling(self):
         """Enable polling"""
         self.polling_enabled = True
-        logger.info("✅ Polling enabled")
+        logger.info("Polling enabled")
     
     def disable_polling(self):
         """Disable polling (without stopping scheduler)"""
         self.polling_enabled = False
-        logger.info("⏸️ Polling disabled")
+        logger.info("Polling disabled")
     
     def set_interval(self, minutes: int):
         """Change polling interval"""
@@ -237,7 +263,7 @@ class BackgroundPollingService:
                 replace_existing=True,
             )
         
-        logger.info(f"✅ Polling interval changed to {minutes} minutes")
+        logger.info(f"Polling interval changed to {minutes} minutes")
         return True
 
 
