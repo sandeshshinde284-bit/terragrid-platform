@@ -9,6 +9,7 @@ export function useWebSocket() {
   const maxReconnectAttempts = 5
   let ws: WebSocket | null = null
   let pingInterval: number | null = null
+  let isDestroyed = false // Flag to prevent reconnect loops on unmount
   
   const connect = () => {
     // Connect to WebSocket using the current host, changing protocol to ws/wss
@@ -73,7 +74,9 @@ export function useWebSocket() {
       isConnected.value = false
       if (pingInterval) clearInterval(pingInterval)
       
-      attemptReconnect()
+      if (!isDestroyed) {
+          attemptReconnect()
+      }
     }
 
     ws.onerror = (error) => {
@@ -83,8 +86,10 @@ export function useWebSocket() {
   }
 
   const attemptReconnect = () => {
-    if (reconnectAttempts.value >= maxReconnectAttempts) {
-      console.error('⛔ Max WebSocket reconnection attempts reached. Please refresh the page.')
+    if (isDestroyed || reconnectAttempts.value >= maxReconnectAttempts) {
+      if (!isDestroyed) {
+        console.error('⛔ Max WebSocket reconnection attempts reached. Please refresh the page.')
+      }
       return
     }
     
@@ -95,11 +100,14 @@ export function useWebSocket() {
     console.log(`⏳ Attempting to reconnect in ${timeout/1000}s (Attempt ${reconnectAttempts.value}/${maxReconnectAttempts})...`)
     
     setTimeout(() => {
-      connect()
+      if (!isDestroyed) {
+          connect()
+      }
     }, timeout)
   }
 
   const disconnect = () => {
+    isDestroyed = true // Set flag to prevent reconnect loop
     if (ws) {
       ws.close(1000, 'Component unmounted')
     }

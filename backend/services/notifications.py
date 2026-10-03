@@ -16,6 +16,9 @@ class NotificationService:
         self.from_email = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
         self.from_name = os.getenv("RESEND_FROM_NAME", "TerraGrid Alerts")
         
+        # Prevent email spam on every 15-minute polling cycle
+        self.sent_alerts = set()
+        
         if self.api_key and self.api_key != "re_your_api_key_from_resend_dashboard":
             resend.api_key = self.api_key
             self.is_configured = True
@@ -39,6 +42,15 @@ class NotificationService:
         if not self.is_configured:
             logger.info("Skipping email alert: Resend not configured.")
             return False
+            
+        location = incident.get("location_name", "Unknown Location")
+        threat_score = incident.get("impact", {}).get("risk_score", 0)
+        
+        # SPAM PREVENTION: Only send one email per incident location/threat combo
+        alert_signature = f"{location}_{threat_score}"
+        if alert_signature in self.sent_alerts:
+            logger.debug(f"Email already sent for {alert_signature}. Skipping to prevent spam.")
+            return False
 
         if not recipient_emails:
             # Pull default recipients from .env, fallback to test email if missing
@@ -46,8 +58,6 @@ class NotificationService:
             recipient_emails = [email.strip() for email in env_recipients.split(",") if email.strip()]
             
         incident_type = str(incident.get("event_type", "disaster")).upper()
-        location = incident.get("location_name", "Unknown Location")
-        threat_score = incident.get("impact", {}).get("risk_score", 0)
         
         subject = f"🔴 CRITICAL ALERT: {incident_type} detected near {location} (Threat: {threat_score}/100)"
         
@@ -70,7 +80,7 @@ class NotificationService:
         if zone_data:
              html_content += f"""
                 <h2 style="color: #111827; border-bottom: 2px solid #ef4444; padding-bottom: 8px; margin-top: 20px;">Evacuation Zones</h2>
-                <p><strong>Immediate Action Required:</strong> Approximately {zone_data.get('total_population', 0):,} people are in the calculated impact zones.</p>
+                <p><strong>Immediate Action Required:</strong> Approximately {zone_data.get('total_population_affected', 0):,} people are in the calculated impact zones.</p>
              """
              
         html_content += """
@@ -97,6 +107,7 @@ class NotificationService:
                 try:
                     response = resend.Emails.send(params)
                     logger.info(f"Email sent successfully! ID: {response.get('id')}")
+                    self.sent_alerts.add(alert_signature)
                     return True
                 except Exception as attempt_e:
                     if attempt < max_retries - 1:
