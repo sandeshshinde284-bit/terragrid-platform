@@ -66,7 +66,7 @@
           </thead>
           <tbody>
             <tr v-for="incident in filteredIncidents" :key="incident.id" class="incident-row" :class="{ expanded: expandedIncidentId === incident.id }" @click="toggleExpanded(incident.id)">
-              <td class="detail-cell">{{ iconMap[incident.type] }}</td>
+              <td class="detail-cell">{{ iconMap[incident.type] || '⚠️' }}</td>
               <td class="location-cell">{{ incident.location }}</td>
               <td class="status-cell">
                 <span class="status-badge" :class="incident.status">{{ incident.status.toUpperCase() }}</span>
@@ -206,7 +206,7 @@ const toggleExpanded = (id: string) => {
 
 onMounted(() => {
   if (eventsStore.allIncidents.length === 0) {
-    eventsStore.initMockData()
+    // [STRICT LIVE MODE] eventsStore.initMockData()
   }
 })
 </script>
@@ -316,6 +316,17 @@ onMounted(() => {
   color: #ffffff;
 }
 
+.incidents-table thead {
+  position: sticky;
+  top: 0;
+  /* Use a much more solid background so scrolling text doesn't bleed through the blur */
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  z-index: 10; /* CRITICAL: Keeps header strictly above the scrolling table rows */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); /* Adds a subtle drop shadow to separate header from scrolling content */
+}
+
+/* Ensure the wrapper doesn't clip the sticky header shadow */
 .incidents-table-wrapper {
   flex: 1;
   overflow: auto;
@@ -324,20 +335,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.incidents-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  flex: 1;
-}
-
-.incidents-table thead {
-  position: sticky;
-  top: 0;
-  background: linear-gradient(135deg, rgba(30, 64, 175, 0.3), rgba(14, 165, 233, 0.2));
-  backdrop-filter: blur(10px);
+  position: relative; /* Helps context for sticky children */
 }
 
 .incidents-table th {
@@ -352,11 +350,31 @@ onMounted(() => {
   letter-spacing: 0.5px;
 }
 
+/* Specific Column Widths */
+.incidents-table th:nth-child(1),
+.incidents-table td:nth-child(1) {
+  width: 50px;
+  text-align: center;
+}
+
+.incidents-table th:nth-child(2),
+.incidents-table td:nth-child(2) {
+  width: 25%;
+}
+
 .incidents-table td {
   padding: 12px 10px;
   border-bottom: 1px solid rgba(30, 64, 175, 0.2);
   color: #ffffff;
   font-weight: 500;
+  vertical-align: middle;
+}
+
+.location-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0;
 }
 
 .incident-row:hover {

@@ -27,7 +27,8 @@
     <div class="header-center"></div>
 
     <div class="header-right">
-      <!-- Mock/Live Data Toggle -->
+      <!-- Mock/Live Data Toggle (Disabled for Strict Live Mode) -->
+      <!--
       <button 
         class="header-btn mock-toggle"
         @click="toggleMockMode"
@@ -37,6 +38,7 @@
         <span v-if="mockModeEnabled">🧪 MOCK</span>
         <span v-else>🌐 LIVE</span>
       </button>
+      -->
 
       <button 
         class="header-btn"

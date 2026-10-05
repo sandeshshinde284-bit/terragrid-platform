@@ -101,9 +101,20 @@
               </article>
               <article class="glass-panel action-panel">
                 <div class="panel-heading"><div><span class="section-kicker">DECISION SUPPORT</span><h2>Recommended actions</h2></div><span class="ai-chip">AI PRIORITIZED</span></div>
-                <ol class="action-list">
-                  <li v-for="(action, index) in detail.recommendedActions" :key="action.title">
-                    <span class="action-number">0{{ index + 1 }}</span><div><strong>{{ action.title }}</strong><p>{{ action.description }}</p></div><span class="priority" :class="`priority-${action.priority}`">{{ action.priority }}</span>
+                <div v-if="aiLoading" class="loading-state">
+                  <span class="loading-spinner"></span>
+                  <p>Loading AI recommendations...</p>
+                </div>
+                <div v-else-if="aiError" class="error-state">
+                  <span class="error-icon">⚠</span>
+                  <p>{{ aiError }}</p>
+                </div>
+                <ol v-else class="action-list">
+                  <!-- COMMENTED OUT (Live Mode): Used to show fallback data from detail.recommendedActions when AI didn't load -->
+                  <!-- <li v-for="(action, index) in (aiInsights.length > 0 ? aiInsights : detail.recommendedActions)" :key="action.id || action.title"> -->
+                  <!-- Now only shows REAL AI data from aiPlan.immediate_actions -->
+                  <li v-for="(action, index) in aiInsights" :key="action.id">
+                    <span class="action-number">0{{ index + 1 }}</span><div><strong>{{ action.action }}</strong><p>{{ action.description || '' }}</p></div><span class="priority" :class="`priority-${action.severity}`">{{ action.severity }}</span>
                   </li>
                 </ol>
               </article>
@@ -112,6 +123,17 @@
 
           <!-- IMPACT ANALYSIS -->
           <div v-else-if="activeTab === 'impact'" class="impact-tab">
+            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+              <div class="phase2-card glass-panel">
+                <div class="phase2-icon">🏢</div>
+                <div class="phase2-tag">PHASE 2 ROADMAP</div>
+                <h2>Predictive Impact Assessment</h2>
+                <p>Infrastructure damage modeling and cascading failure analysis are scheduled for delivery in <strong>Phase 2</strong>.</p>
+                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+              </div>
+            </div>
+            <template v-else>
+
             <div class="tab-intro"><div><span class="section-kicker">FEATURE 09 · IMPACT ASSESSMENT</span><h2>Impact analysis</h2><p>Exposure is segmented into operational zones to guide resource allocation.</p></div><span class="updated-pill">Updated {{ relativeTime(detail.lastUpdated) }}</span></div>
             <div class="impact-layout">
               <article class="glass-panel zone-panel"><div class="panel-heading"><div><span class="section-kicker">EXPOSURE MODEL</span><h3>Affected zones</h3></div><span class="panel-code">IA-01</span></div><div class="zone-list"><div v-for="zone in detail.zones" :key="zone.name" class="zone-row"><div class="zone-icon" :class="`zone-${zone.level}`">{{ zone.code }}</div><div class="zone-main"><div class="row-title"><strong>{{ zone.name }}</strong><span>{{ zone.level }} risk</span></div><div class="progress-track"><span class="progress-fill" :class="`fill-${zone.level}`" :style="{ width: `${zone.percentage}%` }"></span></div><small>{{ formatNumber(zone.area) }} km² · {{ zone.note }}</small></div><strong class="zone-percent">{{ zone.percentage }}%</strong></div></div></article>
@@ -121,52 +143,156 @@
               <article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">CRITICAL ASSETS</span><h3>Infrastructure affected</h3></div><span class="panel-code">IA-03</span></div><div class="asset-grid"><div v-for="asset in detail.infrastructure" :key="asset.label" class="asset-card"><span class="asset-icon">{{ asset.icon }}</span><strong>{{ asset.count }}</strong><span>{{ asset.label }}</span><small :class="asset.status">{{ asset.status }}</small></div></div></article>
               <article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">LOGISTICS</span><h3>Resource requirements</h3></div><span class="panel-code">IA-04</span></div><div class="resource-list"><div v-for="resource in detail.resources" :key="resource.name" class="resource-row"><span>{{ resource.name }}</span><div class="resource-progress"><span :style="{ width: `${resource.fulfilled}%` }"></span></div><strong>{{ resource.required }}</strong><small>{{ resource.fulfilled }}% ready</small></div></div></article>
             </div>
-          </div>
+          
+            </template>
+</div>
 
           <!-- MAP & EVIDENCE -->
           <div v-else-if="activeTab === 'map'" class="map-tab">
+            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+              <div class="phase2-card glass-panel">
+                <div class="phase2-icon">🗺️</div>
+                <div class="phase2-tag">PHASE 2 ROADMAP</div>
+                <h2>Geospatial Evidence Register</h2>
+                <p>Verified satellite imagery integration and field sensor data mapping are scheduled for delivery in <strong>Phase 2</strong>.</p>
+                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+              </div>
+            </div>
+            <template v-else>
+
             <div class="tab-intro"><div><span class="section-kicker">FEATURES 03 · 11 · 13</span><h2>Map & evidence</h2><p>Geospatial context and validated media supporting the current incident perimeter.</p></div><button class="primary-button" type="button" @click="goTo('/map')">Open interactive map ↗</button></div>
             <div class="map-evidence-layout">
               <article class="glass-panel map-preview"><div class="map-toolbar"><span class="map-title">SATELLITE REFERENCE · {{ incident.location.toUpperCase() }}</span><span class="map-live"><i></i> LIVE LAYERS</span></div><div class="map-canvas"><div class="map-grid"></div><div v-for="(zone, index) in detail.zones" :key="zone.name" class="map-zone" :class="`map-zone-${index + 1}`"><span>{{ zone.code }}</span></div><div class="map-crosshair">⊕</div><div class="map-scale">N<br><span>━━</span><br>2 km</div><div class="map-legend"><span><i class="legend-dot critical"></i> Critical</span><span><i class="legend-dot watch"></i> Watch</span><span><i class="legend-dot safe"></i> Monitored</span></div></div><div class="map-footer"><span>Imagery: Sentinel-2 · 10m resolution</span><span>Coordinates: {{ detail.coordinates }}</span></div></article>
               <article class="glass-panel evidence-panel"><div class="panel-heading"><div><span class="section-kicker">MEDIA VALIDATION</span><h3>Evidence register</h3></div><span class="verified-chip">{{ verifiedEvidence }}/{{ detail.evidence.length }} VERIFIED</span></div><div class="evidence-list"><div v-for="evidence in detail.evidence" :key="evidence.id" class="evidence-row"><div class="evidence-thumb" :class="`evidence-${evidence.kind}`">{{ evidence.kind === 'satellite' ? '◉' : evidence.kind === 'field' ? '▣' : '◌' }}</div><div class="evidence-main"><strong>{{ evidence.title }}</strong><small>{{ evidence.source }} · {{ evidence.captured }}</small></div><span class="evidence-status" :class="`evidence-${evidence.status.toLowerCase()}`">{{ evidence.status }}</span></div></div><div class="verification-score"><div class="score-ring"><strong>{{ detail.imageVerification }}%</strong><small>confidence</small></div><div><strong>Image verification status</strong><p>Cross-checked against temporal and geospatial signals.</p></div></div></article>
             </div>
-          </div>
+          
+            </template>
+</div>
 
           <!-- EMERGENCY RESPONSE -->
           <div v-else-if="activeTab === 'response'" class="response-tab">
+            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+              <div class="phase2-card glass-panel">
+                <div class="phase2-icon">🚑</div>
+                <div class="phase2-tag">PHASE 2 ROADMAP</div>
+                <h2>Emergency Response Operations</h2>
+                <p>Live resource tracking and evacuation route capacity monitoring are scheduled for delivery in <strong>Phase 2</strong>.</p>
+                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+              </div>
+            </div>
+            <template v-else>
+
             <div class="tab-intro"><div><span class="section-kicker">FEATURE 10 · EVACUATION OPERATIONS</span><h2>Emergency response</h2><p>Live route capacity and deployment readiness for the affected population.</p></div><span class="response-state"><i></i> RESPONSE ACTIVE</span></div>
             <div class="response-metrics"><div v-for="metric in detail.responseMetrics" :key="metric.label" class="glass-panel response-metric"><span>{{ metric.label }}</span><strong>{{ metric.value }}</strong><small>{{ metric.note }}</small></div></div>
             <div class="content-grid two-columns"><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">SAFE MOVEMENT</span><h3>Evacuation routes</h3></div><span class="panel-code">ER-01</span></div><div class="route-list"><div v-for="routeItem in detail.routes" :key="routeItem.name" class="route-row"><div class="route-status" :class="`route-${routeItem.status}`"><span></span></div><div class="route-main"><div class="row-title"><strong>{{ routeItem.name }}</strong><span>{{ routeItem.status }}</span></div><small>{{ routeItem.direction }} · {{ routeItem.distance }} · capacity {{ routeItem.capacity }}</small><div class="route-track"><span :style="{ width: `${routeItem.clearance}%` }"></span></div></div><strong class="route-time">{{ routeItem.eta }}</strong></div></div></article><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">FIELD OPERATIONS</span><h3>Resource deployment</h3></div><span class="panel-code">ER-02</span></div><div class="deployment-list"><div v-for="deployment in detail.deployments" :key="deployment.name" class="deployment-row"><span class="deployment-icon">{{ deployment.icon }}</span><div><strong>{{ deployment.name }}</strong><small>{{ deployment.location }}</small></div><span class="deployment-count">{{ deployment.count }}</span><span class="deployment-status" :class="deployment.status">{{ deployment.status }}</span></div></div><div class="eta-callout"><span>Estimated full evacuation</span><strong>{{ detail.evacuationTime }}</strong><small>Based on current route clearance and traffic model</small></div></article></div>
-          </div>
+          
+            </template>
+</div>
 
           <!-- INCIDENT HISTORY -->
           <div v-else-if="activeTab === 'history'" class="history-tab">
+            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+              <div class="phase2-card glass-panel">
+                <div class="phase2-icon">📚</div>
+                <div class="phase2-tag">PHASE 2 ROADMAP</div>
+                <h2>Historical RAG Engine</h2>
+                <p>Retrieval-Augmented Generation for historical disaster precedents and after-action reports is scheduled for delivery in <strong>Phase 2</strong>.</p>
+                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+              </div>
+            </div>
+            <template v-else>
+
             <div class="tab-intro"><div><span class="section-kicker">FEATURE 05 · HISTORICAL CONTEXT</span><h2>Incident history</h2><p>Comparable events reveal patterns, response outcomes, and reusable lessons.</p></div><span class="panel-code">HISTORY / {{ detail.historicalPattern }}</span></div>
             <div class="content-grid two-columns"><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">COMPARABLE EVENTS</span><h3>Similar past incidents</h3></div><span class="panel-code">IH-01</span></div><div class="history-list"><div v-for="past in detail.pastIncidents" :key="past.name" class="history-row"><div class="history-year">{{ past.year }}</div><div class="history-main"><strong>{{ past.name }}</strong><small>{{ past.location }} · {{ past.duration }}</small></div><div class="history-stat"><strong>{{ past.population }}</strong><small>affected</small></div><span class="similarity">{{ past.similarity }}% match</span></div></div></article><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">BENCHMARK</span><h3>Comparison metrics</h3></div><span class="panel-code">IH-02</span></div><div class="comparison-list"><div v-for="comparison in detail.comparisons" :key="comparison.label" class="comparison-row"><span>{{ comparison.label }}</span><div class="comparison-values"><strong>{{ comparison.current }}</strong><span>vs {{ comparison.baseline }}</span></div><span class="comparison-delta" :class="comparison.direction">{{ comparison.delta }}</span></div></div></article></div>
             <div class="content-grid two-columns"><article class="glass-panel pattern-card"><div class="panel-heading"><div><span class="section-kicker">PATTERN ANALYSIS</span><h3>Historical patterns</h3></div><span class="pattern-confidence">{{ detail.patternConfidence }}% confidence</span></div><ul class="insight-list"><li v-for="pattern in detail.patterns" :key="pattern"><span>↗</span>{{ pattern }}</li></ul></article><article class="glass-panel lessons-card"><div class="panel-heading"><div><span class="section-kicker">AFTER-ACTION LEARNING</span><h3>Lessons learned</h3></div><span class="panel-code">IH-04</span></div><ol class="lessons-list"><li v-for="lesson in detail.lessons" :key="lesson.title"><strong>{{ lesson.title }}</strong><span>{{ lesson.text }}</span></li></ol></article></div>
-          </div>
+          
+            </template>
+</div>
 
           <!-- SOURCE OF TRUTH -->
           <div v-else-if="activeTab === 'source'" class="source-tab">
+            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+              <div class="phase2-card glass-panel">
+                <div class="phase2-icon">🔗</div>
+                <div class="phase2-tag">PHASE 2 ROADMAP</div>
+                <h2>Data Lineage & Audit Trail</h2>
+                <p>Immutable data provenance tracking and automated source verification chains are scheduled for delivery in <strong>Phase 2</strong>.</p>
+                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+              </div>
+            </div>
+            <template v-else>
+
             <div class="tab-intro"><div><span class="section-kicker">FEATURE 07 · GOVERNANCE LAYER</span><h2>Source of truth <span class="critical-marker">★</span></h2><p>Every signal is traceable, freshness-scored, and independently verified before it informs decisions.</p></div><div class="quality-score"><span>DATA QUALITY</span><strong>{{ detail.dataQuality }}<small>/100</small></strong></div></div>
             <div class="source-grid"><article class="glass-panel source-overview"><div class="panel-heading"><div><span class="section-kicker">PROVENANCE</span><h3>Data source origin</h3></div><span class="verified-chip">● {{ verifiedSources }} VERIFIED</span></div><div class="source-cards"><div v-for="source in detail.sources" :key="source.name" class="source-card"><div class="source-card-head"><span class="source-icon">{{ source.icon }}</span><span class="source-status" :class="source.status.toLowerCase()">{{ source.status }}</span></div><strong>{{ source.name }}</strong><p>{{ source.description }}</p><div class="source-meta"><span>{{ source.records }} records</span><span>{{ source.confidence }}% confidence</span></div></div></div></article><article class="glass-panel freshness-panel"><div class="panel-heading"><div><span class="section-kicker">FRESHNESS</span><h3>Verification status</h3></div><span class="panel-code">ST-02</span></div><div class="freshness-list"><div><span>Last updated</span><strong>{{ formatDate(detail.lastUpdated) }}</strong></div><div><span>Last verified</span><strong>{{ formatDate(detail.lastVerified) }}</strong></div><div><span>Verification cadence</span><strong>Every 15 minutes</strong></div><div><span>Stale data threshold</span><strong>60 minutes</strong></div></div><div class="freshness-meter"><span>Freshness window</span><div class="progress-track"><span class="progress-fill freshness-fill" style="width: 82%"></span></div><strong>82%</strong></div></article></div>
             <div class="content-grid two-columns"><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">CHAIN OF CUSTODY</span><h3>Data lineage</h3></div><span class="panel-code">ST-03</span></div><div class="lineage-list"><div v-for="lineage in detail.lineage" :key="lineage.label" class="lineage-row"><span class="lineage-marker"></span><div><strong>{{ lineage.label }}</strong><small>{{ lineage.value }}</small></div><span class="confidence-badge">{{ lineage.confidence }}%</span></div></div></article><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">ACCOUNTABILITY</span><h3>Audit trail</h3></div><span class="panel-code">ST-04</span></div><div class="audit-list"><div v-for="audit in detail.auditTrail" :key="audit.time + audit.actor" class="audit-row"><span class="audit-time">{{ audit.time }}</span><div><strong>{{ audit.action }}</strong><small>{{ audit.actor }} · {{ audit.source }}</small></div></div></div></article></div>
-          </div>
+          
+            </template>
+</div>
 
           <!-- AI INSIGHTS -->
           <div v-else-if="activeTab === 'ai'" class="ai-tab">
             <div class="tab-intro"><div><span class="section-kicker">FEATURE 12 · ASK THE MAP AI</span><h2>AI insights</h2><p>Models combine live telemetry, imagery, terrain, and historical analogues into an explainable forecast.</p></div><button class="primary-button" type="button" @click="goTo('/ask-map')">Ask the Map AI ↗</button></div>
-            <div class="ai-grid"><article class="glass-panel prediction-card"><div class="panel-heading"><div><span class="section-kicker">PREDICTION ENGINE</span><h3>Forecast outlook</h3></div><span class="ai-chip">MODEL v4.8</span></div><div class="prediction-head"><div class="forecast-number">{{ detail.aiForecast.probability }}<small>%</small></div><div><strong>{{ detail.aiForecast.headline }}</strong><p>{{ detail.aiForecast.window }}</p></div></div><div class="forecast-timeline"><div v-for="forecast in detail.aiForecast.timeline" :key="forecast.time" class="forecast-point"><span class="forecast-dot" :class="forecast.state"></span><strong>{{ forecast.time }}</strong><small>{{ forecast.value }}</small></div></div></article><article class="glass-panel risk-card"><div class="panel-heading"><div><span class="section-kicker">EXPLAINABILITY</span><h3>Risk score breakdown</h3></div><strong class="risk-total">{{ detail.aiForecast.riskScore }}/100</strong></div><div class="risk-list"><div v-for="risk in detail.aiForecast.riskBreakdown" :key="risk.label" class="risk-row"><div class="row-title"><span>{{ risk.label }}</span><strong>{{ risk.score }}</strong></div><div class="progress-track"><span class="progress-fill risk-fill" :style="{ width: `${risk.score}%` }"></span></div></div></div></article></div>
-            <div class="content-grid two-columns"><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">SIGNAL INTERPRETATION</span><h3>Pattern analysis</h3></div><span class="confidence-badge">{{ detail.aiForecast.confidence }}% confidence</span></div><div class="ai-pattern"><div v-for="signal in detail.aiForecast.signals" :key="signal.title" class="signal-row"><span class="signal-icon">{{ signal.icon }}</span><div><strong>{{ signal.title }}</strong><p>{{ signal.detail }}</p></div><span class="signal-impact">{{ signal.impact }}</span></div></div></article><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">AUTOMATED DECISION SUPPORT</span><h3>AI recommended actions</h3></div><span class="ai-chip">LIVE</span></div><ol class="action-list ai-actions"><li v-for="(action, index) in detail.aiForecast.actions" :key="action.title"><span class="action-number">0{{ index + 1 }}</span><div><strong>{{ action.title }}</strong><p>{{ action.reason }}</p></div></li></ol></article></div>
+            
+            <!-- COMMENTED OUT (Live Mode): These sections used to show hardcoded detail.aiForecast mock data -->
+            <!-- They are kept here as reference for what was originally displayed -->
+            <!-- Forecast card: Shows probability, timeline, and risk breakdown -->
+            <!-- <div class="ai-grid"><article class="glass-panel prediction-card"><div class="panel-heading"><div><span class="section-kicker">PREDICTION ENGINE</span><h3>Forecast outlook</h3></div><span class="ai-chip">MODEL v4.8</span></div><div class="prediction-head"><div class="forecast-number">{{ detail.aiForecast.probability }}<small>%</small></div><div><strong>{{ detail.aiForecast.headline }}</strong><p>{{ detail.aiForecast.window }}</p></div></div><div class="forecast-timeline"><div v-for="forecast in detail.aiForecast.timeline" :key="forecast.time" class="forecast-point"><span class="forecast-dot" :class="forecast.state"></span><strong>{{ forecast.time }}</strong><small>{{ forecast.value }}</small></div></div></article><article class="glass-panel risk-card"><div class="panel-heading"><div><span class="section-kicker">EXPLAINABILITY</span><h3>Risk score breakdown</h3></div><strong class="risk-total">{{ detail.aiForecast.riskScore }}/100</strong></div><div class="risk-list"><div v-for="risk in detail.aiForecast.riskBreakdown" :key="risk.label" class="risk-row"><div class="row-title"><span>{{ risk.label }}</span><strong>{{ risk.score }}</strong></div><div class="progress-track"><span class="progress-fill risk-fill" :style="{ width: `${risk.score}%` }"></span></div></div></div></article></div> -->
+            
+            <!-- Signal interpretation & Actions: Shows pattern analysis and decision support -->
+            <!-- <div class="content-grid two-columns"><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">SIGNAL INTERPRETATION</span><h3>Pattern analysis</h3></div><span class="confidence-badge">{{ detail.aiForecast.confidence }}% confidence</span></div><div class="ai-pattern"><div v-for="signal in detail.aiForecast.signals" :key="signal.title" class="signal-row"><span class="signal-icon">{{ signal.icon }}</span><div><strong>{{ signal.title }}</strong><p>{{ signal.detail }}</p></div><span class="signal-impact">{{ signal.impact }}</span></div></div></article><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">AUTOMATED DECISION SUPPORT</span><h3>AI recommended actions</h3></div><span class="ai-chip">LIVE</span></div><ol class="action-list ai-actions"><li v-for="(action, index) in detail.aiForecast.actions" :key="action.title"><span class="action-number">0{{ index + 1 }}</span><div><strong>{{ action.title }}</strong><p>{{ action.reason }}</p></div></li></ol></article></div> -->
+            
+            <!-- NEW (Live Mode): Now displays REAL AI data from aiPlan and aiInsights -->
+            <div v-if="aiLoading" class="loading-state">
+              <span class="loading-spinner"></span>
+              <p>Loading AI analysis...</p>
+            </div>
+            <div v-else-if="aiError" class="error-state">
+              <span class="error-icon">⚠</span>
+              <p>AI analysis unavailable: {{ aiError }}</p>
+            </div>
+            <div v-else-if="aiPlan" class="real-ai-content">
+              <article class="glass-panel">
+                <div class="panel-heading"><div><span class="section-kicker">AI DECISION SUPPORT</span><h2>{{ aiPlan.country_context }}</h2></div></div>
+                <p class="long-copy">{{ aiPlan.severity_assessment }}</p>
+              </article>
+              <article class="glass-panel action-panel" style="margin-top: 18px;">
+                <div class="panel-heading"><div><span class="section-kicker">IMMEDIATE ACTIONS</span><h3>Live AI recommendations</h3></div><span class="ai-chip">LIVE</span></div>
+                <ol class="action-list">
+                  <li v-for="(action, index) in aiPlan.immediate_actions" :key="index">
+                    <span class="action-number">0{{ index + 1 }}</span><div><strong>{{ action }}</strong></div>
+                  </li>
+                </ol>
+              </article>
+              <article class="glass-panel" style="margin-top: 18px;">
+                <div class="panel-heading"><div><span class="section-kicker">EVACUATION GUIDANCE</span><h3>Critical instructions</h3></div></div>
+                <p class="long-copy">{{ aiPlan.evacuation_guidance }}</p>
+              </article>
+            </div>
+            <div v-else class="loading-state">
+              <p>No AI data available</p>
+            </div>
           </div>
 
           <!-- ALERTS & COMMUNICATIONS -->
           <div v-else-if="activeTab === 'alerts'" class="alerts-tab">
+            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+              <div class="phase2-card glass-panel">
+                <div class="phase2-icon">📱</div>
+                <div class="phase2-tag">PHASE 2 ROADMAP</div>
+                <h2>Alert Management & Dispatch</h2>
+                <p>Multi-channel emergency broadcast analytics and delivery tracking are scheduled for delivery in <strong>Phase 2</strong>.</p>
+                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+              </div>
+            </div>
+            <template v-else>
+
             <div class="tab-intro"><div><span class="section-kicker">FEATURES 06 · 13 · REAL-TIME NOTIFICATIONS</span><h2>Alerts & communications</h2><p>Broadcast reach, delivery health, and community response in one operational view.</p></div><button class="primary-button" type="button" @click="goTo('/alerts')">Open alert center ↗</button></div>
             <div class="response-metrics"><div v-for="metric in detail.communicationMetrics" :key="metric.label" class="glass-panel response-metric"><span>{{ metric.label }}</span><strong>{{ metric.value }}</strong><small>{{ metric.note }}</small></div></div>
             <div class="content-grid two-columns"><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">BROADCAST LOG</span><h3>Alert broadcast history</h3></div><span class="panel-code">AC-01</span></div><div class="alert-history"><div v-for="alert in detail.alertHistory" :key="alert.time + alert.message" class="alert-row"><span class="alert-severity" :class="alert.severity"></span><div><strong>{{ alert.message }}</strong><small>{{ alert.time }} · {{ alert.channel }}</small></div><span class="delivery-status" :class="alert.status">{{ alert.status }}</span></div></div></article><article class="glass-panel"><div class="panel-heading"><div><span class="section-kicker">REACH & DELIVERY</span><h3>Who was notified</h3></div><span class="panel-code">AC-02</span></div><div class="region-list"><div v-for="region in detail.notifiedRegions" :key="region.name" class="region-row"><span>{{ region.name }}</span><div class="progress-track"><span class="progress-fill region-fill" :style="{ width: `${region.delivery}%` }"></span></div><strong>{{ formatNumber(region.count) }}</strong><small>{{ region.delivery }}% delivered</small></div></div><div class="channel-pills"><span v-for="channel in detail.channels" :key="channel.name" class="channel-pill"><i>{{ channel.icon }}</i>{{ channel.name }} <strong>{{ channel.percent }}%</strong></span></div></article></div>
             <article class="glass-panel response-panel"><div class="panel-heading"><div><span class="section-kicker">OUTCOME MEASUREMENT</span><h3>Response metrics</h3></div><span class="panel-code">AC-03</span></div><div class="outcome-grid"><div v-for="outcome in detail.responseOutcomes" :key="outcome.label"><span>{{ outcome.label }}</span><strong>{{ outcome.value }}</strong><small>{{ outcome.note }}</small></div></div></article>
-          </div>
+          
+            </template>
+</div>
         </section>
       </Transition>
     </template>
@@ -174,10 +300,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useEventsStore } from '@/stores'
+import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1, Event } from '@/types'
+
+// AI Insights data structure
+interface ResponsePlan {
+  immediate_actions: string[]
+  resource_allocation: Record<string, unknown>
+  evacuation_guidance: string
+  severity_assessment: string
+  country_context: string
+}
+
+interface AIInsight {
+  id: string
+  action: string
+  estimatedAffected?: number
+  timeUrgent: boolean
+  severity: 'urgent' | 'high' | 'medium' | 'low'
+}
 
 type TabId = 'overview' | 'impact' | 'map' | 'response' | 'history' | 'source' | 'ai' | 'alerts'
 type Status = 'Verified' | 'Pending' | 'Unverified'
@@ -212,9 +355,16 @@ interface DetailData {
 const route = useRoute()
 const router = useRouter()
 const eventsStore = useEventsStore()
+const appStore = useAppStore()
 const activeTab = ref<TabId>('overview')
 const incidentId = computed(() => String(route.params.id || ''))
 const incident = computed<IncidentLevel1 | undefined>(() => eventsStore.allIncidents.find(item => item.id === incidentId.value))
+
+// AI Insights state
+const aiPlan = ref<ResponsePlan | null>(null)
+const aiInsights = ref<AIInsight[]>([])
+const aiLoading = ref(false)
+const aiError = ref<string | null>(null)
 
 const tabs: Tab[] = [
   { id: 'overview', label: 'Overview', icon: '◈' }, 
@@ -244,6 +394,36 @@ function relativeTime(value: Date) { const minutes = Math.max(1, Math.round((Dat
 function formatIncidentType(type: Event['type']) { return type.charAt(0).toUpperCase() + type.slice(1) }
 function formatStatus(status: IncidentLevel1['status']) { return status.charAt(0).toUpperCase() + status.slice(1) }
 function getTrendDirection(value: number) { return value >= 0 ? '↗' : '↘' }
+
+async function fetchAIInsights() {
+  if (!incidentId.value) return
+  aiLoading.value = true
+  aiError.value = null
+  try {
+    const response = await fetch(`/api/v1/incidents/${incidentId.value}/insights`)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const data = await response.json()
+    if (data.plan) {
+      aiPlan.value = data.plan
+      // Transform backend plan to frontend insights
+      aiInsights.value = (data.plan.immediate_actions || []).map((action: string, idx: number) => ({
+        id: `ai-action-${idx}`,
+        action,
+        timeUrgent: idx === 0,
+        severity: idx === 0 ? 'urgent' : idx === 1 ? 'high' : 'medium'
+      }))
+    }
+  } catch (err) {
+    aiError.value = err instanceof Error ? err.message : 'Failed to load AI insights'
+    console.error('[AIInsights]', aiError.value)
+  } finally {
+    aiLoading.value = false
+  }
+}
+
+onMounted(() => {
+  if (incidentId.value) fetchAIInsights()
+})
 
 function makeDetail(item?: IncidentLevel1): DetailData {
   const now = new Date()
@@ -467,6 +647,47 @@ function makeDetail(item?: IncidentLevel1): DetailData {
   box-shadow: 0 0 28px rgba(14, 165, 233, .28);
 }
 
+.loading-state, .error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(14,165,233,.3);
+  border-top-color: #0ea5e9;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-state {
+  background: rgba(244,63,94,.1);
+  border: 1px solid rgba(244,63,94,.3);
+  border-radius: 8px;
+  color: #fb7185;
+}
+
+.error-icon {
+  font-size: 18px;
+}
+
+.ai-action-item {
+  background: rgba(14,165,233,.08);
+  border-left: 3px solid #0ea5e9;
+  padding-left: 12px;
+}
+
 .panel-heading { margin-bottom: 20px; }
 .panel-heading h2, .panel-heading h3 { font-size: clamp(16px, 1.5vw, 20px); }
 .long-copy, .signal-row p, .source-card p, .not-found p { font-size: 13px; line-height: 1.65; }
@@ -528,4 +749,72 @@ function makeDetail(item?: IncidentLevel1): DetailData {
   .tab-button { padding-inline: 11px; font-size: 11px; }
   .tab-button span:not(.tab-icon):not(.critical-marker) { display: inline; }
 }
+
+/* ===== PHASE 2 ROADMAP STYLES ===== */
+.phase2-center-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 400px;
+  padding: 20px;
+}
+
+.phase2-card {
+  max-width: 520px;
+  width: 100%;
+  padding: 40px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.phase2-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 12px rgba(14, 165, 233, 0.4));
+}
+
+.phase2-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.2);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(14, 165, 233, 0.4);
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.phase2-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+}
+
+.phase2-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin: 0 0 18px 0;
+}
+
+.phase2-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 </style>
+

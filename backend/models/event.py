@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, Text
+from sqlalchemy import Column, String, Float, Integer, Boolean, DateTime, Text, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 from .base import BaseModel
@@ -6,6 +6,10 @@ from .base import BaseModel
 class Event(BaseModel):
     """Natural disaster event (fire, earthquake, flood, etc.)"""
     __tablename__ = "events"
+    
+    __table_args__ = (
+        Index("ix_events_lat_lon_type", "latitude", "longitude", "event_type"),
+    )
     
     # Basic Info
     event_type = Column(String(50), nullable=False)  # 'fire', 'earthquake', 'flood'
@@ -15,7 +19,7 @@ class Event(BaseModel):
     # Location
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    location_name = Column(String(255), nullable=True)
+    location_name = Column(Text, nullable=True)  # Changed from String(255) to Text for long NOAA descriptions
     
     # Data
     data = Column(JSONB, nullable=True)  # Raw data from API

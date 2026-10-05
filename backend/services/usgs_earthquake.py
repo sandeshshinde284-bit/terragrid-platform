@@ -37,17 +37,20 @@ class USGSEarthquakeService:
         Returns:
             List of earthquake event dictionaries
         """
+        # 12-Factor App: Strict Environment-Driven Mock Guard
         if use_mock:
+            logger.info(" USGS Earthquakes: 🧪 MOCK MODE ENABLED via .env")
             return cls._get_mock_data()
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # USGS provides different feeds by time period
-                # Use 'significant' feed for only significant earthquakes (M >= 4.5)
-                # This filters out the noise of millions of tiny earthquakes
+                # USGS provides different feeds by time period and magnitude.
+                # '4.5_day.geojson' hits the perfect sweet spot: 
+                # - Daily feed (fast updates, less bloat than week/month)
+                # - Mag 4.5+ (threshold where structural damage starts, skipping micro-quakes)
                 
                 response = await client.get(
-                    f"{cls.BASE_URL}/significant_week.geojson",
+                    f"{cls.BASE_URL}/4.5_day.geojson",
                     timeout=30.0
                 )
                 response.raise_for_status()
@@ -55,19 +58,19 @@ class USGSEarthquakeService:
                 
                 events = []
                 for feature in data.get("features", []):
-                    # Additional client-side filter for magnitude
-                    magnitude = float(feature.get("properties", {}).get("mag", 0))
-                    if magnitude >= min_magnitude:
-                        parsed = cls._parse_event(feature)
-                        if parsed:
-                            events.append(parsed)
+                    # We can remove manual min_magnitude filtering because 
+                    # the 4.5+ USGS feed natively enforces the threshold.
+                    parsed = cls._parse_event(feature)
+                    if parsed:
+                        events.append(parsed)
                 
-                logger.info(f"✅ USGS Earthquakes: Fetched {len(events)} significant events (M >= {min_magnitude})")
+                logger.info(f" USGS Earthquakes: Fetched {len(events)} events (M >= 4.5, past 24h)")
                 return events
                 
         except Exception as e:
-            logger.error(f"❌ USGS Earthquake API Error: {str(e)}")
-            return cls._get_mock_data()
+            logger.error(f" USGS Earthquake API Error: {str(e)}")
+            # return cls._get_mock_data()
+            return []
     
     @classmethod
     def _parse_event(cls, feature: Dict) -> Dict[str, Any] | None:

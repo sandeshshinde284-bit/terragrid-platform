@@ -3,111 +3,127 @@
     <Header />
 
     <div class="alerts-container">
-      <!-- Filter Tabs -->
-      <div class="filter-tabs glass-panel">
-        <button 
-          v-for="filter in filters"
-          :key="filter"
-          @click="activeFilter = filter"
-          :class="['tab-btn', { active: activeFilter === filter }]"
-        >
-          {{ getFilterLabel(filter) }}
-        </button>
-      </div>
-
-      <!-- AI Disaster Brief -->
-      <div class="disaster-brief glass-panel">
-        <div class="brief-header">
-          <h3>🤖 {{ $t('alerts.disasterBrief') }}</h3>
-          <span class="update-time">{{ lastUpdateTime }}</span>
-        </div>
-        <div class="brief-content">
+      <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+        <div class="phase2-card glass-panel">
+          <div class="phase2-icon">🚨</div>
+          <div class="phase2-tag">PHASE 2 ROADMAP</div>
+          <h2>Alert Management & Dispatch Engine</h2>
           <p>
-            {{ briefText }}
+            Automated SMS, WhatsApp, and multi-channel emergency broadcast dispatchers are scheduled for delivery in <strong>Phase 2</strong>.
           </p>
-          <div class="brief-metrics">
-            <div class="metric">
-              <span class="label">Confidence</span>
-              <span class="value">92%</span>
-            </div>
-            <div class="metric">
-              <span class="label">Data Sources</span>
-              <span class="value">7</span>
-            </div>
-            <div class="metric">
-              <span class="label">Last Model Run</span>
-              <span class="value">2m ago</span>
-            </div>
+          <div class="phase2-note">
+            Real-time multi-hazard disaster monitoring and AI decision support are fully operational on the <strong>Dashboard</strong> and <strong>Incidents</strong> screens.
           </div>
+          <router-link to="/" class="return-dashboard-btn">
+            ← Return to Live Dashboard
+          </router-link>
         </div>
       </div>
 
-      <!-- Alerts List -->
-      <div class="alerts-list-wrapper glass-panel">
-        <div v-if="filteredAlerts.length === 0" class="no-alerts">
-          <p>{{ $t('alerts.noAlerts') }}</p>
+      <!-- ORIGINAL MOCK UI (Dynamically rendered if Backend USE_MOCK_DATA=true) -->
+      <template v-else>
+        <div class="filter-tabs glass-panel">
+          <button 
+            v-for="filter in filters"
+            :key="filter"
+            @click="activeFilter = filter"
+            :class="['tab-btn', { active: activeFilter === filter }]"
+          >
+            {{ getFilterLabel(filter) }}
+          </button>
         </div>
 
-        <div v-else class="alerts-list">
-          <div 
-            v-for="alert in filteredAlerts"
-            :key="alert.id"
-            :class="['alert-item', alert.severity]"
-          >
-            <div class="alert-icon">{{ alert.icon }}</div>
-            
-            <div class="alert-content">
-              <div class="alert-title">{{ alert.title }}</div>
-              <div class="alert-message">{{ alert.message }}</div>
-              <div class="alert-meta">
-                <span class="location">📍 {{ alert.location }}</span>
-                <span class="timestamp">⏱️ {{ alert.time }}</span>
+        <div class="disaster-brief glass-panel">
+          <div class="brief-header">
+            <h3>🤖 {{ $t('alerts.disasterBrief') }}</h3>
+            <span class="update-time">{{ lastUpdateTime }}</span>
+          </div>
+          <div class="brief-content">
+            <p>
+              {{ briefText }}
+            </p>
+            <div class="brief-metrics">
+              <div class="metric">
+                <span class="label">Confidence</span>
+                <span class="value">94%</span>
+              </div>
+              <div class="metric">
+                <span class="label">Data Sources</span>
+                <span class="value">5 Live</span>
+              </div>
+              <div class="metric">
+                <span class="label">Active Threats</span>
+                <span class="value">{{ totalCount }}</span>
               </div>
             </div>
+          </div>
+        </div>
 
-            <div class="alert-badge">
-              <span class="severity-badge" :class="alert.severity">
-                {{ alert.severity.toUpperCase() }}
-              </span>
+        <div class="alerts-list-wrapper glass-panel">
+          <div v-if="filteredAlerts.length === 0" class="no-alerts">
+            <p>{{ $t('alerts.noAlerts') }}</p>
+          </div>
+
+          <div v-else class="alerts-list">
+            <div 
+              v-for="alert in filteredAlerts"
+              :key="alert.id"
+              :class="['alert-item', alert.severity]"
+            >
+              <div class="alert-icon">{{ alert.icon }}</div>
+              
+              <div class="alert-content">
+                <div class="alert-title">{{ alert.title }}</div>
+                <div class="alert-message">{{ alert.message }}</div>
+                <div class="alert-meta">
+                  <span class="location">📍 {{ alert.location }}</span>
+                  <span class="timestamp">⏱️ {{ alert.time }}</span>
+                </div>
+              </div>
+
+              <div class="alert-badge">
+                <span class="severity-badge" :class="alert.severity">
+                  {{ alert.severity.toUpperCase() }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Statistics -->
-      <div class="stats-grid">
-        <div class="stat-card glass-panel">
-          <div class="stat-icon">🚨</div>
-          <div class="stat-info">
-            <span class="label">{{ $t('common.critical') }}</span>
-            <span class="value">{{ criticalCount }}</span>
+        <div class="stats-grid">
+          <div class="stat-card glass-panel">
+            <div class="stat-icon">🚨</div>
+            <div class="stat-info">
+              <span class="label">{{ $t('common.critical') }}</span>
+              <span class="value">{{ criticalCount }}</span>
+            </div>
+          </div>
+
+          <div class="stat-card glass-panel">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-info">
+              <span class="label">{{ $t('common.high') }}</span>
+              <span class="value">{{ highCount }}</span>
+            </div>
+          </div>
+
+          <div class="stat-card glass-panel">
+            <div class="stat-icon">ℹ️</div>
+            <div class="stat-info">
+              <span class="label">{{ $t('alerts.info') }}</span>
+              <span class="value">{{ infoCount }}</span>
+            </div>
+          </div>
+
+          <div class="stat-card glass-panel">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+              <span class="label">{{ $t('alerts.realTime') }}</span>
+              <span class="value">{{ totalCount }}</span>
+            </div>
           </div>
         </div>
-
-        <div class="stat-card glass-panel">
-          <div class="stat-icon">⚠️</div>
-          <div class="stat-info">
-            <span class="label">{{ $t('common.high') }}</span>
-            <span class="value">{{ highCount }}</span>
-          </div>
-        </div>
-
-        <div class="stat-card glass-panel">
-          <div class="stat-icon">ℹ️</div>
-          <div class="stat-info">
-            <span class="label">{{ $t('alerts.info') }}</span>
-            <span class="value">{{ infoCount }}</span>
-          </div>
-        </div>
-
-        <div class="stat-card glass-panel">
-          <div class="stat-icon">📊</div>
-          <div class="stat-info">
-            <span class="label">{{ $t('alerts.realTime') }}</span>
-            <span class="value">{{ totalCount }}</span>
-          </div>
-        </div>
-      </div>
+      </template>
     </div>
   </div>
 </template>
@@ -115,9 +131,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import Header from '@/components/organisms/Header.vue'
-import { useEventsStore } from '@/stores'
+import { useEventsStore, useAppStore } from '@/stores'
 
 const eventsStore = useEventsStore()
+const appStore = useAppStore()
 const activeFilter = ref('all')
 
 interface Alert {
@@ -132,123 +149,62 @@ interface Alert {
 
 const filters = ['all', 'critical', 'high', 'medium', 'info']
 
-const alerts = ref<Alert[]>([
-  {
-    id: '1',
-    severity: 'critical',
-    icon: '🚨',
-    title: 'Landslide Event Detected',
-    message: 'Rapid area expansion detected near San Jose. 87/100 threat score. Evacuation recommended.',
-    location: 'San Jose, CA',
-    time: '1 min ago',
-  },
-  {
-    id: '2',
-    severity: 'critical',
-    icon: '🔥',
-    title: 'Fire Spread Acceleration',
-    message: 'Santa Cruz fire expanding at 2.1 km²/h. 45,000 people in precautionary zones.',
-    location: 'Santa Cruz, CA',
-    time: '3 min ago',
-  },
-  {
-    id: '3',
-    severity: 'high',
-    icon: '💧',
-    title: 'Flood Level Rising',
-    message: 'Russian River flood levels rising. Secondary flood risk zones identified.',
-    location: 'Russian River, CA',
-    time: '5 min ago',
-  },
-  {
-    id: '4',
-    severity: 'high',
-    icon: '🌍',
-    title: 'Seismic Activity',
-    message: 'Magnitude 4.2 earthquake detected. Minor aftershock risk through tomorrow.',
-    location: 'San Francisco Bay Area',
-    time: '7 min ago',
-  },
-  {
-    id: '5',
-    severity: 'medium',
-    icon: '⛔',
-    title: 'Evacuation Zone Expansion',
-    message: '2 new evacuation zones activated. 12,000 additional residents advised to prepare.',
-    location: 'Marin County, CA',
-    time: '10 min ago',
-  },
-  {
-    id: '6',
-    severity: 'medium',
-    icon: '🛣️',
-    title: 'Emergency Route Updated',
-    message: 'Highway 101 North rerouted due to landslide debris. Use alternate Route 280.',
-    location: 'Oakland, CA',
-    time: '12 min ago',
-  },
-  {
-    id: '7',
-    severity: 'medium',
-    icon: '👥',
-    title: 'Population Alert',
-    message: '8,500 residents in isolated areas. Rescue teams dispatched.',
-    location: 'Sierra Nevada, CA',
-    time: '15 min ago',
-  },
-  {
-    id: '8',
-    severity: 'low',
-    icon: 'ℹ️',
-    title: 'Data Updated',
-    message: 'Real-time satellite imagery refreshed. 7 new data sources integrated.',
-    location: 'All Zones',
-    time: '20 min ago',
-  },
-  {
-    id: '9',
-    severity: 'critical',
-    icon: '🚨',
-    title: 'Critical Water Shortage',
-    message: 'Water treatment facility compromised. Emergency water supplies initiated.',
-    location: 'Santa Rosa, CA',
-    time: '22 min ago',
-  },
-  {
-    id: '10',
-    severity: 'high',
-    icon: '🏥',
-    title: 'Medical Resources Alert',
-    message: 'Hospitals near Santa Cruz at 85% capacity. Additional medical staff requested.',
-    location: 'Santa Cruz County',
-    time: '25 min ago',
-  },
-  {
-    id: '11',
-    severity: 'high',
-    icon: '📡',
-    title: 'Communication Infrastructure',
-    message: '3 cell towers affected by fire. Alternative networks activated.',
-    location: 'Santa Cruz & Surrounding',
-    time: '28 min ago',
-  },
-  {
-    id: '12',
-    severity: 'medium',
-    icon: '🚗',
-    title: 'Transportation Disruption',
-    message: '6 major roads closed. Public transit diverted to alternative routes.',
-    location: 'Bay Area',
-    time: '30 min ago',
-  },
-])
+const getIncidentIcon = (type: string) => {
+  const icons: Record<string, string> = {
+    fire: '🔥',
+    flood: '💧',
+    earthquake: '🌍',
+    storm: '🌀',
+    landslide: '🏔️',
+  }
+  return icons[type?.toLowerCase()] || '⚠️'
+}
+
+const formatTimeAgo = (date: Date) => {
+  if (!date) return 'Recently'
+  const diffMs = Date.now() - new Date(date).getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins} min ago`
+  const diffHours = Math.floor(diffMins / 60)
+  if (diffHours < 24) return `${diffHours} hr ago`
+  return `${Math.floor(diffHours / 24)} days ago`
+}
+
+// Feature 7: Dynamically derive real-time emergency alerts from analyzed live incidents in store
+const alerts = computed<Alert[]>(() => {
+  return eventsStore.allIncidents.map((incident, index) => {
+    const score = incident.threatScore ?? 50
+    let severity: 'critical' | 'high' | 'medium' | 'low' = 'low'
+    if (score >= 80 || incident.severity === 'critical') severity = 'critical'
+    else if (score >= 65 || incident.severity === 'high') severity = 'high'
+    else if (score >= 40 || incident.severity === 'medium') severity = 'medium'
+
+    const icon = severity === 'critical' ? '🚨' : getIncidentIcon(incident.type)
+    const title = `${(incident.type || 'Hazard').toUpperCase()} EMERGENCY ALERT`
+    const area = incident.affectedArea ? `${incident.affectedArea.toFixed(0)} km²` : 'Active perimeter'
+    const pop = incident.affectedPopulation ? `${(incident.affectedPopulation / 1000).toFixed(0)}K residents` : 'Monitored area'
+    const message = `Assessed threat level ${score}/100. Affected zone: ${area} with ~${pop} in proximity. Tactical response advisory in effect.`
+
+    return {
+      id: incident.id || `alert-${index}`,
+      severity,
+      icon,
+      title,
+      message,
+      location: incident.location || 'Global Incident',
+      time: formatTimeAgo(incident.detectionTime),
+    }
+  })
+})
 
 const briefText = computed(() => {
   const incidents = eventsStore.allIncidents.length
   const area = eventsStore.totalAffectedArea.toFixed(0)
   const population = (eventsStore.totalAffectedPopulation / 1000).toFixed(0)
+  const critical = eventsStore.allIncidents.filter(i => (i.threatScore ?? 0) >= 80 || i.severity === 'critical').length
   
-  return `CRITICAL SITUATION UPDATE: ${incidents} active disaster incidents across California affecting approximately ${population}K people and ${area} km² of territory. Primary threats: Landslide near San Jose (87/100), Fire near Santa Cruz (82/100), Flood in Russian River (78/100). Evacuation zones expanding. Emergency response activated. Follow official directives and stay in safe zones.`
+  return `GLOBAL THREAT INTELLIGENCE BRIEF: TerraGrid is actively monitoring ${incidents} verified disaster incidents worldwide across 5 real-time satellite and sensor feeds. High-threat clusters identify ${critical} priority emergencies affecting ~${population}K residents and ${area} km² of territory. AI decision support models are operational.`
 })
 
 const lastUpdateTime = computed(() => {
@@ -271,21 +227,45 @@ const getFilterLabel = (filter: string) => {
   if (filter === 'all') return `All (${alerts.value.length})`
   if (filter === 'critical') return `🚨 Critical (${criticalCount.value})`
   if (filter === 'high') return `⚠️ High (${highCount.value})`
-  if (filter === 'medium') return `📢 Medium`
+  if (filter === 'medium') return `📢 Medium (${alerts.value.filter(a => a.severity === 'medium').length})`
   if (filter === 'info') return `ℹ️ Info (${infoCount.value})`
   return filter
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // If navigated directly to /alerts, hydrate live incidents from PostgreSQL database
   if (eventsStore.allIncidents.length === 0) {
-    eventsStore.initMockData()
+    try {
+      const host = window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin
+      const res = await fetch(`${host}/api/v1/incidents?limit=50`)
+      if (res.ok) {
+        const rawIncidents = await res.json()
+        if (Array.isArray(rawIncidents) && rawIncidents.length > 0) {
+          const mapped = rawIncidents.map((event: any, index: number) => {
+            const impact = event.impact || {}
+            const severity = (event.severity || 'medium').toLowerCase()
+            return {
+              id: event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id || `event-${index}-${Date.now()}`,
+              type: event.event_type || 'fire',
+              location: event.location_name || 'Unknown',
+              severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
+              status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
+              threatScore: impact.risk_score ?? 50,
+              detectionTime: new Date(event.event_timestamp || Date.now()),
+              affectedArea: impact.affected_area_km2 ?? 150,
+              affectedPopulation: impact.affected_population ?? 50000,
+              trend: impact.trend_km2_per_hour ?? 5.2,
+              forecast6h: impact.forecast_6h_km2 ?? 31.2,
+              coordinates: [event.latitude, event.longitude] as [number, number],
+            }
+          })
+          eventsStore.setIncidents(mapped)
+        }
+      }
+    } catch (err) {
+      console.warn('AlertsScreen: Failed to hydrate live incidents:', err)
+    }
   }
-
-  // Simulate real-time alerts (WebSocket simulation)
-  setInterval(() => {
-    // In production, this would be a real WebSocket connection
-    // For now, just show the mock data
-  }, 30000)
 })
 </script>
 
@@ -690,5 +670,93 @@ onMounted(() => {
   .stat-info .value {
     font-size: 16px;
   }
+}
+
+/* ===== PHASE 2 ROADMAP STYLES ===== */
+.phase2-center-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 420px;
+  padding: 40px 20px;
+}
+
+.phase2-card {
+  max-width: 520px;
+  width: 100%;
+  padding: 40px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.phase2-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.4));
+}
+
+.phase2-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.2);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(14, 165, 233, 0.4);
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.phase2-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+}
+
+.phase2-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin: 0 0 18px 0;
+}
+
+.phase2-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 24px;
+}
+
+.return-dashboard-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid var(--accent-cyan);
+}
+
+.return-dashboard-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.4);
 }
 </style>

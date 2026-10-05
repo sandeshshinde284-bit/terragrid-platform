@@ -51,7 +51,7 @@ class NASAEONETService:
     @classmethod
     async def fetch_events(cls, use_mock: bool = False) -> List[Dict[str, Any]]:
         """
-        Fetch current natural disaster events from NASA EONET
+        Fetch current natural disaster events from NASA EONET v3.1 GeoJSON API
         
         Args:
             use_mock: If True, return mock data instead of calling API
@@ -60,13 +60,13 @@ class NASAEONETService:
             List of event dictionaries
         """
         if use_mock:
+            logger.info(" NASA EONET: 🧪 MOCK MODE ENABLED via .env")
             return cls._get_mock_data()
-        
+            
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                # Fetch events from last 30 days
                 response = await client.get(
-                    f"{cls.BASE_URL}/events",
+                    f"{cls.BASE_URL}/events/geojson",
                     params={
                         "status": "open",  # Only open/ongoing events
                         "limit": 100
@@ -76,58 +76,62 @@ class NASAEONETService:
                 data = response.json()
                 
                 events = []
-                for event in data.get("events", []):
-                    parsed = cls._parse_event(event)
+                features = data.get("features", [])
+                for feature in features:
+                    parsed = cls._parse_event(feature)
                     if parsed:
                         events.append(parsed)
                 
-                logger.info(f"✅ NASA EONET: Fetched {len(events)} events")
+                logger.info(f" NASA EONET: Fetched {len(events)} events")
                 return events
                 
         except Exception as e:
-            logger.error(f"❌ NASA EONET API Error: {str(e)}")
-            # Fall back to mock data on error
-            return cls._get_mock_data()
+            logger.error(f" NASA EONET API Error: {str(e)}")
+            return []
     
     @classmethod
-    def _parse_event(cls, event: Dict) -> Dict[str, Any] | None:
-        """Parse NASA EONET event to internal format"""
+    def _parse_event(cls, feature: Dict) -> Dict[str, Any] | None:
+        """Parse NASA EONET v3.1 GeoJSON Feature to internal format"""
         try:
+            properties = feature.get("properties", {})
+            geometry = feature.get("geometry", {})
+            
             # Get event category
-            category = event.get("categories", [{}])[0].get("id", "").lower()
+            categories = properties.get("categories", [])
+            category = categories[0].get("id", "").lower() if categories else ""
             event_type = cls.CATEGORY_MAPPING.get(category, "other")
             
-            # Get latest geometry (most recent location)
-            # NASA's real API uses the key "geometry" (a list of geometry snapshots over time)
-            geometries = event.get("geometry", event.get("geometries", []))
-            if not geometries:
-                return None
+            # Extract coordinates from GeoJSON
+            coords = cls._extract_point(geometry.get("coordinates", [0, 0]))
             
-            latest_geom = geometries[-1]
-            coords = cls._extract_point(latest_geom.get("coordinates", [0, 0]))
+            # Use exact physical magnitude for threat scoring if available
+            mag_value = properties.get("magnitudeValue")
+            mag_unit = properties.get("magnitudeUnit")
             
             # Build event
             return {
                 "event_type": event_type,
-                "severity": "medium",  # NASA doesn't provide severity
-                "status": "detected" if not event.get("closed") else "resolved",
+                "severity": "medium",  # Calculated dynamically later in impact_analysis
+                "status": "detected" if not properties.get("closed") else "resolved",
                 "latitude": coords[1] if len(coords) > 1 else 0,
                 "longitude": coords[0] if len(coords) > 0 else 0,
-                "location_name": event.get("title", "Unknown"),
+                "location_name": properties.get("title", "Unknown"),
                 "source": "NASA_EONET",
-                "event_timestamp": cls._parse_date(latest_geom.get("date")),
+                "event_timestamp": cls._parse_date(properties.get("date")),
                 "confidence": 0.95,  # NASA data is highly reliable
                 "is_verified": True,
                 "data": {
-                    "nasa_id": event.get("id"),
+                    "nasa_id": properties.get("id"),
                     "category": category,
-                    "description": event.get("description", ""),
-                    "link": event.get("link", ""),
-                    "geometry_type": latest_geom.get("type")
+                    "description": properties.get("description", ""),
+                    "link": properties.get("link", ""),
+                    "geometry_type": geometry.get("type"),
+                    "magnitude_value": mag_value,
+                    "magnitude_unit": mag_unit
                 }
             }
         except Exception as e:
-            logger.error(f"Error parsing NASA event: {str(e)}")
+            logger.error(f"Error parsing NASA GeoJSON event: {str(e)}")
             return None
     
     @classmethod

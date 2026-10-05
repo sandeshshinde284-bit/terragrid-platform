@@ -1,13 +1,14 @@
 ﻿# Models initialization
-from .base import Base, BaseModel
+from .base import BaseModel
 from .event import Event
 from .analysis import Analysis
 from .alert import Alert
+from .geocoding import GeocodingCache
 
 __all__ = [
-    "Base",
     "BaseModel",
     "Event",
     "Analysis",
     "Alert",
+    "GeocodingCache"
 ]

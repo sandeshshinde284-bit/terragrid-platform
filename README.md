@@ -17,30 +17,10 @@ TerraGrid is an AI-powered platform that detects natural disasters (fires, earth
 - 📱 Multi-channel alerts (SMS via httpSMS, Email via Resend)
 - 🤖 AI threat analysis (Google Gemini)
 
-## For Judges & Evaluators
 
-### ✅ Review Code (FREE - No Charges)
-```bash
-# Clone and read code
-git clone https://github.com/YOUR_USERNAME/terragrid-platform.git
 
-# Review code: FREE ✅
-# Check architecture: FREE ✅
-# No charges at any point
-```
 
-### ✅ Run Locally (FREE - Your API Keys Only)
-```bash
-# Follow Quick Start below
-# When you create .env with YOUR keys:
-# - Costs are charged to YOUR GCP account
-# - Costs are charged to YOUR API accounts
-# - TerraGrid author cost: $0
-```
 
-**Summary: Judges are NEVER charged to evaluate code** ✅
-
----
 
 ## Quick Start (Local Development)
 

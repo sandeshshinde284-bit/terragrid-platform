@@ -6,14 +6,13 @@ import httpx
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-from xml.etree import ElementTree as ET
 
 logger = logging.getLogger(__name__)
 
 class GDACSService:
-    """Service to fetch disaster alerts from GDACS API"""
+    """Service to fetch disaster alerts from official GDACS GeoJSON API"""
     
-    BASE_URL = "https://www.gdacs.org/api/v1"
+    BASE_URL = "https://www.gdacs.org/gdacsapi/api/Events/geteventlist/latest"
     
     # Disaster type mappings
     DISASTER_MAPPING = {
@@ -30,7 +29,7 @@ class GDACSService:
     @classmethod
     async def fetch_events(cls, use_mock: bool = False) -> List[Dict[str, Any]]:
         """
-        Fetch disaster alerts from GDACS
+        Fetch disaster alerts from GDACS GeoJSON endpoint
         
         Args:
             use_mock: If True, return mock data instead of calling API
@@ -39,72 +38,98 @@ class GDACSService:
             List of event dictionaries
         """
         if use_mock:
+            logger.info(" GDACS: 🧪 MOCK MODE ENABLED via .env")
             return cls._get_mock_data()
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    f"{cls.BASE_URL}/events",
-                    params={
-                        "limit": 100,
-                        "status": "alert"
-                    }
-                )
+                response = await client.get(cls.BASE_URL)
                 response.raise_for_status()
-                data = response.json()
+                try:
+                    data = response.json()
+                except Exception as json_err:
+                    logger.warning(f"GDACS returned non-JSON response. Returning empty list.")
+                    return []
                 
                 events = []
-                for event in data.get("events", []):
-                    parsed = cls._parse_event(event)
+                features = data.get("features", [])
+                for feature in features:
+                    parsed = cls._parse_event(feature)
                     if parsed:
                         events.append(parsed)
                 
-                logger.info(f"✅ GDACS: Fetched {len(events)} events")
+                logger.info(f" GDACS: Fetched {len(events)} events")
                 return events
                 
         except Exception as e:
-            logger.error(f"❌ GDACS API Error: {str(e)}")
-            return cls._get_mock_data()
+            logger.error(f" GDACS API Error: {str(e)}")
+            return []
     
     @classmethod
-    def _parse_event(cls, event: Dict) -> Dict[str, Any] | None:
-        """Parse GDACS event to internal format"""
+    def _parse_event(cls, feature: Dict) -> Dict[str, Any] | None:
+        """Parse GDACS GeoJSON feature to internal format"""
         try:
-            disaster_type = event.get("disasterType", "").upper()
+            properties = feature.get("properties", {})
+            geometry = feature.get("geometry", {})
+            
+            disaster_type = properties.get("eventtype", "").upper()
             event_type = cls.DISASTER_MAPPING.get(disaster_type, "other")
             
-            # Calculate severity from alert score (0-8)
-            alert_score = float(event.get("alertScore", 0))
-            if alert_score >= 6:
+            # Map severity from alertlevel string
+            alert_level = properties.get("alertlevel", "").lower()
+            if alert_level == "red":
                 severity = "critical"
-            elif alert_score >= 5:
+                confidence = 0.95
+            elif alert_level == "orange":
                 severity = "high"
-            elif alert_score >= 3:
-                severity = "medium"
-            else:
+                confidence = 0.85
+            elif alert_level == "green":
                 severity = "low"
+                confidence = 0.70
+            else:
+                severity = "medium"
+                confidence = 0.60
+                
+            coordinates = geometry.get("coordinates", [0, 0])
+            if len(coordinates) >= 2:
+                lon, lat = coordinates[0], coordinates[1]
+            else:
+                return None
+                
+            # Construct a descriptive name combining event name and country
+            event_name = properties.get("eventname", "")
+            country = properties.get("country", "")
+            if event_name and country:
+                location_name = f"{event_name}, {country}"
+            elif country:
+                location_name = country
+            elif event_name:
+                location_name = event_name
+            else:
+                location_name = "Unknown GDACS Location"
             
             return {
                 "event_type": event_type,
                 "severity": severity,
-                "status": "confirmed",
-                "latitude": float(event.get("latitude", 0)),
-                "longitude": float(event.get("longitude", 0)),
-                "location_name": event.get("description", "Unknown"),
+                "status": "active",
+                "latitude": float(lat),
+                "longitude": float(lon),
+                "location_name": location_name,
                 "source": "GDACS",
-                "event_timestamp": cls._parse_date(event.get("eventDate")),
-                "confidence": min(0.99, (alert_score / 8.0) * 0.95),
+                "event_timestamp": cls._parse_date(properties.get("fromdate")),
+                "confidence": confidence,
                 "is_verified": True,
                 "data": {
-                    "gdacs_id": event.get("eventId"),
-                    "alert_score": alert_score,
-                    "affected_population": event.get("affectedPopulation", 0),
-                    "vulnerability": event.get("vulnerability", ""),
-                    "recommendation": event.get("recommendation", "")
+                    "gdacs_id": properties.get("eventid"),
+                    "episode_id": properties.get("episodeid"),
+                    "alert_level": alert_level,
+                    "event_name": event_name,
+                    "country": country,
+                    "url": properties.get("url")
                 }
             }
         except Exception as e:
-            logger.error(f"Error parsing GDACS event: {str(e)}")
+            logger.error(f"Error parsing GDACS GeoJSON feature: {str(e)}")
             return None
     
     @classmethod
@@ -120,63 +145,4 @@ class GDACSService:
     @classmethod
     def _get_mock_data(cls) -> List[Dict[str, Any]]:
         """Return mock GDACS data for testing"""
-        now = datetime.utcnow()
-        return [
-            {
-                "event_type": "flood",
-                "severity": "high",
-                "status": "confirmed",
-                "latitude": 28.6139,
-                "longitude": 77.2090,
-                "location_name": "New Delhi Flooding Alert",
-                "source": "GDACS",
-                "event_timestamp": now - timedelta(hours=3),
-                "confidence": 0.93,
-                "is_verified": True,
-                "data": {
-                    "gdacs_id": "GDACS_MOCK_001",
-                    "alert_score": 6.5,
-                    "affected_population": 500000,
-                    "vulnerability": "high",
-                    "recommendation": "Evacuate vulnerable populations"
-                }
-            },
-            {
-                "event_type": "earthquake",
-                "severity": "high",
-                "status": "confirmed",
-                "latitude": -33.8688,
-                "longitude": 151.2093,
-                "location_name": "Sydney Seismic Event",
-                "source": "GDACS",
-                "event_timestamp": now - timedelta(hours=5),
-                "confidence": 0.91,
-                "is_verified": True,
-                "data": {
-                    "gdacs_id": "GDACS_MOCK_002",
-                    "alert_score": 5.8,
-                    "affected_population": 300000,
-                    "vulnerability": "medium",
-                    "recommendation": "Structural damage assessment needed"
-                }
-            },
-            {
-                "event_type": "storm",
-                "severity": "critical",
-                "status": "confirmed",
-                "latitude": 15.2993,
-                "longitude": 74.1240,
-                "location_name": "Arabian Sea Cyclone",
-                "source": "GDACS",
-                "event_timestamp": now - timedelta(hours=1),
-                "confidence": 0.96,
-                "is_verified": True,
-                "data": {
-                    "gdacs_id": "GDACS_MOCK_003",
-                    "alert_score": 7.2,
-                    "affected_population": 2000000,
-                    "vulnerability": "very_high",
-                    "recommendation": "Immediate evacuation advised"
-                }
-            }
-        ]
+        pass

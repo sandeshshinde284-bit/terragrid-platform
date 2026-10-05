@@ -27,7 +27,9 @@ class NOAAService:
         Returns:
             List of weather event dictionaries
         """
+        # 12-Factor App: Strict Environment-Driven Mock Guard
         if use_mock:
+            logger.info(" NOAA Weather: 🧪 MOCK MODE ENABLED via .env")
             return cls._get_mock_data()
         
         try:
@@ -37,7 +39,6 @@ class NOAAService:
                 response = await client.get(
                     cls.ALERTS_URL,
                     params={
-                        "point": None,  # We'll parse all alerts
                         "status": "actual"
                     },
                     timeout=30.0,
@@ -54,12 +55,13 @@ class NOAAService:
                     if parsed:
                         events.append(parsed)
                 
-                logger.info(f"✅ NOAA Weather: Fetched {len(events)} events")
+                logger.info(f" NOAA Weather: Fetched {len(events)} events")
                 return events
                 
         except Exception as e:
-            logger.error(f"❌ NOAA API Error: {str(e)}")
-            return cls._get_mock_data()
+            logger.error(f" NOAA API Error: {str(e)}")
+            # return cls._get_mock_data()
+            return []
     
     @classmethod
     def _parse_event(cls, feature: Dict) -> Dict[str, Any] | None:
@@ -92,8 +94,8 @@ class NOAAService:
             
             # Extract area name
             area = properties.get("areaDesc", "Unknown Area")
-            
-            # Parse timestamps
+            # Add country code for NOAA (US weather service)
+            location_name = f"{area}, US"
             effective = properties.get("effective")
             expires = properties.get("expires")
             
@@ -108,7 +110,7 @@ class NOAAService:
                 "status": "detected",
                 "latitude": coords[1],
                 "longitude": coords[0],
-                "location_name": area,
+                "location_name": location_name,
                 "source": "NOAA_WEATHER",
                 "event_timestamp": event_timestamp,
                 "confidence": 0.92,  # NOAA is reliable but less precise than seismic

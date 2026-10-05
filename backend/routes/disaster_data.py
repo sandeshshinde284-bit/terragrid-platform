@@ -221,7 +221,8 @@ async def ingestion_status():
 
 
 # Global mock mode for testing
-_mock_mode_enabled = True
+# [STRICT LIVE] _mock_mode_enabled = True
+_mock_mode_enabled = False
 
 @router.get("/config/mock-mode")
 async def get_mock_mode():

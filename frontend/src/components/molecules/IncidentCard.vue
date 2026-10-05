@@ -11,7 +11,7 @@
         <h3>{{ incident.type.toUpperCase() }}</h3>
       </div>
       <div class="header-bottom">
-        <p class="location">{{ incident.location }}</p>
+        <p class="location">{{ formatLocation(incident.location) }}</p>
         <Badge :severity="incident.severity" />
       </div>
     </div>
@@ -58,6 +58,25 @@ const emit = defineEmits<{
 }>()
 
 const appStore = useAppStore()
+
+const formatLocation = (loc: string) => {
+  if (!loc || !loc.includes(',')) return loc;
+  const parts = loc.split(',');
+  const code = parts[parts.length - 1].trim();
+  if (code.length === 2 && code === code.toUpperCase()) {
+     try {
+       const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
+       const countryName = displayNames.of(code);
+       if (countryName && countryName !== code) {
+         parts[parts.length - 1] = ' ' + countryName;
+         return parts.join(',');
+       }
+     } catch (e) {
+       return loc;
+     }
+  }
+  return loc;
+}
 const { t } = useI18n()
 
 const iconMap: Record<string, string> = {
@@ -185,6 +204,12 @@ const selectIncident = () => {
   line-height: 1.3;
   flex: 1;
   font-weight: 600;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .card-body {

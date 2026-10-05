@@ -11,6 +11,7 @@ export const useAppStore = defineStore('app', () => {
   const demoMode = ref<boolean>(true)
   const expandedIncident = ref<string | null>(null)
   const selectedIncident = ref<string | null>(null)
+  const isBackendMockModeEnabled = ref<boolean>(false)
 
   // Getters
   const state = computed<DashboardState>(() => ({
@@ -48,6 +49,10 @@ export const useAppStore = defineStore('app', () => {
   const toggleDemoMode = () => {
     demoMode.value = !demoMode.value
   }
+  
+  const setBackendMockMode = (enabled: boolean) => {
+    isBackendMockModeEnabled.value = enabled
+  }
 
   return {
     // State
@@ -57,6 +62,7 @@ export const useAppStore = defineStore('app', () => {
     demoMode,
     expandedIncident,
     selectedIncident,
+    isBackendMockModeEnabled,
 
     // Getters
     state,
@@ -68,6 +74,7 @@ export const useAppStore = defineStore('app', () => {
     setExpandedIncident,
     setSelectedIncident,
     toggleDemoMode,
+    setBackendMockMode,
   }
 })
 
@@ -159,7 +166,7 @@ export const useEventsStore = defineStore('events', () => {
     setIncidents(mockIncidents)
   }
 
-  initMockData()
+  // [STRICT LIVE MODE] initMockData()
 
   return {
     // State
@@ -261,7 +268,8 @@ export const useAlertsStore = defineStore('alerts', () => {
     setAIInsights(mockInsights)
   }
 
-  initMockInsights()
+  // COMMENTED OUT (Live Mode): Never initialize mock insights on store load
+  // initMockInsights()
 
   return {
     // State

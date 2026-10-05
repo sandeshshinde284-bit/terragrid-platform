@@ -15,7 +15,29 @@
               {{ isConnected ? '🟢 Live Updates' : '🔴 Offline' }}
             </span>
           </div>
-          <div class="sort-controls">
+          
+          <!-- Country Filter Buttons -->
+          <div class="country-filter-section">
+            <div class="filter-label">Filter by Country:</div>
+            <select v-model="selectedCountry" class="country-dropdown">
+              <option :value="null">All Countries</option>
+              <option v-for="country in availableCountries" :key="country" :value="country">
+                {{ getCountryName(country) }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Event Type & Sort Controls -->
+          <div class="filter-controls">
+            <select v-model="selectedEventType" class="event-type-dropdown">
+              <option value="">All Event Types</option>
+              <option value="earthquake">🔴 Earthquake</option>
+              <option value="flood">🌊 Flood</option>
+              <option value="storm">⚡ Storm</option>
+              <option value="fire">🔥 Fire</option>
+              <option value="volcano">🌋 Volcano</option>
+              <option value="weather">🌤️ Weather</option>
+            </select>
             <select v-model="sortBy" class="sort-dropdown">
               <option value="threat">↓ Threat Score</option>
               <option value="area">↓ Affected Area</option>
@@ -24,6 +46,7 @@
             </select>
           </div>
         </div>
+        
         <div class="incident-list" :class="{ 'is-loading': isLoading }">
           <IncidentCard 
             v-for="incident in sortedAndPaginatedIncidents"
@@ -84,48 +107,75 @@
           </div>
 
           <div class="detail-content">
+            
+            <div class="ai-decision-plan">
+              <label class="ai-plan-title">🤖 AI Tactical Response</label>
+              
+              <div v-if="isLoadingInsights" class="ai-loading">
+                <span class="spinner">⟳</span> Generating country-specific action plan...
+              </div>
+              
+              <div v-else-if="aiPlan" class="ai-plan-content">
+                <div class="country-context-tag">{{ aiPlan.country_context }}</div>
+                
+                <h5 class="section-subtitle">Tactical Actions:</h5>
+                <ul class="action-steps">
+                  <li v-for="(act, idx) in aiPlan.immediate_actions" :key="idx">
+                    {{ act }}
+                  </li>
+                </ul>
+
+                <h5 class="section-subtitle">Evacuation Corridor:</h5>
+                <p class="evac-guidance">{{ aiPlan.evacuation_guidance }}</p>
+
+                <h5 class="section-subtitle">Resource Mobilization:</h5>
+                <div class="resource-grid">
+                  <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-pill">
+                    <strong>{{ res.resource }}:</strong> {{ res.quantity }} ({{ res.status }})
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- 2. CORE METADATA (Full Width) -->
             <div class="detail-item">
               <label>{{ $t('incidents.location') }}</label>
               <div class="location-value">📍 {{ selectedIncidentData.location }}</div>
             </div>
 
-            <div class="detail-item">
-              <label>{{ $t('incidents.status') }}</label>
-              <div class="status-badge" :class="selectedIncidentData.status">
-                {{ selectedIncidentData.status.toUpperCase() }}
+            <div class="detail-item-row">
+              <div class="detail-item">
+                <label>{{ $t('incidents.status') }}</label>
+                <div class="status-badge" :class="selectedIncidentData.status">
+                  {{ selectedIncidentData.status.toUpperCase() }}
+                </div>
+              </div>
+              <div class="detail-item">
+                <label>{{ $t('incidents.threatScore') }}</label>
+                <div class="threat-score">{{ getThreatScore(selectedIncidentData) }}/100</div>
               </div>
             </div>
 
-            <div class="detail-item">
-              <label>{{ $t('incidents.threatScore') }}</label>
-              <div class="threat-score">{{ getThreatScore(selectedIncidentData) }}/100</div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="detail-item">
-              <label>{{ $t('incidents.detectionTime') }}</label>
-              <div class="value">{{ formatDate(selectedIncidentData.detectionTime) }}</div>
-            </div>
-
-            <div class="detail-item">
-              <label>{{ $t('incidents.affectedArea') }}</label>
-              <div class="metric-value">{{ selectedIncidentData.affectedArea.toFixed(1) }} km²</div>
-            </div>
-
-            <div class="detail-item">
-              <label>{{ $t('incidents.population') }}</label>
-              <div class="metric-value">{{ selectedIncidentData.affectedPopulation.toLocaleString() }}</div>
-            </div>
-
-            <div class="detail-item">
-              <label>{{ $t('incidents.trend') }}</label>
-              <div class="trend-value">+{{ selectedIncidentData.trend.toFixed(1) }} km²/h</div>
-            </div>
-
-            <div class="detail-item">
-              <label>{{ $t('incidents.forecast') }}</label>
-              <div class="forecast-value">+{{ selectedIncidentData.forecast6h.toFixed(1) }} km²</div>
+            <!-- 3. COMPACT STATS GRID -->
+            <div class="metadata-grid">
+              <div class="detail-item">
+                <label>{{ $t('incidents.affectedArea') }}</label>
+                <div class="metric-value">{{ selectedIncidentData.affectedArea.toFixed(1) }} km²</div>
+              </div>
+              <div class="detail-item">
+                <label>{{ $t('incidents.population') }}</label>
+                <div class="metric-value">{{ selectedIncidentData.affectedPopulation.toLocaleString() }}</div>
+              </div>
+              <div class="detail-item">
+                <label>{{ $t('incidents.trend') }}</label>
+                <div class="trend-value">+{{ selectedIncidentData.trend.toFixed(1) }} km²/h</div>
+              </div>
+              <div class="detail-item">
+                <label>{{ $t('incidents.forecast') }}</label>
+                <div class="forecast-value">+{{ selectedIncidentData.forecast6h.toFixed(1) }} km²</div>
+              </div>
             </div>
 
             <div class="divider"></div>
@@ -139,7 +189,7 @@
               </p>
             </div>
           </div>
-        </aside>
+</aside>
       </transition>
 
       <!-- Mobile Modal Overlay (Mobile <480px only) -->
@@ -234,15 +284,15 @@
     <footer class="metrics-section glass-panel">
       <div class="metric">
         <span class="label">{{ $t('dashboard.totalAffectedArea') }}</span>
-        <span class="value">{{ eventsStore.totalAffectedArea.toFixed(1) }} km²</span>
+        <span class="value">{{ totalAffectedArea.toFixed(1) }} km²</span>
       </div>
       <div class="metric">
         <span class="label">{{ $t('dashboard.totalPopulation') }}</span>
-        <span class="value">{{ eventsStore.totalAffectedPopulation.toLocaleString() }}</span>
+        <span class="value">{{ totalPopulation.toLocaleString() }}</span>
       </div>
       <div class="metric">
         <span class="label">{{ $t('dashboard.activeIncidentsCount') }}</span>
-        <span class="value">{{ eventsStore.allIncidents.length }}</span>
+        <span class="value">{{ activeIncidentsCount }}</span>
       </div>
     </footer>
   </div>
@@ -250,6 +300,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
 import IncidentCard from '@/components/molecules/IncidentCard.vue'
 import MapComponent from '@/components/organisms/MapComponent.vue'
@@ -260,6 +311,7 @@ import { useMockMode } from '@/composables/useMockMode'
 import { useWebSocket } from '@/composables/useWebSocket'
 import type { IncidentLevel1 } from '@/types'
 
+const { t: $t } = useI18n()
 const appStore = useAppStore()
 const eventsStore = useEventsStore()
 const alertsStore = useAlertsStore()
@@ -271,6 +323,50 @@ const apiError = ref<string | null>(null)
 const sortBy = ref<'threat' | 'area' | 'population' | 'time'>('threat')
 const currentPage = ref(1)
 const cardsPerPage = ref(5) // 5-10 cards per page on mobile
+const selectedCountry = ref<string | null>(null)
+const selectedEventType = ref<string>('')
+
+// Feature 6: Reactive AI Decision Support Plan
+const aiPlan = ref<any | null>(null)
+const isLoadingInsights = ref(false)
+
+// Watch for incident selection to fetch Gemini AI Response Plan
+watch(
+  () => appStore.selectedIncident,
+  async (newId) => {
+    if (!newId) {
+      aiPlan.value = null
+      return
+    }
+    
+    try {
+      isLoadingInsights.value = true
+      aiPlan.value = null
+      
+      const host = window.location.hostname === 'localhost'
+        ? 'http://localhost:8000'
+        : window.location.origin
+        
+      const response = await fetch(`${host}/api/v1/incidents/${newId}/insights`)
+      if (response.ok) {
+        const data = await response.json()
+        aiPlan.value = data.plan
+      }
+    } catch (err) {
+      console.warn('Failed to fetch AI insights plan:', err)
+    } finally {
+      isLoadingInsights.value = false
+    }
+  }
+)
+
+// Stats for dashboard
+const stats = ref({
+  total: 0,
+  by_severity: { critical: 0, high: 0, medium: 0, low: 0 },
+  by_type: {},
+  by_country: {}
+})
 
 const selectedIncidentData = computed<IncidentLevel1 | null>(
   () =>
@@ -279,8 +375,21 @@ const selectedIncidentData = computed<IncidentLevel1 | null>(
     ) ?? null,
 )
 
-const sortedAndPaginatedIncidents = computed(() => {
+// Filtered and sorted incidents based on active country, event type, and sort criteria
+const filteredIncidents = computed(() => {
   let incidents = [...eventsStore.allIncidents]
+  
+  // Apply country filter
+  if (selectedCountry.value) {
+    incidents = incidents.filter(i => {
+      return i.countryCode === selectedCountry.value
+    })
+  }
+  
+  // Apply event type filter
+  if (selectedEventType.value) {
+    incidents = incidents.filter(i => i.type === selectedEventType.value)
+  }
   
   // Apply sorting
   switch (sortBy.value) {
@@ -295,22 +404,107 @@ const sortedAndPaginatedIncidents = computed(() => {
       break
     case 'threat':
     default:
-      // Already sorted by threatScore in backend, but ensure here too
       incidents.sort((a, b) => (b.threatScore || 0) - (a.threatScore || 0))
   }
   
-  // Apply pagination (only on mobile, desktop shows all)
-  const startIndex = (currentPage.value - 1) * cardsPerPage.value
-  const endIndex = startIndex + cardsPerPage.value
-  return incidents.slice(startIndex, endIndex)
+  return incidents
 })
 
+
+// Bottom bar stats based on filtered list
+const totalAffectedArea = computed(() =>
+  filteredIncidents.value.reduce((sum, i) => sum + (i.affectedArea || 0), 0)
+)
+const totalPopulation = computed(() =>
+  filteredIncidents.value.reduce((sum, i) => sum + (i.affectedPopulation || 0), 0)
+)
+const activeIncidentsCount = computed(() => filteredIncidents.value.length)
+
+const sortedAndPaginatedIncidents = computed(() => {
+  const startIndex = (currentPage.value - 1) * cardsPerPage.value
+  const endIndex = startIndex + cardsPerPage.value
+  return filteredIncidents.value.slice(startIndex, endIndex)
+})
+
+// Get incidents grouped by country
+const groupedByCountry = computed(() => {
+  const grouped: { [key: string]: any[] } = {}
+  
+  eventsStore.allIncidents.forEach(incident => {
+    const country = incident.countryCode || 'UN'
+    
+    if (!grouped[country]) {
+      grouped[country] = []
+    }
+    grouped[country].push(incident)
+  })
+  
+  return grouped
+})
+
+// Available countries for filter
+const availableCountries = computed(() => {
+  const countries = new Set<string>()
+  eventsStore.allIncidents.forEach(incident => {
+    const country = incident.countryCode
+    if (country && country !== 'UN') countries.add(country)
+  })
+  return Array.from(countries).sort()
+})
+
+// Get statistics
+const statsComputed = computed(() => {
+  const s = {
+    total: eventsStore.allIncidents.length,
+    by_severity: { critical: 0, high: 0, medium: 0, low: 0 },
+    by_type: {} as Record<string, number>,
+    by_country: {} as Record<string, number>
+  }
+  
+  eventsStore.allIncidents.forEach(incident => {
+    // Count by severity
+    const severity = incident.severity || 'low'
+    s.by_severity[severity as keyof typeof s.by_severity]++
+    
+    // Count by type
+    const type = incident.type || 'unknown'
+    s.by_type[type] = (s.by_type[type] || 0) + 1
+    
+    // Count by country
+    const country = incident.countryCode || 'UN'
+    s.by_country[country] = (s.by_country[country] || 0) + 1
+  })
+  
+  return s
+})
+
+// Country details with incident counts
+const countryDetails = computed(() => {
+  return Object.entries(groupedByCountry.value).map(([country, incidents]) => {
+    const critical = incidents.filter(i => i.severity === 'critical').length
+    const high = incidents.filter(i => i.severity === 'high').length
+    const medium = incidents.filter(i => i.severity === 'medium').length
+    
+    return {
+      code: country,
+      name: getCountryName(country),
+      flag: getCountryFlag(country),
+      count: incidents.length,
+      critical,
+      high,
+      medium,
+      incidents: incidents.sort((a, b) => (b.threatScore || 0) - (a.threatScore || 0))
+    }
+  }).sort((a, b) => b.critical - a.critical || b.count - a.count)
+})
+
+// Dynamic pagination indicators based on the currently filtered list!
 const hasMoreIncidents = computed(() => {
-  return currentPage.value * cardsPerPage.value < eventsStore.allIncidents.length
+  return currentPage.value * cardsPerPage.value < filteredIncidents.value.length
 })
 
 const totalPages = computed(() => {
-  return Math.ceil(eventsStore.allIncidents.length / cardsPerPage.value) || 1
+  return Math.ceil(filteredIncidents.value.length / cardsPerPage.value) || 1
 })
 
 const loadMoreIncidents = () => {
@@ -372,13 +566,120 @@ const getThreatScore = (incident: IncidentLevel1 | null): number => {
   return severityMap[incident.severity] || 75
 }
 
+// Native browser internationalization for country names (supports all 249 countries dynamically without hardcoding)
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
+
 /**
- * California bounding box (matches MapComponent.vue MAP_BOUNDS, with padding)
- * Live global feeds need filtering so only geographically relevant events
- * are shown on this California-focused map/list.
+ * Mathematically generates the Unicode flag emoji from a 2-letter ISO country code.
+ * (e.g. "US" -> 🇺🇸, "IN" -> 🇮🇳, "JP" -> 🇯🇵, "NP" -> 🇳🇵)
+ * Uses Unicode Regional Indicator Symbols (offset 127397) - zero hardcoding required!
  */
-const CA_BOUNDS = { minLat: 30, maxLat: 44, minLon: -127, maxLon: -112 }
-const MAX_INCIDENTS_DISPLAYED = 20
+const getCountryFlag = (code: string): string => {
+  if (!code) return '🌍'
+  const trimmed = code.trim().toUpperCase()
+  if (/^[A-Z]{2}$/.test(trimmed)) {
+    return String.fromCodePoint(
+      127397 + trimmed.charCodeAt(0),
+      127397 + trimmed.charCodeAt(1)
+    )
+  }
+  return '🌍'
+}
+
+/**
+ * Dynamically resolves country names using native browser Intl.DisplayNames.
+ * Works for all ISO country codes worldwide with zero hardcoded dictionaries.
+ */
+const getCountryName = (code: string): string => {
+  if (!code) return 'Unknown'
+  const trimmed = code.trim()
+  if (/^[A-Za-z]{2}$/.test(trimmed)) {
+    try {
+      return regionNames.of(trimmed.toUpperCase()) || trimmed
+    } catch {
+      return trimmed
+    }
+  }
+  return trimmed
+}
+
+/**
+ * 50 US State postal codes + territories.
+ * Collapses states like "FL", "TX", "CA", "CO" into the canonical country "US".
+ */
+    const US_STATE_CODES = new Set([
+        // 50 States
+        'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+        'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+        'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+        'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+        'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+
+        // Federal District & Territories
+        'DC', 'PR', 'VI', 'GU', 'MP', 'AS',
+
+        // Freely Associated States
+        'FM', 'MH', 'PW',
+
+        // Military Postal Regions
+        'AA', 'AE', 'AP'
+    ]);
+
+/**
+ * Resolves a reliable, canonical 2-letter ISO country code from location and source.
+ * Prevents US state abbreviations (FL, TX) and marine zones (Mississippi Sound) from leaking into the country dropdown.
+ */
+const resolveCountryCode = (locationName: string, source: string, lat?: number, lon?: number): string => {
+  const src = (source || '').toUpperCase()
+  
+  // 1. NOAA is unconditionally the United States
+  if (src.includes('NOAA')) return 'US'
+  
+  if (!locationName) return 'UN'
+  const locUpper = locationName.toUpperCase()
+  
+  // 2. Full country names & common US aliases
+  if (locUpper.includes('UNITED STATES') || locUpper.includes('USA') || locUpper.endsWith(', US') || locUpper.endsWith(' US')) {
+    return 'US'
+  }
+  if (locUpper.includes('INDIA')) return 'IN'
+  if (locUpper.includes('CHINA')) return 'CN'
+  if (locUpper.includes('NEPAL')) return 'NP'
+  if (locUpper.includes('JAPAN')) return 'JP'
+  if (locUpper.includes('CHILE')) return 'CL'
+  if (locUpper.includes('PHILIPPINES')) return 'PH'
+  if (locUpper.includes('INDONESIA')) return 'ID'
+  if (locUpper.includes('CANADA')) return 'CA'
+  if (locUpper.includes('AUSTRALIA')) return 'AU'
+  if (locUpper.includes('MEXICO')) return 'MX'
+  
+  const locParts = locationName.split(',')
+  const lastPart = locParts.length > 0 ? locParts[locParts.length - 1].trim().toUpperCase() : ''
+  
+  // 3. Special case: 'IN' (Indiana vs India). Lon ~ 60-100 is India, Lon < -50 is Indiana, US
+  if (lastPart === 'IN') {
+    return (lon !== undefined && lon > 50 && lon < 100) ? 'IN' : 'US'
+  }
+  
+  // 4. US State code detection (e.g., "Apalachicola, FL" -> "US")
+  if (US_STATE_CODES.has(lastPart)) {
+    return 'US'
+  }
+  
+  // 5. Genuine 2-letter ISO country code verification via Intl API
+  if (/^[A-Z]{2}$/.test(lastPart)) {
+    try {
+      const name = regionNames.of(lastPart)
+      if (name && name !== lastPart) {
+        return lastPart
+      }
+    } catch {
+      // Not a valid country code
+    }
+  }
+  
+  return 'UN'
+}
 
 /**
  * Fetch incidents from backend API
@@ -398,17 +699,24 @@ const fetchIncidents = async () => {
     
     const result = await response.json()
     const events = result.data?.events ?? []
-    console.log('✅ Incidents loaded:', events.length, 'events (raw, before filtering)')
+    console.log('Incidents loaded:', events.length, 'events (raw, global)')
     
     // Transform backend response to store format
     if (Array.isArray(events) && events.length > 0) {
       const mapped = events.map((event: any, index: number) => {
         const impact = event.impact || {}
         const severity = (event.severity || 'medium').toLowerCase()
+        const locationName = event.location_name || 'Unknown'
+        const source = event.source || event.data?.source || 'unknown'
+        
+        // Canonical Country Code extraction (collapses US states and NOAA marine alerts into 'US')
+        const countryCode = resolveCountryCode(locationName, source, event.latitude, event.longitude)
+
         return {
-          id: event.data?.nasa_id || event.data?.gdacs_id || `event-${index}-${Date.now()}`,
+          id: event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id || `event-${index}-${Date.now()}`,
           type: event.event_type || 'fire',
-          location: event.location_name || 'Unknown',
+          location: locationName,
+          countryCode: countryCode,
           severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
           status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
           threatScore: impact.risk_score ?? undefined,
@@ -421,39 +729,34 @@ const fetchIncidents = async () => {
         }
       })
 
-      // This dashboard's map is scoped to California — filter out events
-      // that fall outside those bounds so live (global) feeds don't clutter it.
-      const inCalifornia = mapped.filter(
-        (incident) =>
-          incident.coordinates[0] >= CA_BOUNDS.minLat &&
-          incident.coordinates[0] <= CA_BOUNDS.maxLat &&
-          incident.coordinates[1] >= CA_BOUNDS.minLon &&
-          incident.coordinates[1] <= CA_BOUNDS.maxLon,
-      )
+      // Global Platform: Show all live disaster incidents worldwide sorted by threat score
+      const incidents = mapped.sort((a, b) => (b.threatScore ?? 0) - (a.threatScore ?? 0))
 
-      // Prefer in-region events; fall back to the highest-threat global
-      // events if nothing is currently happening in California.
-      const pool = inCalifornia.length > 0 ? inCalifornia : mapped
-      const incidents = pool
-        .slice()
-        .sort((a, b) => (b.threatScore ?? 0) - (a.threatScore ?? 0))
-        .slice(0, MAX_INCIDENTS_DISPLAYED)
-
-      console.log(
-        `📍 Showing ${incidents.length} incident(s) after CA filter + cap (of ${mapped.length} total)`,
-      )
-
+      console.log(`📍 Loaded ${incidents.length} global incident(s) worldwide across all sources`)
       eventsStore.setIncidents(incidents)
     } else {
-      // Fallback to mock data if no events
-      console.warn('⚠️ No events from API, using mock data')
-      eventsStore.initMockData()
+      // Live mode strictness: No mock fallbacks allowed
+      console.warn('No events from API. (Mock fallback disabled for strict live testing)')
+      
+      // Look for failing sources to report in the banner
+      const sources = result.data?.sources || {}
+      const failedSources = Object.keys(sources).filter(k => sources[k].count === 0 || sources[k].status !== 'success')
+      
+      if (failedSources.length > 0) {
+          apiError.value = `Live Mode: 0 events returned from ${failedSources.join(', ')}`
+      } else {
+          apiError.value = "Live Mode: Currently 0 active disaster events worldwide."
+      }
+      
+      eventsStore.setIncidents([])
     }
   } catch (error) {
-    console.error('❌ Failed to fetch incidents:', error)
+    console.error('Failed to fetch incidents:', error)
     apiError.value = error instanceof Error ? error.message : 'Failed to fetch data'
-    // Fallback to mock data on error
-    eventsStore.initMockData()
+      //// Fallback to mock data on error
+      //eventsStore.initMockData()
+      // Strict live testing: No mock fallback on network error
+    eventsStore.setIncidents([])
   } finally {
     isLoading.value = false
   }
@@ -464,14 +767,78 @@ const fetchIncidents = async () => {
  */
 const loadAlerts = () => {
   if (alertsStore.criticalInsights.length === 0) {
-    alertsStore.initMockInsights()
+    // COMMENTED OUT (Live Mode): Never show mock insights as fallback
+    // alertsStore.initMockInsights()
   }
 }
 
-onMounted(() => {
-  // Fetch from backend API instead of using mock store data directly
-  fetchIncidents()
-  loadAlerts()
+onMounted(async () => {
+  isLoading.value = true
+  apiError.value = null
+  
+  try {
+    console.log('📥 Loading historical incidents from database (Feature 5)...')
+    
+    // Feature 5: Hydrate UI from database first so it survives restarts
+    const host = window.location.hostname === 'localhost'
+      ? 'http://localhost:8000'
+      : window.location.origin
+      
+    const response = await fetch(`${host}/api/v1/incidents?limit=50`)
+    
+    if (response.ok) {
+        const rawIncidents = await response.json()
+        if (rawIncidents && rawIncidents.length > 0) {
+            // Re-use the existing transformation logic from fetchIncidents
+            const mapped = rawIncidents.map((event: any, index: number) => {
+              const impact = event.impact || {}
+              const severity = (event.severity || 'medium').toLowerCase()
+              const locationName = event.location_name || 'Unknown'
+              const source = event.source || event.data?.source || 'unknown'
+              
+              // Canonical Country Code extraction (collapses US states and NOAA marine alerts into 'US')
+              const countryCode = resolveCountryCode(locationName, source, event.latitude, event.longitude)
+
+              return {
+                id: event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id || `event-${index}-${Date.now()}`,
+                type: event.event_type || 'fire',
+                location: locationName,
+                countryCode: countryCode,
+                severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
+                status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
+                threatScore: impact.risk_score ?? undefined,
+                detectionTime: new Date(event.event_timestamp || Date.now()),
+                affectedArea: impact.affected_area_km2 ?? 150,
+                affectedPopulation: impact.affected_population ?? 50000,
+                trend: impact.trend_km2_per_hour ?? 5.2,
+                forecast6h: impact.forecast_6h_km2 ?? 31.2,
+                coordinates: [event.latitude, event.longitude] as [number, number],
+              }
+            })
+            eventsStore.setIncidents(mapped)
+            console.log(`✅ Loaded ${mapped.length} historical incidents from DB`)
+        } else {
+            console.log('⚠️ Database is empty, waiting for polling/WebSockets to provide live data')
+            // Optionally run a manual fetch if DB is completely empty on first boot
+            await fetchIncidents()
+        }
+    } else {
+        console.warn('Failed to load from database, falling back to REST ingestion')
+        await fetchIncidents()
+    }
+  } catch (e: any) {
+    console.error('❌ Database hydration failed:', e)
+    apiError.value = e.message
+    await fetchIncidents()
+  } finally {
+    isLoading.value = false
+    loadAlerts()
+    
+    // Connect to WebSocket for live updates AFTER database hydration
+    console.log('📡 Connecting to WebSocket for live updates...')
+    // Note: useWebSocket internally uses onMounted so we don't need to call connect() here,
+    // just instantiating it inside setup/onMounted is sufficient as Vue handles it.
+  }
 })
 
 // Watch for mock mode changes and refetch
@@ -481,8 +848,8 @@ watch(isMockMode, () => {
   fetchIncidents()
 })
 
-// Reset pagination when sort order changes
-watch(sortBy, () => {
+// Reset pagination when sort order, country filter, or event type filter changes
+watch([sortBy, selectedCountry, selectedEventType], () => {
   currentPage.value = 1
 })
 </script>
@@ -508,7 +875,7 @@ watch(sortBy, () => {
 }
 
 .content-grid.detail-open {
-  grid-template-columns: 250px 1fr 320px;
+  grid-template-columns: 320px 1fr 340px;
 }
 
 .glass-panel {
@@ -526,6 +893,7 @@ watch(sortBy, () => {
   flex-direction: column;
   gap: 16px;
   overflow: hidden;
+  min-width: 320px;
 }
 
 .incidents-panel h3 {
@@ -667,13 +1035,29 @@ watch(sortBy, () => {
   color: var(--text-primary);
 }
 
-.detail-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
+\.detail-content {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.detail-item-row {
+  display: flex;
+  justify-content: space-between;
   gap: 12px;
+}
+
+.metadata-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .detail-content::-webkit-scrollbar {
@@ -712,6 +1096,14 @@ watch(sortBy, () => {
   font-size: 14px;
   color: var(--accent-cyan);
   font-weight: 600;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.4;
+  max-height: 2.8em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .threat-score {
@@ -943,8 +1335,7 @@ watch(sortBy, () => {
 /* ===== SORT CONTROLS & HEADER ===== */
 .incidents-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
   margin-bottom: 12px;
 }
@@ -952,6 +1343,7 @@ watch(sortBy, () => {
 .header-title-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
 }
 
@@ -1004,6 +1396,124 @@ watch(sortBy, () => {
 .sort-dropdown:hover {
   border-color: var(--accent-cyan);
   background: rgba(20, 30, 48, 0.7);
+}
+
+.sort-dropdown option {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+/* ===== COUNTRY FILTER ===== */
+.country-filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.country-dropdown {
+  background: rgba(20, 30, 48, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(30, 144, 255, 0.2);
+  color: var(--accent-cyan);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.country-dropdown:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(30, 144, 255, 0.1);
+}
+
+.country-dropdown:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  background: rgba(30, 144, 255, 0.15);
+  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
+}
+
+.country-dropdown option {
+  background: rgba(20, 30, 48, 1);
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.event-type-dropdown {
+  background: rgba(20, 30, 48, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(30, 144, 255, 0.2);
+  color: var(--accent-cyan);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+  flex: 1;
+  min-width: 140px;
+}
+
+.event-type-dropdown:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(20, 30, 48, 0.7);
+}
+
+.event-type-dropdown:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  background: rgba(30, 144, 255, 0.15);
+  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
+}
+
+.event-type-dropdown option {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.sort-dropdown {
+  background: rgba(20, 30, 48, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(30, 144, 255, 0.2);
+  color: var(--accent-cyan);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+  flex: 1;
+  min-width: 140px;
+}
+
+.sort-dropdown:hover {
+  border-color: var(--accent-cyan);
+  background: rgba(20, 30, 48, 0.7);
+}
+
+.sort-dropdown:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  background: rgba(30, 144, 255, 0.15);
+  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
 }
 
 .sort-dropdown option {
@@ -1115,7 +1625,7 @@ watch(sortBy, () => {
   }
 
   .content-grid.detail-open {
-    grid-template-columns: 280px 1fr 300px;
+    grid-template-columns: 300px 1fr 320px;
   }
 
   .metrics-section {
@@ -1523,6 +2033,10 @@ watch(sortBy, () => {
   }
 
   .detail-content {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
     padding: 12px;
     gap: 10px;
   }
@@ -1716,6 +2230,10 @@ watch(sortBy, () => {
   }
 
   .mobile-detail-modal .detail-content {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
     flex: 1;
     overflow-y: auto;
     padding: 16px;
@@ -1818,10 +2336,34 @@ watch(sortBy, () => {
     gap: 8px;
   }
 
+  .country-filter-section {
+    width: 100%;
+  }
+
+  .country-dropdown {
+    width: 100%;
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  .filter-controls {
+    flex-direction: column;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .event-type-dropdown {
+    font-size: 10px;
+    padding: 4px 8px;
+    width: 100%;
+    min-width: auto;
+  }
+
   .sort-dropdown {
     font-size: 10px;
     padding: 4px 8px;
     width: 100%;
+    min-width: auto;
   }
 
   .incident-list {
@@ -1991,6 +2533,10 @@ watch(sortBy, () => {
   }
 
   .detail-content {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
     padding: 10px;
     gap: 8px;
     max-height: 40vh;
@@ -2198,6 +2744,10 @@ watch(sortBy, () => {
   }
 
   .mobile-detail-modal .detail-content {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
     flex: 1;
     overflow-y: auto;
     padding: 12px;

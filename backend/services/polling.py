@@ -106,15 +106,21 @@ class BackgroundPollingService:
     async def _async_polling_job(self):
         """Actual async polling logic"""
         if not self.polling_enabled:
-            logger.debug("Polling disabled")
+            logger.debug("⏸️ Polling disabled")
             return
-        
+
         try:
-            logger.info("Background polling: Fetching latest incidents...")
-            
+            logger.info("🔄 Background polling: Fetching latest incidents...")
+
             # Fetch latest incidents
-            result = await self.data_ingestion_service.ingest_all_sources(use_mock=False)
-            
+            from backend.database import SessionLocal
+
+            with SessionLocal() as db_session:
+                result = await self.data_ingestion_service.ingest_all_sources(
+                    use_mock=False, 
+                    db_session=db_session
+                )
+
             new_incidents = result.get("events", [])
             old_count = self.last_incident_count
             new_count = len(new_incidents)

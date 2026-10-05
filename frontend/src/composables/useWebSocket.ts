@@ -43,7 +43,7 @@ export function useWebSocket() {
         
         switch (message.type) {
           case 'connection_established':
-            console.log('✅ Connection confirmed by server')
+            console.log(' Connection confirmed by server')
             break
             
           case 'pong':
@@ -80,7 +80,7 @@ export function useWebSocket() {
     }
 
     ws.onerror = (error) => {
-      console.error('❌ WebSocket Error:', error)
+      console.error(' WebSocket Error:', error)
       // The onclose event will fire immediately after onerror, triggering reconnect
     }
   }
@@ -88,7 +88,7 @@ export function useWebSocket() {
   const attemptReconnect = () => {
     if (isDestroyed || reconnectAttempts.value >= maxReconnectAttempts) {
       if (!isDestroyed) {
-        console.error('⛔ Max WebSocket reconnection attempts reached. Please refresh the page.')
+        console.error(' Max WebSocket reconnection attempts reached. Please refresh the page.')
       }
       return
     }
@@ -97,7 +97,7 @@ export function useWebSocket() {
     
     // Exponential backoff: 2s, 4s, 8s, 16s...
     const timeout = Math.pow(2, reconnectAttempts.value) * 1000
-    console.log(`⏳ Attempting to reconnect in ${timeout/1000}s (Attempt ${reconnectAttempts.value}/${maxReconnectAttempts})...`)
+    console.log(`Attempting to reconnect in ${timeout/1000}s (Attempt ${reconnectAttempts.value}/${maxReconnectAttempts})...`)
     
     setTimeout(() => {
       if (!isDestroyed) {

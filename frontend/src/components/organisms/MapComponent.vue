@@ -13,7 +13,7 @@
     ></canvas>
 
     <div class="map-overlay legend-panel">
-      <div class="overlay-title">California Incident Map</div>
+      <div class="overlay-title">Global Incident Map</div>
       <div class="overlay-subtitle">
         {{ appStore.viewMode === '2d' ? '2D tactical view' : '3D preview uses 2D tactical map' }}
       </div>
@@ -115,41 +115,41 @@ interface ThemePalette {
   landStroke: string
 }
 
-const INCIDENT_METADATA: Record<string, IncidentMetadata> = {
-  'incident-1': {
-    latitude: 34.27,
-    longitude: -118.07,
-    icon: '🔥',
-    displayName: 'San Gabriel Wildfire',
-    typeLabel: 'Wildfire',
-    severityLabel: 'critical',
-    threatScore: 96,
-  },
-  'incident-2': {
-    latitude: 36.5,
-    longitude: -119.5,
-    icon: '💧',
-    displayName: 'Central Valley Flooding',
-    typeLabel: 'Flood',
-    severityLabel: 'high',
-    threatScore: 82,
-  },
-  'incident-3': {
-    latitude: 37.77,
-    longitude: -122.42,
-    icon: '☁️',
-    displayName: 'Bay Area AQI',
-    typeLabel: 'Air Quality',
-    severityLabel: 'medium',
-    threatScore: 68,
-  },
-}
-
+    //const INCIDENT_METADATA: Record<string, IncidentMetadata> = {
+    //    'incident-1': {
+    //        latitude: 34.27,
+    //        longitude: -118.07,
+    //        icon: '🔥',
+    //        displayName: 'San Gabriel Wildfire',
+    //        typeLabel: 'Wildfire',
+    //        severityLabel: 'critical',
+    //        threatScore: 96,
+    //    },
+    //    'incident-2': {
+    //        latitude: 36.5,
+    //        longitude: -119.5,
+    //        icon: '💧',
+    //        displayName: 'Central Valley Flooding',
+    //        typeLabel: 'Flood',
+    //        severityLabel: 'high',
+    //        threatScore: 82,
+    //    },
+    //    'incident-3': {
+    //        latitude: 37.77,
+    //        longitude: -122.42,
+    //        icon: '☁️',
+    //        displayName: 'Bay Area AQI',
+    //        typeLabel: 'Air Quality',
+    //        severityLabel: 'medium',
+    //        threatScore: 68,
+    //    },
+    //}
 const MAP_BOUNDS = {
-  minLat: 32,
-  maxLat: 42.3,
-  minLon: -124.8,
-  maxLon: -114,
+  // Global Projection
+  minLat: -60,
+  maxLat: 75,
+  minLon: -180,
+  maxLon: 180,
 }
 
 const MIN_SCALE = 0.5
@@ -184,9 +184,11 @@ const legendItems = [
 
 const mapIncidents = computed<MapIncident[]>(() =>
   eventsStore.allIncidents
+    .filter((incident) => incident && incident.type && incident.location)
     .map((incident) => {
-      // Use coordinates from backend incident data
-      const [latitude, longitude] = incident.coordinates || [0, 0]
+      // Use coordinates from the backend incident data tuple
+      const latitude = incident.coordinates ? incident.coordinates[0] : 0
+      const longitude = incident.coordinates ? incident.coordinates[1] : 0
       
       return {
         ...incident,
@@ -201,7 +203,7 @@ const mapIncidents = computed<MapIncident[]>(() =>
           landslide: '⛰️',
         }[incident.type] || '⚠️',
         displayName: incident.location,
-        typeLabel: incident.type.charAt(0).toUpperCase() + incident.type.slice(1),
+        typeLabel: (incident.type || 'unknown').charAt(0).toUpperCase() + (incident.type || 'unknown').slice(1),
         severityLabel: (incident.severity === 'high' ? 'high' : incident.severity === 'low' ? 'medium' : incident.severity) as SeverityLabel,
         threatScore: incident.threatScore ?? 50,
         affectedArea: incident.affectedArea ?? 100,
@@ -210,7 +212,6 @@ const mapIncidents = computed<MapIncident[]>(() =>
         status: incident.status || 'active',
       } as MapIncident
     })
-    .filter((incident): incident is MapIncident => incident && incident.latitude !== 0 && incident.longitude !== 0)
 )
 
 const hoveredIncident = computed(
@@ -306,51 +307,88 @@ const drawBackground = (
     ctx.stroke()
   }
 
-  const californiaSilhouette = [
-    { x: width * 0.2, y: height * 0.16 },
-    { x: width * 0.24, y: height * 0.08 },
-    { x: width * 0.3, y: height * 0.18 },
-    { x: width * 0.35, y: height * 0.28 },
-    { x: width * 0.39, y: height * 0.37 },
-    { x: width * 0.44, y: height * 0.49 },
-    { x: width * 0.45, y: height * 0.6 },
-    { x: width * 0.48, y: height * 0.72 },
-    { x: width * 0.55, y: height * 0.94 },
-    { x: width * 0.66, y: height * 0.96 },
-    { x: width * 0.62, y: height * 0.76 },
-    { x: width * 0.58, y: height * 0.58 },
-    { x: width * 0.54, y: height * 0.42 },
-    { x: width * 0.5, y: height * 0.27 },
-    { x: width * 0.46, y: height * 0.14 },
-  ]
+  // Draw global tactical reference lines (Equator and Prime Meridian)
+  const equatorWorld = latLonToWorld(0, 0)
+  const pmWorld = latLonToWorld(0, 0)
 
   ctx.save()
+  // Equator line (0° Latitude)
+  ctx.strokeStyle = palette.majorGridLine
+  ctx.lineWidth = 1.8
+  ctx.beginPath()
+  ctx.moveTo(0, equatorWorld.y)
+  ctx.lineTo(width, equatorWorld.y)
+  ctx.stroke()
+
+  // Prime Meridian (0° Longitude)
+  ctx.strokeStyle = palette.majorGridLine
+  ctx.lineWidth = 1.8
+  ctx.beginPath()
+  ctx.moveTo(pmWorld.x, 0)
+  ctx.lineTo(pmWorld.x, height)
+  ctx.stroke()
+
+  // Continental landmass reference silhouettes (Global world overview)
+  const continents = [
+    // North America
+    [
+      { x: width * 0.12, y: height * 0.22 },
+      { x: width * 0.28, y: height * 0.20 },
+      { x: width * 0.29, y: height * 0.36 },
+      { x: width * 0.23, y: height * 0.46 },
+      { x: width * 0.18, y: height * 0.48 },
+      { x: width * 0.13, y: height * 0.34 },
+    ],
+    // South America
+    [
+      { x: width * 0.26, y: height * 0.52 },
+      { x: width * 0.34, y: height * 0.56 },
+      { x: width * 0.31, y: height * 0.78 },
+      { x: width * 0.27, y: height * 0.88 },
+      { x: width * 0.24, y: height * 0.66 },
+    ],
+    // Europe & Asia (Eurasia)
+    [
+      { x: width * 0.46, y: height * 0.18 },
+      { x: width * 0.85, y: height * 0.18 },
+      { x: width * 0.84, y: height * 0.42 },
+      { x: width * 0.74, y: height * 0.50 },
+      { x: width * 0.62, y: height * 0.46 },
+      { x: width * 0.54, y: height * 0.34 },
+      { x: width * 0.45, y: height * 0.30 },
+    ],
+    // Africa
+    [
+      { x: width * 0.47, y: height * 0.38 },
+      { x: width * 0.60, y: height * 0.40 },
+      { x: width * 0.58, y: height * 0.68 },
+      { x: width * 0.53, y: height * 0.78 },
+      { x: width * 0.46, y: height * 0.58 },
+    ],
+    // Australia
+    [
+      { x: width * 0.78, y: height * 0.66 },
+      { x: width * 0.88, y: height * 0.66 },
+      { x: width * 0.87, y: height * 0.80 },
+      { x: width * 0.77, y: height * 0.78 },
+    ],
+  ]
+
   ctx.fillStyle = palette.landFill
   ctx.strokeStyle = palette.landStroke
-  ctx.lineWidth = 2
-  ctx.beginPath()
-  californiaSilhouette.forEach((point, index) => {
-    if (index === 0) {
-      ctx.moveTo(point.x, point.y)
-      return
-    }
+  ctx.lineWidth = 1.5
 
-    ctx.lineTo(point.x, point.y)
+  continents.forEach((polygon) => {
+    ctx.beginPath()
+    polygon.forEach((pt, idx) => {
+      if (idx === 0) ctx.moveTo(pt.x, pt.y)
+      else ctx.lineTo(pt.x, pt.y)
+    })
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
   })
-  ctx.closePath()
-  ctx.fill()
-  ctx.stroke()
 
-  ctx.strokeStyle = palette.gridLine
-  ctx.lineWidth = 1
-  ctx.beginPath()
-  ctx.moveTo(width * 0.46, height * 0.12)
-  ctx.lineTo(width * 0.54, height * 0.86)
-  ctx.moveTo(width * 0.38, height * 0.34)
-  ctx.lineTo(width * 0.59, height * 0.31)
-  ctx.moveTo(width * 0.4, height * 0.52)
-  ctx.lineTo(width * 0.61, height * 0.48)
-  ctx.stroke()
   ctx.restore()
 }
 
@@ -360,21 +398,24 @@ const drawScaleLabels = (
   height: number,
   palette: ThemePalette,
 ) => {
-  const latLines = [32, 34, 36, 38, 40, 42]
-  const lonLines = [-124, -122, -120, -118, -116, -114]
+  // Global Latitude & Longitude reference lines
+  const latLines = [-45, -30, -15, 0, 15, 30, 45, 60]
+  const lonLines = [-150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150]
 
   ctx.save()
   ctx.fillStyle = palette.textSecondary
-  ctx.font = '12px Segoe UI, sans-serif'
+  ctx.font = '11px Segoe UI, sans-serif'
 
   latLines.forEach((latitude) => {
     const y = latLonToWorld(latitude, MAP_BOUNDS.minLon).y
-    ctx.fillText(`${latitude.toFixed(0)}°N`, 12, clamp(y - 6, 18, height - 10))
+    const label = latitude === 0 ? 'Equator (0°)' : `${Math.abs(latitude)}°${latitude > 0 ? 'N' : 'S'}`
+    ctx.fillText(label, 12, clamp(y - 4, 18, height - 10))
   })
 
   lonLines.forEach((longitude) => {
     const x = latLonToWorld(MAP_BOUNDS.minLat, longitude).x
-    ctx.fillText(`${Math.abs(longitude).toFixed(0)}°W`, clamp(x + 4, 12, width - 46), height - 14)
+    const label = longitude === 0 ? '0° (PM)' : `${Math.abs(longitude)}°${longitude > 0 ? 'E' : 'W'}`
+    ctx.fillText(label, clamp(x - 14, 12, width - 46), height - 14)
   })
   ctx.restore()
 }
@@ -382,21 +423,22 @@ const drawScaleLabels = (
 const drawMarkers = (ctx: CanvasRenderingContext2D, palette: ThemePalette) => {
   const nextMarkers: RenderedMarker[] = []
 
+  if (mapIncidents.value.length > 0 && mapIncidents.value.length % 10 === 0) {
+    console.log(`Drawing ${mapIncidents.value.length} incidents on map`)
+    console.log('Sample incident:', {
+      id: mapIncidents.value[0].id,
+      lat: mapIncidents.value[0].latitude,
+      lon: mapIncidents.value[0].longitude,
+      location: mapIncidents.value[0].location,
+    })
+  }
+
   mapIncidents.value.forEach((incident) => {
     const world = latLonToWorld(incident.latitude, incident.longitude)
     const screen = worldToScreen(world.x, world.y)
     const radius = getMarkerRadius(incident)
     const outerRadius = radius + 6
     const markerColor = getMarkerColor(incident.severityLabel)
-
-    if (
-      screen.x < -60 ||
-      screen.x > canvasWidth.value + 60 ||
-      screen.y < -60 ||
-      screen.y > canvasHeight.value + 60
-    ) {
-      return
-    }
 
     nextMarkers.push({
       id: incident.id,
@@ -407,35 +449,61 @@ const drawMarkers = (ctx: CanvasRenderingContext2D, palette: ThemePalette) => {
 
     ctx.save()
 
+    // Draw selection ring if this marker is selected or hovered
+    if (selectedIncidentId.value === incident.id || hoveredIncidentId.value === incident.id) {
+      ctx.beginPath()
+      ctx.strokeStyle = markerColor
+      ctx.lineWidth = 2
+      ctx.arc(screen.x, screen.y, outerRadius + 6, 0, Math.PI * 2)
+      ctx.stroke()
+      
+      // Draw subtle glow
+      ctx.beginPath()
+      ctx.fillStyle = `${markerColor}33`
+      ctx.arc(screen.x, screen.y, outerRadius + 8, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    // Outer glow
     ctx.beginPath()
     ctx.fillStyle = `${markerColor}33`
     ctx.arc(screen.x, screen.y, outerRadius + 4, 0, Math.PI * 2)
     ctx.fill()
 
+    // Solid border
     ctx.beginPath()
     ctx.fillStyle = markerColor
     ctx.arc(screen.x, screen.y, outerRadius, 0, Math.PI * 2)
     ctx.fill()
 
+    // Inner circle
     ctx.beginPath()
     ctx.fillStyle = appStore.isDarkMode ? 'rgba(15, 20, 25, 0.92)' : 'rgba(255, 255, 255, 0.96)'
     ctx.arc(screen.x, screen.y, radius, 0, Math.PI * 2)
     ctx.fill()
 
+    // Icon (Emoji)
     ctx.fillStyle = palette.textPrimary
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.font = `${Math.max(16, radius + 4)}px Segoe UI Emoji, Apple Color Emoji, sans-serif`
-    ctx.fillText(incident.icon, screen.x, screen.y + 1)
+    // Ensure emoji font family is prominent so they render correctly on canvas
+    ctx.font = `${Math.max(12, radius - 2)}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`
+    ctx.fillText(incident.icon || '⚠️', screen.x, screen.y + 1)
 
-    ctx.textBaseline = 'top'
-    ctx.font = '600 12px Segoe UI, sans-serif'
-    ctx.fillStyle = palette.textPrimary
-    ctx.fillText(incident.displayName, screen.x, screen.y + outerRadius + 10)
+    // Only draw text labels if the marker is selected or hovered to reduce map congestion
+    if (selectedIncidentId.value === incident.id || hoveredIncidentId.value === incident.id) {
+        // Label
+        ctx.textBaseline = 'top'
+        ctx.font = '600 11px Segoe UI, sans-serif'
+        ctx.fillStyle = palette.textPrimary
+        ctx.fillText(incident.displayName || 'Unknown', screen.x, screen.y + outerRadius + 6)
 
-    ctx.font = '11px Segoe UI, sans-serif'
-    ctx.fillStyle = palette.textSecondary
-    ctx.fillText(`Threat ${incident.threatScore}`, screen.x, screen.y + outerRadius + 28)
+        // Threat Score
+        ctx.font = '10px Segoe UI, sans-serif'
+        ctx.fillStyle = palette.textSecondary
+        ctx.fillText(`Threat ${incident.threatScore || 0}`, screen.x, screen.y + outerRadius + 20)
+    }
+    
     ctx.restore()
   })
 

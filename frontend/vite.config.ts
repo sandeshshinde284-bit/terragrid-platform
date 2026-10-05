@@ -19,6 +19,13 @@ export default defineConfig({
     port: 5173,
     strictPort: false,
     cors: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+      },
+    },
   },
   build: {
     target: 'es2017',

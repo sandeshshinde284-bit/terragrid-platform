@@ -27,7 +27,7 @@ class NotificationService:
             self.is_configured = False
             logger.warning("RESEND_API_KEY is not configured or is using the default template. Email alerts are disabled.")
 
-    def send_critical_alert(self, incident: Dict[str, Any], zone_data: Optional[Dict[str, Any]] = None, recipient_emails: List[str] = None):
+    def send_critical_alert(self, incident: Dict[str, Any], zone_data: Optional[Dict[str, Any]] = None, recipient_emails: List[str] = None, db_session=None):
         """
         Formats and sends an HTML emergency email for a high-risk disaster event.
         
@@ -35,6 +35,7 @@ class NotificationService:
             incident: The raw incident data dictionary containing location, type, and impact scores.
             zone_data: Optional evacuation zone population data to include in the email body.
             recipient_emails: A list of target email addresses. Defaults to a test address if none provided.
+            db_session: Database session to record alert in alerts table (optional).
             
         Returns:
             bool: True if the email was dispatched successfully to Resend, False otherwise.
@@ -46,7 +47,27 @@ class NotificationService:
         location = incident.get("location_name", "Unknown Location")
         threat_score = incident.get("impact", {}).get("risk_score", 0)
         
-        # SPAM PREVENTION: Only send one email per incident location/threat combo
+        # Check database for existing alert (more reliable than in-memory)
+        if db_session:
+            try:
+                from ..models.alert import Alert
+                from ..models.event import Event
+                
+                # Find event by coordinates and type
+                existing_alert = db_session.query(Alert).join(Event).filter(
+                    Event.latitude == incident.get("latitude"),
+                    Event.longitude == incident.get("longitude"),
+                    Event.event_type == incident.get("event_type"),
+                    Alert.status == "sent"
+                ).first()
+                
+                if existing_alert:
+                    logger.debug(f"Alert already sent for this incident. Skipping to prevent spam.")
+                    return False
+            except Exception as check_e:
+                logger.warning(f"Could not check database for existing alert: {str(check_e)}")
+        
+        # Fallback to in-memory prevention if DB not available
         alert_signature = f"{location}_{threat_score}"
         if alert_signature in self.sent_alerts:
             logger.debug(f"Email already sent for {alert_signature}. Skipping to prevent spam.")
@@ -106,8 +127,43 @@ class NotificationService:
             for attempt in range(max_retries):
                 try:
                     response = resend.Emails.send(params)
-                    logger.info(f"Email sent successfully! ID: {response.get('id')}")
+                    resend_email_id = response.get('id', 'unknown')
+                    logger.info(f"Email sent successfully! Resend ID: {resend_email_id}")
                     self.sent_alerts.add(alert_signature)
+                    
+                    # Record alert in database
+                    if db_session:
+                        try:
+                            from ..models.alert import Alert
+                            from ..models.event import Event
+                            from datetime import datetime
+                            
+                            # Find the event record
+                            event = db_session.query(Event).filter(
+                                Event.latitude == incident.get("latitude"),
+                                Event.longitude == incident.get("longitude"),
+                                Event.event_type == incident.get("event_type")
+                            ).first()
+                            
+                            if event:
+                                # Create alert record
+                                alert_record = Alert(
+                                    event_id=event.id,
+                                    alert_type="critical_threat",
+                                    status="sent",
+                                    title=subject,
+                                    message=html_content[:1000],  # Store first 1000 chars
+                                    channels="email",
+                                    is_critical=True,
+                                    retry_count=attempt
+                                )
+                                db_session.add(alert_record)
+                                db_session.commit()
+                                logger.info(f"Alert record persisted to database for event {event.id}")
+                        except Exception as db_e:
+                            logger.warning(f"Could not persist alert to database: {str(db_e)}")
+                            # Don't fail the email sending if database fails
+                    
                     return True
                 except Exception as attempt_e:
                     if attempt < max_retries - 1:

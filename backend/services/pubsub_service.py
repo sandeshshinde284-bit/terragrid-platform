@@ -18,7 +18,10 @@ class PubSubService:
         self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
         self.topic_id = os.getenv("PUBSUB_TOPIC_ID", "terragrid-events")
         self.publisher = None
-        self.enabled = bool(self.project_id)
+        self.enabled = os.getenv("USE_PUBSUB", "false").lower() == "true"
+        
+        if not self.enabled:
+            logger.info("Pub/Sub publishing is disabled via USE_PUBSUB=false")
     
     async def publish_event(self, event: Dict[str, Any]) -> bool:
         """
@@ -54,11 +57,11 @@ class PubSubService:
             
             # Wait for publish to complete
             message_id = future.result(timeout=5.0)
-            logger.info(f"✅ Published event to Pub/Sub: {message_id}")
+            logger.info(f" Published event to Pub/Sub: {message_id}")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Failed to publish to Pub/Sub: {str(e)}")
+            logger.error(f" Failed to publish to Pub/Sub: {str(e)}")
             return False
     
     async def publish_batch(self, events: List[Dict[str, Any]]) -> int:
@@ -80,7 +83,7 @@ class PubSubService:
             if await self.publish_event(event):
                 success_count += 1
         
-        logger.info(f"✅ Published {success_count}/{len(events)} events to Pub/Sub")
+        logger.info(f" Published {success_count}/{len(events)} events to Pub/Sub")
         return success_count
     
     def close(self):

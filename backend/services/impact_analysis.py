@@ -33,7 +33,7 @@ class ImpactAnalysisService:
     }
     
     @classmethod
-    def calculate_impact(cls, event: Dict[str, Any]) -> Dict[str, Any]:
+    def calculate_impact(cls, event: Dict[str, Any], db_session=None) -> Dict[str, Any]:
         """
         Calculate comprehensive impact analysis for an event
         
@@ -80,7 +80,7 @@ class ImpactAnalysisService:
                     from backend.services.evacuation_zones import EvacuationZoneService
                     # Get zone data for the email
                     zone_data = EvacuationZoneService.calculate_zones(event)
-                    notification_service.send_critical_alert(incident=event, zone_data=zone_data)
+                    notification_service.send_critical_alert(incident=event, zone_data=zone_data, db_session=db_session)
                 except Exception as notify_e:
                     logger.error(f"Failed to send email alert: {str(notify_e)}")
             

@@ -31,6 +31,7 @@ export interface IncidentLevel1 {
   status: 'active' | 'monitoring' | 'resolved'
   threatScore?: number  // Optional threat score (0-100)
   coordinates?: [number, number]  // lat, lng
+  countryCode?: string  // Canonical 2-letter ISO country code (e.g., 'US', 'IN')
 }
 
 // Expanded Incident Data (Level 2 - Drawer)

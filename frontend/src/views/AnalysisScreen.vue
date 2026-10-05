@@ -3,7 +3,24 @@
     <Header />
 
     <div class="analysis-container">
-      <!-- Incident Selector -->
+      <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+        <div class="phase2-card glass-panel">
+          <div class="phase2-icon">🛰️</div>
+          <div class="phase2-tag">PHASE 2 ROADMAP</div>
+          <h2>Predictive Cascade & Satellite Analysis</h2>
+          <p>
+            Multi-spectral satellite change detection, historical RAG incident matching, and predictive cascade modeling (Feature 9) are scheduled for delivery in <strong>Phase 2</strong>.
+          </p>
+          <div class="phase2-note">
+            Real-time multi-hazard disaster monitoring, threat scoring, and AI decision support are fully operational on the <strong>Dashboard</strong> and <strong>Incidents</strong> screens.
+          </div>
+          <router-link to="/" class="return-dashboard-btn">
+            ← Return to Live Dashboard
+          </router-link>
+        </div>
+      </div>
+
+      <template v-else>
       <div class="selector-panel glass-panel">
         <select v-model="selectedIncidentId" class="incident-select">
           <option value="">{{ $t('analysis.selectIncident') }}</option>
@@ -13,9 +30,7 @@
         </select>
       </div>
 
-      <!-- Before/After Timeline -->
       <div v-if="selectedIncident" class="timeline-section">
-        <!-- Before/After Images -->
         <div class="before-after-container glass-panel">
           <div class="before-after-wrapper">
             <div class="image-section">
@@ -65,7 +80,6 @@
           </div>
         </div>
 
-        <!-- Area Growth Chart -->
         <div class="chart-section glass-panel">
           <h3>{{ $t('analysis.areaGrowth') }}</h3>
           <div class="chart-container">
@@ -83,7 +97,6 @@
           </div>
         </div>
 
-        <!-- Trend Analysis -->
         <div class="trends-section glass-panel">
           <h3>{{ $t('analysis.trends') }}</h3>
           <div class="trend-cards">
@@ -125,7 +138,6 @@
           </div>
         </div>
 
-        <!-- Historical Data -->
         <div class="historical-section glass-panel">
           <h3>{{ $t('analysis.trends') }} - Historical</h3>
           <div class="historical-table">
@@ -151,12 +163,12 @@
         </div>
       </div>
 
-      <!-- Empty State -->
       <div v-else class="empty-state glass-panel">
         <div class="empty-icon">📊</div>
         <h3>{{ $t('analysis.selectIncident') }}</h3>
         <p>Select an incident from the dropdown to view before/after analysis and historical trends</p>
       </div>
+      </template>
     </div>
   </div>
 </template>
@@ -164,10 +176,11 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
 import Header from '@/components/organisms/Header.vue'
-import { useEventsStore } from '@/stores'
+import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1 } from '@/types'
 
 const eventsStore = useEventsStore()
+const appStore = useAppStore()
 const selectedIncidentId = ref('')
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
 
@@ -304,7 +317,7 @@ const drawChart = () => {
 
 onMounted(() => {
   if (eventsStore.allIncidents.length === 0) {
-    eventsStore.initMockData()
+    // [STRICT LIVE MODE] eventsStore.initMockData()
   }
 })
 
@@ -708,5 +721,93 @@ watch(() => chartCanvas.value, () => {
   .historical-table td {
     padding: 6px;
   }
+}
+
+/* ===== PHASE 2 ROADMAP STYLES ===== */
+.phase2-center-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 420px;
+  padding: 40px 20px;
+}
+
+.phase2-card {
+  max-width: 520px;
+  width: 100%;
+  padding: 40px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.phase2-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 12px rgba(14, 165, 233, 0.4));
+}
+
+.phase2-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.2);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(14, 165, 233, 0.4);
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.phase2-card h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+}
+
+.phase2-card p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin: 0 0 18px 0;
+}
+
+.phase2-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 24px;
+}
+
+.return-dashboard-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid var(--accent-cyan);
+}
+
+.return-dashboard-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.4);
 }
 </style>

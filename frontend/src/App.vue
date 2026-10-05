@@ -5,10 +5,25 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useAppStore } from '@/stores'
 
 const appStore = useAppStore()
+
+onMounted(async () => {
+  try {
+    const host = window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin
+    const res = await fetch(`${host}/api/v1/config`)
+    if (res.ok) {
+      const config = await res.json()
+      appStore.setBackendMockMode(config.mock_mode_enabled === true)
+      console.log(`⚙️ Global Backend Config Loaded | MOCK_MODE: ${config.mock_mode_enabled}`)
+    }
+  } catch (err) {
+    console.warn('Failed to fetch global backend configuration, defaulting to Strict Live Mode', err)
+  }
+})
 </script>
 
 <style>
