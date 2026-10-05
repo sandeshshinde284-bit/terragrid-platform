@@ -82,7 +82,7 @@
       <main class="map-section glass-panel">
         <div class="map-container">
           <div v-if="appStore.viewMode === '2d'" class="map-view">
-            <MapComponent />
+            <MapComponent :incidents="filteredIncidents" :selectedCountry="selectedCountry" />
           </div>
           <div v-else class="map-view three-d-view">
             <div class="three-d-placeholder">
@@ -137,29 +137,32 @@
               </div>
             </div>
 
-            <div class="divider"></div>
-
-            <!-- 2. CORE METADATA (Full Width) -->
-            <div class="detail-item">
-              <label>{{ $t('incidents.location') }}</label>
-              <div class="location-value">📍 {{ selectedIncidentData.location }}</div>
-            </div>
-
-            <div class="detail-item-row">
-              <div class="detail-item">
-                <label>{{ $t('incidents.status') }}</label>
-                <div class="status-badge" :class="selectedIncidentData.status">
-                  {{ selectedIncidentData.status.toUpperCase() }}
-                </div>
+            <!-- 2. INCIDENT PROFILE (Boxed & Padded) -->
+            <div class="profile-card glass-subpanel">
+              <div class="profile-item">
+                <span class="card-section-label">{{ $t('incidents.location') }}</span>
+                <div class="profile-location">📍 {{ selectedIncidentData.location }}</div>
               </div>
-              <div class="detail-item">
-                <label>{{ $t('incidents.threatScore') }}</label>
-                <div class="threat-score">{{ getThreatScore(selectedIncidentData) }}/100</div>
+
+              <div class="profile-split-row">
+                <div class="profile-item">
+                  <span class="card-section-label">{{ $t('incidents.status') }}</span>
+                  <div class="status-badge" :class="selectedIncidentData.status">
+                    {{ selectedIncidentData.status.toUpperCase() }}
+                  </div>
+                </div>
+                <div class="profile-item align-right">
+                  <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
+                  <div class="threat-score-pill">
+                    <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
+                    <span class="threat-score-max">/100</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             <!-- 3. COMPACT STATS GRID -->
-            <div class="metadata-grid">
+            <div class="metadata-grid glass-subpanel">
               <div class="detail-item">
                 <label>{{ $t('incidents.affectedArea') }}</label>
                 <div class="metric-value">{{ selectedIncidentData.affectedArea.toFixed(1) }} km²</div>
@@ -178,11 +181,10 @@
               </div>
             </div>
 
-            <div class="divider"></div>
-
-            <div class="summary-section">
-              <label>{{ $t('common.details') }}</label>
-              <p>
+            <!-- 4. SITUATION BRIEFING (Boxed & Padded) -->
+            <div class="summary-card glass-subpanel">
+              <span class="card-section-label">{{ $t('common.details') }}</span>
+              <p class="summary-text">
                 {{ formatIncidentType(selectedIncidentData.type) }} activity near
                 {{ selectedIncidentData.location }} is currently
                 {{ selectedIncidentData.status }} and remains under active monitoring.
@@ -280,19 +282,50 @@
       </aside>
     </div>
 
-    <!-- Bottom: Metrics -->
+    <!-- Bottom: Metrics & Telemetry Bar -->
     <footer class="metrics-section glass-panel">
-      <div class="metric">
-        <span class="label">{{ $t('dashboard.totalAffectedArea') }}</span>
-        <span class="value">{{ totalAffectedArea.toFixed(1) }} km²</span>
+      <div class="metrics-group">
+        <div class="metric">
+          <span class="label">{{ $t('dashboard.totalAffectedArea') }}</span>
+          <span class="value">{{ totalAffectedArea.toFixed(1) }} km²</span>
+        </div>
+        <div class="metric">
+          <span class="label">{{ $t('dashboard.totalPopulation') }}</span>
+          <span class="value">{{ totalPopulation.toLocaleString() }}</span>
+        </div>
+        <div class="metric">
+          <span class="label">{{ $t('dashboard.activeIncidentsCount') }}</span>
+          <span class="value">{{ activeIncidentsCount }}</span>
+        </div>
       </div>
-      <div class="metric">
-        <span class="label">{{ $t('dashboard.totalPopulation') }}</span>
-        <span class="value">{{ totalPopulation.toLocaleString() }}</span>
-      </div>
-      <div class="metric">
-        <span class="label">{{ $t('dashboard.activeIncidentsCount') }}</span>
-        <span class="value">{{ activeIncidentsCount }}</span>
+
+      <!-- Command Center Telemetry: Multi-Agency Health & Live Feed -->
+      <div class="telemetry-bar">
+        <div class="telemetry-item">
+          <span class="dot live"></span>
+          <span class="telemetry-name">NASA</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="dot live"></span>
+          <span class="telemetry-name">GDACS</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="dot live"></span>
+          <span class="telemetry-name">USGS</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="dot live"></span>
+          <span class="telemetry-name">NOAA</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="dot live"></span>
+          <span class="telemetry-name">WEATHER</span>
+        </div>
+        <div class="telemetry-divider"></div>
+        <div class="telemetry-item status-badge-item">
+          <span class="telemetry-engine">AI: VERTEX 1.5</span>
+          <span class="telemetry-ws">STREAM: 🟢 LIVE</span>
+        </div>
       </div>
     </footer>
   </div>
@@ -1035,7 +1068,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   color: var(--text-primary);
 }
 
-\.detail-content {
+.detail-content {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1050,14 +1083,86 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   gap: 12px;
 }
 
+/* Unified Glass Subpanel Styling for Right Panel */
+.glass-subpanel {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-item.align-right {
+  align-items: flex-end;
+}
+
+.card-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
+}
+
+.profile-location {
+  font-size: 14px;
+  font-weight: 700;
+  color: #38bdf8;
+  line-height: 1.4;
+}
+
+.profile-split-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.threat-score-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.threat-score-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ff6b6b;
+}
+
+.threat-score-max {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
 .metadata-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .detail-content::-webkit-scrollbar {
@@ -1094,7 +1199,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 
 .location-value {
   font-size: 14px;
-  color: var(--accent-cyan);
+  color: #38bdf8;
   font-weight: 600;
   word-break: break-word;
   overflow-wrap: break-word;
@@ -1104,6 +1209,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  padding-left: 10px;
 }
 
 .threat-score {
@@ -1138,7 +1244,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 
 .summary-section {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 12px;
+  padding: 12px 10px 0 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1251,24 +1357,32 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   margin: 0;
 }
 
-/* Metrics Footer */
+/* Metrics Footer - Full-Width Command Center Telemetry */
 .metrics-section {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  gap: 24px;
+  min-height: 72px;
+}
+
+.metrics-group {
+  display: flex;
+  align-items: center;
+  gap: 32px;
 }
 
 .metric {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .label {
-  font-size: 12px;
-  color: #b0b9c1;
+  font-size: 11px;
+  color: #94a3b8;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1276,8 +1390,151 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 
 .value {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 800;
   color: #ffffff;
+}
+
+/* Command Center Multi-Agency Telemetry Bar */
+.telemetry-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.telemetry-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.telemetry-item .dot.live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.telemetry-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.telemetry-engine {
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.telemetry-ws {
+  color: #10b981;
+  font-size: 11px;
+  font-weight: 800;
+  margin-left: 12px;
+}
+
+/* AI Tactical Response - High Contrast Styling */
+.ai-decision-plan {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-plan-title {
+  color: #38bdf8 !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.country-context-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.15);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  margin-bottom: 4px;
+}
+
+.section-subtitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  margin: 6px 0 2px 0;
+}
+
+.action-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.action-steps li {
+  position: relative;
+  padding-left: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #f8fafc !important;
+}
+
+.action-steps li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: #38bdf8;
+  font-weight: 800;
+}
+
+.evac-guidance {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #f8fafc !important;
+  background: rgba(30, 41, 59, 0.5);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #f59e0b;
+  margin: 0;
+}
+
+.resource-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.resource-pill {
+  font-size: 11px;
+  color: #f8fafc !important;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.resource-pill strong {
+  color: #38bdf8;
 }
 
 /* Slide Right Animation */

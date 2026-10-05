@@ -12,6 +12,7 @@ export const useAppStore = defineStore('app', () => {
   const expandedIncident = ref<string | null>(null)
   const selectedIncident = ref<string | null>(null)
   const isBackendMockModeEnabled = ref<boolean>(false)
+  const mapboxToken = ref<string>('')
 
   // Getters
   const state = computed<DashboardState>(() => ({
@@ -49,9 +50,12 @@ export const useAppStore = defineStore('app', () => {
   const toggleDemoMode = () => {
     demoMode.value = !demoMode.value
   }
-  
   const setBackendMockMode = (enabled: boolean) => {
     isBackendMockModeEnabled.value = enabled
+  }
+
+  const setMapboxToken = (token: string) => {
+    mapboxToken.value = token
   }
 
   return {
@@ -63,6 +67,7 @@ export const useAppStore = defineStore('app', () => {
     expandedIncident,
     selectedIncident,
     isBackendMockModeEnabled,
+    mapboxToken,
 
     // Getters
     state,
@@ -75,8 +80,9 @@ export const useAppStore = defineStore('app', () => {
     setSelectedIncident,
     toggleDemoMode,
     setBackendMockMode,
+    setMapboxToken,
   }
-})
+  })
 
 // Events Store (Incidents)
 export const useEventsStore = defineStore('events', () => {

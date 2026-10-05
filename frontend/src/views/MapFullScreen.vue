@@ -3,18 +3,38 @@
     <Header />
 
     <div ref="containerRef" class="map-container">
-      <!-- High Performance HTML5 Canvas GIS Engine -->
-      <canvas
-        ref="mapCanvas"
-        class="map-canvas"
-        @pointerdown="handlePointerDown"
-        @pointermove="handlePointerMove"
-        @pointerup="handlePointerUp"
-        @pointerleave="handlePointerLeave"
-        @wheel.prevent="handleWheel"
-      ></canvas>
+      <!-- High Performance Mapbox GL JS WebGL Engine -->
+      <div ref="mapContainer" class="mapbox-container"></div>
 
-      <!-- Zoom & Viewport Controls HUD -->
+      <!-- 3-Way Tactical Mode Switcher HUD (Top Left) -->
+      <div class="style-switcher-hud glass-panel">
+        <button 
+          :class="['mode-btn', { active: currentMode === 'tactical' }]"
+          @click="setMode('tactical')"
+          title="Tactical Navigation Night Radar (Vivid midnight blue & glowing borders)"
+        >
+          <span class="mode-icon">🌙</span>
+          <span class="mode-label">TACTICAL</span>
+        </button>
+        <button 
+          :class="['mode-btn', { active: currentMode === 'satellite' }]"
+          @click="setMode('satellite')"
+          title="Real-World Photorealistic Satellite Recon"
+        >
+          <span class="mode-icon">🛰️</span>
+          <span class="mode-label">SATELLITE</span>
+        </button>
+        <button 
+          :class="['mode-btn', { active: currentMode === 'globe' }]"
+          @click="setMode('globe')"
+          title="3D Orbital Globe with Atmospheric Lighting"
+        >
+          <span class="mode-icon">🌐</span>
+          <span class="mode-label">3D GLOBE</span>
+        </button>
+      </div>
+
+      <!-- Zoom & Viewport Controls HUD (Top Right) -->
       <div class="map-controls glass-panel">
         <button @click="zoomIn" title="Zoom In" class="control-btn" type="button">➕</button>
         <button @click="zoomOut" title="Zoom Out" class="control-btn" type="button">➖</button>
@@ -31,28 +51,13 @@
           </div>
 
           <div class="layer-item">
-            <input v-model="layers.incidents" type="checkbox" id="layer-incidents" />
+            <input v-model="layers.incidents" type="checkbox" id="layer-incidents" @change="renderMarkers" />
             <label for="layer-incidents">📍 Live Disaster Markers</label>
           </div>
 
           <div class="layer-item">
-            <input v-model="layers.evacuationZones" type="checkbox" id="layer-evac" />
-            <label for="layer-evac">⛔ Evacuation Zones (A/B/C/D)</label>
-          </div>
-
-          <div class="layer-item">
-            <input v-model="layers.threatHeatmap" type="checkbox" id="layer-heatmap" />
-            <label for="layer-heatmap">🔥 Threat Density Heatmap</label>
-          </div>
-
-          <div class="layer-item">
-            <input v-model="layers.grid" type="checkbox" id="layer-grid" />
-            <label for="layer-grid">🌐 Coordinate Meridians & Equator</label>
-          </div>
-
-          <div class="layer-item">
-            <input v-model="layers.continents" type="checkbox" id="layer-continents" />
-            <label for="layer-continents">🗺️ Continental Outlines</label>
+            <input v-model="layers.threatGlow" type="checkbox" id="layer-glow" @change="renderMarkers" />
+            <label for="layer-glow">🔥 Critical Threat Pulsing Rings</label>
           </div>
         </div>
       </transition>
@@ -66,12 +71,12 @@
         <div class="hud-divider"></div>
         <div class="hud-item">
           <span class="hud-label">ZOOM</span>
-          <span class="hud-value">{{ scale.toFixed(2) }}x</span>
+          <span class="hud-value">{{ currentZoom.toFixed(2) }}x</span>
         </div>
         <div class="hud-divider"></div>
         <div class="hud-item">
           <span class="hud-label">POSTGRES FEED</span>
-          <span class="hud-value live-pulse">237 VERIFIED 🟢</span>
+          <span class="hud-value live-pulse">{{ eventsStore.allIncidents.length }} VERIFIED 🟢</span>
         </div>
       </div>
 
@@ -100,16 +105,16 @@
             <span class="count">{{ incidentCounts.storm }}</span>
           </div>
           <div class="legend-row">
-            <span class="icon">⚠️</span>
+            <span class="icon">📍</span>
             <span class="name">Other Hazards</span>
             <span class="count">{{ incidentCounts.other }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Hover / Selected Incident Tactical Tooltip -->
+      <!-- Tactical Hover Tooltip -->
       <transition name="fade">
-        <div 
+        <div
           v-if="hoveredIncident"
           class="tactical-tooltip glass-panel"
           :style="{ left: `${tooltipPos.x}px`, top: `${tooltipPos.y}px` }"
@@ -136,7 +141,7 @@
             </div>
             <div class="metric">
               <span>GROWTH TREND:</span>
-              <strong style="color: #ef4444">+{{ hoveredIncident.trend ? hoveredIncident.trend.toFixed(1) : '5.2' }} km²/h</strong>
+              <strong style="color: #34d399">+{{ hoveredIncident.trend ? hoveredIncident.trend.toFixed(1) : '5.2' }} km²/h</strong>
             </div>
           </div>
         </div>
@@ -146,30 +151,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
 import Header from '@/components/organisms/Header.vue'
-import { useEventsStore } from '@/stores'
+import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1 } from '@/types'
+import mapboxgl from 'mapbox-gl'
+import 'mapbox-gl/dist/mapbox-gl.css'
 
 const eventsStore = useEventsStore()
-const containerRef = ref<HTMLDivElement | null>(null)
-const mapCanvas = ref<HTMLCanvasElement | null>(null)
+const appStore = useAppStore()
 
-// Viewport state
-const scale = ref(1.0)
-const panX = ref(0)
-const panY = ref(0)
-const MIN_SCALE = 0.5
-const MAX_SCALE = 5.0
+const mapContainer = ref<HTMLDivElement | null>(null)
+const map = shallowRef<mapboxgl.Map | null>(null)
+let markers: mapboxgl.Marker[] = []
+
+const currentZoom = ref(1.5)
+const DEFAULT_CENTER: [number, number] = [0, 20]
+const DEFAULT_ZOOM = 1.5
+
+type MapMode = 'tactical' | 'satellite' | 'globe'
+const currentMode = ref<MapMode>('tactical')
+
+const MAP_STYLES = {
+  tactical: 'mapbox://styles/mapbox/navigation-night-v1', // Vivid midnight blue oceans, charcoal land, glowing neon borders
+  satellite: 'mapbox://styles/mapbox/satellite-streets-v12', // Real-world photorealistic satellite imagery + street/border vectors
+  globe: 'mapbox://styles/mapbox/satellite-streets-v12' // Real satellite on 3D rotating globe sphere
+}
 
 // Layer state
-const showLayersPanel = ref(true)
+const showLayersPanel = ref(false)
 const layers = reactive({
   incidents: true,
-  evacuationZones: true,
-  threatHeatmap: true,
-  grid: true,
-  continents: true,
+  threatGlow: true
 })
 
 const activeLayerCount = computed(() => {
@@ -180,14 +193,6 @@ const activeLayerCount = computed(() => {
 const cursorCoordinates = ref<{ lat: number; lon: number } | null>(null)
 const hoveredIncident = ref<IncidentLevel1 | null>(null)
 const tooltipPos = ref({ x: 0, y: 0 })
-
-// Global bounds
-const MAP_BOUNDS = {
-  minLat: -60,
-  maxLat: 75,
-  minLon: -180,
-  maxLon: 180,
-}
 
 // Telemetry counts
 const incidentCounts = computed(() => {
@@ -206,18 +211,20 @@ const incidentCounts = computed(() => {
 const cursorCoordText = computed(() => {
   if (!cursorCoordinates.value) return 'HOVER TO INSPECT'
   const { lat, lon } = cursorCoordinates.value
-  const latStr = `${Math.abs(lat).toFixed(2)}° ${lat >= 0 ? 'N' : 'S'}`
-  const lonStr = `${Math.abs(lon).toFixed(2)}° ${lon >= 0 ? 'E' : 'W'}`
+  const latStr = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'N' : 'S'}`
+  const lonStr = `${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'E' : 'W'}`
   return `${latStr} | ${lonStr}`
 })
 
 const getIncidentIcon = (type: string) => {
   const t = (type || '').toLowerCase()
-  if (t.includes('fire')) return '🔥'
+  if (t.includes('fire') || t.includes('wildfire')) return '🔥'
   if (t.includes('flood')) return '💧'
-  if (t.includes('earthquake')) return '🌍'
-  if (t.includes('storm')) return '🌀'
-  return '⚠️'
+  if (t.includes('earthquake') || t.includes('seismic')) return '🌍'
+  if (t.includes('storm') || t.includes('weather') || t.includes('cyclone') || t.includes('typhoon')) return '🌀'
+  if (t.includes('drought')) return '🌾'
+  if (t.includes('volcano')) return '🌋'
+  return '📍'
 }
 
 const getSeverityClass = (score?: number) => {
@@ -227,526 +234,279 @@ const getSeverityClass = (score?: number) => {
   return 'medium'
 }
 
-// Coordinate conversions
-const latLonToWorld = (lat: number, lon: number, width: number, height: number) => ({
-  x: ((lon - MAP_BOUNDS.minLon) / (MAP_BOUNDS.maxLon - MAP_BOUNDS.minLon)) * width,
-  y: ((MAP_BOUNDS.maxLat - lat) / (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat)) * height,
-})
+const getSeverityColor = (score?: number) => {
+  const s = score ?? 50
+  if (s >= 80) return '#ef4444'
+  if (s >= 65) return '#f59e0b'
+  return '#38bdf8'
+}
 
-const worldToLatLon = (x: number, y: number, width: number, height: number) => ({
-  lon: (x / width) * (MAP_BOUNDS.maxLon - MAP_BOUNDS.minLon) + MAP_BOUNDS.minLon,
-  lat: MAP_BOUNDS.maxLat - (y / height) * (MAP_BOUNDS.maxLat - MAP_BOUNDS.minLat),
-})
-
-const worldToScreen = (wx: number, wy: number) => ({
-  x: wx * scale.value + panX.value,
-  y: wy * scale.value + panY.value,
-})
-
-const screenToWorld = (sx: number, sy: number) => ({
-  x: (sx - panX.value) / scale.value,
-  y: (sy - panY.value) / scale.value,
-})
-
-// Dragging & Interaction
-let isDragging = false
-let startPointerX = 0
-let startPointerY = 0
-
-const handlePointerDown = (e: PointerEvent) => {
-  isDragging = true
-  startPointerX = e.clientX - panX.value
-  startPointerY = e.clientY - panY.value
-  if (mapCanvas.value) {
-    mapCanvas.value.setPointerCapture(e.pointerId)
+const applyAtmosphere = () => {
+  if (!map.value) return
+  if (currentMode.value === 'globe') {
+    map.value.setProjection({ name: 'globe' })
+    map.value.setFog({
+      color: 'rgb(11, 19, 43)',
+      'high-color': 'rgb(14, 165, 233)',
+      'horizon-blend': 0.15,
+      'space-color': 'rgb(8, 12, 22)',
+      'star-intensity': 0.8
+    })
+  } else {
+    map.value.setProjection({ name: 'mercator' })
+    map.value.setFog(null as any)
   }
 }
 
-const handlePointerMove = (e: PointerEvent) => {
-  if (!mapCanvas.value) return
-  const rect = mapCanvas.value.getBoundingClientRect()
-  const screenX = e.clientX - rect.left
-  const screenY = e.clientY - rect.top
+const setMode = (mode: MapMode) => {
+  if (!map.value || currentMode.value === mode) return
+  const prevMode = currentMode.value
+  currentMode.value = mode
 
-  if (isDragging) {
-    panX.value = e.clientX - startPointerX
-    panY.value = e.clientY - startPointerY
-    scheduleDraw()
-  }
-
-  // Update live cursor coordinates
-  const world = screenToWorld(screenX, screenY)
-  const coords = worldToLatLon(world.x, world.y, rect.width, rect.height)
-  if (coords.lat >= -85 && coords.lat <= 85 && coords.lon >= -180 && coords.lon <= 180) {
-    cursorCoordinates.value = coords
+  if (MAP_STYLES[mode] !== MAP_STYLES[prevMode]) {
+    map.value.setStyle(MAP_STYLES[mode])
+    map.value.once('style.load', () => {
+      applyAtmosphere()
+      renderMarkers()
+    })
   } else {
-    cursorCoordinates.value = null
+    applyAtmosphere()
   }
+}
 
-  // Detect hover over incidents
-  let foundHover: IncidentLevel1 | null = null
-  for (const incident of eventsStore.allIncidents) {
+const initMap = () => {
+  if (!mapContainer.value || !appStore.mapboxToken) return
+
+  mapboxgl.accessToken = appStore.mapboxToken
+
+  map.value = new mapboxgl.Map({
+    container: mapContainer.value,
+    style: MAP_STYLES.tactical,
+    center: DEFAULT_CENTER,
+    zoom: DEFAULT_ZOOM,
+    projection: { name: 'mercator' },
+    minZoom: 1,
+    maxZoom: 18,
+    attributionControl: false
+  })
+
+  map.value.on('load', () => {
+    renderMarkers()
+  })
+
+  map.value.on('zoom', () => {
+    if (map.value) currentZoom.value = map.value.getZoom()
+  })
+
+  map.value.on('mousemove', (e) => {
+    cursorCoordinates.value = { lat: e.lngLat.lat, lon: e.lngLat.lng }
+  })
+
+  map.value.on('mouseleave', () => {
+    cursorCoordinates.value = null
+  })
+}
+
+// Watch for backend mapbox token arrival asynchronously
+watch(() => appStore.mapboxToken, (token) => {
+  if (token && !map.value) {
+    initMap()
+  }
+})
+
+const clearMarkers = () => {
+  markers.forEach(marker => marker.remove())
+  markers = []
+}
+
+const renderMarkers = () => {
+  if (!map.value || !layers.incidents) {
+    clearMarkers()
+    return
+  }
+  
+  clearMarkers()
+
+  eventsStore.allIncidents.forEach(incident => {
     const lat = incident.coordinates ? incident.coordinates[0] : (incident as any).latitude
     const lon = incident.coordinates ? incident.coordinates[1] : (incident as any).longitude
-    if (lat !== undefined && lon !== undefined) {
-      const iw = latLonToWorld(lat, lon, rect.width, rect.height)
-      const iscreen = worldToScreen(iw.x, iw.y)
-      const dist = Math.hypot(screenX - iscreen.x, screenY - iscreen.y)
-      if (dist < 18) {
-        foundHover = incident
-        tooltipPos.value = {
-          x: Math.min(e.clientX - rect.left + 16, rect.width - 320),
-          y: Math.min(e.clientY - rect.top + 16, rect.height - 180),
-        }
-        break
-      }
+    if (lat === undefined || lon === undefined) return
+
+    const score = incident.threatScore ?? 50
+    const color = getSeverityColor(score)
+    const icon = getIncidentIcon(incident.type)
+
+    const el = document.createElement('div')
+    el.className = 'custom-marker'
+
+    if (layers.threatGlow && score >= 80) {
+      const pulseRing = document.createElement('div')
+      pulseRing.className = 'pulse-ring'
+      pulseRing.style.borderColor = color
+      el.appendChild(pulseRing)
     }
-  }
 
-  hoveredIncident.value = foundHover
-  mapCanvas.value.style.cursor = foundHover ? 'pointer' : (isDragging ? 'grabbing' : 'grab')
+    const dot = document.createElement('div')
+    dot.className = `marker-dot ${getSeverityClass(score)}`
+    dot.innerHTML = `<span>${icon}</span>`
+    el.appendChild(dot)
+
+    // Hover tooltip tracking
+    el.addEventListener('mouseenter', (e) => {
+      hoveredIncident.value = incident
+      tooltipPos.value = {
+        x: Math.min(e.clientX + 16, window.innerWidth - 320),
+        y: Math.min(e.clientY + 16, window.innerHeight - 200)
+      }
+    })
+
+    el.addEventListener('mouseleave', () => {
+      hoveredIncident.value = null
+    })
+
+    el.addEventListener('click', (e) => {
+      e.stopPropagation()
+      map.value?.flyTo({
+        center: [lon, lat],
+        zoom: Math.max(map.value.getZoom(), 5),
+        speed: 1.2
+      })
+    })
+
+    const marker = new mapboxgl.Marker({ element: el })
+      .setLngLat([lon, lat])
+      .addTo(map.value)
+
+    markers.push(marker)
+  })
 }
 
-const handlePointerUp = (e: PointerEvent) => {
-  isDragging = false
-  if (mapCanvas.value && mapCanvas.value.hasPointerCapture(e.pointerId)) {
-    mapCanvas.value.releasePointerCapture(e.pointerId)
-  }
-}
-
-const handlePointerLeave = () => {
-  isDragging = false
-  cursorCoordinates.value = null
-  hoveredIncident.value = null
-}
-
-const handleWheel = (e: WheelEvent) => {
-  if (!mapCanvas.value) return
-  const rect = mapCanvas.value.getBoundingClientRect()
-  const mouseX = e.clientX - rect.left
-  const mouseY = e.clientY - rect.top
-
-  const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85
-  const newScale = Math.min(Math.max(scale.value * zoomFactor, MIN_SCALE), MAX_SCALE)
-  if (newScale === scale.value) return
-
-  // Zoom centered around mouse pointer
-  panX.value = mouseX - (mouseX - panX.value) * (newScale / scale.value)
-  panY.value = mouseY - (mouseY - panY.value) * (newScale / scale.value)
-  scale.value = newScale
-  scheduleDraw()
-}
-
-// Zoom HUD controls
-const zoomIn = () => {
-  const newScale = Math.min(scale.value * 1.25, MAX_SCALE)
-  if (!mapCanvas.value) return
-  const cx = mapCanvas.value.clientWidth / 2
-  const cy = mapCanvas.value.clientHeight / 2
-  panX.value = cx - (cx - panX.value) * (newScale / scale.value)
-  panY.value = cy - (cy - panY.value) * (newScale / scale.value)
-  scale.value = newScale
-  scheduleDraw()
-}
-
-const zoomOut = () => {
-  const newScale = Math.max(scale.value * 0.8, MIN_SCALE)
-  if (!mapCanvas.value) return
-  const cx = mapCanvas.value.clientWidth / 2
-  const cy = mapCanvas.value.clientHeight / 2
-  panX.value = cx - (cx - panX.value) * (newScale / scale.value)
-  panY.value = cy - (cy - panY.value) * (newScale / scale.value)
-  scale.value = newScale
-  scheduleDraw()
-}
-
+// Controls
+const zoomIn = () => map.value?.zoomIn()
+const zoomOut = () => map.value?.zoomOut()
 const resetView = () => {
-  scale.value = 1.0
-  panX.value = 0
-  panY.value = 0
-  scheduleDraw()
+  map.value?.flyTo({
+    center: DEFAULT_CENTER,
+    zoom: DEFAULT_ZOOM,
+    speed: 1.5
+  })
 }
 
 const toggleLayersPanel = () => {
   showLayersPanel.value = !showLayersPanel.value
 }
 
-// Drawing Engine
-let animId: number | null = null
-const scheduleDraw = () => {
-  if (animId) return
-  animId = requestAnimationFrame(() => {
-    draw()
-    animId = null
-  })
-}
-
-const draw = () => {
-  if (!mapCanvas.value) return
-  const canvas = mapCanvas.value
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-
-  const dpr = window.devicePixelRatio || 1
-  const width = canvas.clientWidth
-  const height = canvas.clientHeight
-
-  if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
-    canvas.width = width * dpr
-    canvas.height = height * dpr
+watch(() => eventsStore.allIncidents.length, () => {
+  if (map.value?.isStyleLoaded()) {
+    renderMarkers()
   }
+})
 
-  ctx.save()
-  ctx.scale(dpr, dpr)
-
-  // Clear tactical background
-  const bg = ctx.createLinearGradient(0, 0, width, height)
-  bg.addColorStop(0, '#090d16')
-  bg.addColorStop(1, '#0f172a')
-  ctx.fillStyle = bg
-  ctx.fillRect(0, 0, width, height)
-
-  // Transform matrix for pan and zoom
-  ctx.save()
-  ctx.translate(panX.value, panY.value)
-  ctx.scale(scale.value, scale.value)
-
-  // LAYER 1: Continental Landmass Silhouettes
-  if (layers.continents) {
-    drawContinents(ctx, width, height)
-  }
-
-  // LAYER 2: Coordinate Meridians, Equator & Grid
-  if (layers.grid) {
-    drawGrid(ctx, width, height)
-  }
-
-  // LAYER 3: Threat Density Heatmap / Aura
-  if (layers.threatHeatmap) {
-    drawThreatHeatmap(ctx, width, height)
-  }
-
-  // LAYER 4: Concentric Evacuation Zones (Feature 3A)
-  if (layers.evacuationZones) {
-    drawEvacuationZones(ctx, width, height)
-  }
-
-  // LAYER 5: Real Live Disaster Markers
-  if (layers.incidents) {
-    drawMarkers(ctx, width, height)
-  }
-
-  ctx.restore() // Restore pan/zoom transform
-  ctx.restore() // Restore DPR
-}
-
-const drawContinents = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  const continents = [
-    // North America
-    [
-      { x: width * 0.12, y: height * 0.22 },
-      { x: width * 0.28, y: height * 0.20 },
-      { x: width * 0.29, y: height * 0.36 },
-      { x: width * 0.23, y: height * 0.46 },
-      { x: width * 0.18, y: height * 0.48 },
-      { x: width * 0.13, y: height * 0.34 },
-    ],
-    // South America
-    [
-      { x: width * 0.26, y: height * 0.52 },
-      { x: width * 0.34, y: height * 0.56 },
-      { x: width * 0.31, y: height * 0.78 },
-      { x: width * 0.27, y: height * 0.88 },
-      { x: width * 0.24, y: height * 0.66 },
-    ],
-    // Europe & Asia
-    [
-      { x: width * 0.46, y: height * 0.18 },
-      { x: width * 0.85, y: height * 0.18 },
-      { x: width * 0.84, y: height * 0.42 },
-      { x: width * 0.74, y: height * 0.50 },
-      { x: width * 0.62, y: height * 0.46 },
-      { x: width * 0.54, y: height * 0.34 },
-      { x: width * 0.45, y: height * 0.30 },
-    ],
-    // Africa
-    [
-      { x: width * 0.47, y: height * 0.38 },
-      { x: width * 0.60, y: height * 0.40 },
-      { x: width * 0.58, y: height * 0.68 },
-      { x: width * 0.53, y: height * 0.78 },
-      { x: width * 0.46, y: height * 0.58 },
-    ],
-    // Australia
-    [
-      { x: width * 0.78, y: height * 0.66 },
-      { x: width * 0.88, y: height * 0.66 },
-      { x: width * 0.87, y: height * 0.80 },
-      { x: width * 0.77, y: height * 0.78 },
-    ],
-  ]
-
-  ctx.fillStyle = 'rgba(14, 165, 233, 0.04)'
-  ctx.strokeStyle = 'rgba(14, 165, 233, 0.2)'
-  ctx.lineWidth = 1.2
-
-  continents.forEach((poly) => {
-    ctx.beginPath()
-    poly.forEach((pt, idx) => {
-      if (idx === 0) ctx.moveTo(pt.x, pt.y)
-      else ctx.lineTo(pt.x, pt.y)
-    })
-    ctx.closePath()
-    ctx.fill()
-    ctx.stroke()
-  })
-}
-
-const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  ctx.save()
-
-  // Standard Meridian Grid
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)'
-  ctx.lineWidth = 0.8
-  const latSteps = [-45, -30, -15, 15, 30, 45, 60]
-  const lonSteps = [-150, -120, -90, -60, -30, 30, 60, 90, 120, 150]
-
-  latSteps.forEach((lat) => {
-    const y = latLonToWorld(lat, 0, width, height).y
-    ctx.beginPath()
-    ctx.moveTo(0, y)
-    ctx.lineTo(width, y)
-    ctx.stroke()
-  })
-
-  lonSteps.forEach((lon) => {
-    const x = latLonToWorld(0, lon, width, height).x
-    ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.lineTo(x, height)
-    ctx.stroke()
-  })
-
-  // Highlighted Equator (0° Lat)
-  const eqY = latLonToWorld(0, 0, width, height).y
-  ctx.strokeStyle = 'rgba(14, 165, 233, 0.4)'
-  ctx.lineWidth = 1.8
-  ctx.beginPath()
-  ctx.moveTo(0, eqY)
-  ctx.lineTo(width, eqY)
-  ctx.stroke()
-
-  // Highlighted Prime Meridian (0° Lon)
-  const pmX = latLonToWorld(0, 0, width, height).x
-  ctx.strokeStyle = 'rgba(14, 165, 233, 0.4)'
-  ctx.lineWidth = 1.8
-  ctx.beginPath()
-  ctx.moveTo(pmX, 0)
-  ctx.lineTo(pmX, height)
-  ctx.stroke()
-
-  ctx.restore()
-}
-
-const drawThreatHeatmap = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  ctx.save()
-  eventsStore.allIncidents.forEach((incident) => {
-    const lat = incident.coordinates ? incident.coordinates[0] : (incident as any).latitude
-    const lon = incident.coordinates ? incident.coordinates[1] : (incident as any).longitude
-    if (lat === undefined || lon === undefined) return
-
-    const score = incident.threatScore ?? 50
-    if (score < 60) return
-
-    const { x, y } = latLonToWorld(lat, lon, width, height)
-    const radius = 30 + (score / 100) * 45
-
-    const aura = ctx.createRadialGradient(x, y, 4, x, y, radius)
-    if (score >= 80) {
-      aura.addColorStop(0, 'rgba(239, 68, 68, 0.35)')
-      aura.addColorStop(0.5, 'rgba(239, 68, 68, 0.12)')
-      aura.addColorStop(1, 'transparent')
-    } else {
-      aura.addColorStop(0, 'rgba(245, 158, 11, 0.3)')
-      aura.addColorStop(0.5, 'rgba(245, 158, 11, 0.1)')
-      aura.addColorStop(1, 'transparent')
-    }
-
-    ctx.fillStyle = aura
-    ctx.beginPath()
-    ctx.arc(x, y, radius, 0, Math.PI * 2)
-    ctx.fill()
-  })
-  ctx.restore()
-}
-
-const drawEvacuationZones = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  ctx.save()
-  eventsStore.allIncidents.forEach((incident) => {
-    const lat = incident.coordinates ? incident.coordinates[0] : (incident as any).latitude
-    const lon = incident.coordinates ? incident.coordinates[1] : (incident as any).longitude
-    if (lat === undefined || lon === undefined) return
-
-    const score = incident.threatScore ?? 50
-    if (score < 75) return
-
-    const { x, y } = latLonToWorld(lat, lon, width, height)
-
-    // Concentric rings (Zones A, B, C)
-    const zones = [
-      { r: 16, color: 'rgba(239, 68, 68, 0.8)', fill: 'rgba(239, 68, 68, 0.12)' },
-      { r: 32, color: 'rgba(245, 158, 11, 0.6)', fill: 'rgba(245, 158, 11, 0.06)' },
-      { r: 52, color: 'rgba(59, 130, 246, 0.4)', fill: 'transparent' },
-    ]
-
-    zones.forEach((z) => {
-      ctx.beginPath()
-      ctx.strokeStyle = z.color
-      ctx.fillStyle = z.fill
-      ctx.lineWidth = 1.2
-      ctx.setLineDash([4, 3])
-      ctx.arc(x, y, z.r, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.stroke()
-    })
-    ctx.setLineDash([])
-  })
-  ctx.restore()
-}
-
-const drawMarkers = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-  ctx.save()
-  eventsStore.allIncidents.forEach((incident) => {
-    const lat = incident.coordinates ? incident.coordinates[0] : (incident as any).latitude
-    const lon = incident.coordinates ? incident.coordinates[1] : (incident as any).longitude
-    if (lat === undefined || lon === undefined) return
-
-    const { x, y } = latLonToWorld(lat, lon, width, height)
-    const score = incident.threatScore ?? 50
-    const icon = getIncidentIcon(incident.type)
-
-    // Outer glow ring
-    ctx.beginPath()
-    ctx.arc(x, y, 12, 0, Math.PI * 2)
-    ctx.fillStyle = score >= 80 ? 'rgba(239, 68, 68, 0.3)' : (score >= 65 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(59, 130, 246, 0.25)')
-    ctx.fill()
-
-    ctx.beginPath()
-    ctx.arc(x, y, 10, 0, Math.PI * 2)
-    ctx.strokeStyle = score >= 80 ? '#ef4444' : (score >= 65 ? '#f59e0b' : '#3b82f6')
-    ctx.lineWidth = 1.5
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)'
-    ctx.fill()
-    ctx.stroke()
-
-    // Render Unicode Emoji Icon
-    ctx.font = '12px "Segoe UI Emoji", "Apple Color Emoji", sans-serif'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(icon, x, y + 1)
-  })
-  ctx.restore()
-}
-
-// Lifecycle
-let resizeObs: ResizeObserver | null = null
-
-onMounted(async () => {
-  // Hydrate from PostgreSQL database if navigating straight to /map
-  if (eventsStore.allIncidents.length === 0) {
-    try {
-      const host = window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin
-      const res = await fetch(`${host}/api/v1/incidents?limit=50`)
-      if (res.ok) {
-        const raw = await res.json()
-        if (Array.isArray(raw) && raw.length > 0) {
-          eventsStore.setIncidents(raw.map((e: any, idx: number) => ({
-            id: e.data?.id || e.id || `event-${idx}`,
-            type: e.event_type || 'fire',
-            location: e.location_name || 'Unknown',
-            severity: (e.severity || 'medium').toLowerCase(),
-            status: e.status || 'active',
-            threatScore: e.data?.impact?.risk_score ?? (e.severity === 'critical' ? 85 : 55),
-            detectionTime: new Date(e.event_timestamp || Date.now()),
-            affectedArea: e.data?.impact?.affected_area_km2 ?? 150,
-            affectedPopulation: e.data?.impact?.affected_population ?? 50000,
-            trend: 5.2,
-            forecast6h: 31.2,
-            coordinates: [e.latitude, e.longitude],
-          })))
-        }
-      }
-    } catch (err) {
-      console.warn('MapFullScreen hydration error:', err)
-    }
-  }
-
-  scheduleDraw()
-
-  if (containerRef.value) {
-    resizeObs = new ResizeObserver(() => scheduleDraw())
-    resizeObs.observe(containerRef.value)
+onMounted(() => {
+  if (appStore.mapboxToken) {
+    initMap()
   }
 })
 
 onUnmounted(() => {
-  if (animId) cancelAnimationFrame(animId)
-  if (resizeObs) resizeObs.disconnect()
+  clearMarkers()
+  if (map.value) map.value.remove()
 })
-
-watch(
-  () => [layers.incidents, layers.evacuationZones, layers.threatHeatmap, layers.grid, layers.continents],
-  () => scheduleDraw()
-)
-
-watch(
-  () => eventsStore.allIncidents.length,
-  () => scheduleDraw()
-)
 </script>
 
-<style scoped>
+<style>
 .map-fullscreen {
   display: flex;
   flex-direction: column;
+  width: 100vw;
   height: 100vh;
   background-color: var(--bg-dark);
   color: var(--text-primary);
-  padding: 16px;
-  gap: 16px;
   overflow: hidden;
 }
 
 .map-container {
-  flex: 1;
   position: relative;
-  min-height: 0;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--glass-border);
-}
-
-.map-canvas {
+  flex: 1;
   width: 100%;
   height: 100%;
-  display: block;
+  overflow: hidden;
 }
 
-/* Zoom & Viewport Controls HUD */
-.map-controls {
+.mapbox-container {
+  width: 100%;
+  height: 100%;
+  background-color: #0b0f19;
+}
+
+/* 3-Way Tactical Mode Switcher HUD */
+.style-switcher-hud {
   position: absolute;
   top: 16px;
   left: 16px;
   display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  border-radius: 8px;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94a3b8;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(30, 64, 175, 0.4));
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.mode-icon {
+  font-size: 13px;
+}
+
+/* Map Controls HUD */
+.map-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 8px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  border-radius: 8px;
   z-index: 10;
 }
 
 .control-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: 1px solid rgba(14, 165, 233, 0.4);
   background: rgba(15, 23, 42, 0.7);
   color: var(--accent-cyan);
@@ -775,7 +535,7 @@ watch(
 .layers-panel {
   position: absolute;
   top: 16px;
-  right: 16px;
+  right: 70px;
   width: 260px;
   padding: 16px;
   display: flex;
@@ -995,6 +755,71 @@ watch(
 
 .tooltip-body .metric strong {
   color: #ffffff;
+}
+
+/* Custom Marker Styling */
+.custom-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  z-index: 5;
+}
+
+.marker-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background-color: #1e293b;
+  border: 2.5px solid;
+  border-radius: 50%;
+  font-size: 13px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.marker-dot:hover {
+  transform: scale(1.35);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.8);
+  z-index: 30;
+}
+
+.marker-dot.critical {
+  border-color: #ef4444;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.8);
+}
+
+.marker-dot.high {
+  border-color: #f59e0b;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.8);
+}
+
+.marker-dot.medium, .marker-dot.low {
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+}
+
+.pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid;
+  animation: pulse-animation 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  z-index: 1;
+}
+
+@keyframes pulse-animation {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
 }
 
 .fade-enter-active,

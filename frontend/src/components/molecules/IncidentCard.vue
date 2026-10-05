@@ -183,9 +183,9 @@ const selectIncident = () => {
 .header-top h3 {
   margin: 0;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.2;
-  color: var(--accent-cyan);
+  color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -199,7 +199,7 @@ const selectIncident = () => {
 
 .location {
   font-size: 11px;
-  color: var(--accent-cyan);
+  color: #cbd5e1;
   margin: 0;
   line-height: 1.3;
   flex: 1;
@@ -228,7 +228,7 @@ const selectIncident = () => {
 }
 
 .label {
-  color: #b0b9c1;
+  color: #94a3b8;
   font-weight: 700;
   text-transform: uppercase;
   font-size: 10px;
@@ -240,7 +240,7 @@ const selectIncident = () => {
 
 .value {
   color: #ffffff;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 14px;
   text-align: right;
   flex-shrink: 0;
@@ -249,8 +249,8 @@ const selectIncident = () => {
 }
 
 .value.trend-up {
-  color: #10b981;
-  font-weight: 700;
+  color: #34d399;
+  font-weight: 800;
 }
 
 .action-btn {

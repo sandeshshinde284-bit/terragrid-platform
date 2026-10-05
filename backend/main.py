@@ -127,7 +127,8 @@ def get_app_config():
     """
     return {
         "mock_mode_enabled": os.getenv("USE_MOCK_DATA", "false").lower() == "true",
-        "environment": os.getenv("ENV", "development")
+        "environment": os.getenv("ENV", "development"),
+        "mapbox_token": os.getenv("MAPBOX_TOKEN", "")
     }
 
 
