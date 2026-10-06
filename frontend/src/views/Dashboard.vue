@@ -183,11 +183,9 @@
 
             <!-- 4. SITUATION BRIEFING (Boxed & Padded) -->
             <div class="summary-card glass-subpanel">
-              <span class="card-section-label">{{ $t('common.details') }}</span>
+              <span class="card-section-label">AI SITUATIONAL ASSESSMENT</span>
               <p class="summary-text">
-                {{ formatIncidentType(selectedIncidentData.type) }} activity near
-                {{ selectedIncidentData.location }} is currently
-                {{ selectedIncidentData.status }} and remains under active monitoring.
+                {{ aiPlan?.severity_assessment || `${formatIncidentType(selectedIncidentData.type, selectedIncidentData.location)} activity near ${selectedIncidentData.location} is currently ${selectedIncidentData.status} and remains under active monitoring.` }}
               </p>
             </div>
           </div>
@@ -211,55 +209,84 @@
           </div>
 
           <div class="detail-content">
-            <div class="detail-item">
-              <label>{{ $t('incidents.location') }}</label>
-              <div class="location-value">📍 {{ selectedIncidentData.location }}</div>
-            </div>
+            <!-- 1. AI TACTICAL RESPONSE (Mobile) -->
+            <div class="ai-decision-plan">
+              <label class="ai-plan-title">🤖 AI Tactical Response</label>
+              
+              <div v-if="isLoadingInsights" class="ai-loading">
+                <span class="spinner">⟳</span> Generating country-specific action plan...
+              </div>
+              
+              <div v-else-if="aiPlan" class="ai-plan-content">
+                <div class="country-context-tag">{{ aiPlan.country_context }}</div>
+                
+                <h5 class="section-subtitle">Tactical Actions:</h5>
+                <ul class="action-steps">
+                  <li v-for="(act, idx) in aiPlan.immediate_actions" :key="idx">
+                    {{ act }}
+                  </li>
+                </ul>
 
-            <div class="detail-item">
-              <label>{{ $t('incidents.status') }}</label>
-              <div class="status-badge" :class="selectedIncidentData.status">
-                {{ selectedIncidentData.status.toUpperCase() }}
+                <h5 class="section-subtitle">Evacuation Corridor:</h5>
+                <p class="evac-guidance">{{ aiPlan.evacuation_guidance }}</p>
+
+                <h5 class="section-subtitle">Resource Mobilization:</h5>
+                <div class="resource-grid">
+                  <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-pill">
+                    <strong>{{ res.resource }}:</strong> {{ res.quantity }} ({{ res.status }})
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="detail-item">
-              <label>{{ $t('incidents.threatScore') }}</label>
-              <div class="threat-score">{{ getThreatScore(selectedIncidentData) }}/100</div>
+            <!-- 2. INCIDENT PROFILE (Mobile) -->
+            <div class="profile-card glass-subpanel">
+              <div class="profile-item">
+                <span class="card-section-label">{{ $t('incidents.location') }}</span>
+                <div class="profile-location">📍 {{ selectedIncidentData.location }}</div>
+              </div>
+
+              <div class="profile-split-row">
+                <div class="profile-item">
+                  <span class="card-section-label">{{ $t('incidents.status') }}</span>
+                  <div class="status-badge" :class="selectedIncidentData.status">
+                    {{ selectedIncidentData.status.toUpperCase() }}
+                  </div>
+                </div>
+                <div class="profile-item align-right">
+                  <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
+                  <div class="threat-score-pill">
+                    <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
+                    <span class="threat-score-max">/100</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div class="divider"></div>
-
-            <div class="detail-item">
-              <label>{{ $t('incidents.detectionTime') }}</label>
-              <div class="value">{{ formatDate(selectedIncidentData.detectionTime) }}</div>
+            <!-- 3. COMPACT STATS GRID (Mobile) -->
+            <div class="metadata-grid glass-subpanel">
+              <div class="detail-item">
+                <label>{{ $t('incidents.affectedArea') }}</label>
+                <div class="metric-value">{{ selectedIncidentData.affectedArea.toFixed(1) }} km²</div>
+              </div>
+              <div class="detail-item">
+                <label>{{ $t('incidents.population') }}</label>
+                <div class="metric-value">{{ selectedIncidentData.affectedPopulation.toLocaleString() }}</div>
+              </div>
+              <div class="detail-item">
+                <label>{{ $t('incidents.trend') }}</label>
+                <div class="trend-value">+{{ selectedIncidentData.trend.toFixed(1) }} km²/h</div>
+              </div>
+              <div class="detail-item">
+                <label>{{ $t('incidents.forecast') }}</label>
+                <div class="forecast-value">+{{ selectedIncidentData.forecast6h.toFixed(1) }} km²</div>
+              </div>
             </div>
 
-            <div class="detail-item">
-              <label>{{ $t('incidents.affectedArea') }}</label>
-              <div class="metric-value">{{ selectedIncidentData.affectedArea.toFixed(1) }} km²</div>
-            </div>
-
-            <div class="detail-item">
-              <label>{{ $t('incidents.population') }}</label>
-              <div class="metric-value">{{ selectedIncidentData.affectedPopulation.toLocaleString() }}</div>
-            </div>
-
-            <div class="detail-item">
-              <label>{{ $t('incidents.trend') }}</label>
-              <div class="trend-value">+{{ selectedIncidentData.trend.toFixed(1) }} km²/h</div>
-            </div>
-
-            <div class="detail-item">
-              <label>{{ $t('incidents.forecast') }}</label>
-              <div class="forecast-value">+{{ selectedIncidentData.forecast6h.toFixed(1) }} km²</div>
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="summary-section">
-              <label>{{ $t('common.details') }}</label>
-              <p>
+            <!-- 4. SITUATION BRIEFING (Mobile) -->
+            <div class="summary-card glass-subpanel">
+              <span class="card-section-label">{{ $t('common.details') }}</span>
+              <p class="summary-text">
                 {{ formatIncidentType(selectedIncidentData.type) }} activity near
                 {{ selectedIncidentData.location }} is currently
                 {{ selectedIncidentData.status }} and remains under active monitoring.
@@ -269,21 +296,53 @@
         </div>
       </transition>
 
-      <!-- Right: AI Insights (Hidden when detail open) -->
+      <!-- Right: AI Insights (Default view when no incident is selected) -->
       <aside v-if="!selectedIncidentData" class="insights-panel glass-panel">
-        <h3>🤖 {{ $t('dashboard.aiInsights') }}</h3>
-        <div v-if="alertsStore.criticalInsights.length" class="insights-list">
-          <div v-for="insight in alertsStore.criticalInsights" :key="insight.id" class="insight-item">
-            <div class="action">{{ insight.action }}</div>
-            <div class="meta">{{ insight.estimatedAffected.toLocaleString() }} people</div>
+        <div class="insights-panel-header">
+          <h3>🤖 {{ $t('dashboard.aiInsights') }}</h3>
+          <span class="ai-live-badge">REAL-TIME</span>
+        </div>
+
+        <!-- Global Situation Assessment Summary -->
+        <div class="ai-overview-card glass-subpanel">
+          <div class="overview-title">GLOBAL SITUATION ASSESSMENT</div>
+          <p class="overview-text">
+            Autonomous threat detection is actively monitoring 
+            <strong style="color: #38bdf8;">{{ filteredIncidents.length }} active hazards</strong>. 
+            Prioritizing emergency response for high-severity clusters below.
+          </p>
+        </div>
+
+        <div class="insights-subheading">CRITICAL PRIORITY ACTIONS:</div>
+
+        <div v-if="liveCriticalInsights.length" class="insights-list">
+          <div 
+            v-for="insight in liveCriticalInsights" 
+            :key="insight.id" 
+            class="insight-item-interactive glass-subpanel"
+            @click="expandIncident(insight.incidentId)"
+            title="Click to open tactical response plan"
+          >
+            <div class="insight-top">
+              <span class="insight-type-tag">{{ getIncidentIcon(insight.type) }} {{ insight.type.toUpperCase() }}</span>
+              <span class="insight-score" :class="getSeverityClass(insight.threatScore)">
+                {{ insight.threatScore }}/100
+              </span>
+            </div>
+            <div class="insight-action">{{ insight.action }}</div>
+            <div class="insight-meta">
+              <span>👥 {{ insight.estimatedAffected.toLocaleString() }} at risk</span>
+              <span class="insight-inspect">Inspect Plan →</span>
+            </div>
           </div>
         </div>
-        <p v-else class="no-insights">{{ $t('alerts.noAlerts') }}</p>
+        <p v-else class="no-insights">No critical priority threats detected.</p>
       </aside>
     </div>
 
-    <!-- Bottom: Metrics & Telemetry Bar -->
+    <!-- Bottom: Metrics & Live Operational Telemetry Bar -->
     <footer class="metrics-section glass-panel">
+      <!-- Left: Macro Stats -->
       <div class="metrics-group">
         <div class="metric">
           <span class="label">{{ $t('dashboard.totalAffectedArea') }}</span>
@@ -299,32 +358,40 @@
         </div>
       </div>
 
-      <!-- Command Center Telemetry: Multi-Agency Health & Live Feed -->
-      <div class="telemetry-bar">
-        <div class="telemetry-item">
-          <span class="dot live"></span>
-          <span class="telemetry-name">NASA</span>
+      <!-- Right: Operational Emergency Telemetry -->
+      <div class="operational-telemetry-hud">
+        <!-- Option 1: Multi-Hazard Breakdown -->
+        <div class="hazard-breakdown-group">
+          <div class="hazard-pill" title="Active Wildfires">
+            <span class="h-icon">🔥</span>
+            <span class="h-name">Fires</span>
+            <span class="h-count">{{ filteredHazardCounts.fire }}</span>
+          </div>
+          <div class="hazard-pill" title="Active Floods">
+            <span class="h-icon">💧</span>
+            <span class="h-name">Floods</span>
+            <span class="h-count">{{ filteredHazardCounts.flood }}</span>
+          </div>
+          <div class="hazard-pill" title="Active Seismic / Earthquakes">
+            <span class="h-icon">🌍</span>
+            <span class="h-name">Seismic</span>
+            <span class="h-count">{{ filteredHazardCounts.earthquake }}</span>
+          </div>
+          <div class="hazard-pill" title="Severe Storms">
+            <span class="h-icon">🌀</span>
+            <span class="h-name">Storms</span>
+            <span class="h-count">{{ filteredHazardCounts.storm }}</span>
+          </div>
         </div>
-        <div class="telemetry-item">
-          <span class="dot live"></span>
-          <span class="telemetry-name">GDACS</span>
-        </div>
-        <div class="telemetry-item">
-          <span class="dot live"></span>
-          <span class="telemetry-name">USGS</span>
-        </div>
-        <div class="telemetry-item">
-          <span class="dot live"></span>
-          <span class="telemetry-name">NOAA</span>
-        </div>
-        <div class="telemetry-item">
-          <span class="dot live"></span>
-          <span class="telemetry-name">WEATHER</span>
-        </div>
+
         <div class="telemetry-divider"></div>
-        <div class="telemetry-item status-badge-item">
-          <span class="telemetry-engine">AI: VERTEX 1.5</span>
-          <span class="telemetry-ws">STREAM: 🟢 LIVE</span>
+
+        <!-- Option 2: Chronological Latest Signal -->
+        <div v-if="latestIncident" class="latest-signal-pill" @click="expandIncident(latestIncident.id)" title="Click to inspect latest signal">
+          <span class="pulse-beacon"></span>
+          <span class="signal-tag">LATEST:</span>
+          <span class="signal-location">{{ latestIncident.location }}</span>
+          <span class="signal-time">{{ formatTimeAgo(latestIncident.detectionTime) }}</span>
         </div>
       </div>
     </footer>
@@ -453,6 +520,68 @@ const totalPopulation = computed(() =>
 )
 const activeIncidentsCount = computed(() => filteredIncidents.value.length)
 
+// Hazard breakdown dynamically computed from filtered list
+const filteredHazardCounts = computed(() => {
+  const counts = { fire: 0, flood: 0, earthquake: 0, storm: 0 }
+  filteredIncidents.value.forEach((i) => {
+    const t = (i.type || '').toLowerCase()
+    if (t.includes('fire') || t.includes('wildfire')) counts.fire++
+    else if (t.includes('flood')) counts.flood++
+    else if (t.includes('earthquake') || t.includes('seismic')) counts.earthquake++
+    else if (t.includes('storm') || t.includes('weather') || t.includes('cyclone') || t.includes('typhoon')) counts.storm++
+  })
+  return counts
+})
+
+// Chronologically latest disaster event from filtered list
+const latestIncident = computed(() => {
+  if (!filteredIncidents.value.length) return null
+  const sorted = [...filteredIncidents.value].sort(
+    (a, b) => new Date(b.detectionTime).getTime() - new Date(a.detectionTime).getTime()
+  )
+  return sorted[0]
+})
+
+// Relative time formatting for emergency telemetry
+const formatTimeAgo = (date: Date | string) => {
+  if (!date) return ''
+  const d = new Date(date)
+  const diffMinutes = Math.floor((Date.now() - d.getTime()) / 60000)
+  if (diffMinutes < 1) return 'Just now'
+  if (diffMinutes < 60) return `${diffMinutes}m ago`
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) return `${diffHours}h ago`
+  return `${Math.floor(diffHours / 24)}d ago`
+}
+
+// Live dynamic critical insights derived from real PostgreSQL database events!
+const liveCriticalInsights = computed(() => {
+  const topIncidents = [...filteredIncidents.value]
+    .sort((a, b) => (b.threatScore || 0) - (a.threatScore || 0))
+    .slice(0, 3)
+
+  return topIncidents.map(inc => {
+    const type = (inc.type || 'Hazard').toLowerCase()
+    let action = ''
+    if (type.includes('fire')) action = `Deploy perimeter containment & thermal surveillance in ${inc.location}`
+    else if (type.includes('flood')) action = `Establish water barriers & riverbank evacuation corridor in ${inc.location}`
+    else if (type.includes('earthquake') || type.includes('seismic')) action = `Dispatch search & rescue units to epicenter in ${inc.location}`
+    else if (type.includes('storm')) action = `Issue high-wind & storm surge shelter warnings for ${inc.location}`
+    else action = `Initiate multi-agency rapid response mobilization in ${inc.location}`
+
+    return {
+      id: inc.id,
+      incidentId: inc.id,
+      type: inc.type || 'Hazard',
+      location: inc.location,
+      threatScore: inc.threatScore || 50,
+      action,
+      estimatedAffected: inc.affectedPopulation || 15000,
+      severity: (inc.threatScore && inc.threatScore >= 80) ? 'critical' : 'high'
+    }
+  })
+})
+
 const sortedAndPaginatedIncidents = computed(() => {
   const startIndex = (currentPage.value - 1) * cardsPerPage.value
   const endIndex = startIndex + cardsPerPage.value
@@ -574,17 +703,76 @@ const formatDate = (date: Date) =>
     minute: '2-digit',
   })
 
-const formatIncidentType = (type: IncidentLevel1['type']) =>
-  type.charAt(0).toUpperCase() + type.slice(1)
+const formatIncidentType = (type: string, location?: string): string => {
+  const loc = (location || '').toLowerCase()
+  const t = (type || '').toLowerCase()
 
-const getIncidentIcon = (type: IncidentLevel1['type']) => {
+  // 1. High-fidelity meteorological specific classification
+  if (loc.includes('super typhoon')) return 'Super Typhoon'
+  if (loc.includes('typhoon')) return 'Typhoon'
+  if (loc.includes('hurricane')) return 'Hurricane'
+  if (loc.includes('cyclone')) return 'Cyclone'
+  if (loc.includes('tornado')) return 'Tornado'
+
+  // 2. OpenWeather atmospheric advisories
+  if (t === 'other' || t === 'weather') {
+    return 'Weather Advisory'
+  }
+
+  // 3. Standard clean mappings
+  const map: Record<string, string> = {
+    fire: 'Wildfire',
+    wildfire: 'Wildfire',
+    flood: 'Flood',
+    earthquake: 'Earthquake',
+    seismic: 'Seismic Event',
+    storm: 'Storm System',
+    winter_storm: 'Winter Storm',
+    dust_storm: 'Dust Storm',
+    volcano: 'Volcano',
+    drought: 'Drought',
+    landslide: 'Landslide',
+    heat_wave: 'Heat Wave',
+    cold_wave: 'Cold Wave',
+    snow_ice: 'Snow & Ice',
+    tsunami: 'Tsunami'
+  }
+
+  if (map[t]) return map[t]
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Weather Advisory'
+}
+
+const getIncidentIcon = (type: string, location?: string): string => {
+  const loc = (location || '').toLowerCase()
+  const t = (type || '').toLowerCase()
+
+  if (loc.includes('typhoon') || loc.includes('hurricane') || loc.includes('cyclone')) return '🌀'
+  if (loc.includes('tornado')) return '🌪️'
+  if (loc.includes('fire')) return '🔥'
+  if (loc.includes('flood')) return '💧'
+  if (loc.includes('quake') || loc.includes('seismic')) return '🌍'
+
   const icons: Record<string, string> = {
     fire: '🔥',
+    wildfire: '🔥',
     flood: '💧',
-    landslide: '🏔️',
-    earthquake: '📍',
+    earthquake: '🌍',
+    seismic: '🌍',
+    storm: '⛈️',
+    winter_storm: '❄️',
+    dust_storm: '🌪️',
+    volcano: '🌋',
+    landslide: '⛰️',
+    drought: '🌾',
+    heat_wave: '🌡️',
+    cold_wave: '❄️',
+    snow_ice: '❄️',
+    tsunami: '🌊',
+    weather: '🌤️',
+    other: '🌤️'
   }
-  return icons[type] || '⚠️'
+
+  return icons[t] || '🌤️'
 }
 
 const getThreatScore = (incident: IncidentLevel1 | null): number => {
@@ -597,6 +785,13 @@ const getThreatScore = (incident: IncidentLevel1 | null): number => {
     high: 75,
   }
   return severityMap[incident.severity] || 75
+}
+
+const getSeverityClass = (score?: number) => {
+  const s = score ?? 50
+  if (s >= 80) return 'critical'
+  if (s >= 65) return 'high'
+  return 'medium'
 }
 
 // Native browser internationalization for country names (supports all 249 countries dynamically without hardcoding)
@@ -1314,17 +1509,69 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Insights Panel */
+/* Insights Panel - Enterprise AI Situational Assessment */
 .insights-panel {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow-y: auto;
 }
 
-.insights-panel h3 {
-  margin: 0 0 12px 0;
+.insights-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.insights-panel-header h3 {
+  margin: 0;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.ai-live-badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
+.ai-overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.overview-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.8px;
+}
+
+.overview-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.insights-subheading {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-top: 4px;
 }
 
 .insights-list {
@@ -1333,22 +1580,84 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   gap: 8px;
 }
 
-.insight-item {
-  background: var(--critical-surface);
-  border: 1px solid var(--critical-border);
-  border-radius: 8px;
-  padding: 8px;
+.insight-item-interactive {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.insight-item-interactive:hover {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+.insight-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.insight-type-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.insight-score {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.insight-score.critical {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.insight-score.high {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.insight-score.medium {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.insight-action {
   font-size: 12px;
-}
-
-.action {
   font-weight: 600;
-  color: var(--critical);
-  margin-bottom: 4px;
+  line-height: 1.4;
+  color: #f8fafc;
 }
 
-.meta {
-  color: var(--text-secondary);
+.insight-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.insight-inspect {
+  color: #38bdf8;
+  font-weight: 700;
 }
 
 .no-insights {
@@ -1357,7 +1666,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   margin: 0;
 }
 
-/* Metrics Footer - Full-Width Command Center Telemetry */
+/* Metrics Footer - Full-Width Command Center Bar */
 .metrics-section {
   display: flex;
   align-items: center;
@@ -1394,52 +1703,117 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   color: #ffffff;
 }
 
-/* Command Center Multi-Agency Telemetry Bar */
-.telemetry-bar {
+/* Operational Emergency Telemetry HUD */
+.operational-telemetry-hud {
   display: flex;
   align-items: center;
   gap: 16px;
   background: rgba(0, 0, 0, 0.35);
-  padding: 8px 18px;
+  padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.telemetry-item {
+.hazard-breakdown-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hazard-pill {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: monospace;
-  font-size: 11px;
-  color: #94a3b8;
-  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
 }
 
-.telemetry-item .dot.live {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
+.hazard-pill .h-icon {
+  font-size: 13px;
+}
+
+.hazard-pill .h-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.3px;
+}
+
+.hazard-pill .h-count {
+  font-weight: 800;
+  color: #ffffff;
+  font-family: monospace;
+}
+
+/* Hide hazard text name on mobile/tablets to preserve compact icon look */
+@media (max-width: 1199px) {
+  .hazard-pill .h-name {
+    display: none;
+  }
 }
 
 .telemetry-divider {
   width: 1px;
-  height: 18px;
+  height: 20px;
   background: rgba(255, 255, 255, 0.15);
 }
 
-.telemetry-engine {
-  color: #38bdf8;
-  font-size: 11px;
-  font-weight: 800;
+.latest-signal-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  transition: all 0.2s ease;
 }
 
-.telemetry-ws {
-  color: #10b981;
-  font-size: 11px;
+.latest-signal-pill:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+}
+
+.pulse-beacon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+  animation: beaconPulse 2s infinite;
+}
+
+@keyframes beaconPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.signal-tag {
+  font-size: 10px;
   font-weight: 800;
-  margin-left: 12px;
+  color: #10b981;
+  letter-spacing: 0.5px;
+}
+
+.signal-location {
+  font-size: 12px;
+  font-weight: 700;
+  color: #38bdf8;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.signal-time {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: monospace;
 }
 
 /* AI Tactical Response - High Contrast Styling */
@@ -2357,28 +2731,76 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
     color: var(--text-secondary);
   }
 
-  /* Metrics Section */
+  /* Metrics Section on Mobile */
   .metrics-section {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    height: auto;
-    padding: 12px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    height: auto !important;
+    min-height: auto !important;
+    padding: 12px !important;
     order: 5;
   }
 
+  .metrics-group {
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100%;
+    gap: 8px !important;
+  }
+
   .metric {
-    padding: 10px;
-    gap: 4px;
+    flex: 1;
+    padding: 8px 6px;
+    gap: 2px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 6px;
+    align-items: center;
   }
 
   .metric .label {
-    font-size: 10px;
+    font-size: 9px;
+    text-align: center;
   }
 
   .metric .value {
-    font-size: 15px;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .operational-telemetry-hud {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100%;
+    padding: 10px !important;
+  }
+
+  .hazard-breakdown-group {
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100%;
+    gap: 4px;
+  }
+
+  .hazard-pill {
+    flex: 1;
+    justify-content: center;
+    padding: 6px 4px !important;
+  }
+
+  .telemetry-divider {
+    display: none !important;
+  }
+
+  .latest-signal-pill {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .signal-location {
+    max-width: 160px;
   }
 
   .three-d-placeholder {
@@ -2881,17 +3303,8 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
     font-size: 11px;
   }
 
-  /* Metrics Section */
-  .metrics-section {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    height: auto;
-    padding: 10px;
-    order: 5;
-  }
-
   .metric {
-    padding: 8px;
+    padding: 6px;
     gap: 2px;
     background: rgba(255, 255, 255, 0.02);
     border-radius: 4px;

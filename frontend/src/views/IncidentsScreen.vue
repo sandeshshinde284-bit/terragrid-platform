@@ -52,7 +52,7 @@
         <table class="incidents-table">
           <thead>
             <tr>
-              <th>{{ $t('common.details') }}</th>
+              <th>Hazard Type</th>
               <th>{{ $t('incidents.location') }}</th>
               <th>{{ $t('incidents.status') }}</th>
               <th>{{ $t('incidents.threatScore') }}</th>
@@ -61,12 +61,15 @@
               <th>{{ $t('incidents.trend') }}</th>
               <th>{{ $t('incidents.detectionTime') }}</th>
               <th>Recommended Action</th>
-              <th>{{ $t('common.details') }}</th>
+              <th>Analysis</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="incident in filteredIncidents" :key="incident.id" class="incident-row" :class="{ expanded: expandedIncidentId === incident.id }" @click="toggleExpanded(incident.id)">
-              <td class="detail-cell">{{ iconMap[incident.type] || '⚠️' }}</td>
+              <td class="type-cell">
+                <span class="type-icon">{{ getIcon(incident.type, incident.location) }}</span>
+                <span class="type-name">{{ formatType(incident.type, incident.location) }}</span>
+              </td>
               <td class="location-cell">{{ incident.location }}</td>
               <td class="status-cell">
                 <span class="status-badge" :class="incident.status">{{ incident.status.toUpperCase() }}</span>
@@ -135,10 +138,93 @@ const expandedIncidentId = ref<string | null>(null)
 const iconMap: Record<string, string> = {
   flood: '💧',
   earthquake: '🌍',
+  seismic: '🌍',
   fire: '🔥',
+  wildfire: '🔥',
   hurricane: '🌀',
+  storm: '🌀',
+  cyclone: '🌀',
+  typhoon: '🌀',
   volcano: '🌋',
   landslide: '⛰️',
+  drought: '🌾',
+  snow_ice: '❄️',
+  cold_wave: '❄️',
+  heat_wave: '🌡️',
+  temperature_extreme: '🌡️',
+  tsunami: '🌊',
+}
+
+const getIcon = (type: string, location?: string): string => {
+  const loc = (location || '').toLowerCase()
+  const t = (type || '').toLowerCase()
+
+  if (loc.includes('typhoon') || loc.includes('hurricane') || loc.includes('cyclone')) return '🌀'
+  if (loc.includes('tornado')) return '🌪️'
+  if (loc.includes('fire')) return '🔥'
+  if (loc.includes('flood')) return '💧'
+  if (loc.includes('quake') || loc.includes('seismic')) return '🌍'
+
+  const icons: Record<string, string> = {
+    fire: '🔥',
+    wildfire: '🔥',
+    flood: '💧',
+    earthquake: '🌍',
+    seismic: '🌍',
+    storm: '⛈️',
+    winter_storm: '❄️',
+    dust_storm: '🌪️',
+    volcano: '🌋',
+    landslide: '⛰️',
+    drought: '🌾',
+    heat_wave: '🌡️',
+    cold_wave: '❄️',
+    snow_ice: '❄️',
+    tsunami: '🌊',
+    weather: '🌤️',
+    other: '🌤️'
+  }
+
+  return icons[t] || '🌤️'
+}
+
+const formatType = (type: string, location?: string): string => {
+  const loc = (location || '').toLowerCase()
+  const t = (type || '').toLowerCase()
+
+  // 1. High-fidelity meteorological specific classification
+  if (loc.includes('super typhoon')) return 'Super Typhoon'
+  if (loc.includes('typhoon')) return 'Typhoon'
+  if (loc.includes('hurricane')) return 'Hurricane'
+  if (loc.includes('cyclone')) return 'Cyclone'
+  if (loc.includes('tornado')) return 'Tornado'
+
+  // 2. OpenWeather atmospheric advisories
+  if (t === 'other' || t === 'weather') {
+    return 'Weather Advisory'
+  }
+
+  // 3. Standard clean mappings
+  const map: Record<string, string> = {
+    fire: 'Wildfire',
+    wildfire: 'Wildfire',
+    flood: 'Flood',
+    earthquake: 'Earthquake',
+    seismic: 'Seismic Event',
+    storm: 'Storm System',
+    winter_storm: 'Winter Storm',
+    dust_storm: 'Dust Storm',
+    volcano: 'Volcano',
+    drought: 'Drought',
+    landslide: 'Landslide',
+    heat_wave: 'Heat Wave',
+    cold_wave: 'Cold Wave',
+    snow_ice: 'Snow & Ice',
+    tsunami: 'Tsunami'
+  }
+
+  if (map[t]) return map[t]
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Weather Advisory'
 }
 
 const filteredIncidents = computed(() => {
@@ -182,17 +268,17 @@ const getTrendDirection = (trend: number): string => {
 }
 
 const getRecommendedAction = (incident: IncidentLevel1): string => {
-  const threatLevel = incident.threatScore
-  const population = incident.affectedPopulation
+  const threat = incident.threatScore ?? 50
+  const pop = incident.affectedPopulation || 0
   
-  if (threatLevel >= 8 && population > 5000) {
-    return `EVACUATE ZONE (${(population / 1000).toFixed(0)}K people at high risk)`
-  } else if (threatLevel >= 6 && population > 2000) {
-    return `ACTIVATE EMERGENCY SHELTERS (${(population / 1000).toFixed(0)}K people)`
-  } else if (threatLevel >= 4) {
-    return `DEPLOY EMERGENCY RESOURCES & MONITOR`
+  if (threat >= 80) {
+    return `🚨 MANDATORY EVACUATION (${(pop / 1000).toFixed(0)}K at risk)`
+  } else if (threat >= 65) {
+    return `⚠️ PREPARE SHELTERS & DEPLOY FIRST RESPONDERS`
+  } else if (threat >= 50) {
+    return `🛡️ ACTIVATE PERIMETER MONITORING`
   } else {
-    return `MAINTAIN MONITORING & ALERT STATUS`
+    return `📡 SENSOR SURVEILLANCE ACTIVE`
   }
 }
 
@@ -204,9 +290,34 @@ const toggleExpanded = (id: string) => {
   expandedIncidentId.value = expandedIncidentId.value === id ? null : id
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (eventsStore.allIncidents.length === 0) {
-    // [STRICT LIVE MODE] eventsStore.initMockData()
+    try {
+      const host = window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin
+      const res = await fetch(`${host}/api/v1/incidents?limit=50`)
+      if (res.ok) {
+        const raw = await res.json()
+        if (raw && raw.length > 0) {
+          eventsStore.setIncidents(raw.map((e: any, idx: number) => ({
+            id: e.id || `inc-${idx}`,
+            type: e.event_type || 'fire',
+            location: e.location_name || 'Unknown',
+            countryCode: e.countryCode || 'UN',
+            severity: e.severity || 'medium',
+            status: e.status || 'active',
+            threatScore: e.impact?.risk_score ?? 50,
+            detectionTime: new Date(e.event_timestamp || Date.now()),
+            affectedArea: e.impact?.affected_area_km2 ?? 150,
+            affectedPopulation: e.impact?.affected_population ?? 50000,
+            trend: e.impact?.trend_km2_per_hour ?? 5.2,
+            forecast6h: e.impact?.forecast_6h_km2 ?? 31.2,
+            coordinates: [e.latitude, e.longitude] as [number, number],
+          })))
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to hydrate incidents in IncidentsScreen:', err)
+    }
   }
 })
 </script>
@@ -353,8 +464,27 @@ onMounted(() => {
 /* Specific Column Widths */
 .incidents-table th:nth-child(1),
 .incidents-table td:nth-child(1) {
-  width: 50px;
-  text-align: center;
+  min-width: 130px;
+  text-align: left;
+}
+
+.type-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.type-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.type-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .incidents-table th:nth-child(2),

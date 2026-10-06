@@ -74,9 +74,9 @@ type MapMode = 'tactical' | 'satellite' | 'globe'
 const currentMode = ref<MapMode>('tactical')
 
 const MAP_STYLES = {
-  tactical: 'mapbox://styles/mapbox/navigation-night-v1', // Vivid midnight blue oceans, charcoal land, glowing neon borders
-  satellite: 'mapbox://styles/mapbox/satellite-streets-v12', // Real-world photorealistic satellite imagery + street/border vectors
-  globe: 'mapbox://styles/mapbox/satellite-streets-v12' // Real satellite on 3D rotating globe sphere
+  tactical: 'mapbox://styles/mapbox/standard', // Mapbox Standard with 3D buildings & twilight lighting (The Shard)
+  satellite: 'mapbox://styles/mapbox/standard-satellite', // Clean vertical top-down photorealistic satellite
+  globe: 'mapbox://styles/mapbox/standard-satellite' // Pristine Blue Marble 3D globe with glowing atmosphere
 }
 
 const getIncidentIcon = (type: string) => {
@@ -104,20 +104,35 @@ const getSeverityColor = (score?: number) => {
   return '#38bdf8' // bright cyan/sky blue
 }
 
-const applyAtmosphere = () => {
+const applyModeSettings = () => {
   if (!map.value) return
+
+  // Clean vertical top-down view (0° tilt)
+  map.value.easeTo({ pitch: 0, bearing: 0, duration: 600 })
+
   if (currentMode.value === 'globe') {
+    // 1. Pristine Blue Marble 3D Orbital Globe (matching unnamed.jpg)
     map.value.setProjection({ name: 'globe' })
     map.value.setFog({
       color: 'rgb(11, 19, 43)', // Lower atmosphere
-      'high-color': 'rgb(14, 165, 233)', // Glowing upper cyan atmosphere
+      'high-color': 'rgb(14, 165, 233)', // Glowing cyan halo
       'horizon-blend': 0.15,
       'space-color': 'rgb(8, 12, 22)', // Deep space
       'star-intensity': 0.8
     })
-  } else {
+  } else if (currentMode.value === 'satellite') {
+    // 2. Crystal-Clear Standard Satellite (Clean Vertical Top-Down)
+    map.value.setFog(null as any)
     map.value.setProjection({ name: 'mercator' })
-    map.value.setFog(null as any) // Clear fog in 2D modes
+  } else {
+    // 3. Tactical Mapbox Standard (Dusk/Night preset with 3D buildings like The Shard)
+    map.value.setFog(null as any)
+    map.value.setProjection({ name: 'mercator' })
+    try {
+      (map.value as any).setConfigProperty('basemap', 'lightPreset', 'dusk')
+    } catch {
+      // Fallback if preset unavailable
+    }
   }
 }
 
@@ -130,12 +145,12 @@ const setMode = (mode: MapMode) => {
   if (MAP_STYLES[mode] !== MAP_STYLES[prevMode]) {
     map.value.setStyle(MAP_STYLES[mode])
     map.value.once('style.load', () => {
-      applyAtmosphere()
+      applyModeSettings()
       renderMarkers()
     })
   } else {
-    // Same style, just projection switch (e.g. satellite to globe)
-    applyAtmosphere()
+    // Same style, apply globe projection dynamically
+    applyModeSettings()
   }
 }
 
@@ -492,5 +507,32 @@ onUnmounted(() => {
   background: rgba(14, 165, 233, 0.3);
   border-color: #38bdf8;
   transform: scale(1.05);
+}
+
+/* Responsive HUD Controls for Mobile (< 640px) to prevent overlap */
+@media (max-width: 640px) {
+  .style-switcher-hud {
+    top: 8px;
+    left: 8px;
+    gap: 2px;
+    padding: 2px 4px;
+  }
+  .mode-btn {
+    padding: 6px 8px;
+  }
+  .mode-btn .mode-label {
+    display: none;
+  }
+  .map-controls {
+    top: 8px;
+    right: 8px;
+    gap: 4px;
+    padding: 4px;
+  }
+  .control-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
 }
 </style>

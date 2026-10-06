@@ -94,6 +94,20 @@ body {
   overflow: hidden;
 }
 
+@media (max-width: 1023px) {
+  html, body {
+    height: auto;
+    min-height: 100%;
+    overflow-y: auto;
+  }
+  #app {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 main {
   flex: 1;
   overflow-y: auto;
@@ -129,4 +143,12 @@ a {
 
 a:hover {
   color: var(--accent-green);
+}
+
+/* White-label Mapbox (Hide watermarks for Enterprise UI) */
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib,
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right {
+  display: none !important;
 }
