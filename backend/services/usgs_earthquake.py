@@ -40,7 +40,15 @@ class USGSEarthquakeService:
         # 12-Factor App: Strict Environment-Driven Mock Guard
         if use_mock:
             logger.info(" USGS Earthquakes: 🧪 MOCK MODE ENABLED via .env")
-            return cls._get_mock_data()
+            try:
+                import json
+                from pathlib import Path
+                mock_path = Path(__file__).parent.parent / "data" / "mocks" / "usgs_earthquake.json"
+                with open(mock_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load USGS mock: {e}")
+                return []
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -123,54 +131,3 @@ class USGSEarthquakeService:
         except Exception as e:
             logger.error(f"Error parsing USGS event: {str(e)}")
             return None
-    
-    @classmethod
-    def _get_mock_data(cls) -> List[Dict[str, Any]]:
-        """Return mock USGS earthquake data for testing"""
-        now = datetime.utcnow()
-        return [
-            {
-                "event_type": "earthquake",
-                "severity": "high",
-                "status": "detected",
-                "latitude": 37.0,
-                "longitude": -121.5,
-                "location_name": "San Francisco Bay Area, California",
-                "source": "USGS_EARTHQUAKES",
-                "event_timestamp": now - timedelta(hours=3),
-                "confidence": 0.98,
-                "is_verified": True,
-                "data": {
-                    "usgs_id": "us1000test01",
-                    "magnitude": 5.2,
-                    "depth_km": 12.5,
-                    "tsunami": False,
-                    "alert_level": "yellow",
-                    "url": "https://earthquake.usgs.gov",
-                    "felt_reports": 150,
-                    "type": "earthquake",
-                }
-            },
-            {
-                "event_type": "earthquake",
-                "severity": "medium",
-                "status": "detected",
-                "latitude": 34.3,
-                "longitude": -118.8,
-                "location_name": "Los Angeles area, California",
-                "source": "USGS_EARTHQUAKES",
-                "event_timestamp": now - timedelta(hours=8),
-                "confidence": 0.98,
-                "is_verified": True,
-                "data": {
-                    "usgs_id": "us1000test02",
-                    "magnitude": 4.1,
-                    "depth_km": 8.3,
-                    "tsunami": False,
-                    "alert_level": "none",
-                    "url": "https://earthquake.usgs.gov",
-                    "felt_reports": 45,
-                    "type": "earthquake",
-                }
-            },
-        ]

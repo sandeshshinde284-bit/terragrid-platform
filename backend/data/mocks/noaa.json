@@ -1,0 +1,19 @@
+[
+  {
+    "event_type": "storm",
+    "severity": "high",
+    "status": "active",
+    "latitude": 38.58,
+    "longitude": -121.49,
+    "location_name": "Sacramento High Wind Warning",
+    "source": "NOAA_NWS",
+    "event_timestamp": "2026-10-06T12:00:00Z",
+    "confidence": 0.85,
+    "is_verified": true,
+    "data": {
+      "noaa_id": "NOAA_MOCK_001",
+      "category": "High Wind Warning",
+      "description": "High wind warning in effect for Sacramento Valley"
+    }
+  }
+]

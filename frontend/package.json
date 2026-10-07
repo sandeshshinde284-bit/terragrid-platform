@@ -13,8 +13,10 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@types/jszip": "^3.4.0",
     "axios": "^1.6.0",
     "date-fns": "^3.0.0",
+    "jszip": "^3.10.2",
     "mapbox-gl": "^3.32.0",
     "pinia": "^2.2.0",
     "pino": "^8.17.0",

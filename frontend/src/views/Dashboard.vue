@@ -15,6 +15,25 @@
               {{ isConnected ? '🟢 Live Updates' : '🔴 Offline' }}
             </span>
           </div>
+
+          <!-- Quick Search Bar -->
+          <div class="sidebar-search-section">
+            <div class="sidebar-search-box">
+              <span class="search-icon">🔍</span>
+              <input
+                v-model="dashboardSearchQuery"
+                type="text"
+                placeholder="Search city, hazard, or country..."
+                class="sidebar-search-input"
+              />
+              <button
+                v-if="dashboardSearchQuery"
+                class="search-clear-btn"
+                @click="dashboardSearchQuery = ''"
+                aria-label="Clear search"
+              >✕</button>
+            </div>
+          </div>
           
           <!-- Country Filter Buttons -->
           <div class="country-filter-section">
@@ -81,16 +100,8 @@
       <!-- Center: Map -->
       <main class="map-section glass-panel">
         <div class="map-container">
-          <div v-if="appStore.viewMode === '2d'" class="map-view">
+          <div class="map-view">
             <MapComponent :incidents="filteredIncidents" :selectedCountry="selectedCountry" />
-          </div>
-          <div v-else class="map-view three-d-view">
-            <div class="three-d-placeholder">
-              <h2>🌐 {{ $t('map.title') }}</h2>
-              <p>California disaster map in 3D perspective</p>
-              <p class="terrain-icon">🏔️</p>
-              <p class="coming-soon">3D view coming in STEP 2</p>
-            </div>
           </div>
         </div>
       </main>
@@ -108,30 +119,72 @@
 
           <div class="detail-content">
             
+            <!-- 1. OPERATIONAL ACTION PLAN -->
             <div class="ai-decision-plan">
-              <label class="ai-plan-title">🤖 AI Tactical Response</label>
+              <div class="ai-plan-header">
+                <span class="ai-pulse-dot"></span>
+                <label class="ai-plan-title">⚡ Operational Action Plan</label>
+                <span class="ai-engine-chip">Live Triage</span>
+              </div>
               
-              <div v-if="isLoadingInsights" class="ai-loading">
-                <span class="spinner">⟳</span> Generating country-specific action plan...
+              <!-- High-Tech Tactical Loading State with Dynamic Stepper & Shimmer Skeletons -->
+              <div v-if="isLoadingInsights" class="ai-tactical-loading">
+                <div class="loading-radar-header">
+                  <div class="radar-ping-ring">
+                    <span class="radar-dot"></span>
+                  </div>
+                  <div class="loading-telemetry-text">
+                    <span class="loading-phase-tag">AI COGNITIVE PROCESSING ACTIVE</span>
+                    <strong class="cycling-step-text">{{ currentLoadingPhaseText }}</strong>
+                  </div>
+                </div>
+
+                <div class="tactical-progress-track">
+                  <div class="tactical-scan-laser"></div>
+                </div>
+
+                <!-- Ghost Skeleton Micro-Cards -->
+                <div class="skeleton-action-cards">
+                  <div class="skeleton-tag shimmer"></div>
+                  <div class="skeleton-card shimmer" v-for="n in 3" :key="n">
+                    <div class="sk-num">0{{ n }}</div>
+                    <div class="sk-lines">
+                      <div class="sk-line full"></div>
+                      <div class="sk-line half"></div>
+                    </div>
+                  </div>
+                  <div class="skeleton-evac shimmer"></div>
+                </div>
               </div>
               
               <div v-else-if="aiPlan" class="ai-plan-content">
-                <div class="country-context-tag">{{ aiPlan.country_context }}</div>
+                <div class="country-context-tag">{{ formatTacticalText(aiPlan.country_context) }}</div>
                 
-                <h5 class="section-subtitle">Tactical Actions:</h5>
-                <ul class="action-steps">
-                  <li v-for="(act, idx) in aiPlan.immediate_actions" :key="idx">
-                    {{ act }}
-                  </li>
-                </ul>
+                <div class="tactical-group">
+                  <span class="group-title">Immediate Action Items:</span>
+                  <div class="tactical-action-cards">
+                    <div v-for="(act, idx) in aiPlan.immediate_actions" :key="idx" class="tactical-action-card">
+                      <span class="action-num">0{{ idx + 1 }}</span>
+                      <span class="action-text">{{ formatTacticalText(act) }}</span>
+                    </div>
+                  </div>
+                </div>
 
-                <h5 class="section-subtitle">Evacuation Corridor:</h5>
-                <p class="evac-guidance">{{ aiPlan.evacuation_guidance }}</p>
+                <div class="tactical-group" v-if="aiPlan.evacuation_guidance">
+                  <span class="group-title">🛣️ Evacuation Routing:</span>
+                  <div class="evacuation-card">
+                    <p class="evac-text">{{ formatTacticalText(aiPlan.evacuation_guidance) }}</p>
+                  </div>
+                </div>
 
-                <h5 class="section-subtitle">Resource Mobilization:</h5>
-                <div class="resource-grid">
-                  <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-pill">
-                    <strong>{{ res.resource }}:</strong> {{ res.quantity }} ({{ res.status }})
+                <div class="tactical-group" v-if="aiPlan.resource_allocation && aiPlan.resource_allocation.length">
+                  <span class="group-title">🚒 Resource Deployment:</span>
+                  <div class="resource-chip-grid">
+                    <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-chip">
+                      <strong class="res-label">{{ res.resource }}:</strong>
+                      <span class="res-qty">{{ res.quantity }}</span>
+                      <span class="res-status" :class="res.status ? res.status.toLowerCase() : ''">{{ res.status }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -153,9 +206,23 @@
                 </div>
                 <div class="profile-item align-right">
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
-                  <div class="threat-score-pill">
+                  <div class="threat-score-pill tooltip-container">
                     <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
                     <span class="threat-score-max">/100</span>
+
+                    <!-- Floating Tactical Tooltip -->
+                    <div class="tactical-tooltip">
+                      <div class="tooltip-header">
+                        <span class="tooltip-dot" :class="getSeverityClass(getThreatScore(selectedIncidentData))"></span>
+                        <strong>THREAT LEVEL: {{ getThreatScore(selectedIncidentData) }}/100</strong>
+                      </div>
+                      <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
+                      <div class="tooltip-factors">
+                        <div class="factor-row"><span>💨 Atmospheric Risk:</span> <strong>Active</strong></div>
+                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? selectedIncidentData.affectedPopulation.toLocaleString() : 'Estimating' }}</strong></div>
+                        <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -183,7 +250,7 @@
 
             <!-- 4. SITUATION BRIEFING (Boxed & Padded) -->
             <div class="summary-card glass-subpanel">
-              <span class="card-section-label">AI SITUATIONAL ASSESSMENT</span>
+              <span class="card-section-label">SITUATION SUMMARY</span>
               <p class="summary-text">
                 {{ aiPlan?.severity_assessment || `${formatIncidentType(selectedIncidentData.type, selectedIncidentData.location)} activity near ${selectedIncidentData.location} is currently ${selectedIncidentData.status} and remains under active monitoring.` }}
               </p>
@@ -210,30 +277,72 @@
 
           <div class="detail-content">
             <!-- 1. AI TACTICAL RESPONSE (Mobile) -->
+            <!-- 1. OPERATIONAL ACTION PLAN -->
             <div class="ai-decision-plan">
-              <label class="ai-plan-title">🤖 AI Tactical Response</label>
+              <div class="ai-plan-header">
+                <span class="ai-pulse-dot"></span>
+                <label class="ai-plan-title">⚡ Operational Action Plan</label>
+                <span class="ai-engine-chip">Live Triage</span>
+              </div>
               
-              <div v-if="isLoadingInsights" class="ai-loading">
-                <span class="spinner">⟳</span> Generating country-specific action plan...
+              <!-- High-Tech Tactical Loading State with Dynamic Stepper & Shimmer Skeletons -->
+              <div v-if="isLoadingInsights" class="ai-tactical-loading">
+                <div class="loading-radar-header">
+                  <div class="radar-ping-ring">
+                    <span class="radar-dot"></span>
+                  </div>
+                  <div class="loading-telemetry-text">
+                    <span class="loading-phase-tag">AI COGNITIVE PROCESSING ACTIVE</span>
+                    <strong class="cycling-step-text">{{ currentLoadingPhaseText }}</strong>
+                  </div>
+                </div>
+
+                <div class="tactical-progress-track">
+                  <div class="tactical-scan-laser"></div>
+                </div>
+
+                <!-- Ghost Skeleton Micro-Cards -->
+                <div class="skeleton-action-cards">
+                  <div class="skeleton-tag shimmer"></div>
+                  <div class="skeleton-card shimmer" v-for="n in 3" :key="n">
+                    <div class="sk-num">0{{ n }}</div>
+                    <div class="sk-lines">
+                      <div class="sk-line full"></div>
+                      <div class="sk-line half"></div>
+                    </div>
+                  </div>
+                  <div class="skeleton-evac shimmer"></div>
+                </div>
               </div>
               
               <div v-else-if="aiPlan" class="ai-plan-content">
-                <div class="country-context-tag">{{ aiPlan.country_context }}</div>
+                <div class="country-context-tag">{{ formatTacticalText(aiPlan.country_context) }}</div>
                 
-                <h5 class="section-subtitle">Tactical Actions:</h5>
-                <ul class="action-steps">
-                  <li v-for="(act, idx) in aiPlan.immediate_actions" :key="idx">
-                    {{ act }}
-                  </li>
-                </ul>
+                <div class="tactical-group">
+                  <span class="group-title">Immediate Action Items:</span>
+                  <div class="tactical-action-cards">
+                    <div v-for="(act, idx) in aiPlan.immediate_actions" :key="idx" class="tactical-action-card">
+                      <span class="action-num">0{{ idx + 1 }}</span>
+                      <span class="action-text">{{ formatTacticalText(act) }}</span>
+                    </div>
+                  </div>
+                </div>
 
-                <h5 class="section-subtitle">Evacuation Corridor:</h5>
-                <p class="evac-guidance">{{ aiPlan.evacuation_guidance }}</p>
+                <div class="tactical-group" v-if="aiPlan.evacuation_guidance">
+                  <span class="group-title">🛣️ Evacuation Routing:</span>
+                  <div class="evacuation-card">
+                    <p class="evac-text">{{ formatTacticalText(aiPlan.evacuation_guidance) }}</p>
+                  </div>
+                </div>
 
-                <h5 class="section-subtitle">Resource Mobilization:</h5>
-                <div class="resource-grid">
-                  <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-pill">
-                    <strong>{{ res.resource }}:</strong> {{ res.quantity }} ({{ res.status }})
+                <div class="tactical-group" v-if="aiPlan.resource_allocation && aiPlan.resource_allocation.length">
+                  <span class="group-title">🚒 Resource Deployment:</span>
+                  <div class="resource-chip-grid">
+                    <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-chip">
+                      <strong class="res-label">{{ res.resource }}:</strong>
+                      <span class="res-qty">{{ res.quantity }}</span>
+                      <span class="res-status" :class="res.status ? res.status.toLowerCase() : ''">{{ res.status }}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -255,9 +364,23 @@
                 </div>
                 <div class="profile-item align-right">
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
-                  <div class="threat-score-pill">
+                  <div class="threat-score-pill tooltip-container">
                     <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
                     <span class="threat-score-max">/100</span>
+
+                    <!-- Floating Tactical Tooltip -->
+                    <div class="tactical-tooltip">
+                      <div class="tooltip-header">
+                        <span class="tooltip-dot" :class="getSeverityClass(getThreatScore(selectedIncidentData))"></span>
+                        <strong>THREAT LEVEL: {{ getThreatScore(selectedIncidentData) }}/100</strong>
+                      </div>
+                      <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
+                      <div class="tooltip-factors">
+                        <div class="factor-row"><span>💨 Atmospheric Risk:</span> <strong>Active</strong></div>
+                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? selectedIncidentData.affectedPopulation.toLocaleString() : 'Estimating' }}</strong></div>
+                        <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -425,10 +548,28 @@ const currentPage = ref(1)
 const cardsPerPage = ref(5) // 5-10 cards per page on mobile
 const selectedCountry = ref<string | null>(null)
 const selectedEventType = ref<string>('')
+const dashboardSearchQuery = ref('')
+
+const getThreatTooltipText = (score: number) => {
+  if (score >= 80) return 'Severe hazard level. Imminent risk to civil population, primary transport arteries, and critical hospital infrastructure.'
+  if (score >= 65) return 'Elevated hazard level. Rapid environmental expansion vector requiring shelter activation and first-responder mobilization.'
+  if (score >= 50) return 'Moderate hazard level. Active environmental perimeter requiring continuous telemetry monitoring.'
+  return 'Baseline hazard advisory. Minimal immediate risk to municipal boundaries.'
+}
 
 // Feature 6: Reactive AI Decision Support Plan
 const aiPlan = ref<any | null>(null)
 const isLoadingInsights = ref(false)
+
+const loadingPhases = [
+  '🛰️ Cross-referencing satellite perimeter with municipal boundary...',
+  '💨 Ingesting real-time OpenWeather wind & atmospheric vectors...',
+  '🏥 Evaluating hospital exposure & bridge choke-points...',
+  '⚡ Synthesizing emergency operational action directives...'
+]
+const loadingPhaseIndex = ref(0)
+const currentLoadingPhaseText = computed(() => loadingPhases[loadingPhaseIndex.value] || loadingPhases[0])
+let loadingInterval: any = null
 
 // Watch for incident selection to fetch Gemini AI Response Plan
 watch(
@@ -436,12 +577,19 @@ watch(
   async (newId) => {
     if (!newId) {
       aiPlan.value = null
+      if (loadingInterval) clearInterval(loadingInterval)
       return
     }
     
     try {
       isLoadingInsights.value = true
       aiPlan.value = null
+      loadingPhaseIndex.value = 0
+      
+      if (loadingInterval) clearInterval(loadingInterval)
+      loadingInterval = setInterval(() => {
+        loadingPhaseIndex.value = (loadingPhaseIndex.value + 1) % loadingPhases.length
+      }, 850)
       
       const host = window.location.hostname === 'localhost'
         ? 'http://localhost:8000'
@@ -455,6 +603,7 @@ watch(
     } catch (err) {
       console.warn('Failed to fetch AI insights plan:', err)
     } finally {
+      if (loadingInterval) clearInterval(loadingInterval)
       isLoadingInsights.value = false
     }
   }
@@ -478,6 +627,19 @@ const selectedIncidentData = computed<IncidentLevel1 | null>(
 // Filtered and sorted incidents based on active country, event type, and sort criteria
 const filteredIncidents = computed(() => {
   let incidents = [...eventsStore.allIncidents]
+  
+  // Apply quick search query across location, hazard type, country code, and country name
+  if (dashboardSearchQuery.value.trim()) {
+    const q = dashboardSearchQuery.value.trim().toLowerCase()
+    incidents = incidents.filter(i => {
+      const loc = (i.location || '').toLowerCase()
+      const rawType = (i.type || '').toLowerCase()
+      const fmtType = formatIncidentType(i.type, i.location).toLowerCase()
+      const country = (i.countryCode || '').toLowerCase()
+      const countryName = getCountryName(i.countryCode || '').toLowerCase()
+      return loc.includes(q) || rawType.includes(q) || fmtType.includes(q) || country.includes(q) || countryName.includes(q)
+    })
+  }
   
   // Apply country filter
   if (selectedCountry.value) {
@@ -794,6 +956,23 @@ const getSeverityClass = (score?: number) => {
   return 'medium'
 }
 
+/**
+ * Automatically converts shouting ALL-CAPS text blocks into clean, readable Sentence Case,
+ * preserving critical emergency agency acronyms (FEMA, NOAA, USCG, JFO, etc.).
+ */
+const formatTacticalText = (text: string): string => {
+  if (!text) return ''
+  const upperCount = (text.match(/[A-Z]/g) || []).length
+  const letterCount = (text.match(/[a-zA-Z]/g) || []).length
+  if (letterCount > 20 && upperCount / letterCount > 0.55) {
+    return text
+      .toLowerCase()
+      .replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase())
+      .replace(/\b(us|usa|fema|noaa|usgs|nasa|gdacs|jfo|eoc|lang|uscg|als|ems|ndrf|ch-47|i-10|i-49|us-90|dotd)\b/gi, m => m.toUpperCase())
+  }
+  return text
+}
+
 // Native browser internationalization for country names (supports all 249 countries dynamically without hardcoding)
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
 
@@ -949,10 +1128,10 @@ const fetchIncidents = async () => {
           status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
           threatScore: impact.risk_score ?? undefined,
           detectionTime: new Date(event.event_timestamp || Date.now()),
-          affectedArea: impact.affected_area_km2 ?? 150,
-          affectedPopulation: impact.affected_population ?? 50000,
-          trend: impact.trend_km2_per_hour ?? 5.2,
-          forecast6h: impact.forecast_6h_km2 ?? 31.2,
+          affectedArea: impact.affected_area_km2 || 0,
+          affectedPopulation: impact.affected_population || 0,
+          trend: impact.trend_km2_per_hour || 0,
+          forecast6h: impact.forecast_6h_km2 || 0,
           coordinates: [event.latitude, event.longitude] as [number, number],
         }
       })
@@ -1816,15 +1995,23 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   font-family: monospace;
 }
 
-/* AI Tactical Response - High Contrast Styling */
+/* AI Tactical Response - De-Congested & Airy Command Styling */
 .ai-decision-plan {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.65);
   border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 10px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
+}
+
+.ai-plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .ai-plan-title {
@@ -1833,82 +2020,134 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   font-size: 13px !important;
   text-transform: uppercase;
   letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-engine-chip {
+  font-size: 9px;
+  font-weight: 800;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
 }
 
 .country-context-tag {
-  display: inline-block;
+  display: block;
   font-size: 11px;
   font-weight: 700;
   color: #38bdf8;
-  background: rgba(14, 165, 233, 0.15);
-  padding: 4px 10px;
+  background: rgba(14, 165, 233, 0.12);
+  padding: 8px 12px;
   border-radius: 6px;
-  border: 1px solid rgba(14, 165, 233, 0.3);
-  margin-bottom: 4px;
+  border-left: 3px solid #38bdf8;
+  line-height: 1.4;
 }
 
-.section-subtitle {
+.tactical-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-title {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   color: #94a3b8;
   letter-spacing: 0.5px;
-  margin: 6px 0 2px 0;
 }
 
-.action-steps {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.tactical-action-cards {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-.action-steps li {
-  position: relative;
-  padding-left: 14px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #f8fafc !important;
+.tactical-action-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: all 0.2s ease;
 }
 
-.action-steps li::before {
-  content: "▸";
-  position: absolute;
-  left: 0;
+.tactical-action-card:hover {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.action-num {
   color: #38bdf8;
   font-weight: 800;
+  font-size: 11px;
+  font-family: monospace;
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 
-.evac-guidance {
+.action-text {
   font-size: 12px;
   line-height: 1.5;
-  color: #f8fafc !important;
-  background: rgba(30, 41, 59, 0.5);
-  padding: 8px 12px;
-  border-radius: 6px;
+  color: #f1f5f9 !important;
+}
+
+.evacuation-card {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
   border-left: 3px solid #f59e0b;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.evac-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #f8fafc !important;
   margin: 0;
 }
 
-.resource-grid {
+.resource-chip-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.resource-pill {
+.resource-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
-  color: #f8fafc !important;
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 4px 8px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
   border-radius: 6px;
 }
 
-.resource-pill strong {
+.res-label {
   color: #38bdf8;
+}
+
+.res-qty {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.res-status {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 /* Slide Right Animation */
@@ -3486,5 +3725,313 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
     color: var(--text-secondary);
     margin: 0;
   }
+}
+
+/* ===== HIGH-TECH TACTICAL LOADING ANIMATION ===== */
+.ai-tactical-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 10px 4px;
+}
+
+.loading-radar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.radar-ping-ring {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.radar-ping-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid #0ea5e9;
+  animation: radarExpand 1.6s infinite ease-out;
+}
+
+@keyframes radarExpand {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.radar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 10px #38bdf8;
+}
+
+.loading-telemetry-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 34px;
+}
+
+.loading-phase-tag {
+  font-size: 9px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.cycling-step-text {
+  font-size: 12px;
+  color: #f1f5f9;
+  font-weight: 600;
+  line-height: 1.4;
+  animation: textFadeIn 0.3s ease;
+}
+
+@keyframes textFadeIn {
+  from { opacity: 0.3; transform: translateY(2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tactical-progress-track {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+}
+
+.tactical-scan-laser {
+  position: absolute;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+  box-shadow: 0 0 12px #38bdf8;
+  animation: laserScan 1.3s infinite ease-in-out;
+}
+
+@keyframes laserScan {
+  0% { left: -35%; }
+  100% { left: 100%; }
+}
+
+/* Skeleton Shimmer Loaders */
+.skeleton-action-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.skeleton-tag {
+  height: 24px;
+  width: 70%;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.skeleton-card {
+  height: 48px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 12px;
+}
+
+.sk-num {
+  font-size: 11px;
+  font-weight: 800;
+  font-family: monospace;
+  color: rgba(56, 189, 248, 0.4);
+}
+
+.sk-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sk-line {
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sk-line.full { width: 90%; }
+.sk-line.half { width: 55%; }
+
+.skeleton-evac {
+  height: 40px;
+  border-radius: 6px;
+  background: rgba(245, 158, 11, 0.06);
+  border-left: 3px solid rgba(245, 158, 11, 0.3);
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(56, 189, 248, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerSweep 1.8s infinite;
+}
+
+@keyframes shimmerSweep {
+  100% { transform: translateX(100%); }
+}
+
+/* ===== SIDEBAR SEARCH BOX ===== */
+.sidebar-search-section {
+  width: 100%;
+}
+
+.sidebar-search-box {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 8px;
+  padding: 6px 10px;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-search-box:focus-within {
+  border-color: #38bdf8;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+
+.sidebar-search-input {
+  background: transparent;
+  border: none;
+  color: #f1f5f9;
+  font-size: 12px;
+  width: 100%;
+  outline: none;
+}
+
+.sidebar-search-input::placeholder {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.search-clear-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.search-clear-btn:hover {
+  color: #ffffff;
+}
+
+/* ===== TACTICAL THREAT SCORE HOVER TOOLTIP ===== */
+.tooltip-container {
+  position: relative;
+  cursor: help;
+}
+
+.tactical-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  transform: translateY(6px);
+  width: 250px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.tooltip-container:hover .tactical-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(10px);
+}
+
+.tooltip-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tooltip-header strong {
+  font-size: 11px;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+}
+
+.tooltip-dot.critical { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+.tooltip-dot.high { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+.tooltip-dot.medium { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+
+.tooltip-desc {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #cbd5e1;
+  margin: 6px 0;
+}
+
+.tooltip-factors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.factor-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.factor-row strong {
+  color: #38bdf8;
+  font-family: monospace;
 }
 </style>

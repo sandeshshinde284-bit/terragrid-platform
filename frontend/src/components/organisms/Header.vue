@@ -42,16 +42,6 @@
 
       <button 
         class="header-btn"
-        @click="refreshData"
-        :disabled="appStore.isLoading"
-        title="Refresh data"
-      >
-        <span v-if="appStore.isLoading">⟳</span>
-        <span v-else>⟳</span>
-      </button>
-
-      <button 
-        class="header-btn"
         @click="toggle3D"
         :class="{ active: is3D }"
         title="Toggle 2D/3D view"
@@ -175,14 +165,6 @@ const goHome = () => {
 
 const isActive = (path: string) => {
   return route.path === path
-}
-
-const refreshData = async () => {
-  appStore.setLoading(true)
-  // Refresh incidents data
-  setTimeout(() => {
-    appStore.setLoading(false)
-  }, 1000)
 }
 
 const toggle3D = () => {

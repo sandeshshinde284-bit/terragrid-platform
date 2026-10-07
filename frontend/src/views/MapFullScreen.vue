@@ -6,6 +6,16 @@
       <!-- High Performance Mapbox GL JS WebGL Engine -->
       <div ref="mapContainer" class="mapbox-container"></div>
 
+      <!-- Floating Back to Incident Navigation Pill (Only when coming from an incident) -->
+      <transition name="fade">
+        <div v-if="fromIncidentId" class="floating-incident-back">
+          <button class="incident-back-pill" type="button" @click="returnToIncident">
+            <span class="back-chevron">←</span>
+            <span class="back-text">Return to Incident: <strong>{{ fromIncidentLocation }}</strong></span>
+          </button>
+        </div>
+      </transition>
+
       <!-- 3-Way Tactical Mode Switcher HUD (Top Left) -->
       <div class="style-switcher-hud glass-panel">
         <button 
@@ -152,14 +162,28 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1 } from '@/types'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
+const route = useRoute()
+const router = useRouter()
 const eventsStore = useEventsStore()
 const appStore = useAppStore()
+
+const fromIncidentId = computed(() => (route.query.fromIncident as string) || '')
+const fromIncidentLocation = computed(() => (route.query.location as string) || 'Incident')
+
+function returnToIncident() {
+  if (fromIncidentId.value) {
+    router.push(`/incident/${fromIncidentId.value}`)
+  } else {
+    router.push('/incidents')
+  }
+}
 
 const mapContainer = ref<HTMLDivElement | null>(null)
 const map = shallowRef<mapboxgl.Map | null>(null)
@@ -244,8 +268,10 @@ const getSeverityColor = (score?: number) => {
 const applyModeSettings = () => {
   if (!map.value) return
 
-  // Clean vertical top-down view (0° tilt)
-  map.value.easeTo({ pitch: 0, bearing: 0, duration: 600 })
+  // Respect appStore.viewMode (55° pitch in 3D mode, 0° top-down in 2D mode)
+  const targetPitch = appStore.viewMode === '3d' ? 55 : 0
+  const targetBearing = appStore.viewMode === '3d' ? -20 : 0
+  map.value.easeTo({ pitch: targetPitch, bearing: targetBearing, duration: 600 })
 
   if (currentMode.value === 'globe') {
     // 1. Pristine Blue Marble 3D Orbital Globe (matching unnamed.jpg)
@@ -300,6 +326,8 @@ const initMap = () => {
     style: MAP_STYLES.tactical,
     center: DEFAULT_CENTER,
     zoom: DEFAULT_ZOOM,
+    pitch: appStore.viewMode === '3d' ? 55 : 0,
+    bearing: appStore.viewMode === '3d' ? -20 : 0,
     projection: { name: 'mercator' },
     minZoom: 1,
     maxZoom: 18,
@@ -415,6 +443,24 @@ const toggleLayersPanel = () => {
 watch(() => eventsStore.allIncidents.length, () => {
   if (map.value?.isStyleLoaded()) {
     renderMarkers()
+  }
+})
+
+// Watch for 2D / 3D Mode Toggle from Header.vue
+watch(() => appStore.viewMode, (mode) => {
+  if (!map.value) return
+  if (mode === '3d') {
+    map.value.easeTo({
+      pitch: 55,
+      bearing: -20,
+      duration: 1000
+    })
+  } else {
+    map.value.easeTo({
+      pitch: 0,
+      bearing: 0,
+      duration: 1000
+    })
   }
 })
 
@@ -873,5 +919,67 @@ onUnmounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* Floating Back to Incident Button */
+.floating-incident-back {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+
+.incident-back-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(16px);
+  border: 1px solid #38bdf8;
+  color: #f1f5f9;
+  padding: 8px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(14, 165, 233, 0.4);
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.incident-back-pill:hover {
+  background: #0ea5e9;
+  color: #03111b;
+  transform: scale(1.03);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.7);
+}
+
+.incident-back-pill strong {
+  color: #38bdf8;
+}
+
+.incident-back-pill:hover strong {
+  color: #03111b;
+}
+
+.back-chevron {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .floating-incident-back {
+    top: 52px;
+    width: 90%;
+    display: flex;
+    justify-content: center;
+  }
+  .incident-back-pill {
+    padding: 6px 14px;
+    font-size: 11px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 </style>

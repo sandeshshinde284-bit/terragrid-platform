@@ -19,9 +19,11 @@
           <div class="filter-group">
             <select v-model="filterType" class="filter-select">
               <option value="">{{ $t('incidents.filterByType') }} - All</option>
-              <option value="fire">🔥 Fire</option>
+              <option value="fire">🔥 Wildfire / Fire</option>
               <option value="flood">💧 Flood</option>
-              <option value="earthquake">🌍 Earthquake</option>
+              <option value="earthquake">🌍 Earthquake / Seismic</option>
+              <option value="storm">🌀 Storm / Cyclone / Typhoon</option>
+              <option value="weather">🌤️ Weather Advisory</option>
               <option value="landslide">⛰️ Landslide</option>
             </select>
           </div>
@@ -54,6 +56,7 @@
             <tr>
               <th>Hazard Type</th>
               <th>{{ $t('incidents.location') }}</th>
+              <th>Country</th>
               <th>{{ $t('incidents.status') }}</th>
               <th>{{ $t('incidents.threatScore') }}</th>
               <th>{{ $t('incidents.affectedArea') }}</th>
@@ -70,7 +73,12 @@
                 <span class="type-icon">{{ getIcon(incident.type, incident.location) }}</span>
                 <span class="type-name">{{ formatType(incident.type, incident.location) }}</span>
               </td>
-              <td class="location-cell">{{ incident.location }}</td>
+              <td class="location-cell">
+                <span class="location-text">{{ cleanLocation(incident.location) }}</span>
+              </td>
+              <td class="country-cell">
+                <span class="country-name">{{ resolveCountry(incident.location, incident.countryCode).name }}</span>
+              </td>
               <td class="status-cell">
                 <span class="status-badge" :class="incident.status">{{ incident.status.toUpperCase() }}</span>
               </td>
@@ -93,26 +101,6 @@
 
         <div v-if="filteredIncidents.length === 0" class="no-results">
           <p>{{ $t('alerts.noAlerts') }}</p>
-        </div>
-
-        <!-- Stats Footer - moved inside wrapper -->
-        <div class="stats-footer glass-panel">
-          <div class="stat">
-            <span class="label">{{ $t('incidents.viewing') }}</span>
-            <span class="value">{{ filteredIncidents.length }}</span>
-          </div>
-          <div class="stat">
-            <span class="label">Total {{ $t('incidents.affectedArea') }}</span>
-            <span class="value">{{ totalArea.toFixed(1) }} km²</span>
-          </div>
-          <div class="stat">
-            <span class="label">Total {{ $t('incidents.population') }}</span>
-            <span class="value">{{ totalPopulation.toLocaleString() }}</span>
-          </div>
-          <div class="stat">
-            <span class="label">Avg {{ $t('incidents.threatScore') }}</span>
-            <span class="value">{{ avgThreat.toFixed(0) }}/100</span>
-          </div>
         </div>
       </div>
     </div>
@@ -229,13 +217,70 @@ const formatType = (type: string, location?: string): string => {
 
 const filteredIncidents = computed(() => {
   return eventsStore.allIncidents.filter((incident) => {
-    const matchSearch = 
-      incident.location.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      incident.type.toLowerCase().includes(searchQuery.value.toLowerCase())
-    
-    const matchType = !filterType.value || incident.type === filterType.value
-    const matchStatus = !filterStatus.value || incident.status === filterStatus.value
-    const matchSeverity = !filterSeverity.value || incident.severity === filterSeverity.value
+    // 1. Search Query: location, type, country, and formatted hazard name
+    const q = searchQuery.value.trim().toLowerCase()
+    let matchSearch = true
+    if (q) {
+      const loc = (incident.location || '').toLowerCase()
+      const rawType = (incident.type || '').toLowerCase()
+      const fmtType = formatType(incident.type, incident.location).toLowerCase()
+      const country = (incident.countryCode || '').toLowerCase()
+      matchSearch = loc.includes(q) || rawType.includes(q) || fmtType.includes(q) || country.includes(q)
+    }
+
+    // 2. Type Filter: Normalize categories!
+    let matchType = true
+    if (filterType.value) {
+      const selected = filterType.value.toLowerCase()
+      const incType = (incident.type || '').toLowerCase()
+      const loc = (incident.location || '').toLowerCase()
+      
+      if (selected === 'fire') {
+        matchType = incType.includes('fire') || loc.includes('fire')
+      } else if (selected === 'flood') {
+        matchType = incType.includes('flood') || loc.includes('flood')
+      } else if (selected === 'earthquake') {
+        matchType = incType.includes('earthquake') || incType.includes('seismic') || loc.includes('quake')
+      } else if (selected === 'storm') {
+        matchType = incType.includes('storm') || incType.includes('cyclone') || incType.includes('typhoon') || incType.includes('hurricane') || loc.includes('storm') || loc.includes('typhoon') || loc.includes('hurricane')
+      } else if (selected === 'weather') {
+        matchType = incType.includes('weather') || incType === 'other'
+      } else if (selected === 'landslide') {
+        matchType = incType.includes('landslide')
+      } else {
+        matchType = incType === selected
+      }
+    }
+
+    // 3. Status Filter: Treat 'detected' and 'active' uniformly or match
+    let matchStatus = true
+    if (filterStatus.value) {
+      const selected = filterStatus.value.toLowerCase()
+      const incStatus = (incident.status || '').toLowerCase()
+      if (selected === 'active') {
+        matchStatus = incStatus === 'active' || incStatus === 'detected'
+      } else {
+        matchStatus = incStatus === selected
+      }
+    }
+
+    // 4. Severity Filter: Calibrate against both severity string and 0-100 threat score!
+    let matchSeverity = true
+    if (filterSeverity.value) {
+      const selected = filterSeverity.value.toLowerCase()
+      const incSeverity = (incident.severity || '').toLowerCase()
+      const threat = incident.threatScore ?? 50
+
+      if (selected === 'critical') {
+        matchSeverity = incSeverity === 'critical' || threat >= 80
+      } else if (selected === 'high') {
+        matchSeverity = incSeverity === 'high' || (threat >= 65 && threat < 80)
+      } else if (selected === 'medium') {
+        matchSeverity = incSeverity === 'medium' || (threat >= 45 && threat < 65)
+      } else if (selected === 'low') {
+        matchSeverity = incSeverity === 'low' || threat < 45
+      }
+    }
 
     return matchSearch && matchType && matchStatus && matchSeverity
   })
@@ -288,6 +333,65 @@ const viewIncident = (id: string) => {
 
 const toggleExpanded = (id: string) => {
   expandedIncidentId.value = expandedIncidentId.value === id ? null : id
+}
+
+// Native browser internationalization for country names
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
+
+const getCountryFlag = (code?: string): string => {
+  if (!code) return '🌍'
+  const trimmed = code.trim().toUpperCase()
+  if (/^[A-Z]{2}$/.test(trimmed)) {
+    return String.fromCodePoint(
+      127397 + trimmed.charCodeAt(0),
+      127397 + trimmed.charCodeAt(1)
+    )
+  }
+  return '🌍'
+}
+
+const getCountryName = (code?: string): string => {
+  if (!code) return ''
+  const trimmed = code.trim().toUpperCase()
+  if (/^[A-Z]{2}$/.test(trimmed)) {
+    try {
+      return regionNames.of(trimmed) || trimmed
+    } catch {
+      return trimmed
+    }
+  }
+  return trimmed
+}
+
+/**
+ * Leaves location intact or trims trailing 2-letter country code so location stays clean
+ * e.g. "Dale, AL, US" -> "Dale, AL"
+ *      "Port Fourchon, Louisiana, US" -> "Port Fourchon, Louisiana"
+ *      "Karachi, PK" -> "Karachi"
+ */
+const cleanLocation = (location: string): string => {
+  if (!location) return 'Unknown Sector'
+  return location.replace(/,\s*[A-Za-z]{2}$/, '').trim()
+}
+
+/**
+ * Resolves full country name and flag emoji for dedicated Country column
+ */
+const resolveCountry = (location: string, countryCode?: string): { name: string; flag: string } => {
+  let code = countryCode ? countryCode.trim().toUpperCase() : ''
+  
+  // If backend passed the default 'UN' (Unknown/United Nations) or it's empty, 
+  // attempt to extract the real country code from the location string (e.g. "Dale, AL, US" -> "US")
+  if ((!code || code === 'UN') && location) {
+    const match = location.trim().match(/,\s*([A-Za-z]{2})$/)
+    if (match && match[1]) {
+      code = match[1].toUpperCase()
+    }
+  }
+  
+  const name = getCountryName(code) || 'Global Sector'
+  const flag = getCountryFlag(code)
+  return { name, flag }
 }
 
 onMounted(async () => {
@@ -489,7 +593,45 @@ onMounted(async () => {
 
 .incidents-table th:nth-child(2),
 .incidents-table td:nth-child(2) {
-  width: 25%;
+  width: 20%;
+  min-width: 140px;
+}
+
+/* Column 3: Country */
+.incidents-table th:nth-child(3),
+.incidents-table td:nth-child(3) {
+  min-width: 150px;
+}
+
+/* Column 10: Recommended Action */
+.incidents-table th:nth-child(10),
+.incidents-table td:nth-child(10) {
+  min-width: 240px;
+  width: 280px;
+}
+
+/* Column 11: Analysis (View Button) */
+.incidents-table th:nth-child(11),
+.incidents-table td:nth-child(11) {
+  min-width: 140px;
+  width: 140px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.country-cell {
+  white-space: nowrap;
+}
+
+.country-flag {
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+.country-name {
+  color: #cbd5e1;
+  font-weight: 500;
+  font-size: 13px;
 }
 
 .incidents-table td {
@@ -674,52 +816,36 @@ onMounted(async () => {
 
 .action-cell {
   font-size: 11px;
-  max-width: 200px;
+  min-width: 240px;
+  max-width: 320px;
+  vertical-align: middle;
 }
 
 .action-badge {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid #ef4444;
   color: #fca5a5;
-  padding: 6px 10px;
-  border-radius: 4px;
-  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: block;
   font-weight: 600;
+  white-space: normal;
+  word-break: normal;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.view-cell {
+  min-width: 140px;
+  text-align: center;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
 .no-results {
   text-align: center;
   padding: 40px 20px;
   color: var(--text-muted);
-}
-
-.stats-footer {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
-  padding: 16px;
-  margin-top: 16px;
-  border-top: 1px solid rgba(30, 144, 255, 0.2);
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.stat .label {
-  font-size: 11px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.stat .value {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--accent-cyan);
 }
 
 .detail-panel {
@@ -1028,49 +1154,21 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
+  .incidents-screen {
+    padding: 10px;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
   .controls-panel {
     padding: 12px;
   }
 
   .filters {
+    display: flex;
     flex-direction: column;
-  }
-
-  .filter-select {
-    width: 100%;
-  }
-
-  .incidents-table-wrapper {
-    overflow-x: auto;
-  }
-
-  .detail-panel {
-    width: 280px;
-    right: 8px;
-  }
-
-  .stats-footer {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .incidents-screen {
-    padding: 8px;
     gap: 8px;
-  }
-
-  .incidents-container {
-    gap: 8px;
-  }
-
-  .controls-panel {
-    padding: 10px;
-    gap: 8px;
-  }
-
-  .filters {
-    grid-template-columns: 1fr;
   }
 
   .filter-select {
@@ -1081,15 +1179,17 @@ onMounted(async () => {
     font-size: 13px;
   }
 
-  /* Mobile: Transform table into collapsible cards */
+  /* Mobile: Clean Incident Cards Layout (Replaces Table) */
   .incidents-table-wrapper {
-    padding: 0;
-    background: transparent;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
   }
 
   .incidents-table {
     display: block;
-    font-size: 11px;
+    width: 100%;
   }
 
   .incidents-table thead {
@@ -1099,238 +1199,260 @@ onMounted(async () => {
   .incidents-table tbody {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    width: 100%;
   }
 
-  /* Each row becomes a card */
+  /* Each table row becomes a sleek, high-tech Mobile Card */
   .incident-row {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0;
-    padding: 0;
-    border: 1px solid rgba(30, 144, 255, 0.25);
-    border-radius: 8px;
-    background: rgba(20, 50, 120, 0.5);
-    overflow: hidden;
-    transition: all 0.2s ease;
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-areas: 
+      "header status"
+      "location location" !important;
+    row-gap: 6px !important;
+    column-gap: 8px !important;
+    padding: 14px 16px !important;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.65)) !important;
+    border: 1px solid rgba(56, 189, 248, 0.2) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
+    backdrop-filter: blur(16px) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    position: relative !important;
   }
 
   .incident-row:hover {
-    background: rgba(20, 50, 120, 0.6);
-    border-color: rgba(30, 144, 255, 0.4);
+    border-color: #38bdf8 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 28px rgba(14, 165, 233, 0.2) !important;
   }
 
   .incident-row.expanded {
-    background: rgba(20, 50, 120, 0.7);
-    border-color: rgba(30, 144, 255, 0.5);
+    border-color: #38bdf8 !important;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)) !important;
+    box-shadow: 0 10px 32px rgba(14, 165, 233, 0.25) !important;
   }
 
-  /* Hide all cells by default */
-  .incident-row td {
-    display: none;
+  /* 1. Header Area: Hazard Type on Left with chevron */
+  .incident-row .type-cell {
+    grid-area: header !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    min-width: unset !important;
   }
 
-  /* Show first cell (icon) as header */
-  .detail-cell {
+  .incident-row .type-icon {
+    font-size: 20px !important;
+  }
+
+  .incident-row .type-name {
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+  }
+
+  /* 2. Status & Threat Badges on Right */
+  .incident-row .status-cell {
+    grid-area: status !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    position: static !important;
+  }
+
+  .incident-row .status-badge {
+    padding: 3px 8px !important;
+    font-size: 9px !important;
+    font-weight: 800 !important;
+    border-radius: 4px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  /* Expand chevron */
+  .incident-row .status-cell::after {
+    content: '▾';
+    font-size: 16px;
+    color: #38bdf8;
+    transition: transform 0.25s ease;
+    margin-left: 2px;
+  }
+
+  .incident-row.expanded .status-cell::after {
+    transform: rotate(180deg);
+  }
+
+  /* 3. Location Row */
+  .incident-row .location-cell {
+    grid-area: location !important;
     display: block !important;
-    grid-column: 1;
-    padding: 12px;
-    font-size: 20px;
-    border: none;
-    background: transparent;
-    position: relative;
-    cursor: pointer;
+    padding: 2px 0 4px 0 !important;
+    border: none !important;
+    background: transparent !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #38bdf8 !important;
+    line-height: 1.4 !important;
+    position: static !important;
+    width: 100% !important;
+    white-space: normal !important;
+    max-width: unset !important;
   }
 
-  /* Add expand arrow icon */
-  .detail-cell::after {
-    content: '▶';
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 14px;
-    color: #67e8f9;
-    transition: transform 0.2s ease;
+  /* 4. HIDDEN IN COLLAPSED STATE */
+  .incident-row .threat-cell,
+  .incident-row .area-cell,
+  .incident-row .population-cell,
+  .incident-row .trend-cell,
+  .incident-row .time-cell,
+  .incident-row .action-cell,
+  .incident-row .view-cell {
+    display: none !important;
   }
 
-  /* Rotate arrow when expanded */
-  .incident-row.expanded .detail-cell::after {
-    transform: translateY(-50%) rotate(90deg);
+  /* 5. EXPANDED BODY: Compact 2x2 Grid + Action + Button */
+  .incident-row.expanded {
+    grid-template-columns: 1fr 1fr !important;
+    grid-template-areas: 
+      "header status"
+      "location location" !important;
   }
 
-  /* Show location as header text */
-  .location-cell {
-    display: block !important;
-    grid-column: 1;
-    padding: 12px 0 0 0;
-    font-weight: 600;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 13px;
-    color: #ffffff;
-    position: relative;
-    top: -48px;
-    left: 50px;
-    width: calc(100% - 90px);
-  }
-
-  /* Show status as header badge */
-  .status-cell {
-    display: block !important;
-    grid-column: 1;
-    padding: 0;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    position: relative;
-    top: -48px;
-    text-align: right;
-    padding-right: 50px;
-  }
-
-  /* Create clickable header area */
-  .detail-cell,
-  .location-cell,
-  .status-cell {
-    cursor: pointer;
-    user-select: none;
-  }
-
-  /* Header row structure */
-  .detail-cell::before {
-    content: '';
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 14px;
-    color: #67e8f9;
-  }
-
-  /* Show expanded details when row is active */
   .incident-row.expanded .threat-cell,
+  .incident-row.expanded .action-cell,
+  .incident-row.expanded .view-cell {
+    grid-column: 1 / -1 !important;
+  }
+
+  .incident-row.expanded .area-cell,
+  .incident-row.expanded .trend-cell {
+    grid-column: 1 !important;
+  }
+
+  .incident-row.expanded .population-cell,
+  .incident-row.expanded .time-cell {
+    grid-column: 2 !important;
+  }
+
+  .incident-row.expanded .threat-cell {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-top: 6px !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    background: rgba(245, 158, 11, 0.08) !important;
+    color: #fbbf24 !important;
+    border-radius: 8px !important;
+    padding: 7px 12px !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+  }
+
+  .incident-row.expanded .threat-cell::before { content: 'THREAT SCORE'; font-size: 10px; font-weight: 700; color: #94a3b8; }
+
+  /* 2x2 Metric Tiles */
   .incident-row.expanded .area-cell,
   .incident-row.expanded .population-cell,
   .incident-row.expanded .trend-cell,
-  .incident-row.expanded .time-cell,
-  .incident-row.expanded .action-cell,
-  .incident-row.expanded .view-cell {
-    display: grid !important;
-    grid-template-columns: 70px 1fr;
-    gap: 8px;
-    padding: 12px;
-    border-bottom: 1px solid rgba(30, 144, 255, 0.1);
-    border-top: 1px solid rgba(30, 144, 255, 0.1);
-    align-items: center;
+  .incident-row.expanded .time-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    background: rgba(30, 41, 59, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 8px !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #f1f5f9 !important;
+    gap: 3px !important;
   }
 
-  .threat-cell::before {
-    content: 'Threat';
-    font-weight: 600;
-    color: #a0aec0;
-    font-size: 9px;
-    text-transform: uppercase;
-  }
+  .incident-row.expanded .area-cell::before { content: 'AFFECTED AREA'; font-size: 9px; font-weight: 700; color: #94a3b8; }
+  .incident-row.expanded .population-cell::before { content: 'POPULATION AT RISK'; font-size: 9px; font-weight: 700; color: #94a3b8; }
+  .incident-row.expanded .trend-cell::before { content: 'SPREAD RATE'; font-size: 9px; font-weight: 700; color: #94a3b8; }
+  .incident-row.expanded .time-cell::before { content: 'DETECTED'; font-size: 9px; font-weight: 700; color: #94a3b8; }
 
-  .area-cell::before {
-    content: 'Area';
-    font-weight: 600;
-    color: #a0aec0;
-    font-size: 9px;
-    text-transform: uppercase;
-  }
-
-  .population-cell::before {
-    content: 'Population';
-    font-weight: 600;
-    color: #a0aec0;
-    font-size: 9px;
-    text-transform: uppercase;
-  }
-
-  .trend-cell::before {
-    content: 'Trend';
-    font-weight: 600;
-    color: #a0aec0;
-    font-size: 9px;
-    text-transform: uppercase;
-  }
-
-  .time-cell::before {
-    content: 'Time';
-    font-weight: 600;
-    color: #a0aec0;
-    font-size: 9px;
-    text-transform: uppercase;
-  }
-
-  .action-cell::before {
-    content: 'Action';
-    font-weight: 600;
-    color: #a0aec0;
-    font-size: 9px;
-    text-transform: uppercase;
-  }
-
-  .view-cell {
+  .incident-row.expanded .action-cell {
     display: block !important;
-    padding: 0 12px 12px 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    padding: 6px 0 !important;
+    margin: 4px 0 !important;
+    border: none !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  .incident-row.expanded .action-badge {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 10px 12px !important;
+    border-radius: 6px !important;
+    background: rgba(239, 68, 68, 0.12) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #fca5a5 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.4 !important;
+  }
+
+  .incident-row.expanded .view-cell {
+    display: block !important;
+    width: 100% !important;
+    padding: 6px 0 0 0 !important;
+    margin-top: 6px !important;
     border: none !important;
     background: transparent !important;
+    box-sizing: border-box !important;
   }
 
-  .view-btn {
-    width: 100%;
-    padding: 8px 12px;
-    font-size: 11px;
-    background: rgba(30, 144, 255, 0.15);
-    border: 1px solid #0ea5e9;
-    color: #67e8f9;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+  .incident-row.expanded .view-btn {
+    width: 100% !important;
+    padding: 12px 16px !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+    border-radius: 8px !important;
+    background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
+    border: 1px solid #38bdf8 !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35) !important;
   }
 
-  .view-btn:hover {
-    background: rgba(30, 144, 255, 0.25);
-    color: #ffffff;
+  .incident-row.expanded .view-btn:hover {
+    background: linear-gradient(135deg, #38bdf8, #1d4ed8) !important;
+    box-shadow: 0 0 24px rgba(56, 189, 248, 0.5) !important;
   }
 
-  .status-badge {
-    display: inline-block;
-    padding: 6px 10px;
-    font-size: 10px;
-    border-radius: 4px;
-  }
-
-  .action-badge {
-    display: block;
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid #ef4444;
-    color: #fca5a5;
-    padding: 8px 10px;
-    border-radius: 4px;
-    font-weight: 600;
-    font-size: 10px;
-    white-space: normal;
-  }
-
+  /* Hide redundant bottom stats footer on mobile to keep view uncluttered */
   .stats-footer {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    padding: 12px;
-    margin-top: 12px;
-    border-top: 1px solid rgba(30, 144, 255, 0.2);
+    display: none !important;
   }
 
-  .stat .label {
-    font-size: 10px;
-  }
-
-  .stat .value {
-    font-size: 16px;
+  .detail-panel {
+    width: 280px;
+    right: 8px;
   }
 }
 </style>

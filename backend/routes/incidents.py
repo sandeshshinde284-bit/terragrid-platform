@@ -72,14 +72,14 @@ async def get_incident(incident_id: int, db: Session = Depends(get_db)):
     return incident.data if incident.data else {"id": incident.id, "event_type": incident.event_type}
 
 @router.get("/{incident_id}/insights")
-async def get_incident_insights(incident_id: str, db: Session = Depends(get_db)):
+async def get_incident_insights(
+    incident_id: str, 
+    db: Session = Depends(get_db),
+    use_mock: bool = Query(False, description="Bypass Vertex AI and return rich mock demonstration plan")
+):
     """
     Generate and return a country-specific AI Decision Support plan (Feature 6).
     Uses Gemini 1.5 Flash to synthesize tactical emergency actions for this incident.
-    
-    STRICT MODE: Only returns real data. No fallback/mock data.
-    Returns 404 if incident not found.
-    Returns 500 if Gemini fails (not 200).
     """
     try:
         incident = None
@@ -137,17 +137,19 @@ async def get_incident_insights(incident_id: str, db: Session = Depends(get_db))
             zone_data = None
             
         from backend.services.decision_support import get_decision_support_service
-        plan = get_decision_support_service().generate_response_plan(incident_dict, zone_data)
+        plan = get_decision_support_service().generate_response_plan(incident_dict, zone_data, use_mock=use_mock)
         
         # Verify we got a plan (real AI or graceful fallback)
         if not plan:
             logger.warning(f"[INSIGHTS] LIVE MODE: Received empty plan")
             raise HTTPException(status_code=500, detail="AI Decision Support failed to generate a plan")
             
-        if plan.get("country_context", "").startswith("Standard emergency"):
-            logger.info(f"[INSIGHTS] LIVE MODE: Serving graceful tactical fallback plan (Gemini API unavailable or rate limited)")
+        if plan.get("is_fallback"):
+            logger.info(f"[INSIGHTS] LIVE MODE: Serving transparent offline state (Gemini API unavailable)")
+        elif use_mock:
+            logger.info(f"[INSIGHTS] DEMO MODE: Serving rich mock payload for {incident_id}")
         else:
-            logger.info(f"[INSIGHTS] Successfully generated real AI plan for {incident_id}")
+            logger.info(f"[INSIGHTS] Successfully generated AI plan for {incident_id}")
             
         return {
             "status": "success",
@@ -160,6 +162,135 @@ async def get_incident_insights(incident_id: str, db: Session = Depends(get_db))
     except Exception as e:
         logger.exception(f"[INSIGHTS] ✗ Error generating insights for incident {incident_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate insights: {str(e)}")
+
+
+def find_incident_by_id(incident_id: str, db: Session):
+    """
+    Safely resolves an incident by numeric ID, prefixed format (event_457, event-457),
+    or external JSONB ID without throwing PostgreSQL integer cast errors.
+    """
+    clean_id = str(incident_id).strip()
+    
+    # 1. Extract database integer ID if numeric or prefixed
+    db_id = None
+    if clean_id.isdigit():
+        db_id = int(clean_id)
+    elif clean_id.startswith("event_") or clean_id.startswith("event-"):
+        suffix = clean_id.replace("event_", "").replace("event-", "").split("-")[0]
+        if suffix.isdigit():
+            db_id = int(suffix)
+            
+    if db_id is not None:
+        ev = db.query(Event).filter(Event.id == db_id).first()
+        if ev:
+            return ev
+
+    # 2. Query by external ID in data JSONB
+    try:
+        ev = db.query(Event).filter(
+            (Event.data["id"].astext == clean_id) |
+            (Event.data["nasa_id"].astext == clean_id) |
+            (Event.data["gdacs_id"].astext == clean_id)
+        ).first()
+        if ev:
+            return ev
+    except Exception:
+        pass
+
+    # 3. Fallback scan all recent events
+    for evt in db.query(Event).order_by(desc(Event.id)).limit(200).all():
+        if str(evt.id) == clean_id or f"event_{evt.id}" == clean_id or f"event-{evt.id}" == clean_id:
+            return evt
+        data = evt.data or {}
+        if str(data.get("id")) == clean_id or str(data.get("nasa_id")) == clean_id or str(data.get("gdacs_id")) == clean_id:
+            return evt
+
+    return None
+
+
+@router.post("/{incident_id}/deep-analysis")
+async def generate_deep_incident_analysis(incident_id: str, db: Session = Depends(get_db)):
+    """
+    Tier 2 Deep Tactical AI Dossier: Generates an exhaustive, unscripted 8-tab
+    crisis intelligence dossier (6h/12h/24h predictive cascade, critical infrastructure,
+    evacuation corridors, resource mobilization) using Google Cloud Vertex AI (gemini-2.5-flash).
+    Caches the result directly in PostgreSQL Event.data['deep_dossier'].
+    """
+    try:
+        # Find incident safely using multi-format resolver
+        incident = find_incident_by_id(incident_id, db)
+        if not incident:
+            logger.warning(f"[DEEP-DOSSIER] ✗ Incident not found in database: {incident_id}")
+            raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found in database.")
+
+        raw_data = incident.data or {}
+        incident_dict = {
+            "id": incident.id,
+            "event_type": incident.event_type,
+            "location_name": incident.location_name,
+            "latitude": incident.latitude,
+            "longitude": incident.longitude,
+            "source": incident.source,
+            "impact": raw_data.get("impact") or {},
+            "data": raw_data
+        }
+
+        from backend.services.decision_support import get_decision_support_service
+        dossier = get_decision_support_service().generate_deep_tactical_dossier(incident_dict)
+
+        # Cache dossier in PostgreSQL
+        try:
+            curr_data = dict(incident.data or {})
+            curr_data["deep_dossier"] = dossier
+            incident.data = curr_data
+            db.commit()
+            logger.info(f"[DEEP-DOSSIER] ✓ Successfully cached deep AI dossier for incident {incident_id} in PostgreSQL.")
+        except Exception as cache_err:
+            logger.warning(f"[DEEP-DOSSIER] Could not cache dossier in PostgreSQL: {cache_err}")
+            db.rollback()
+
+        return {
+            "status": "success",
+            "incident_id": incident_id,
+            "location": incident.location_name,
+            "dossier": dossier
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"[DEEP-DOSSIER] ✗ Error generating deep dossier for {incident_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Deep analysis generation failed: {str(e)}")
+
+
+@router.get("/{incident_id}/deep-dossier")
+async def get_deep_incident_dossier(incident_id: str, db: Session = Depends(get_db)):
+    """
+    Retrieves the cached Tier 2 Deep Tactical AI Dossier for an incident.
+    """
+    try:
+        incident = find_incident_by_id(incident_id, db)
+        if not incident:
+            raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found.")
+
+        dossier = (incident.data or {}).get("deep_dossier")
+        if not dossier:
+            return {
+                "status": "pending",
+                "incident_id": incident_id,
+                "dossier": None,
+                "message": "Deep tactical reconnaissance has not yet been launched for this incident."
+            }
+
+        return {
+            "status": "success",
+            "incident_id": incident_id,
+            "dossier": dossier
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"[DEEP-DOSSIER] ✗ Error retrieving deep dossier for {incident_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{incident_id}/analyses")
 async def get_analyses(incident_id: int, db: Session = Depends(get_db)):

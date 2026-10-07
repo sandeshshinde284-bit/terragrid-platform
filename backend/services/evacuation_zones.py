@@ -249,7 +249,7 @@ class EvacuationZoneService:
     @classmethod
     def get_safe_routes(cls, incident: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Identify safe evacuation routes from incident zone
+        Identify safe evacuation routes from incident zone using real road networks.
         
         Args:
             incident: Incident data with coordinates
@@ -264,17 +264,16 @@ class EvacuationZoneService:
                 ]
             }
         """
+        import urllib.request
+        import json
         try:
             lat = float(incident.get("latitude", 0))
             lon = float(incident.get("longitude", 0))
             event_type = incident.get("event_type", "other")
             
-            # Generate mock safe routes (simplified for MVP)
-            # Real implementation would use Overpass API or Google Maps
-            
             routes = []
             
-            # Route directions: N, NE, E, SE, S, SW, W, NW (away from incident)
+            # Target egress vectors (N, NE, E, SE) approximately 30-40km away
             directions = [
                 {"name": "North", "bearing": 0, "lon_offset": 0, "lat_offset": 0.3},
                 {"name": "Northeast", "bearing": 45, "lon_offset": 0.25, "lat_offset": 0.25},
@@ -283,34 +282,49 @@ class EvacuationZoneService:
             ]
             
             for i, direction in enumerate(directions, 1):
-                # Create route coordinates
-                route_coords = [
-                    [lon, lat],  # Start at incident center
-                    [lon + direction["lon_offset"] * 2, lat + direction["lat_offset"] * 2],  # 30km away
-                ]
+                dst_lon = lon + direction["lon_offset"] * 2
+                dst_lat = lat + direction["lat_offset"] * 2
+                
+                route_coords = []
+                distance_km = 0.0
+                estimated_time_hours = 0.0
+                
+                # Fetch REAL physical road networks from OSRM Project (OpenStreetMap)
+                try:
+                    url = f"http://router.project-osrm.org/route/v1/driving/{lon},{lat};{dst_lon},{dst_lat}?geometries=geojson&overview=full"
+                    req = urllib.request.Request(url, headers={'User-Agent': 'TerraGrid-Disaster-App/1.0'})
+                    with urllib.request.urlopen(req, timeout=3.0) as response:
+                        data = json.loads(response.read().decode())
+                        if data.get('code') == 'Ok' and len(data.get('routes', [])) > 0:
+                            route_obj = data['routes'][0]
+                            route_coords = route_obj['geometry']['coordinates']
+                            distance_km = route_obj['distance'] / 1000.0
+                            estimated_time_hours = route_obj['duration'] / 3600.0
+                except Exception as osrm_err:
+                    logger.warning(f"OSRM real routing failed for {direction['name']}, falling back to geodesic vector: {osrm_err}")
+                
+                # Fallback to geodesic line if OSRM fails (e.g. over oceans or rate limited)
+                if not route_coords:
+                    route_coords = [[lon, lat], [dst_lon, dst_lat]]
+                    distance_km = math.sqrt((direction["lon_offset"] * 111)**2 + (direction["lat_offset"] * 111)**2) * 2
+                    estimated_time_hours = max(1.0, distance_km / 60.0)
                 
                 # Calculate safety score (0-100)
-                # Score based on distance from incident center
-                distance_km = math.sqrt(
-                    (direction["lon_offset"] * 111)**2 + 
-                    (direction["lat_offset"] * 111)**2
-                ) * 2
-                
-                safety_score = min(100, int(80 + distance_km * 2))
+                safety_score = min(100, int(80 + distance_km * 0.5))
                 
                 route = {
                     "route_id": f"route_{i}",
                     "name": f"Route {i}: {direction['name']} Corridor",
                     "direction": direction["name"],
                     "distance_km": round(distance_km, 1),
-                    "estimated_time_hours": max(1, int(distance_km / 60)),
+                    "estimated_time_hours": round(estimated_time_hours, 1),
                     "capacity_vehicles_per_hour": 500 + (i * 100),
                     "safety_score": safety_score,
                     "coordinates": route_coords,
                     "properties": {
                         "name": f"Route {i}: {direction['name']}",
                         "distance": f"{round(distance_km, 1)} km",
-                        "time": f"{max(1, int(distance_km / 60))} hours",
+                        "time": f"{round(estimated_time_hours, 1)} hours",
                         "safety": safety_score,
                     }
                 }
@@ -323,7 +337,7 @@ class EvacuationZoneService:
                 "timestamp": datetime.utcnow().isoformat(),
             }
             
-            logger.info(f"Generated {len(routes)} safe routes for {incident.get('location_name')}")
+            logger.info(f"Generated {len(routes)} physical escape routes for {incident.get('location_name')}")
             return result
             
         except Exception as e:

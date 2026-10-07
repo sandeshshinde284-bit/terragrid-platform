@@ -1,0 +1,19 @@
+{
+  "ai_available": false,
+  "is_fallback": true,
+  "country_context": "AI DECISION SUPPORT OFFLINE",
+  "severity_assessment": "Automated tactical response generation is currently unavailable. Please rely on established emergency management protocols.",
+  "immediate_actions": [
+    "Initiate standard multi-agency manual response protocols.",
+    "Refer to local municipal guidelines for the affected jurisdiction.",
+    "Establish forward incident command post and monitor situation manually."
+  ],
+  "resource_allocation": [
+    {
+      "resource": "Automated Intelligence",
+      "quantity": "-",
+      "status": "Unavailable"
+    }
+  ],
+  "evacuation_guidance": "Automated routing disabled. Consult local emergency broadcasting networks for evacuation orders."
+}

@@ -1,0 +1,81 @@
+{
+  "ai_available": true,
+  "is_fallback": false,
+  "is_mock_demo": true,
+  "situational_assessment": "MOCK DEMO: Active event confirmed. Autonomous threat monitoring active across multi-agency channels.",
+  "threat_level": "CRITICAL",
+  "predictive_cascade": [
+    {
+      "timeframe": "6 Hours",
+      "perimeter_delta_km2": 45.5,
+      "spread_direction": "Projected expansion along active terrain vectors",
+      "primary_risk": "Perimeter breach of secondary safety buffers",
+      "secondary_threat": "Localized infrastructure stress & power distribution disruption"
+    },
+    {
+      "timeframe": "12 Hours",
+      "perimeter_delta_km2": 95.0,
+      "spread_direction": "Downwind/downstream expansion threatening municipal corridors",
+      "primary_risk": "Transit artery congestion & access denial",
+      "secondary_threat": "Emergency services response delay"
+    },
+    {
+      "timeframe": "24 Hours",
+      "perimeter_delta_km2": 150.0,
+      "spread_direction": "Stabilization dependent on active containment & meteorological shifts",
+      "primary_risk": "Long-term humanitarian displacement",
+      "secondary_threat": "Economic and environmental recovery requirements"
+    }
+  ],
+  "critical_infrastructure": [
+    {
+      "facility_name": "Regional Medical Center",
+      "facility_type": "Hospital",
+      "distance_km": 3.4,
+      "risk_level": "HIGH",
+      "action_required": "Activate auxiliary backup generators & prepare triage expansion"
+    },
+    {
+      "facility_name": "Municipal Power & Distribution Grid Substation",
+      "facility_type": "Power Grid",
+      "distance_km": 5.1,
+      "risk_level": "MODERATE",
+      "action_required": "Deploy perimeter fire/flood barriers & monitor circuit load"
+    }
+  ],
+  "evacuation_corridors": {
+    "primary_corridor": "Major Highway Artery outbound",
+    "alternative_route": "Secondary County Connector Routes Eastbound",
+    "choke_points": [
+      "Interchange Bridge Crossing (Potential bottleneck)",
+      "Single-lane feeder roads"
+    ],
+    "safe_assembly_zones": [
+      "Community Sports Complex",
+      "Regional Civic Exhibition Center"
+    ],
+    "estimated_clearance_time_hours": 4.5
+  },
+  "resource_matrix": [
+    {
+      "resource": "Heavy First Responder Units",
+      "quantity": "12 Squads",
+      "assigned_agency": "State & Municipal Emergency Management",
+      "priority": "IMMEDIATE"
+    },
+    {
+      "resource": "Emergency Medical Transport",
+      "quantity": "8 Advanced Life Support Ambulances",
+      "assigned_agency": "Regional EMS & Red Cross",
+      "priority": "HIGH"
+    }
+  ],
+  "vulnerable_demographics": {
+    "facilities_at_risk": [
+      "Senior Care Center",
+      "Municipal Elementary Schools"
+    ],
+    "estimated_displaced_citizens": 12000,
+    "special_needs_assistance_required": "High-priority medical transport required for 45 non-ambulatory citizens."
+  }
+}

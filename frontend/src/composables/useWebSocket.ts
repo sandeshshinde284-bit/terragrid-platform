@@ -15,7 +15,7 @@ export function useWebSocket() {
     // Connect to WebSocket using the current host, changing protocol to ws/wss
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     // For local dev, hardcode the backend port to 8000
-    const host = process.env.NODE_ENV === 'production' 
+    const host = import.meta.env.MODE === 'production' 
       ? window.location.host 
       : 'localhost:8000'
       
@@ -56,8 +56,27 @@ export function useWebSocket() {
             // Only update store if there are actual changes
             if (message.data.changes.new > 0 || message.data.changes.updated > 0 || message.data.changes.removed > 0) {
                 // Update the Pinia store with the fresh real-time data
-                // In a production app you might merge changes, here we just replace with the top 50
-                eventsStore.setIncidents(message.data.events)
+                // Transform the raw backend DB events into the IncidentLevel1 format expected by the frontend
+                const transformedEvents = message.data.events.map((e: any) => {
+                  const impact = e.data?.impact || e.impact || {}
+                  
+                  return {
+                    id: String(e.id || e.data?.id || `inc-${Math.random()}`),
+                    type: e.event_type || 'other',
+                    location: e.location_name || 'Unknown',
+                    countryCode: e.data?.countryCode || 'UN',
+                    severity: e.severity || 'medium',
+                    status: e.status || 'active',
+                    threatScore: impact.risk_score || 50,
+                    detectionTime: new Date(e.event_timestamp || e.created_at || Date.now()),
+                    affectedArea: impact.affected_area_km2 || 0,
+                    affectedPopulation: impact.affected_population || 0,
+                    trend: impact.trend_km2_per_hour || 0,
+                    forecast6h: impact.forecast_6h_km2 || 0,
+                    coordinates: [e.latitude, e.longitude] as [number, number],
+                  }
+                })
+                eventsStore.setIncidents(transformedEvents)
             }
             break
             

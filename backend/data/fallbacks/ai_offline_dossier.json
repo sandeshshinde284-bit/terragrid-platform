@@ -1,0 +1,27 @@
+{
+  "ai_available": false,
+  "is_fallback": true,
+  "situational_assessment": "⚠️ VERTEX AI OFFLINE: Unable to authenticate with Google Cloud. Deep cognitive synthesis is unavailable.",
+  "threat_level": "UNKNOWN",
+  "predictive_cascade": [],
+  "critical_infrastructure": [],
+  "evacuation_corridors": {
+    "primary_corridor": "SYSTEM OFFLINE",
+    "alternative_route": "SYSTEM OFFLINE",
+    "choke_points": [
+      "AI routing disabled"
+    ],
+    "safe_assembly_zones": [
+      "AI routing disabled"
+    ],
+    "estimated_clearance_time_hours": 0
+  },
+  "resource_matrix": [],
+  "vulnerable_demographics": {
+    "facilities_at_risk": [
+      "Analysis unavailable"
+    ],
+    "estimated_displaced_citizens": 0,
+    "special_needs_assistance_required": "AI demographic profiling offline."
+  }
+}

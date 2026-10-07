@@ -61,7 +61,15 @@ class NASAEONETService:
         """
         if use_mock:
             logger.info(" NASA EONET: 🧪 MOCK MODE ENABLED via .env")
-            return cls._get_mock_data()
+            try:
+                import json
+                from pathlib import Path
+                mock_path = Path(__file__).parent.parent / "data" / "mocks" / "nasa_eonet.json"
+                with open(mock_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load NASA EONET mock: {e}")
+                return []
             
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -159,67 +167,3 @@ class NASAEONETService:
             return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
         except:
             return datetime.utcnow()
-    
-    @classmethod
-    def _get_mock_data(cls) -> List[Dict[str, Any]]:
-        """Return mock NASA EONET data for testing"""
-        now = datetime.utcnow()
-        return [
-            {
-                "event_type": "fire",
-                "severity": "high",
-                "status": "detected",
-                "latitude": 36.1699,
-                "longitude": -119.4179,
-                "location_name": "California Wildfires - Sierra Nevada",
-                "source": "NASA_EONET",
-                "event_timestamp": now - timedelta(hours=2),
-                "confidence": 0.95,
-                "is_verified": True,
-                "data": {
-                    "nasa_id": "EONET_MOCK_001",
-                    "category": "fires",
-                    "description": "Active wildfires detected in California Sierra Nevada region",
-                    "link": "https://eonet.gsfc.nasa.gov",
-                    "geometry_type": "Point"
-                }
-            },
-            {
-                "event_type": "earthquake",
-                "severity": "medium",
-                "status": "detected",
-                "latitude": 34.0522,
-                "longitude": -118.2437,
-                "location_name": "Los Angeles Seismic Activity",
-                "source": "NASA_EONET",
-                "event_timestamp": now - timedelta(hours=4),
-                "confidence": 0.92,
-                "is_verified": True,
-                "data": {
-                    "nasa_id": "EONET_MOCK_002",
-                    "category": "earthquakes",
-                    "description": "Seismic activity detected near Los Angeles",
-                    "link": "https://eonet.gsfc.nasa.gov",
-                    "geometry_type": "Point"
-                }
-            },
-            {
-                "event_type": "flood",
-                "severity": "high",
-                "status": "detected",
-                "latitude": 38.5816,
-                "longitude": -121.4944,
-                "location_name": "Sacramento Valley Flooding",
-                "source": "NASA_EONET",
-                "event_timestamp": now - timedelta(hours=6),
-                "confidence": 0.88,
-                "is_verified": True,
-                "data": {
-                    "nasa_id": "EONET_MOCK_003",
-                    "category": "floods",
-                    "description": "Flooding detected in Sacramento Valley",
-                    "link": "https://eonet.gsfc.nasa.gov",
-                    "geometry_type": "Point"
-                }
-            }
-        ]

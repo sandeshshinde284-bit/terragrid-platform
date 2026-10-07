@@ -107,8 +107,10 @@ const getSeverityColor = (score?: number) => {
 const applyModeSettings = () => {
   if (!map.value) return
 
-  // Clean vertical top-down view (0° tilt)
-  map.value.easeTo({ pitch: 0, bearing: 0, duration: 600 })
+  // Support 3D tilt perspective if appStore.viewMode is '3d'
+  const targetPitch = appStore.viewMode === '3d' ? 55 : 0
+  const targetBearing = appStore.viewMode === '3d' ? -20 : 0
+  map.value.easeTo({ pitch: targetPitch, bearing: targetBearing, duration: 600 })
 
   if (currentMode.value === 'globe') {
     // 1. Pristine Blue Marble 3D Orbital Globe (matching unnamed.jpg)
@@ -269,6 +271,24 @@ watch(() => activeIncidents.value, () => {
     renderMarkers()
   }
 }, { deep: true })
+
+// Real 3D Perspective Tilt Watcher
+watch(() => appStore.viewMode, (mode) => {
+  if (!map.value) return
+  if (mode === '3d') {
+    map.value.easeTo({
+      pitch: 55,
+      bearing: -20,
+      duration: 1000
+    })
+  } else {
+    map.value.easeTo({
+      pitch: 0,
+      bearing: 0,
+      duration: 1000
+    })
+  }
+})
 
 // Auto-Fly camera to center on the selected country!
 watch(() => props.selectedCountry, (newCountry) => {

@@ -30,7 +30,15 @@ class NOAAService:
         # 12-Factor App: Strict Environment-Driven Mock Guard
         if use_mock:
             logger.info(" NOAA Weather: 🧪 MOCK MODE ENABLED via .env")
-            return cls._get_mock_data()
+            try:
+                import json
+                from pathlib import Path
+                mock_path = Path(__file__).parent.parent / "data" / "mocks" / "noaa.json"
+                with open(mock_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load NOAA mock: {e}")
+                return []
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -210,88 +218,3 @@ class NOAAService:
             return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
         except:
             return datetime.utcnow()
-    
-    @classmethod
-    def _get_mock_data(cls) -> List[Dict[str, Any]]:
-        """Return mock NOAA weather data for testing"""
-        now = datetime.utcnow()
-        return [
-            {
-                "event_type": "thunderstorm",
-                "severity": "high",
-                "status": "detected",
-                "latitude": 37.5,
-                "longitude": -120.5,
-                "location_name": "Central California Valley - Severe Thunderstorm Warning",
-                "source": "NOAA_WEATHER",
-                "event_timestamp": now - timedelta(hours=1),
-                "confidence": 0.92,
-                "is_verified": True,
-                "data": {
-                    "noaa_id": "NOAA_MOCK_001",
-                    "event": "Severe Thunderstorm Warning",
-                    "headline": "Severe Thunderstorm Warning issued for Central Valley",
-                    "description": "A severe thunderstorm capable of producing large hail and damaging winds is moving through the region",
-                    "instruction": "Move to an interior room on the lowest floor of a sturdy building",
-                    "urgency": "Immediate",
-                    "severity": "Severe",
-                    "certainty": "Observed",
-                    "effective": (now - timedelta(hours=1)).isoformat(),
-                    "expires": (now + timedelta(hours=2)).isoformat(),
-                    "status": "Actual",
-                    "sender_name": "NOAA Weather Service",
-                }
-            },
-            {
-                "event_type": "flood",
-                "severity": "medium",
-                "status": "detected",
-                "latitude": 38.2,
-                "longitude": -121.8,
-                "location_name": "Sacramento Region - Flood Watch",
-                "source": "NOAA_WEATHER",
-                "event_timestamp": now - timedelta(hours=4),
-                "confidence": 0.92,
-                "is_verified": True,
-                "data": {
-                    "noaa_id": "NOAA_MOCK_002",
-                    "event": "Flood Watch",
-                    "headline": "Flood Watch issued for Sacramento region",
-                    "description": "Significant rainfall expected with potential for minor flooding",
-                    "instruction": "Be prepared to move to higher ground if flooding develops",
-                    "urgency": "Expected",
-                    "severity": "Moderate",
-                    "certainty": "Likely",
-                    "effective": (now - timedelta(hours=4)).isoformat(),
-                    "expires": (now + timedelta(hours=8)).isoformat(),
-                    "status": "Actual",
-                    "sender_name": "NOAA Weather Service",
-                }
-            },
-            {
-                "event_type": "high_wind",
-                "severity": "medium",
-                "status": "detected",
-                "latitude": 39.8,
-                "longitude": -120.2,
-                "location_name": "Sierra Nevada Region - Wind Advisory",
-                "source": "NOAA_WEATHER",
-                "event_timestamp": now - timedelta(hours=2),
-                "confidence": 0.92,
-                "is_verified": True,
-                "data": {
-                    "noaa_id": "NOAA_MOCK_003",
-                    "event": "Wind Advisory",
-                    "headline": "Wind Advisory issued for Sierra Nevada",
-                    "description": "Damaging winds with gusts up to 45 mph expected",
-                    "instruction": "Secure loose outdoor objects and use caution while driving",
-                    "urgency": "Expected",
-                    "severity": "Moderate",
-                    "certainty": "Likely",
-                    "effective": (now - timedelta(hours=2)).isoformat(),
-                    "expires": (now + timedelta(hours=10)).isoformat(),
-                    "status": "Actual",
-                    "sender_name": "NOAA Weather Service",
-                }
-            },
-        ]

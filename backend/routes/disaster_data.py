@@ -14,6 +14,9 @@ from ..services import (
     NASAEONETService,
     GDACSService
 )
+from backend.database import get_db
+from sqlalchemy.orm import Session
+from fastapi import APIRouter, HTTPException, Query, Depends
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +25,10 @@ router = APIRouter(prefix="/api/v1", tags=["disaster-data"])
 # Feature 1: Real-Time Data Ingestion
 @router.get("/ingest/all")
 @router.post("/ingest/all")
-async def ingest_all_sources(use_mock: bool = Query(False, description="Use mock data for testing")):
+async def ingest_all_sources(
+    use_mock: bool = Query(False, description="Use mock data for testing"),
+    db: Session = Depends(get_db)
+):
     """
     Feature 1: Manually trigger data ingestion from all sources (NASA EONET + GDACS)
     
@@ -33,7 +39,7 @@ async def ingest_all_sources(use_mock: bool = Query(False, description="Use mock
     """
     try:
         service = DataIngestionService()
-        results = await service.ingest_all_sources(use_mock=use_mock)
+        results = await service.ingest_all_sources(use_mock=use_mock, db_session=db)
         
         return {
             "status": "success",

@@ -1,0 +1,20 @@
+{
+  "is_estimated": true,
+  "data_quality": "MATHEMATICAL_FALLBACK_ESTIMATE",
+  "affected_area_km2": 0,
+  "affected_population": 0,
+  "population_density_km2": 0,
+  "vulnerability_score": 50.0,
+  "risk_score": 50.0,
+  "trend_km2_per_hour": 0,
+  "forecast_6h_km2": 0,
+  "impact_zones": [],
+  "severity_level": "UNKNOWN",
+  "humanitarian_impact": {
+    "estimated_deaths": 0,
+    "estimated_injured": 0,
+    "estimated_homeless": 0,
+    "need_level": "unknown"
+  },
+  "recommended_actions": []
+}

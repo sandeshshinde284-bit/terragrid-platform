@@ -1,0 +1,30 @@
+{
+  "ai_available": true,
+  "is_fallback": false,
+  "is_mock_demo": true,
+  "country_context": "MOCK DEMONSTRATION MODE: TARGET SECTOR",
+  "severity_assessment": "Active hazard conditions detected in sector. Immediate tactical deployment and perimeter containment required.",
+  "immediate_actions": [
+    "Deploy immediate first-responder task forces to staging areas.",
+    "Activate local emergency broadcast networks and issue shelter-in-place advisories.",
+    "Establish multi-agency coordination perimeter around primary impact zones."
+  ],
+  "resource_allocation": [
+    {
+      "resource": "Heavy Rescue Squads",
+      "quantity": "4 Units",
+      "status": "Deployed"
+    },
+    {
+      "resource": "Medical Transport",
+      "quantity": "12 Ambulances",
+      "status": "En Route"
+    },
+    {
+      "resource": "Potable Water",
+      "quantity": "5,000 Liters",
+      "status": "Staged"
+    }
+  ],
+  "evacuation_guidance": "Primary egress via outbound highways. Avoid secondary routes due to potential debris."
+}

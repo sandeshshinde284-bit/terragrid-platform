@@ -2,6 +2,7 @@
 Feature 1: Data Ingestion Service
 Orchestrates fetching from multiple APIs and storing in database
 """
+import os
 import logging
 import asyncio
 from typing import List, Dict, Any

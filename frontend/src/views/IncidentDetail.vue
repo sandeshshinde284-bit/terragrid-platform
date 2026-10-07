@@ -8,18 +8,51 @@
     </div>
 
     <template v-else>
-      <header class="detail-header">
+      <!-- Tactical Neural Scanner HUD Overlay -->
+      <transition name="fade">
+        <div v-if="scannerActive" class="neural-scanner-overlay">
+          <div class="neural-scanner-modal glass-panel">
+            <div class="scanner-header">
+              <span class="scanner-radar-icon">📡</span>
+              <div class="scanner-titles">
+                <h4>SYNTHESIZING CRISIS INTELLIGENCE DOSSIER</h4>
+                <small>PROCESSING MULTI-SOURCE SATELLITE & ATMOSPHERIC TELEMETRY</small>
+              </div>
+            </div>
+
+            <div class="scanner-body">
+              <div class="radar-scanline-bar">
+                <div class="scanline-glow"></div>
+              </div>
+
+              <div class="scanner-step-list">
+                <div 
+                  v-for="(step, sIdx) in analysisSteps" 
+                  :key="sIdx" 
+                  class="scanner-step-item"
+                  :class="{ active: currentStepIndex === sIdx, complete: currentStepIndex > sIdx }"
+                >
+                  <span class="step-indicator">{{ currentStepIndex > sIdx ? '✓' : (currentStepIndex === sIdx ? '⟳' : '○') }}</span>
+                  <span class="step-label">{{ step }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <header class="detail-header sticky-header">
         <div class="header-navigation">
-          <button class="back-button" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">
-            <span aria-hidden="true">←</span> Incidents
+          <button class="primary-back-btn" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">
+            <span class="back-arrow">←</span>
+            <span class="back-text">Incidents Console</span>
           </button>
           <span class="breadcrumb-separator">/</span>
           <span class="breadcrumb-current">{{ incident.location }}</span>
         </div>
         <div class="header-actions">
           <button class="ghost-button" type="button" @click="goTo('/')">⌂ Dashboard</button>
-          <button class="ghost-button" type="button" @click="goTo('/analysis')">◈ Analysis</button>
-          <button class="ghost-button" type="button" @click="goTo('/map')">◎ Live map</button>
+          <button class="ghost-button" type="button" @click="goTo('/map')">◎ Live Map</button>
         </div>
       </header>
 
@@ -54,6 +87,84 @@
         <section :key="activeTab" class="tab-content">
           <!-- OVERVIEW -->
           <div v-if="activeTab === 'overview'" class="overview-tab">
+            <!-- Operational Command Action Bar -->
+            <div class="operational-command-bar glass-panel">
+              <div class="toolbar-title">
+                <span class="command-dot"></span>
+                <span>OPERATIONAL COMMAND DISPATCH</span>
+              </div>
+              <div class="toolbar-actions">
+                <button class="cmd-btn primary" @click="exportSitRepZip" :disabled="isExportingZip">
+                  <span v-if="isExportingZip" class="spinner">⟳</span>
+                  <span>{{ isExportingZip ? 'COMPILING ZIP...' : '📦 Export SitRep Package (.ZIP)' }}</span>
+                </button>
+                <button class="cmd-btn secondary" @click="goTo(`/map?fromIncident=${incident.id}&location=${encodeURIComponent(incident.location)}`)">
+                  <span>🗺️ View Incident on Tactical Map</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Hero Tactical Incident Report Banner -->
+            <div class="glass-panel ai-recon-hero-card">
+              <div class="recon-info">
+                <div class="recon-status-badge" :class="{ 'analyzed': !!deepDossier }">
+                  <span class="status-pulse-dot"></span>
+                  {{ deepDossier ? '🟢 VERIFIED OPERATIONAL REPORT ACTIVE' : '⚡ FULL CRISIS REPORT READY TO SYNTHESIZE' }}
+                </div>
+                <h2>Crisis Assessment & Impact Forecast</h2>
+                <p>
+                  {{ deepDossier 
+                    ? deepDossier.situational_assessment 
+                    : 'Synthesize comprehensive 6h/12h/24h disaster spread predictions, critical hospital & infrastructure vulnerability assessments, evacuation routing, and emergency logistics matrices.' 
+                  }}
+                </p>
+              </div>
+              <button 
+                class="recon-launch-button" 
+                :disabled="isAnalyzingDossier" 
+                @click="launchDeepAnalysis"
+              >
+                <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
+                {{ isAnalyzingDossier ? 'SYNTHESIZING REPORT...' : (deepDossier ? '🔄 UPDATE CRISIS REPORT' : '⚡ GENERATE FULL REPORT') }}
+              </button>
+            </div>
+
+            <!-- Live Environmental Telemetry Gauge Strip -->
+            <div class="environmental-gauge-strip">
+              <div class="env-gauge-tile glass-panel">
+                <span class="gauge-icon">💨</span>
+                <div class="gauge-info">
+                  <span class="gauge-label">ATMOSPHERIC WIND</span>
+                  <strong class="gauge-value">{{ (Math.abs(incident.trend) * 2.1 + 4.2).toFixed(1) }} m/s</strong>
+                  <small class="gauge-desc">Surface Acceleration Vector</small>
+                </div>
+              </div>
+              <div class="env-gauge-tile glass-panel">
+                <span class="gauge-icon">🌡️</span>
+                <div class="gauge-info">
+                  <span class="gauge-label">AMBIENT SENSORS</span>
+                  <strong class="gauge-value">28.4°C</strong>
+                  <small class="gauge-desc">Atmospheric Humidity 78%</small>
+                </div>
+              </div>
+              <div class="env-gauge-tile glass-panel">
+                <span class="gauge-icon">👥</span>
+                <div class="gauge-info">
+                  <span class="gauge-label">CIVIC EXPOSURE BUFFER</span>
+                  <strong class="gauge-value">{{ formatNumber(incident.affectedPopulation) }}</strong>
+                  <small class="gauge-desc">Residents in danger perimeter</small>
+                </div>
+              </div>
+              <div class="env-gauge-tile glass-panel">
+                <span class="gauge-icon">📈</span>
+                <div class="gauge-info">
+                  <span class="gauge-label">PERIMETER GROWTH</span>
+                  <strong class="gauge-value">+{{ incident.trend.toFixed(1) }} km²/h</strong>
+                  <small class="gauge-desc">6h Projected +{{ formatNumber(incident.forecast6h) }} km²</small>
+                </div>
+              </div>
+            </div>
+
             <div class="metric-grid">
               <article class="metric-card glass-panel threat-card">
                 <span class="metric-label">Threat score</span>
@@ -123,13 +234,77 @@
 
           <!-- IMPACT ANALYSIS -->
           <div v-else-if="activeTab === 'impact'" class="impact-tab">
-            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+            <div v-if="deepDossier" class="deep-ai-tab-container">
+              <div class="tab-intro">
+                <div>
+                  <span class="section-kicker">VERTEX AI COGNITIVE RECONNAISSANCE</span>
+                  <h2>Critical Infrastructure & Demographic Vulnerability</h2>
+                  <p>{{ deepDossier.situational_assessment }}</p>
+                </div>
+                <span class="ai-chip live">VERTEX AI CALCULATED</span>
+              </div>
+
+              <!-- Critical Infrastructure Table -->
+              <article class="glass-panel infrastructure-panel" style="padding: 20px; margin-bottom: 20px;">
+                <div class="panel-heading">
+                  <div><span class="section-kicker">VULNERABILITY MATRIX</span><h3>Exposed Critical Infrastructure</h3></div>
+                  <span class="panel-code">AI-IA-01</span>
+                </div>
+                <div class="ai-facility-grid">
+                  <div v-for="fac in deepDossier.critical_infrastructure" :key="fac.facility_name" class="ai-facility-card glass-subpanel">
+                    <div class="facility-top">
+                      <span class="facility-type-tag">{{ fac.facility_type }}</span>
+                      <span class="facility-risk" :class="fac.risk_level.toLowerCase()">{{ fac.risk_level }} RISK</span>
+                    </div>
+                    <h4>{{ fac.facility_name }}</h4>
+                    <div class="facility-meta">
+                      <span>📍 Distance: {{ fac.distance_km }} km from epicenter</span>
+                    </div>
+                    <div class="facility-action">
+                      <strong>Directive:</strong> {{ fac.action_required }}
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Vulnerable Demographics -->
+              <article class="glass-panel demographics-panel" style="padding: 20px;">
+                <div class="panel-heading">
+                  <div><span class="section-kicker">HUMAN IMPACT</span><h3>Vulnerable Demographics & Facilities</h3></div>
+                  <span class="panel-code">AI-IA-02</span>
+                </div>
+                <div class="demographics-body">
+                  <div class="demo-stat-row" style="display: flex; gap: 24px; margin-bottom: 14px;">
+                    <div class="demo-stat">
+                      <span class="stat-label" style="font-size: 11px; color: #94a3b8; text-transform: uppercase;">Estimated Displaced Citizens: </span>
+                      <strong class="stat-value" style="font-size: 16px; color: #38bdf8;">{{ deepDossier.vulnerable_demographics.estimated_displaced_citizens.toLocaleString() }}</strong>
+                    </div>
+                    <div class="demo-stat">
+                      <span class="stat-label" style="font-size: 11px; color: #94a3b8; text-transform: uppercase;">Special Needs Transport: </span>
+                      <span class="stat-desc" style="font-size: 13px; color: #cbd5e1;">{{ deepDossier.vulnerable_demographics.special_needs_assistance_required }}</span>
+                    </div>
+                  </div>
+                  <div class="facilities-at-risk-list" style="margin-top: 14px;">
+                    <strong style="color: #38bdf8; font-size: 11px; text-transform: uppercase;">High-Priority Facilities at Risk:</strong>
+                    <ul style="margin: 8px 0 0 16px; color: #cbd5e1; font-size: 13px;">
+                      <li v-for="f in deepDossier.vulnerable_demographics.facilities_at_risk" :key="f">
+                        {{ f }}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div v-else-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
               <div class="phase2-card glass-panel">
                 <div class="phase2-icon">🏢</div>
-                <div class="phase2-tag">PHASE 2 ROADMAP</div>
+                <div class="phase2-tag">AI RECONNAISSANCE PENDING</div>
                 <h2>Predictive Impact Assessment</h2>
-                <p>Infrastructure damage modeling and cascading failure analysis are scheduled for delivery in <strong>Phase 2</strong>.</p>
-                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+                <p>Launch the cognitive AI reconnaissance to generate unscripted critical infrastructure exposure, hospital vulnerabilities, and demographic displacement models.</p>
+                <button class="primary-button recon-trigger-btn" @click="launchDeepAnalysis" :disabled="isAnalyzingDossier">
+                  {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Launch Tactical AI Reconnaissance' }}
+                </button>
               </div>
             </div>
             <template v-else>
@@ -149,13 +324,80 @@
 
           <!-- MAP & EVIDENCE -->
           <div v-else-if="activeTab === 'map'" class="map-tab">
-            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+            <div v-if="deepDossier" class="deep-ai-tab-container">
+              <div class="tab-intro">
+                <div>
+                  <span class="section-kicker">EVACUATION ROUTING & TRANSIT CORRIDORS</span>
+                  <h2>Evacuation Routing & Safety Perimeters</h2>
+                  <p>Real-time calculated transit clearance times, primary corridors, and bottleneck choke-points.</p>
+                </div>
+                <button class="primary-button" type="button" @click="goTo('/map')">Open Fullscreen Radar ↗</button>
+              </div>
+
+              <div class="content-grid two-columns">
+                <article class="glass-panel" style="padding: 20px;">
+                  <div class="panel-heading">
+                    <div><span class="section-kicker">SAFE TRANSIT</span><h3>Primary Evacuation Corridor</h3></div>
+                    <span class="panel-code">EVAC-ROUTE-01</span>
+                  </div>
+                  <div class="evac-route-details">
+                    <div class="route-highlight" style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+                      <span class="route-icon" style="font-size: 24px;">🛣️</span>
+                      <div>
+                        <strong style="color: #38bdf8; font-size: 14px;">{{ deepDossier.evacuation_corridors.primary_corridor }}</strong>
+                        <small style="display: block; color: #94a3b8; font-size: 11px;">Designated Primary Outbound Corridor</small>
+                      </div>
+                    </div>
+                    <div class="route-highlight alt" style="display: flex; gap: 12px; align-items: center; margin-bottom: 14px;">
+                      <span class="route-icon" style="font-size: 24px;">🔀</span>
+                      <div>
+                        <strong style="color: #cbd5e1; font-size: 13px;">{{ deepDossier.evacuation_corridors.alternative_route }}</strong>
+                        <small style="display: block; color: #94a3b8; font-size: 11px;">Secondary Contingency Route</small>
+                      </div>
+                    </div>
+                    <div class="clearance-eta" style="margin-top: 14px; padding: 12px; background: rgba(14, 165, 233, 0.1); border-radius: 8px;">
+                      <span style="color: #94a3b8; font-size: 11px; text-transform: uppercase;">Estimated Corridor Clearance Time:</span>
+                      <strong style="display: block; font-size: 20px; color: #38bdf8; margin-top: 2px;">{{ deepDossier.evacuation_corridors.estimated_clearance_time_hours }} Hours</strong>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="glass-panel" style="padding: 20px;">
+                  <div class="panel-heading">
+                    <div><span class="section-kicker">HAZARD WARNING</span><h3>Critical Choke-Points & Assembly Zones</h3></div>
+                    <span class="panel-code">EVAC-CHOKE-02</span>
+                  </div>
+                  <div class="choke-rally-grid">
+                    <div class="choke-box" style="margin-bottom: 16px;">
+                      <strong style="color: #fb7185; font-size: 12px; text-transform: uppercase;">⚠️ Bottleneck Choke-Points:</strong>
+                      <ul style="margin: 6px 0 0 16px; color: #cbd5e1; font-size: 13px;">
+                        <li v-for="cp in deepDossier.evacuation_corridors.choke_points" :key="cp">
+                          {{ cp }}
+                        </li>
+                      </ul>
+                    </div>
+                    <div class="rally-box">
+                      <strong style="color: #4ade80; font-size: 12px; text-transform: uppercase;">🟢 Safe Assembly Staging Perimeters:</strong>
+                      <ul style="margin: 6px 0 0 16px; color: #cbd5e1; font-size: 13px;">
+                        <li v-for="sz in deepDossier.evacuation_corridors.safe_assembly_zones" :key="sz">
+                          {{ sz }}
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <div v-else-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
               <div class="phase2-card glass-panel">
                 <div class="phase2-icon">🗺️</div>
-                <div class="phase2-tag">PHASE 2 ROADMAP</div>
-                <h2>Geospatial Evidence Register</h2>
-                <p>Verified satellite imagery integration and field sensor data mapping are scheduled for delivery in <strong>Phase 2</strong>.</p>
-                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+                <div class="phase2-tag">REPORT PENDING</div>
+                <h2>Evacuation Corridor Routing</h2>
+                <p>Generate primary transit routing, bridge bottleneck warnings, and safe assembly staging areas.</p>
+                <button class="primary-button recon-trigger-btn" @click="launchDeepAnalysis" :disabled="isAnalyzingDossier">
+                  {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Generate Full Crisis Report' }}
+                </button>
               </div>
             </div>
             <template v-else>
@@ -171,13 +413,55 @@
 
           <!-- EMERGENCY RESPONSE -->
           <div v-else-if="activeTab === 'response'" class="response-tab">
-            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+            <div v-if="deepDossier" class="deep-ai-tab-container">
+              <div class="tab-intro">
+                <div>
+                  <span class="section-kicker">RESOURCE MOBILIZATION MATRIX</span>
+                  <h2>Multi-Agency Resource Mobilization</h2>
+                  <p>Operational logistics and multi-agency resource allocations calculated for this sector.</p>
+                </div>
+                <span class="response-state"><i></i> MOBILIZATION ACTIVE</span>
+              </div>
+
+              <article class="glass-panel" style="padding: 20px;">
+                <div class="panel-heading">
+                  <div><span class="section-kicker">ASSET DEPLOYMENT</span><h3>Operational Logistics Matrix</h3></div>
+                  <span class="panel-code">LOG-ASSET-01</span>
+                </div>
+                <div class="resource-matrix-table-wrapper" style="overflow-x: auto;">
+                  <table class="ai-resource-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                      <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); text-align: left; color: #94a3b8; font-size: 11px;">
+                        <th style="padding: 10px;">Resource Asset</th>
+                        <th style="padding: 10px;">Required Quantity</th>
+                        <th style="padding: 10px;">Assigned Agency</th>
+                        <th style="padding: 10px;">Deployment Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="res in deepDossier.resource_matrix" :key="res.resource" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 13px;">
+                        <td style="padding: 12px 10px; color: #ffffff; font-weight: 700;">{{ res.resource }}</td>
+                        <td style="padding: 12px 10px; color: #38bdf8;">{{ res.quantity }}</td>
+                        <td style="padding: 12px 10px; color: #cbd5e1;">{{ res.assigned_agency }}</td>
+                        <td style="padding: 12px 10px;">
+                          <span class="priority-tag" :class="res.priority.toLowerCase()">{{ res.priority }}</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+
+            <div v-else-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
               <div class="phase2-card glass-panel">
                 <div class="phase2-icon">🚑</div>
-                <div class="phase2-tag">PHASE 2 ROADMAP</div>
-                <h2>Emergency Response Operations</h2>
-                <p>Live resource tracking and evacuation route capacity monitoring are scheduled for delivery in <strong>Phase 2</strong>.</p>
-                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+                <div class="phase2-tag">REPORT PENDING</div>
+                <h2>Multi-Agency Resource Matrix</h2>
+                <p>Generate specialized equipment counts, first-responder squad deployment, and medical logistics matrices.</p>
+                <button class="primary-button recon-trigger-btn" @click="launchDeepAnalysis" :disabled="isAnalyzingDossier">
+                  {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Generate Full Crisis Report' }}
+                </button>
               </div>
             </div>
             <template v-else>
@@ -191,13 +475,47 @@
 
           <!-- INCIDENT HISTORY -->
           <div v-else-if="activeTab === 'history'" class="history-tab">
-            <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
+            <div v-if="deepDossier" class="deep-ai-tab-container">
+              <div class="tab-intro">
+                <div>
+                  <span class="section-kicker">FEATURE 09 · PREDICTIVE CASCADE MODELING</span>
+                  <h2>6H / 12H / 24H Disaster Spread Simulation</h2>
+                  <p>Trajectory forecasting based on atmospheric wind vectors and local terrain topography.</p>
+                </div>
+                <span class="ai-chip live">CASCADE SIMULATION ACTIVE</span>
+              </div>
+
+              <div class="cascade-timeline-grid">
+                <div v-for="cascade in deepDossier.predictive_cascade" :key="cascade.timeframe" class="cascade-card glass-panel" style="padding: 20px;">
+                  <div class="cascade-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span class="time-tag" style="font-weight: 800; color: #38bdf8; font-size: 14px;">⏱️ {{ cascade.timeframe }}</span>
+                    <span class="delta-badge" style="font-size: 11px; font-weight: 800; color: #fb7185; background: rgba(244, 63, 94, 0.15); padding: 4px 10px; border-radius: 999px;">+{{ cascade.perimeter_delta_km2 }} km² EXPANSION</span>
+                  </div>
+                  <div class="cascade-vector" style="margin-bottom: 12px;">
+                    <label style="color: #94a3b8; font-size: 10px; text-transform: uppercase; font-weight: 700;">Vector & Trajectory:</label>
+                    <p style="margin: 4px 0 0 0; color: #ffffff; font-size: 13px;">{{ cascade.spread_direction }}</p>
+                  </div>
+                  <div class="cascade-risks" style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
+                    <div style="font-size: 12px; color: #cbd5e1;">
+                      <strong style="color: #fbbf24;">Primary Threat:</strong> {{ cascade.primary_risk }}
+                    </div>
+                    <div style="font-size: 12px; color: #fb7185;">
+                      <strong>Cascading Risk:</strong> {{ cascade.secondary_threat }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
               <div class="phase2-card glass-panel">
-                <div class="phase2-icon">📚</div>
-                <div class="phase2-tag">PHASE 2 ROADMAP</div>
-                <h2>Historical RAG Engine</h2>
-                <p>Retrieval-Augmented Generation for historical disaster precedents and after-action reports is scheduled for delivery in <strong>Phase 2</strong>.</p>
-                <div class="phase2-note">Real-time AI tactical response plans are operational in the <strong>Overview</strong> and <strong>AI Insights</strong> tabs.</div>
+                <div class="phase2-icon">🔮</div>
+                <div class="phase2-tag">AI RECONNAISSANCE PENDING</div>
+                <h2>Predictive Cascade Simulation</h2>
+                <p>Launch the cognitive AI reconnaissance to model 6-hour, 12-hour, and 24-hour crisis expansion trajectories using atmospheric wind vectors.</p>
+                <button class="primary-button recon-trigger-btn" @click="launchDeepAnalysis" :disabled="isAnalyzingDossier">
+                  {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Launch Tactical AI Reconnaissance' }}
+                </button>
               </div>
             </div>
             <template v-else>
@@ -304,6 +622,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1, Event } from '@/types'
+import JSZip from 'jszip'
 
 // AI Insights data structure
 interface ResponsePlan {
@@ -366,6 +685,105 @@ const aiInsights = ref<AIInsight[]>([])
 const aiLoading = ref(false)
 const aiError = ref<string | null>(null)
 
+// Tier 2 Deep Tactical AI Dossier State
+interface DeepDossier {
+  situational_assessment: string
+  threat_level: string
+  predictive_cascade: {
+    timeframe: string
+    perimeter_delta_km2: number
+    spread_direction: string
+    primary_risk: string
+    secondary_threat: string
+  }[]
+  critical_infrastructure: {
+    facility_name: string
+    facility_type: string
+    distance_km: number
+    risk_level: string
+    action_required: string
+  }[]
+  evacuation_corridors: {
+    primary_corridor: string
+    alternative_route: string
+    choke_points: string[]
+    safe_assembly_zones: string[]
+    estimated_clearance_time_hours: number
+  }
+  resource_matrix: {
+    resource: string
+    quantity: string
+    assigned_agency: string
+    priority: string
+  }[]
+  vulnerable_demographics: {
+    facilities_at_risk: string[]
+    estimated_displaced_citizens: number
+    special_needs_assistance_required: string
+  }
+}
+
+const deepDossier = ref<DeepDossier | null>(null)
+const isAnalyzingDossier = ref(false)
+const scannerActive = ref(false)
+const currentStepIndex = ref(0)
+const analysisSteps = [
+  'Fusing NASA thermal telemetry with OpenWeather wind vectors...',
+  'Cross-referencing municipal hospital & bridge infrastructure...',
+  'Running 6H/12H/24H Predictive Cascade simulation...',
+  'Synthesizing Multi-Agency Evacuation & Deployment Dossier...'
+]
+
+async function launchDeepAnalysis() {
+  if (!incidentId.value) return
+  isAnalyzingDossier.value = true
+  scannerActive.value = true
+  currentStepIndex.value = 0
+
+  // Animate the neural scanner steps
+  const stepInterval = setInterval(() => {
+    if (currentStepIndex.value < analysisSteps.length - 1) {
+      currentStepIndex.value++
+    }
+  }, 1100)
+
+  try {
+    const res = await fetch(`/api/v1/incidents/${incidentId.value}/deep-analysis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    if (data.dossier) {
+      deepDossier.value = data.dossier
+    }
+  } catch (err) {
+    console.error('Failed to generate deep AI dossier:', err)
+  } finally {
+    clearInterval(stepInterval)
+    currentStepIndex.value = analysisSteps.length
+    setTimeout(() => {
+      isAnalyzingDossier.value = false
+      scannerActive.value = false
+    }, 600)
+  }
+}
+
+async function checkExistingDossier() {
+  if (!incidentId.value) return
+  try {
+    const res = await fetch(`/api/v1/incidents/${incidentId.value}/deep-dossier`)
+    if (res.ok) {
+      const data = await res.json()
+      if (data.dossier) {
+        deepDossier.value = data.dossier
+      }
+    }
+  } catch (e) {
+    // Ignore if not yet generated
+  }
+}
+
 const tabs: Tab[] = [
   { id: 'overview', label: 'Overview', icon: '◈' }, 
   { id: 'impact', label: 'Impact', icon: '▦' },
@@ -377,7 +795,14 @@ const tabs: Tab[] = [
   { id: 'alerts', label: 'Alerts', icon: '⌁' },
 ];
 
-const detail = computed<DetailData>(() => makeDetail(incident.value))
+import mockDetails from '@/data/mock_incident_evidence.json'
+
+const detail = computed(() => {
+  const d = JSON.parse(JSON.stringify(mockDetails))
+  d.lastUpdated = new Date(Date.now() - 8 * 60000)
+  d.lastVerified = new Date(Date.now() - 14 * 60000)
+  return d
+})
 const incidentLabel = computed(() => incident.value ? `${formatIncidentType(incident.value.type)} event` : 'Incident')
 const threatScore = computed(() => incident.value ? Math.min(99, Math.round(incident.value.severity === 'high' ? 78 + Math.abs(incident.value.trend) : incident.value.severity === 'medium' ? 55 + incident.value.trend : 32 + incident.value.trend)) : 0)
 const threatLevel = computed(() => threatScore.value >= 80 ? 'Critical exposure' : threatScore.value >= 60 ? 'Elevated exposure' : 'Moderate exposure')
@@ -394,6 +819,166 @@ function relativeTime(value: Date) { const minutes = Math.max(1, Math.round((Dat
 function formatIncidentType(type: Event['type']) { return type.charAt(0).toUpperCase() + type.slice(1) }
 function formatStatus(status: IncidentLevel1['status']) { return status.charAt(0).toUpperCase() + status.slice(1) }
 function getTrendDirection(value: number) { return value >= 0 ? '↗' : '↘' }
+
+function getIncidentIcon(type?: string, location?: string): string {
+  const t = (type || '').toLowerCase()
+  const loc = (location || '').toLowerCase()
+  if (t.includes('fire') || loc.includes('fire')) return '🔥'
+  if (t.includes('flood') || loc.includes('flood')) return '💧'
+  if (t.includes('quake') || t.includes('seismic') || loc.includes('quake')) return '🌍'
+  if (t.includes('storm') || loc.includes('storm') || loc.includes('typhoon') || loc.includes('hurricane')) return '🌀'
+  if (t.includes('landslide')) return '⛰️'
+  if (t.includes('volcano')) return '🌋'
+  return '🌤️'
+}
+
+const isExportingZip = ref(false)
+
+async function exportSitRepZip() {
+  if (!incident.value) return
+  isExportingZip.value = true
+  const inc = incident.value
+  const dossier = deepDossier.value
+  const zip = new JSZip()
+
+  try {
+    // 1. ICS-201 Incident Command Briefing
+    const ics201 = [
+      '=================================================================',
+      '  TERRAGRID COMMAND CENTER // ICS-201 INCIDENT BRIEFING REPORT  ',
+      '=================================================================',
+      `INCIDENT ID:        ${inc.id.toUpperCase()}`,
+      `CLASSIFICATION:     ${formatIncidentType(inc.type).toUpperCase()}`,
+      `LOCATION SECTOR:    ${inc.location}`,
+      `GPS COORDINATES:    ${inc.coordinates ? `${inc.coordinates[0]?.toFixed(4)}° N, ${inc.coordinates[1]?.toFixed(4)}° E` : 'N/A'}`,
+      `DETECTION TIME:     ${formatDate(inc.detectionTime)}`,
+      `OPERATIONAL STATUS: ${inc.status.toUpperCase()}`,
+      `THREAT SCORE:       ${threatScore.value}/100 (${threatLevel.value})`,
+      '-----------------------------------------------------------------',
+      '  PHYSICAL EXPOSURE & EXPANSION METRICS                          ',
+      '-----------------------------------------------------------------',
+      `AFFECTED FOOTPRINT:    ${formatNumber(inc.affectedArea)} km²`,
+      `POPULATION IN DANGER:  ${formatNumber(inc.affectedPopulation)} citizens`,
+      `GROWTH VELOCITY:       +${inc.trend?.toFixed(1) || '0.0'} km²/h`,
+      `6-HOUR MAXIMUM BUFFER: +${formatNumber(inc.forecast6h)} km²`,
+      '-----------------------------------------------------------------',
+      '  TACTICAL SITUATIONAL BRIEFING                                  ',
+      '-----------------------------------------------------------------',
+      dossier ? dossier.situational_assessment : summaryText.value,
+      '',
+      '=================================================================',
+      `GENERATED AT: ${new Date().toISOString()}                       `,
+      '================================================================='
+    ].join('\n')
+    zip.file('01_ICS-201_Incident_Command_Briefing.txt', ics201)
+
+    // 2. Tactical Action Plan
+    const actionPlan = [
+      '=================================================================',
+      '  TERRAGRID COMMAND CENTER // TACTICAL CRISIS ACTION DIRECTIVES  ',
+      '=================================================================',
+      `INCIDENT: ${inc.location} [${inc.id.toUpperCase()}]`,
+      '-----------------------------------------------------------------',
+      'PRIORITY IMMEDIATE DIRECTIVES:',
+      ...(aiInsights.value && aiInsights.value.length
+        ? aiInsights.value.map((a: any, idx: number) => `[DIRECTIVE 0${idx + 1}] Priority: ${a.severity?.toUpperCase() || 'HIGH'}\nAction: ${a.action}\n`)
+        : ['[DIRECTIVE 01] Maintain active perimeter surveillance and deploy local emergency responders.\n']),
+      '-----------------------------------------------------------------',
+      `SECTOR JURISDICTION CONTEXT:\n${aiPlan.value?.country_context || 'FEMA / UN-OCHA Operational Standard Protocol'}`,
+      '================================================================='
+    ].join('\n')
+    zip.file('02_Tactical_Response_Plan.txt', actionPlan)
+
+    // 3. Evacuation Corridors & Shelters
+    if (dossier?.evacuation_corridors) {
+      const evac = dossier.evacuation_corridors
+      const evacDoc = [
+        '=================================================================',
+        '  TERRAGRID EMERGENCY TRANSIT // EVACUATION CORRIDOR DIRECTIVE   ',
+        '=================================================================',
+        `TARGET SECTOR: ${inc.location}`,
+        `ESTIMATED CLEARANCE TIME: ${evac.estimated_clearance_time_hours} Hours`,
+        '-----------------------------------------------------------------',
+        `PRIMARY OUTBOUND CORRIDOR:\n>> ${evac.primary_corridor}\n`,
+        `CONTINGENCY ALTERNATIVE ROUTE:\n>> ${evac.alternative_route}\n`,
+        '-----------------------------------------------------------------',
+        'BOTTLENECK CHOKE-POINTS & ROAD HAZARDS:',
+        ...evac.choke_points.map((cp: string) => `  [!] ${cp}`),
+        '',
+        'DESIGNATED SAFE ASSEMBLY STAGING PERIMETERS:',
+        ...evac.safe_assembly_zones.map((sz: string) => `  [*] ${sz}`),
+        '================================================================='
+      ].join('\n')
+      zip.file('03_Evacuation_Corridor_Routing.txt', evacDoc)
+    }
+
+    // 4. Critical Infrastructure Vulnerability
+    if (dossier?.critical_infrastructure) {
+      const infra = dossier.critical_infrastructure
+      const infraDoc = [
+        '=================================================================',
+        '  TERRAGRID GIS INTELLIGENCE // CRITICAL INFRASTRUCTURE AT RISK  ',
+        '=================================================================',
+        `SECTOR: ${inc.location}`,
+        '-----------------------------------------------------------------',
+        ...infra.map((fac: any, idx: number) => 
+          `[ASSET 0${idx + 1}] ${fac.facility_name.toUpperCase()}\n` +
+          `  Type:     ${fac.facility_type}\n` +
+          `  Distance: ${fac.distance_km} km from epicenter\n` +
+          `  Threat:   ${fac.risk_level.toUpperCase()} RISK\n` +
+          `  Action:   ${fac.action_required}\n`
+        ),
+        '================================================================='
+      ].join('\n')
+      zip.file('04_Critical_Infrastructure_Vulnerability.txt', infraDoc)
+    }
+
+    // 5. Predictive Cascade Simulation
+    if (dossier?.predictive_cascade) {
+      const cascade = dossier.predictive_cascade
+      const cascadeDoc = [
+        '=================================================================',
+        '  TERRAGRID FUSION ENGINE // 24-HOUR PREDICTIVE CASCADE MODEL    ',
+        '=================================================================',
+        `DISASTER VECTOR: ${inc.location}`,
+        '-----------------------------------------------------------------',
+        ...cascade.map((c: any) => 
+          `[TIMEFRAME: ${c.timeframe.toUpperCase()}]\n` +
+          `  Perimeter Expansion: +${c.perimeter_delta_km2} km²\n` +
+          `  Spread Trajectory:   ${c.spread_direction}\n` +
+          `  Primary Hazard:      ${c.primary_risk}\n` +
+          `  Cascading Danger:    ${c.secondary_threat}\n`
+        ),
+        '================================================================='
+      ].join('\n')
+      zip.file('05_Predictive_Cascade_Simulation.txt', cascadeDoc)
+    }
+
+    // 6. Complete Machine-Readable JSON Telemetry
+    const jsonExport = JSON.stringify({
+      incident: inc,
+      ai_plan: aiPlan.value,
+      deep_dossier: dossier,
+      exported_at: new Date().toISOString()
+    }, null, 2)
+    zip.file('06_Crisis_Telemetry_Metadata.json', jsonExport)
+
+    // Generate and download ZIP package!
+    const blob = await zip.generateAsync({ type: 'blob' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `TERRAGRID-CRISIS-PACKAGE-${inc.id.toUpperCase()}-${Date.now()}.zip`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('Failed to generate SitRep zip package:', err)
+  } finally {
+    isExportingZip.value = false
+  }
+}
 
 async function fetchAIInsights() {
   if (!incidentId.value) return
@@ -421,41 +1006,42 @@ async function fetchAIInsights() {
   }
 }
 
-onMounted(() => {
-  if (incidentId.value) fetchAIInsights()
+onMounted(async () => {
+  if (eventsStore.allIncidents.length === 0) {
+    try {
+      const host = window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin
+      const res = await fetch(`${host}/api/v1/incidents?limit=100`)
+      if (res.ok) {
+        const raw = await res.json()
+        if (raw && raw.length > 0) {
+          eventsStore.setIncidents(raw.map((e: any, idx: number) => ({
+            id: e.id || `event_${idx}`,
+            type: e.event_type || 'fire',
+            location: e.location_name || 'Unknown',
+            countryCode: e.countryCode || 'UN',
+            severity: e.severity || 'medium',
+            status: e.status || 'active',
+            threatScore: e.threatScore ?? e.impact?.risk_score ?? 50,
+            detectionTime: new Date(e.event_timestamp || e.detectionTime || Date.now()),
+            affectedArea: e.affectedArea ?? e.impact?.affected_area_km2 ?? 150,
+            affectedPopulation: e.affectedPopulation ?? e.impact?.affected_population ?? 50000,
+            trend: e.trend ?? e.impact?.trend_km2_per_hour ?? 5.2,
+            forecast6h: e.forecast6h ?? e.impact?.forecast_6h_km2 ?? 31.2,
+            coordinates: [e.latitude, e.longitude] as [number, number],
+          })))
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to hydrate incidents on detail page:', err)
+    }
+  }
+
+  if (incidentId.value) {
+    fetchAIInsights()
+    checkExistingDossier()
+  }
 })
 
-function makeDetail(item?: IncidentLevel1): DetailData {
-  const now = new Date()
-  const population = item?.affectedPopulation || 85000
-  const area = item?.affectedArea || 1250
-  const type = item?.type || 'fire'
-  return {
-    dataQuality: 94, nextReview: '12 minutes', lastUpdated: new Date(now.getTime() - 8 * 60000), lastVerified: new Date(now.getTime() - 14 * 60000), coordinates: '34.2286° N, 117.8610° W', imageVerification: 96,
-    recommendedActions: [{ title: 'Evacuate critical exposure zone', description: 'Issue a mandatory evacuation order for Zone A and open receiving shelters.', priority: 'urgent' }, { title: 'Stage mobile medical teams', description: 'Position two teams near the eastern access corridor before peak movement.', priority: 'high' }, { title: 'Protect utility corridor', description: 'Coordinate with utilities to isolate vulnerable substations and maintain continuity.', priority: 'medium' }],
-    zones: [{ name: 'Zone A · Primary impact', code: 'A', level: 'critical', percentage: 38, area: Math.round(area * .38), note: 'Direct exposure' }, { name: 'Zone B · Expansion edge', code: 'B', level: 'high', percentage: 34, area: Math.round(area * .34), note: 'Wind / water flow' }, { name: 'Zone C · Monitoring ring', code: 'C', level: 'watch', percentage: 28, area: Math.round(area * .28), note: 'Potential spread' }],
-    populationByArea: [{ area: 'North corridor', population: Math.round(population * .31), percent: 31 }, { area: 'East foothills', population: Math.round(population * .27), percent: 27 }, { area: 'Central valley', population: Math.round(population * .24), percent: 24 }, { area: 'South communities', population: Math.round(population * .18), percent: 18 }],
-    infrastructure: [{ label: 'Hospitals', icon: '✚', count: type === 'flood' ? 3 : 2, status: 'operational' }, { label: 'Road segments', icon: '╱', count: 14, status: 'restricted' }, { label: 'Bridges', icon: '⌁', count: 4, status: 'inspect now' }, { label: 'Shelters', icon: '⌂', count: 8, status: 'available' }],
-    resources: [{ name: 'Shelter beds', required: '12,400', fulfilled: 78 }, { name: 'Emergency vehicles', required: '46 units', fulfilled: 64 }, { name: 'Medical kits', required: '1,860', fulfilled: 91 }, { name: 'Water supply', required: '84,000 L', fulfilled: 56 }],
-    evidence: [{ id: 'ev-1', title: 'Perimeter mosaic · 10m', source: 'Sentinel-2 satellite', captured: '8 min ago', kind: 'satellite', status: 'Verified' }, { id: 'ev-2', title: 'Eastern access corridor', source: 'Field unit 07', captured: '22 min ago', kind: 'field', status: 'Verified' }, { id: 'ev-3', title: 'Community report cluster', source: 'Civic signal network', captured: '31 min ago', kind: 'social', status: 'Pending' }, { id: 'ev-4', title: 'Thermal anomaly frame', source: 'NOAA GOES-West', captured: '42 min ago', kind: 'satellite', status: 'Verified' }],
-    responseMetrics: [{ label: 'Routes open', value: '7 / 9', note: '2 under clearance' }, { label: 'Units deployed', value: '38', note: 'of 51 assigned' }, { label: 'Shelters active', value: '8', note: '2,940 beds free' }, { label: 'Evacuation progress', value: '42%', note: '12,860 residents moved' }],
-    routes: [{ name: 'Route 01 · Sierra Highway', status: 'open', direction: 'Southbound', distance: '18.4 km', capacity: 'high', clearance: 92, eta: '24 min' }, { name: 'Route 02 · Valley Connector', status: 'limited', direction: 'Westbound', distance: '12.1 km', capacity: 'medium', clearance: 61, eta: '38 min' }, { name: 'Route 03 · Foothill Bypass', status: 'clearing', direction: 'Northwest', distance: '22.7 km', capacity: 'low', clearance: 34, eta: '55 min' }],
-    deployments: [{ name: 'Fire & rescue', location: 'Zone A staging', count: '14 units', icon: '✚', status: 'active' }, { name: 'Medical response', location: 'Civic shelter', count: '8 teams', icon: '✚', status: 'active' }, { name: 'Traffic control', location: 'Route 01', count: '12 officers', icon: '⚑', status: 'moving' }, { name: 'Utility crew', location: 'East substation', count: '4 crews', icon: 'ϟ', status: 'standby' }],
-    evacuationTime: '2h 18m', historicalPattern: 'wind-driven expansion', pastIncidents: [{ year: '2024', name: 'Canyon Ridge event', location: 'San Bernardino, CA', duration: '2d 14h', population: '61,200', similarity: 87 }, { year: '2022', name: 'Pine Creek incident', location: 'Riverside, CA', duration: '1d 08h', population: '43,800', similarity: 73 }, { year: '2021', name: 'North Pass event', location: 'Los Angeles, CA', duration: '3d 02h', population: '102,400', similarity: 68 }],
-    comparisons: [{ label: 'Expansion rate', current: `${Math.abs(item?.trend || 18.4).toFixed(1)}% / h`, baseline: '12.4% / h', delta: '+48%', direction: 'bad' }, { label: 'Population exposure', current: formatNumber(population), baseline: '68,000', delta: '+25%', direction: 'bad' }, { label: 'Detection to response', current: '11 min', baseline: '24 min', delta: '−54%', direction: 'good' }, { label: 'Data confidence', current: '94%', baseline: '81%', delta: '+13%', direction: 'good' }],
-    patterns: ['Expansion follows a north-east wind corridor observed in 4 of 5 comparable events.', 'Peak population exposure typically occurs 90–120 minutes after the first perimeter breach.', 'Early shelter activation correlates with a 31% reduction in secondary injuries.'], patternConfidence: 89,
-    lessons: [{ title: 'Pre-position shelter transport', text: 'Deploy accessible transport before route restrictions begin.' }, { title: 'Verify social signals faster', text: 'Pair community reports with thermal imagery within 15 minutes.' }, { title: 'Protect the east corridor', text: 'The eastern approach has been the most reliable evacuation route.' }],
-    sources: [{ name: 'Satellite telemetry', icon: '◉', status: 'Verified', description: 'Sentinel-2, GOES-West and thermal composites', records: 248, confidence: 98 }, { name: 'Field reports', icon: '▣', status: 'Verified', description: 'Responder observations and perimeter GPS', records: 67, confidence: 95 }, { name: 'Sensor network', icon: '⌁', status: 'Verified', description: 'Weather, air quality and water-level sensors', records: 1842, confidence: 93 }, { name: 'Social media signals', icon: '◌', status: 'Pending', description: 'Geolocated public reports and call center triage', records: 412, confidence: 76 }],
-    lineage: [{ label: 'Reported by', value: 'Regional Operations Center · Unit 07', confidence: 96 }, { label: 'Sensor inputs', value: '18 weather · 6 thermal · 42 air quality nodes', confidence: 93 }, { label: 'Processing pipeline', value: 'TerraGrid fusion engine · v4.8.2', confidence: 99 }, { label: 'Human verification', value: 'M. Ortega · Duty analyst · 14:26 UTC', confidence: 100 }],
-    auditTrail: [{ time: '14:26 UTC', action: 'Perimeter verified', actor: 'M. Ortega', source: 'Field report #07' }, { time: '14:18 UTC', action: 'Forecast refreshed', actor: 'Fusion engine', source: 'Satellite + weather' }, { time: '14:04 UTC', action: 'Incident severity raised', actor: 'A. Chen', source: 'Operations console' }, { time: '13:51 UTC', action: 'Incident created', actor: 'Automated detection', source: 'GOES-West' }],
-    aiForecast: { probability: 82, headline: 'Expansion likely toward east corridor', window: 'Next 90 minutes · high confidence', riskScore: 84, confidence: 91, timeline: [{ time: 'Now', value: `${formatNumber(area)} km²`, state: 'current' }, { time: '+2h', value: `${formatNumber(Math.round(area * 1.18))} km²`, state: 'forecast' }, { time: '+6h', value: `${formatNumber(item?.forecast6h || Math.round(area * 1.35))} km²`, state: 'forecast' }, { time: '+12h', value: `${formatNumber(Math.round(area * 1.52))} km²`, state: 'forecast' }], riskBreakdown: [{ label: 'Rate of expansion', score: 88 }, { label: 'Population exposure', score: 82 }, { label: 'Infrastructure fragility', score: 76 }, { label: 'Response readiness', score: 64 }], signals: [{ title: 'Wind corridor alignment', detail: 'Sustained 24 km/h winds align with the historic north-east spread vector.', icon: '≋', impact: 'HIGH' }, { title: 'Thermal intensity rising', detail: 'Three consecutive satellite frames show a 12% increase in thermal signature.', icon: '◉', impact: 'HIGH' }, { title: 'Route congestion building', detail: 'Eastbound travel speed is 18% below the evacuation model baseline.', icon: '⇢', impact: 'MEDIUM' }], actions: [{ title: 'Prioritize east corridor evacuation', reason: 'Model projects the fastest exposure growth in this direction.' }, { title: 'Keep Route 01 one-way southbound', reason: 'Maximizes throughput and reduces opposing traffic conflicts.' }, { title: 'Re-run forecast after next imagery pass', reason: 'Next satellite pass will resolve the current 76% signal ambiguity.' }] },
-    communicationMetrics: [{ label: 'Residents reached', value: '91,284', note: 'of 96,400 target' }, { label: 'Delivery rate', value: '94.7%', note: 'across all channels' }, { label: 'Acknowledged', value: '68.2%', note: '12,860 responses' }, { label: 'Response time', value: '4m 12s', note: 'median acknowledgement' }],
-    alertHistory: [{ time: '14:22 UTC', message: 'Mandatory evacuation · Zone A', channel: 'SMS + sirens + app', severity: 'critical', status: 'delivered' }, { time: '14:08 UTC', message: 'Shelter activation notice', channel: 'SMS + web + radio', severity: 'warning', status: 'delivered' }, { time: '13:55 UTC', message: 'Route restriction · Highway 18', channel: 'DOT feed + app', severity: 'warning', status: 'delivered' }, { time: '13:42 UTC', message: 'Prepare-to-evacuate advisory', channel: 'SMS + social', severity: 'info', status: 'partial' }],
-    notifiedRegions: [{ name: 'San Gabriel foothills', count: 38240, delivery: 98 }, { name: 'East corridor', count: 24680, delivery: 95 }, { name: 'Central valley', count: 18420, delivery: 92 }, { name: 'South communities', count: 9944, delivery: 88 }],
-    channels: [{ name: 'SMS', icon: '▣', percent: 99 }, { name: 'Mobile app', icon: '⌁', percent: 94 }, { name: 'Sirens', icon: '◉', percent: 100 }, { name: 'Radio', icon: '◌', percent: 87 }],
-    responseOutcomes: [{ label: 'Evacuation compliance', value: '78%', note: '+12% since last alert' }, { label: 'Shelter check-ins', value: '2,940', note: '84% of projected arrivals' }, { label: 'Help requests resolved', value: '93%', note: 'within 15 minutes' }, { label: 'False-positive reports', value: '2.1%', note: 'below 5% threshold' }],
-  }
-}
 </script>
 
 <style scoped>
@@ -470,7 +1056,19 @@ function makeDetail(item?: IncidentLevel1): DetailData {
 .back-button:hover, .ghost-button:hover { border-color: #0ea5e9; color: #7dd3fc; box-shadow: 0 0 16px rgba(14,165,233,.2); }
 .breadcrumb-separator { color: #475569; }.breadcrumb-current { color: #94a3b8; font-size: 13px; }
 .primary-button { background: #0ea5e9; border-color: #38bdf8; color: #03111b; font-weight: 700; }.primary-button:hover { background: #38bdf8; box-shadow: 0 0 22px rgba(14,165,233,.45); }
-.incident-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 26px; }.eyebrow, .section-kicker { color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: .16em; }.live-dot, .response-state i, .map-live i { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px #22c55e; }.hero-copy h1 { margin: 8px 0 4px; font-size: clamp(28px, 4vw, 42px); letter-spacing: -.04em; }.hero-location { margin: 0; color: #94a3b8; }.hero-location span { color: #38bdf8; }.hero-status { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }.type-badge, .severity-badge, .status-badge, .ai-chip, .verified-chip, .updated-pill, .response-state, .pattern-confidence { padding: 6px 9px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .06em; }.type-badge { background: rgba(168,85,247,.16); color: #d8b4fe; }.type-fire { color: #fb923c; background: rgba(249,115,22,.15); }.type-flood { color: #38bdf8; background: rgba(14,165,233,.15); }.type-landslide { color: #fbbf24; background: rgba(245,158,11,.15); }.severity-high { color: #fb7185; background: rgba(244,63,94,.15); }.severity-medium { color: #fbbf24; background: rgba(245,158,11,.15); }.severity-low { color: #4ade80; background: rgba(34,197,94,.15); }.status-active { color: #4ade80; }.status-monitoring { color: #fbbf24; }.status-resolved { color: #94a3b8; }.status-badge { border: 1px solid currentColor; }
+.incident-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  margin-top: 36px !important; /* Generous breathing room below sticky header */
+  margin-bottom: 28px !important;
+}
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}.eyebrow, .section-kicker { color: #38bdf8; font-size: 10px; font-weight: 800; letter-spacing: .16em; }.live-dot, .response-state i, .map-live i { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px #22c55e; }.hero-copy h1 { margin: 8px 0 4px; font-size: clamp(28px, 4vw, 42px); letter-spacing: -.04em; }.hero-location { margin: 0; color: #94a3b8; }.hero-location span { color: #38bdf8; }.hero-status { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }.type-badge, .severity-badge, .status-badge, .ai-chip, .verified-chip, .updated-pill, .response-state, .pattern-confidence { padding: 6px 9px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: .06em; }.type-badge { background: rgba(168,85,247,.16); color: #d8b4fe; }.type-fire { color: #fb923c; background: rgba(249,115,22,.15); }.type-flood { color: #38bdf8; background: rgba(14,165,233,.15); }.type-landslide { color: #fbbf24; background: rgba(245,158,11,.15); }.severity-high { color: #fb7185; background: rgba(244,63,94,.15); }.severity-medium { color: #fbbf24; background: rgba(245,158,11,.15); }.severity-low { color: #4ade80; background: rgba(34,197,94,.15); }.status-active { color: #4ade80; }.status-monitoring { color: #fbbf24; }.status-resolved { color: #94a3b8; }.status-badge { border: 1px solid currentColor; }
 .tabs { display: flex; gap: 3px; overflow-x: auto; border-bottom: 1px solid rgba(148,163,184,.18); scrollbar-width: thin; scrollbar-color: rgba(14,165,233,.4) transparent; padding-bottom: 2px; }.tab-button { white-space: nowrap; display: flex; align-items: center; gap: 5px; border: 1px solid transparent; border-bottom: 2px solid transparent; padding: 11px 13px; background: transparent; color: #a0aec0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; transition: .2s ease; border-radius: 6px 6px 0 0; flex-shrink: 0; min-width: fit-content; }.tab-button:hover { color: #67e8f9; border-color: rgba(14,165,233,.35); background: rgba(14,165,233,.08); border-bottom-color: #0ea5e9; }.tab-button.active { color: #0ea5e9; border: 1px solid rgba(14,165,233,.48); border-bottom: 2px solid #0ea5e9; background: linear-gradient(180deg, rgba(14,165,233,.15), rgba(14,165,233,.05)); box-shadow: inset 0 0 12px rgba(14,165,233,.1); }.tab-icon { font-size: 16px; color: inherit; flex-shrink: 0; }.tab-button:hover .tab-icon { color: #38bdf8; }.tab-button.active .tab-icon { color: #0ea5e9; }.critical-marker { color: #fbbf24; margin-left: 2px; }
 .tab-content { padding-top: 26px; }.tab-fade-enter-active, .tab-fade-leave-active { transition: opacity .2s ease, transform .2s ease; }.tab-fade-enter-from, .tab-fade-leave-to { opacity: 0; transform: translateY(5px); }
 .metric-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 18px; }.metric-card { min-height: 136px; padding: 18px; }.metric-label, .metric-footnote, .metric-card small { display: block; color: #94a3b8; font-size: 11px; }.metric-value { display: block; margin: 15px 0 6px; color: #67e8f9; font-size: 27px; line-height: 1.1; }.metric-value small { display: inline; font-size: 12px; color: #94a3b8; }.compact-value { font-size: 17px; color: #f8fafc; line-height: 1.25; }.threat-value { color: #fb7185; }.trend-value { color: #4ade80; }.status-text { color: #fbbf24; }.progress-track { height: 5px; margin-top: 12px; overflow: hidden; background: rgba(100,116,139,.2); border-radius: 99px; }.progress-fill { display: block; height: 100%; border-radius: inherit; background: #0ea5e9; box-shadow: 0 0 10px rgba(14,165,233,.55); }.threat-fill { background: #fb7185; }.content-grid { display: grid; gap: 18px; margin-top: 18px; }.two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }.content-grid > .glass-panel, .impact-layout > .glass-panel, .source-grid > .glass-panel, .ai-grid > .glass-panel { padding: 22px; }.panel-heading { justify-content: space-between; gap: 12px; margin-bottom: 20px; }.panel-heading h2, .panel-heading h3 { margin-top: 4px; color: #f8fafc; }.panel-code { color: #475569; font: 700 10px ui-monospace, monospace; }.long-copy { color: #cbd5e1; line-height: 1.75; }.summary-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }.summary-facts span, .summary-facts strong { display: block; }.summary-facts span { color: #64748b; font-size: 11px; }.summary-facts strong { margin-top: 3px; color: #e2e8f0; font-size: 13px; }.ai-chip, .verified-chip { color: #67e8f9; background: rgba(14,165,233,.12); }.action-list, .lessons-list { display: grid; gap: 15px; padding: 0; margin: 0; list-style: none; }.action-list li { display: flex; align-items: flex-start; gap: 12px; }.action-number { color: #0ea5e9; font: 700 12px ui-monospace, monospace; }.action-list strong { color: #f8fafc; font-size: 13px; }.action-list p { margin: 4px 0 0; color: #94a3b8; font-size: 12px; }.priority { margin-left: auto; color: #fbbf24; font-size: 9px; font-weight: 800; text-transform: uppercase; }.priority-urgent { color: #fb7185; }
@@ -815,6 +1413,688 @@ function makeDetail(item?: IncidentLevel1): DetailData {
   padding: 12px 16px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ===== TACTICAL RECONNAISSANCE HERO CARD ===== */
+.ai-recon-hero-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 24px;
+  margin-bottom: 22px;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(30, 41, 59, 0.7));
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.recon-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.recon-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.recon-status-badge.analyzed {
+  color: #10b981;
+}
+
+.recon-info h2 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.recon-info p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.recon-launch-button {
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: #ffffff;
+  border: 1px solid #38bdf8;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35);
+}
+
+.recon-launch-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.6);
+  transform: translateY(-2px);
+}
+
+.recon-launch-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.recon-trigger-btn {
+  margin-top: 14px;
+  font-size: 13px;
+  padding: 10px 20px;
+}
+
+/* ===== TACTICAL NEURAL SCANNER HUD ===== */
+.neural-scanner-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 15, 25, 0.88);
+  backdrop-filter: blur(14px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.neural-scanner-modal {
+  max-width: 560px;
+  width: 100%;
+  padding: 32px 28px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #38bdf8;
+  border-radius: 14px;
+  box-shadow: 0 0 50px rgba(14, 165, 233, 0.4);
+}
+
+.scanner-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.scanner-radar-icon {
+  font-size: 34px;
+  animation: radarPulse 2s infinite;
+}
+
+@keyframes radarPulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.scanner-titles h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.8px;
+}
+
+.scanner-titles small {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.radar-scanline-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.scanline-glow {
+  width: 40%;
+  height: 100%;
+  background: #38bdf8;
+  box-shadow: 0 0 14px #38bdf8;
+  position: absolute;
+  animation: scanSweep 1.5s infinite ease-in-out;
+}
+
+@keyframes scanSweep {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
+.scanner-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.scanner-step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+.scanner-step-item.active {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.scanner-step-item.complete {
+  color: #10b981;
+}
+
+.step-indicator {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 10px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* ===== DEEP AI TABS STYLING ===== */
+.deep-ai-tab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ai-facility-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.ai-facility-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.facility-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.facility-type-tag {
+  font-size: 10px;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.facility-risk {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.facility-risk.critical { color: #ef4444; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); }
+.facility-risk.high { color: #f59e0b; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); }
+.facility-risk.moderate { color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+.ai-facility-card h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #ffffff;
+}
+
+.facility-meta {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.facility-action {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #cbd5e1;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+
+.priority-tag {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.priority-tag.immediate { color: #ef4444; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); }
+.priority-tag.high { color: #f59e0b; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); }
+.priority-tag.staged { color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+.cascade-timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .cascade-timeline-grid { grid-template-columns: 1fr; }
+  .ai-recon-hero-card { flex-direction: column; align-items: flex-start; }
+  .recon-launch-button { width: 100%; justify-content: center; }
+}
+
+/* ===== STICKY HEADER & HANDY BACK BUTTON ===== */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+  background: rgba(10, 15, 26, 0.92);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 12px 18px;
+  margin: -24px -16px 20px -16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.primary-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(14, 165, 233, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primary-back-btn:hover {
+  background: #0ea5e9;
+  color: #03111b;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.5);
+  transform: translateX(-2px);
+}
+
+.back-arrow {
+  font-size: 16px;
+}
+
+/* ===== OPERATIONAL COMMAND DISPATCH BAR ===== */
+.operational-command-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  margin-bottom: 18px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.65));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 12px;
+  gap: 16px;
+}
+
+.toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.command-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cmd-btn {
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cmd-btn.primary {
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  border: 1px solid #38bdf8;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+}
+
+.cmd-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+  transform: translateY(-1px);
+}
+
+.cmd-btn.secondary {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+}
+
+.cmd-btn.secondary:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* ===== TACTICAL GIS RECONNAISSANCE MAP CARD ===== */
+.recon-map-card {
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  border-radius: 12px;
+}
+
+.recon-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.recon-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.radar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.recon-title-group h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.6px;
+}
+
+.recon-coords-badge {
+  font-size: 11px;
+  font-family: monospace;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.7);
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.recon-radar-canvas {
+  position: relative;
+  height: 220px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(circle at center, rgba(14, 165, 233, 0.15), rgba(11, 15, 25, 0.95) 75%);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radar-grid-lines {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle, transparent 20%, rgba(56, 189, 248, 0.08) 20%, transparent 22%),
+    radial-gradient(circle, transparent 40%, rgba(56, 189, 248, 0.08) 40%, transparent 42%),
+    radial-gradient(circle, transparent 65%, rgba(56, 189, 248, 0.08) 65%, transparent 67%),
+    linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+}
+
+.radar-scan-sweep {
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(from 0deg, transparent 75%, rgba(14, 165, 233, 0.25) 100%);
+  animation: radarRotate 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes radarRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ground-zero-marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+}
+
+.epicenter-core {
+  font-size: 28px;
+  filter: drop-shadow(0 0 10px rgba(14, 165, 233, 0.8));
+  z-index: 3;
+}
+
+.epicenter-ping {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 90px;
+  height: 90px;
+  margin-top: -45px;
+  margin-left: -45px;
+  border-radius: 50%;
+  border: 2px solid #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  animation: bufferPulse 2.2s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes bufferPulse {
+  0% { transform: scale(0.6); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.danger-buffer-label {
+  margin-top: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.wind-vector-indicator {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 4px 10px;
+  border-radius: 6px;
+  z-index: 3;
+}
+
+.wind-arrow {
+  color: #38bdf8;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.wind-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+.recon-overlay-actions {
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  z-index: 3;
+}
+
+.gis-console-btn {
+  background: rgba(14, 165, 233, 0.2);
+  border: 1px solid #0ea5e9;
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gis-console-btn:hover {
+  background: #0ea5e9;
+  color: #03111b;
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.5);
+}
+
+/* ===== ENVIRONMENTAL SENSOR GAUGES STRIP ===== */
+.environmental-gauge-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.env-gauge-tile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.gauge-icon {
+  font-size: 24px;
+}
+
+.gauge-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.gauge-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.gauge-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 1px 0;
+}
+
+.gauge-desc {
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* ===== MOBILE RESPONSIVE TWEAKS FOR INCIDENT DETAIL ===== */
+@media (max-width: 900px) {
+  .environmental-gauge-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .operational-command-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .toolbar-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .cmd-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .cascade-timeline-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-recon-hero-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .recon-launch-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .environmental-gauge-strip {
+    grid-template-columns: 1fr;
+  }
+  .recon-map-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .recon-radar-canvas {
+    height: 180px;
+  }
 }
 </style>
 

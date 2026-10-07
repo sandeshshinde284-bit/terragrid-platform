@@ -39,7 +39,15 @@ class GDACSService:
         """
         if use_mock:
             logger.info(" GDACS: 🧪 MOCK MODE ENABLED via .env")
-            return cls._get_mock_data()
+            try:
+                import json
+                from pathlib import Path
+                mock_path = Path(__file__).parent.parent / "data" / "mocks" / "gdacs.json"
+                with open(mock_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load GDACS mock: {e}")
+                return []
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -141,8 +149,3 @@ class GDACSService:
             return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
         except:
             return datetime.utcnow()
-    
-    @classmethod
-    def _get_mock_data(cls) -> List[Dict[str, Any]]:
-        """Return mock GDACS data for testing"""
-        pass

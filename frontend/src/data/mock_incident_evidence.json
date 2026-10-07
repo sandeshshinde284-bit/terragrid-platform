@@ -1,0 +1,53 @@
+{
+  "evacuationTime": "4.5 hours",
+  "coordinates": "29°06′N 90°12′W",
+  "dataQuality": 98.4,
+  "nextReview": "14 minutes",
+  "zones": [
+    { "name": "Zone A", "code": "A-RED" },
+    { "name": "Zone B", "code": "B-ORG" },
+    { "name": "Zone C", "code": "C-YEL" }
+  ],
+  "evidence": [
+    { "id": "ev-01", "kind": "satellite", "title": "Thermal anomaly expansion", "source": "GOES-West (Band 7)", "captured": "14:12 UTC", "status": "VERIFIED" },
+    { "id": "ev-02", "kind": "sensor", "title": "Abnormal seismic tremor", "source": "USGS Station SN.382", "captured": "13:58 UTC", "status": "VERIFIED" },
+    { "id": "ev-03", "kind": "field", "title": "Structural breach visual", "source": "Drone Recon Unit 04", "captured": "13:45 UTC", "status": "PENDING" },
+    { "id": "ev-04", "kind": "social", "title": "Crowdsourced flooding reports", "source": "X/Twitter Geo-cluster", "captured": "13:30 UTC", "status": "VERIFIED" }
+  ],
+  "imageVerification": 94,
+  "telemetry": {
+    "timeline": [
+      { "time": "14:32 UTC", "value": "+14%", "state": "critical" },
+      { "time": "14:15 UTC", "value": "+8%", "state": "warning" },
+      { "time": "14:00 UTC", "value": "+2%", "state": "stable" },
+      { "time": "13:45 UTC", "value": "0%", "state": "stable" }
+    ],
+    "riskBreakdown": [
+      { "label": "Infrastructure", "score": 88 },
+      { "label": "Population", "score": 92 },
+      { "label": "Economic", "score": 65 },
+      { "label": "Environmental", "score": 78 }
+    ],
+    "signals": [
+      { "title": "Seismic activity", "detail": "Multiple tremors >4.0 M in last hour", "icon": "〰", "impact": "High" },
+      { "title": "Atmospheric pressure", "detail": "Rapid drop of 12 hPa indicating severe cyclonic formation", "icon": "↓", "impact": "Critical" },
+      { "title": "Ground moisture", "detail": "Soil saturation at 98%, extreme flood risk", "icon": "💧", "impact": "High" }
+    ],
+    "actions": [
+      { "title": "Initiate Evacuation", "reason": "Threat score exceeds critical threshold (85+)" },
+      { "title": "Deploy Medical Teams", "reason": "Projected casualties exceed local capacity" },
+      { "title": "Secure Power Grid", "reason": "Substation in direct path of expansion vector" }
+    ]
+  },
+  "logistics": [
+    { "name": "Heavy Rescue Teams", "required": "12 units", "fulfilled": 8 },
+    { "name": "Medical Transports", "required": "24 units", "fulfilled": 24 },
+    { "name": "Emergency Shelters", "required": "5 locations", "fulfilled": 3 },
+    { "name": "Potable Water", "required": "50,000 L", "fulfilled": 15000 }
+  ],
+  "responseMetrics": [
+    { "label": "First responder check-ins", "value": "2,940", "note": "84% of projected arrivals" },
+    { "label": "Help requests resolved", "value": "93%", "note": "within 15 minutes" },
+    { "label": "False-positive reports", "value": "2.1%", "note": "below 5% threshold" }
+  ]
+}

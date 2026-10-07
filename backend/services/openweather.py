@@ -91,7 +91,15 @@ class OpenWeatherService:
         # 12-Factor App: Strict Environment-Driven Mock Guard
         if use_mock:
             logger.info(" OpenWeather: 🧪 MOCK MODE ENABLED via .env")
-            return cls._get_mock_data()
+            try:
+                import json
+                from pathlib import Path
+                mock_path = Path(__file__).parent.parent / "data" / "mocks" / "openweather.json"
+                with open(mock_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load OpenWeather mock: {e}")
+                return []
         
         # Strict Live Mode: No mock fallback parameter
         api_key = os.getenv("OPENWEATHERMAP_API_KEY")

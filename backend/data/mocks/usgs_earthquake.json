@@ -1,0 +1,21 @@
+[
+  {
+    "event_type": "earthquake",
+    "severity": "critical",
+    "status": "detected",
+    "latitude": 34.05,
+    "longitude": -118.25,
+    "location_name": "Los Angeles Region Seismic Event",
+    "source": "USGS_EARTHQUAKE",
+    "event_timestamp": "2026-10-06T12:00:00Z",
+    "confidence": 0.95,
+    "is_verified": true,
+    "data": {
+      "usgs_id": "USGS_MOCK_001",
+      "magnitude": 6.8,
+      "depth_km": 12.5,
+      "url": "https://earthquake.usgs.gov",
+      "significance": 850
+    }
+  }
+]

@@ -1,0 +1,19 @@
+[
+  {
+    "event_type": "flood",
+    "severity": "high",
+    "status": "active",
+    "latitude": 38.5816,
+    "longitude": -121.4944,
+    "location_name": "Sacramento Valley Flooding",
+    "source": "GDACS",
+    "event_timestamp": "2026-10-06T12:00:00Z",
+    "confidence": 0.88,
+    "is_verified": true,
+    "data": {
+      "gdacs_id": "GDACS_MOCK_003",
+      "category": "FL",
+      "description": "Flooding detected in Sacramento Valley"
+    }
+  }
+]
