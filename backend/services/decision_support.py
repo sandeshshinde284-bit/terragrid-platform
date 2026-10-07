@@ -1,7 +1,11 @@
 import os
 import json
+import math
 import logging
 from typing import Dict, Any, List, Optional
+
+from .prompt_schemas import DEEP_DOSSIER_SCHEMA_TEXT, RESPONSE_PLAN_SCHEMA_TEXT
+from .location_context import get_location_context
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +77,9 @@ class DecisionSupportService:
             return fallback_plan
 
         try:
+            location_context = get_location_context(location)
+            agencies_list = "\n            ".join([f"- {agency}" for agency in location_context["secondary_agencies"]])
+            
             prompt = f"""
             You are a Senior Disaster Response Incident Commander (military-grade) operating the TerraGrid Emergency Intelligence System.
             Analyze the following live incident and provide an operational, hyper-realistic, country-specific emergency response plan.
@@ -83,30 +90,48 @@ class DecisionSupportService:
             - Calculated Threat Score: {threat_score} / 100
             - Estimated Population at Risk: {pop_at_risk:,} civilians
 
+            LOCATION-SPECIFIC CONTEXT:
+            - Primary Agency: {location_context['primary_agency']}
+            - Secondary Agencies:
+            {agencies_list}
+            - Key Staging Areas: {", ".join(location_context['staging_areas'][:2])}
+            - Average Response Times: Helicopter {location_context['avg_response_times_minutes']['helicopter']} min, Ambulance {location_context['avg_response_times_minutes']['ambulance']} min
+
             STRICT OPERATIONAL DIRECTIVES:
             1. DO NOT give generic advice. Use highly specific, tactical, and military/FEMA-style terminology (e.g., 'Triage', 'Perimeter Containment', 'Forward Operating Base').
             2. FORMATTING MANDATE: Output MUST be written in crisp, professional Sentence Case (e.g., 'Initiate Joint Field Office activation...', NOT 'INITIATE JOINT...'). Do NOT use monolithic all-caps.
             3. Keep action bullets punchy and actionable (maximum 2 lines per bullet).
-            4. Tailor the agencies specifically to the location (e.g. if India, deploy NDRF; if USA, deploy FEMA/National Guard; if Japan, JDF).
+            4. Tailor the agencies specifically to the location provided above.
             5. Resource allocation must sound like real military/emergency logistics (e.g., 'CH-47 Chinook Helicopters', 'Water Purification Units').
-            6. Return a clean JSON object matching this EXACT schema:
-            {{
-              "country_context": "string (e.g. 'FEMA Region 6 Jurisdiction: Port Fourchon Sector, Louisiana')",
-              "severity_assessment": "string (Concise 2-sentence tactical overview in clean sentence case)",
-              "immediate_actions": ["string (Action 1 in sentence case)", "string (Action 2 in sentence case)", "string (Action 3 in sentence case)"],
-              "resource_allocation": [
-                {{"resource": "string", "quantity": "string", "status": "string"}},
-                {{"resource": "string", "quantity": "string", "status": "string"}},
-                {{"resource": "string", "quantity": "string", "status": "string"}}
-              ],
-              "evacuation_guidance": "string (Specific highway corridors, choke-point warnings, and designated municipal shelters in clean sentence case)"
-            }}
+            6. "quantity" MUST be an INTEGER ONLY (e.g., 5, NOT "4-6")
+            7. "priority" MUST be 1 (IMMEDIATE), 2 (HIGH), or 3 (STAGED) ONLY
+            8. "estimated_arrival_minutes" MUST be INTEGER ONLY
+            9. "confidence" MUST be 0-100 INTEGER ONLY
+            10. Return a clean JSON object matching THIS EXACT schema:
+            {RESPONSE_PLAN_SCHEMA_TEXT}
+            
+            Return ONLY the JSON object. Do not wrap in markdown code blocks.
             """
+
+            logger.info(f"[GEMINI PROMPT - Response Plan] Location: {location}, Event: {event_type}")
+            logger.debug(f"[GEMINI PROMPT FULL]\n{prompt}")
 
             response = self.model.generate_content(prompt)
             if response and response.text:
-                plan = json.loads(response.text.strip())
-                logger.info(f"Generated AI Decision Support Plan for {location} via Vertex AI.")
+                logger.info(f"[GEMINI RESPONSE - Response Plan] Received response from Vertex AI")
+                logger.debug(f"[GEMINI RESPONSE RAW]\n{response.text}")
+                
+                cleaned_text = response.text.strip()
+                if cleaned_text.startswith("```json"):
+                    cleaned_text = cleaned_text[7:]
+                if cleaned_text.endswith("```"):
+                    cleaned_text = cleaned_text[:-3]
+                cleaned_text = cleaned_text.strip()
+                
+                logger.debug(f"[GEMINI RESPONSE CLEANED]\n{cleaned_text}")
+                
+                plan = json.loads(cleaned_text)
+                logger.info(f"✅ Generated AI Decision Support Plan for {location} via Vertex AI. Actions: {len(plan.get('immediate_actions', []))}")
                 return plan
 
         except Exception as e:
@@ -115,7 +140,7 @@ class DecisionSupportService:
 
         return fallback_plan
 
-    def generate_deep_tactical_dossier(self, event_data: Dict[str, Any], use_mock: bool = False) -> Dict[str, Any]:
+    def generate_deep_tactical_dossier(self, event_data: Dict[str, Any], use_mock: bool = False, db_session=None) -> Dict[str, Any]:
         """
         Tier 2 Deep Intelligence Dossier: Fuses multi-source telemetry from NASA, USGS,
         OpenWeather, and GDACS, sending a multi-variable military prompt to Google Cloud Vertex AI
@@ -124,6 +149,7 @@ class DecisionSupportService:
         Args:
             event_data: Incident data.
             use_mock: If True, bypasses API and returns a rich fabricated demonstration dossier.
+            db_session: Optional DB session for historical queries.
         """
         event_type = event_data.get("event_type", "Hazard")
         location = event_data.get("location_name", "Target Sector")
@@ -147,8 +173,74 @@ class DecisionSupportService:
         weather_desc = weather_data.get("description", "Active weather conditions")
 
         from .mock_data_loader import MockDataLoader
+        from .infrastructure import InfrastructureService
+        from .evacuation_zones import EvacuationZoneService
+        from backend.models.event import Event
+        from sqlalchemy import desc
 
-        # Transparent AI Offline Fallback (Addresses Copilot's "Fallback-Heavy" critique)
+        # Fetch Hard GIS Data (OSM Infrastructure & OSRM Routes)
+        radius = math.sqrt(area_km2 / math.pi) if area_km2 > 0 else 10.0
+        osm_facilities = InfrastructureService.get_nearby_facilities(lat, lon, radius)
+        osrm_routing = EvacuationZoneService.get_safe_routes({"latitude": lat, "longitude": lon, "event_type": event_type})
+
+        # Fetch Historical DB Data (Trigonometric precision bounds)
+        history_injection = "\n            HISTORICAL POSTGRESQL DATABASE CONTEXT:"
+        if db_session:
+            try:
+                # Convert 100km radius to rough degrees using cosine of latitude (avoids distortion at poles)
+                # 1 degree lat = ~111km everywhere. 1 degree lon = ~111km * cos(lat)
+                lat_deg = 100.0 / 111.0
+                lon_deg = 100.0 / (111.0 * math.cos(math.radians(lat)))
+                
+                past_events = db_session.query(Event).filter(
+                    Event.event_type == event_type,
+                    Event.latitude.between(lat - lat_deg, lat + lat_deg),
+                    Event.longitude.between(lon - lon_deg, lon + lon_deg),
+                    Event.severity.is_not(None)
+                ).order_by(desc(Event.created_at)).limit(10).all()
+                
+                if past_events:
+                    critical_count = sum(1 for e in past_events if e.severity.lower() == 'critical')
+                    history_injection += f"\n            - {len(past_events)} similar {event_type} incidents recorded in this sector previously."
+                    history_injection += f"\n            - Highest historical severity recorded: {'CRITICAL' if critical_count > 0 else 'HIGH/MEDIUM'}."
+                    history_injection += "\n            - MANDATE: Incorporate regional historical precedent into the predictive cascade spread vectors."
+                else:
+                    history_injection += f"\n            - No similar {event_type} incidents recorded within 100km in the recent database timeline. This is a novel threat vector."
+            except Exception as db_e:
+                history_injection += "\n            - Historical database query unavailable."
+        else:
+            history_injection += "\n            - Historical database query bypassed."
+
+        # Format GIS Data for Prompt Injection
+        gis_injection = "\n            HARD GIS INFRASTRUCTURE (VERIFIED VIA OPENSTREETMAP):"
+        if osm_facilities["hospitals"]:
+            gis_injection += "\n            - HOSPITALS IN DANGER ZONE:"
+            for h in osm_facilities["hospitals"]:
+                gis_injection += f"\n              * {h['name']} ({h['distance_km']} km, est. {round(h['distance_km']/40, 1)}h by road)"
+        if osm_facilities["fire_stations"]:
+            gis_injection += "\n            - FIRE/EMERGENCY STATIONS:"
+            for f in osm_facilities["fire_stations"]:
+                gis_injection += f"\n              * {f['name']} ({f['distance_km']} km, est. {round(f['distance_km']/40, 1)}h by road)"
+        if osm_facilities["critical_infrastructure"]:
+            gis_injection += "\n            - CRITICAL UTILITIES & BRIDGES:"
+            for c in osm_facilities["critical_infrastructure"]:
+                gis_injection += f"\n              * [{c['type']}] {c['name']} ({c['distance_km']} km from epicenter)"
+        if osm_facilities["shelters"]:
+            gis_injection += "\n            - SCHOOLS/CIVIC SHELTERS:"
+            for s in osm_facilities["shelters"]:
+                gis_injection += f"\n              * {s['name']} ({s['distance_km']} km from epicenter)"
+        
+        if not any([osm_facilities["hospitals"], osm_facilities["fire_stations"], osm_facilities["critical_infrastructure"]]):
+            gis_injection += "\n            - (No verified OSM infrastructure retrieved. Rely on regional/county assets.)"
+
+        gis_injection += "\n\n            HARD GIS EVACUATION CORRIDORS (VERIFIED VIA OSRM ROAD NETWORKS):"
+        if osrm_routing.get("routes"):
+            for idx, route in enumerate(osrm_routing["routes"][:2]):
+                gis_injection += f"\n            - ROUTE {idx+1}: Heading {route['direction']}, Distance: {route['distance_km']}km, Est. Clearance: {route['estimated_time_hours']} hrs."
+        else:
+            gis_injection += "\n            - (No OSRM road network geometries retrieved. Rely on cardinal direction egress.)"
+
+        # Transparent AI Offline Fallback
         fallback_dossier = MockDataLoader.load_fallback_dossier()
         
         # Rich demonstration dossier
@@ -162,6 +254,9 @@ class DecisionSupportService:
             return fallback_dossier
 
         try:
+            location_context = get_location_context(location)
+            agencies_list = "\n            ".join([f"- {agency}" for agency in location_context["secondary_agencies"][:3]])
+            
             prompt = f"""
             You are the Chief Geospatial Intelligence Officer and Senior Military Incident Commander for the TerraGrid Crisis Command Center.
             Analyze this live multi-source disaster event and generate an exhaustive, hyper-realistic, 2000% detailed Tactical Intelligence Dossier.
@@ -179,76 +274,40 @@ class DecisionSupportService:
               • Barometric Pressure: {pressure} hPa | Weather: {weather_desc}
             - Source Telemetry: {source}
 
-            STRICT OPERATIONAL DIRECTIVES:
-            1. NO generic advice. Use authentic military, FEMA, and UN OCHA crisis terminology.
-            2. Calculate the PREDICTIVE CASCADE (Feature 9) for 6 Hours, 12 Hours, and 24 Hours based on the physical wind vectors and terrain:
-               - Fire spreads downwind; storm surge moves inland; flood perimeters expand into low-lying basins; seismic aftershocks follow active fault branches.
-            3. Identify SPECIFIC CRITICAL INFRASTRUCTURE at risk: local municipal hospitals, power substations, bridges, water treatment facilities within danger radii.
-            4. Detail EVACUATION CORRIDORS (Feature 3A): specific highway routes, dangerous choke-points (bridges/bottlenecks), and safe assembly staging areas.
-            5. Build a RESOURCE MOBILIZATION MATRIX (Feature 6): concrete units, helicopter sorties, field hospital beds, emergency generators, and potable water rations.
-            6. Detail VULNERABLE DEMOGRAPHICS: senior care facilities, schools, and special-needs medical requirements.
+            LOCATION-SPECIFIC CONTEXT:
+            - Primary Agency: {location_context['primary_agency']}
+            - Secondary Response Agencies:
+            {agencies_list}
+            - Key Staging Areas: {", ".join(location_context['staging_areas'][:2])}
+            - Average Response Times: Helicopter {location_context['avg_response_times_minutes']['helicopter']} min, Ambulance {location_context['avg_response_times_minutes']['ambulance']} min, Fire Engine {location_context['avg_response_times_minutes']['fire_engine']} min
 
-            Return a single clean JSON object matching this EXACT schema:
-            {{
-              "situational_assessment": "string (Concise, high-impact 3-sentence military briefing evaluating the crisis vector)",
-              "threat_level": "string ('CRITICAL' | 'HIGH' | 'MEDIUM')",
-              "predictive_cascade": [
-                {{
-                  "timeframe": "6 Hours",
-                  "perimeter_delta_km2": 15.2,
-                  "spread_direction": "string (Specific vector along wind/topography)",
-                  "primary_risk": "string",
-                  "secondary_threat": "string"
-                }},
-                {{
-                  "timeframe": "12 Hours",
-                  "perimeter_delta_km2": 32.5,
-                  "spread_direction": "string",
-                  "primary_risk": "string",
-                  "secondary_threat": "string"
-                }},
-                {{
-                  "timeframe": "24 Hours",
-                  "perimeter_delta_km2": 65.0,
-                  "spread_direction": "string",
-                  "primary_risk": "string",
-                  "secondary_threat": "string"
-                }}
-              ],
-              "critical_infrastructure": [
-                {{
-                  "facility_name": "string (e.g. 'St. Jude Regional Hospital')",
-                  "facility_type": "string ('Hospital' | 'Power Grid' | 'Water Treatment' | 'Bridge/Transit')",
-                  "distance_km": 3.2,
-                  "risk_level": "string ('CRITICAL' | 'HIGH' | 'MODERATE')",
-                  "action_required": "string"
-                }}
-              ],
-              "evacuation_corridors": {{
-                "primary_corridor": "string (Specific highway or transit route)",
-                "alternative_route": "string",
-                "choke_points": ["string (Specific bottleneck warning)"],
-                "safe_assembly_zones": ["string (Specific stadium or park rally point)"],
-                "estimated_clearance_time_hours": 3.5
-              }},
-              "resource_matrix": [
-                {{
-                  "resource": "string",
-                  "quantity": "string",
-                  "assigned_agency": "string",
-                  "priority": "string ('IMMEDIATE' | 'HIGH' | 'STAGED')"
-                }}
-              ],
-              "vulnerable_demographics": {{
-                "facilities_at_risk": ["string"],
-                "estimated_displaced_citizens": 1200,
-                "special_needs_assistance_required": "string"
-              }}
-            }}
+            {history_injection}
+            {gis_injection}
+
+            STRICT OUTPUT CONSTRAINTS:
+            1. "quantity" MUST be INTEGER ONLY (e.g., 5, NOT "4-6")
+            2. "priority" MUST be 1 (IMMEDIATE), 2 (HIGH), or 3 (STAGED) ONLY
+            3. "estimated_arrival_minutes" MUST be INTEGER ONLY
+            4. "confidence" MUST be 0-100 INTEGER ONLY
+            5. "timeframe_hours" MUST be INTEGER (1, 3, 6, 12, 24, or 48 only)
+            6. "spread_polygon" MUST be array of [lat, lon] pairs forming a closed shape
+            7. "color_code" MUST be RED, ORANGE, YELLOW, or GREEN ONLY
+            8. "risk_level" MUST be CRITICAL, HIGH, or MODERATE ONLY
+            9. "entry_time_hours" MUST be INTEGER (0, 3, 6, 12, 24, or 48)
+            10. Return ONLY the JSON object. Do not wrap in markdown code blocks.
+
+            Generate response matching THIS EXACT schema:
+            {DEEP_DOSSIER_SCHEMA_TEXT}
             """
+
+            logger.info(f"[GEMINI PROMPT - Deep Tactical Dossier] Location: {location}, Event: {event_type}, Threat: {threat_score}/100")
+            logger.debug(f"[GEMINI PROMPT FULL]\n{prompt}")
 
             response = self.model.generate_content(prompt)
             if response and response.text:
+                logger.info(f"[GEMINI RESPONSE - Deep Tactical Dossier] Received response from Vertex AI")
+                logger.debug(f"[GEMINI RESPONSE RAW]\n{response.text}")
+                
                 # Clean response text in case of markdown formatting
                 cleaned_text = response.text.strip()
                 if cleaned_text.startswith("```json"):
@@ -257,8 +316,10 @@ class DecisionSupportService:
                     cleaned_text = cleaned_text[:-3]
                 cleaned_text = cleaned_text.strip()
 
+                logger.debug(f"[GEMINI RESPONSE CLEANED]\n{cleaned_text}")
+                
                 dossier = json.loads(cleaned_text)
-                logger.info(f"Generated Tier 2 Deep Tactical AI Dossier for {location} via Vertex AI.")
+                logger.info(f"✅ Generated Tier 2 Deep Tactical AI Dossier for {location} via Vertex AI. Cascades: {len(dossier.get('cascade_predictions', []))}, Resources: {len(dossier.get('resource_matrix', []))}, Infrastructure: {len(dossier.get('infrastructure_impact', []))}")
                 return dossier
 
         except Exception as e:

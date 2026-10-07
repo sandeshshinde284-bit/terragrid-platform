@@ -263,6 +263,12 @@
                     <div class="facility-action">
                       <strong>Directive:</strong> {{ fac.action_required }}
                     </div>
+                    <div class="facility-confidence" v-if="fac.confidence !== undefined" style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: #94a3b8;">
+                      <div style="flex: 1; background: rgba(255, 255, 255, 0.1); border-radius: 2px; height: 4px; overflow: hidden;">
+                        <div style="background: linear-gradient(90deg, #fbbf24, #38bdf8); height: 100%; width: 100%;" :style="{ width: `${fac.confidence}%` }"></div>
+                      </div>
+                      <span style="min-width: 30px; text-align: right;">{{ fac.confidence }}%</span>
+                    </div>
                   </div>
                 </div>
               </article>
@@ -431,24 +437,31 @@
                 <div class="resource-matrix-table-wrapper" style="overflow-x: auto;">
                   <table class="ai-resource-table" style="width: 100%; border-collapse: collapse;">
                     <thead>
-                      <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); text-align: left; color: #94a3b8; font-size: 11px;">
-                        <th style="padding: 10px;">Resource Asset</th>
-                        <th style="padding: 10px;">Required Quantity</th>
-                        <th style="padding: 10px;">Assigned Agency</th>
-                        <th style="padding: 10px;">Deployment Priority</th>
+                      <tr style="border-bottom: 2px solid #334155; text-align: left; color: #94a3b8; font-size: 11px;">
+                        <th style="padding: 12px 10px;">Resource Asset</th>
+                        <th style="padding: 12px 10px;">Required Quantity</th>
+                        <th style="padding: 12px 10px;">Assigned Agency</th>
+                        <th style="padding: 12px 10px;">Deployment Location</th>
+                        <th style="padding: 12px 10px;">ETA</th>
+                        <th style="padding: 12px 10px;">Priority</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr v-for="res in deepDossier.resource_matrix" :key="res.resource" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 13px;">
+                      <tr v-for="(res, idx) in deepDossier.resource_matrix" :key="idx" style="border-bottom: 1px solid #1e293b; font-size: 13px;">
                         <td style="padding: 12px 10px; color: #ffffff; font-weight: 700;">{{ res.resource }}</td>
-                        <td style="padding: 12px 10px; color: #38bdf8;">{{ res.quantity }}</td>
+                        <td style="padding: 12px 10px; color: #38bdf8; font-family: ui-monospace, monospace;">{{ res.quantity }} {{ res.unit_measure }}</td>
                         <td style="padding: 12px 10px; color: #cbd5e1;">{{ res.assigned_agency }}</td>
+                        <td style="padding: 12px 10px; color: #cbd5e1;">{{ res.deployment_location }}</td>
+                        <td style="padding: 12px 10px; color: #4ade80; font-family: ui-monospace, monospace;">{{ res.estimated_arrival_minutes }} min</td>
                         <td style="padding: 12px 10px;">
-                          <span class="priority-tag" :class="res.priority.toLowerCase()">{{ res.priority }}</span>
+                          <span class="priority-tag" :class="getPriorityClass(res.priority)">
+                            {{ getPriorityLabel(res.priority) }}
+                          </span>
                         </td>
                       </tr>
                     </tbody>
                   </table>
+                  <span class="provenance-tag">[Logistics: TerraGrid Tactical Engine | Confidence Scored]</span>
                 </div>
               </article>
             </div>
@@ -473,34 +486,52 @@
             </template>
 </div>
 
-          <!-- INCIDENT HISTORY -->
+          <!-- INCIDENT HISTORY (PREDICTIVE CASCADE) -->
           <div v-else-if="activeTab === 'history'" class="history-tab">
             <div v-if="deepDossier" class="deep-ai-tab-container">
               <div class="tab-intro">
                 <div>
                   <span class="section-kicker">FEATURE 09 · PREDICTIVE CASCADE MODELING</span>
                   <h2>6H / 12H / 24H Disaster Spread Simulation</h2>
-                  <p>Trajectory forecasting based on atmospheric wind vectors and local terrain topography.</p>
+                  <p>Trajectory forecasting based on atmospheric wind vectors, historical context, and local terrain topography.</p>
                 </div>
                 <span class="ai-chip live">CASCADE SIMULATION ACTIVE</span>
               </div>
 
               <div class="cascade-timeline-grid">
-                <div v-for="cascade in deepDossier.predictive_cascade" :key="cascade.timeframe" class="cascade-card glass-panel" style="padding: 20px;">
+                <div v-for="(cascade, idx) in deepDossier.cascade_predictions" :key="idx" class="cascade-card glass-panel" :class="'cascade-border-' + cascade.color_code" style="padding: 20px; border-left-width: 4px;">
                   <div class="cascade-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <span class="time-tag" style="font-weight: 800; color: #38bdf8; font-size: 14px;">⏱️ {{ cascade.timeframe }}</span>
-                    <span class="delta-badge" style="font-size: 11px; font-weight: 800; color: #fb7185; background: rgba(244, 63, 94, 0.15); padding: 4px 10px; border-radius: 999px;">+{{ cascade.perimeter_delta_km2 }} km² EXPANSION</span>
+                    <span class="time-tag" style="font-weight: 800; font-size: 16px;" :class="'text-' + cascade.color_code">
+                      ⏱️ +{{ cascade.timeframe_hours }} HOURS
+                    </span>
+                    <span class="delta-badge" style="font-family: ui-monospace, monospace; font-size: 11px; font-weight: 700; color: #cbd5e1; background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 4px;">
+                      +{{ cascade.perimeter_delta_km2.toFixed(1) }} km² EXPANSION
+                    </span>
                   </div>
-                  <div class="cascade-vector" style="margin-bottom: 12px;">
-                    <label style="color: #94a3b8; font-size: 10px; text-transform: uppercase; font-weight: 700;">Vector & Trajectory:</label>
-                    <p style="margin: 4px 0 0 0; color: #ffffff; font-size: 13px;">{{ cascade.spread_direction }}</p>
-                  </div>
-                  <div class="cascade-risks" style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
-                    <div style="font-size: 12px; color: #cbd5e1;">
-                      <strong style="color: #fbbf24;">Primary Threat:</strong> {{ cascade.primary_risk }}
+                  
+                  <div class="cascade-vector" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #1e293b;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="color: #94a3b8; font-size: 10px; text-transform: uppercase; font-weight: 700;">Wind Expansion Factor:</span>
+                      <span style="color: #38bdf8; font-family: ui-monospace, monospace; font-weight: 700;">{{ cascade.wind_influence_percent }}%</span>
                     </div>
-                    <div style="font-size: 12px; color: #fb7185;">
-                      <strong>Cascading Risk:</strong> {{ cascade.secondary_threat }}
+                    <div class="progress-track" style="margin-top: 6px; background: #0f172a; border: 1px solid #1e293b; height: 6px;">
+                      <span class="progress-fill" :style="{ width: `${cascade.wind_influence_percent}%`, background: getCascadeColorHex(cascade.color_code) }"></span>
+                    </div>
+                  </div>
+                  
+                  <div class="cascade-risks" style="display: flex; flex-direction: column; gap: 12px;">
+                    <span style="color: #94a3b8; font-size: 10px; text-transform: uppercase; font-weight: 700;">Facilities Entering Danger Zone:</span>
+                    <div v-if="!cascade.primary_risks || cascade.primary_risks.length === 0" style="color: #64748b; font-size: 12px; font-style: italic;">
+                      No major infrastructure predicted to fall within perimeter.
+                    </div>
+                    <div v-for="(risk, rIdx) in cascade.primary_risks" :key="rIdx" class="risk-group">
+                      <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                        <strong style="color: #cbd5e1;">{{ risk.facility_type }}</strong>
+                        <span style="color: #67e8f9; font-family: ui-monospace, monospace; font-weight: 700;">[{{ risk.count_affected }}]</span>
+                      </div>
+                      <ul style="margin: 0; padding-left: 16px; color: #94a3b8; font-size: 11px; line-height: 1.5;">
+                        <li v-for="name in risk.names" :key="name">{{ name }}</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -1042,6 +1073,39 @@ onMounted(async () => {
   }
 })
 
+// Priority helper functions for resource matrix display
+function getPriorityClass(priority: number | string): string {
+  const p = typeof priority === 'string' ? parseInt(priority) : priority
+  if (p === 1) return 'priority-tag immediate'
+  if (p === 2) return 'priority-tag high'
+  if (p === 3) return 'priority-tag staged'
+  return 'priority-tag'
+}
+
+function getPriorityLabel(priority: number | string): string {
+  const p = typeof priority === 'string' ? parseInt(priority) : priority
+  if (p === 1) return 'IMMEDIATE'
+  if (p === 2) return 'HIGH'
+  if (p === 3) return 'STAGED'
+  return 'UNKNOWN'
+}
+
+// Cascade color styling helper
+function getDeltaBadgeStyle(colorCode?: string): Record<string, string> {
+  const code = (colorCode || 'RED').toUpperCase()
+  switch (code) {
+    case 'RED':
+      return { color: '#fb7185', background: 'rgba(244, 63, 94, 0.15)' }
+    case 'ORANGE':
+      return { color: '#fb923c', background: 'rgba(249, 115, 22, 0.15)' }
+    case 'YELLOW':
+      return { color: '#fbbf24', background: 'rgba(245, 158, 11, 0.15)' }
+    case 'GREEN':
+      return { color: '#4ade80', background: 'rgba(34, 197, 94, 0.15)' }
+    default:
+      return { color: '#fb7185', background: 'rgba(244, 63, 94, 0.15)' }
+  }
+}
 </script>
 
 <style scoped>
@@ -1083,71 +1147,135 @@ onMounted(async () => {
 @media (max-width: 780px) { .incident-detail { padding: 16px 12px 40px; }.detail-header, .incident-hero, .tab-intro { align-items: flex-start; flex-direction: column; }.header-actions { width: 100%; }.hero-status { justify-content: flex-start; }.metric-grid, .response-metrics, .outcome-grid { grid-template-columns: repeat(2, 1fr); }.two-columns, .impact-layout, .source-grid, .ai-grid, .map-evidence-layout { grid-template-columns: 1fr; }.map-canvas { height: 300px; }.source-cards { grid-template-columns: 1fr 1fr; }.tab-button { padding: 10px 11px; font-size: 11px; } }
 @media (max-width: 450px) { .metric-grid, .response-metrics, .source-cards, .outcome-grid { grid-template-columns: 1fr; }.summary-facts { grid-template-columns: 1fr; }.tabs { gap: 0; }.tab-button { padding: 9px 8px; font-size: 10px; }.tab-button span:not(.tab-icon):not(.critical-marker) { display: inline; margin-left: 3px; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; }.forecast-number { font-size: 44px; }.map-footer { align-items: flex-start; flex-direction: column; }.resource-row { grid-template-columns: 1fr auto; }.resource-progress { grid-column: 1 / 3; grid-row: 2; }.resource-row small { grid-column: 1 / 3; }.region-row small { margin-left: 0; }.not-found { margin: 40px auto; padding: 30px 18px; } }
 
-/* Design-system refinement: responsive glassmorphism, contrast and interaction states */
 :root {
-  --detail-bg: #0f0f0f;
-  --detail-panel: rgba(22, 29, 39, .72);
-  --detail-border: rgba(148, 163, 184, .17);
-  --detail-accent: #0ea5e9;
-  --detail-cyan: #67e8f9;
-  --detail-primary: #ffffff;
+  --detail-bg: #0b0f19;
+  --detail-panel: #0f172a;
+  --detail-border: #1e293b;
+  --detail-accent: #38bdf8;
+  --detail-cyan: #38bdf8;
+  --detail-primary: #f8fafc;
   --detail-secondary: #94a3b8;
   --detail-muted: #64748b;
   --detail-body: #cbd5e1;
-  --detail-glow: 0 0 24px rgba(14, 165, 233, .12);
+  --detail-glow: none; /* Removed gamer glows */
 }
 
-.incident-detail {
-  background: radial-gradient(circle at 85% 0%, rgba(14, 165, 233, .09), transparent 30%), var(--detail-bg);
-  color: var(--detail-primary);
-  font-size: 13px;
+/* Base structural styles */
+body { background: var(--detail-bg) !important; }
+
+.incident-detail { 
+  min-height: 100%; 
+  padding: 24px clamp(16px, 4vw, 56px) 64px; 
+  color: var(--detail-primary); 
+  background: var(--detail-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px; 
 }
 
+/* Strict Monospace for Telemetry & Scientific Data */
+.metric-value, .recon-coords-badge, .gauge-value, .panel-code, .forecast-number, .threat-value, .action-number {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace !important;
+  letter-spacing: -0.02em;
+}
+
+/* Matte, High-Contrast Structuring (Zero Gimmicks) */
 .glass-panel,
 .metric-card,
 .response-metric,
 .source-card,
 .asset-card,
-.channel-pill {
+.channel-pill,
+.env-gauge-tile {
   background: var(--detail-panel);
   border: 1px solid var(--detail-border);
-  backdrop-filter: blur(14px);
-  transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  border-radius: 8px; /* Sharper corners for enterprise feel */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  transition: border-color .15s ease, transform .15s ease;
+  backdrop-filter: none; /* Removed heavy blurs for crispness */
 }
 
+/* Strict interactive states without neon glows */
 .glass-panel:hover,
 .metric-card:hover,
-.response-metric:hover,
-.source-card:hover,
-.asset-card:hover,
-.channel-pill:hover {
-  border-color: var(--detail-accent);
-  box-shadow: var(--detail-glow);
+.env-gauge-tile:hover { 
+  border-color: #334155; 
+  transform: translateY(-1px);
 }
 
-.detail-header {
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--detail-border);
+.metric-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px; }
+.metric-card { min-height: 120px; padding: 16px; border-top: 3px solid #1e293b; }
+.metric-card:hover { border-top: 3px solid var(--detail-accent); }
+
+.threat-card { border-top: 3px solid #dc2626 !important; }
+.threat-value { color: #ef4444 !important; font-weight: 700; }
+
+.status-badge { border: 1px solid currentColor; }
+.status-badge.active { background: #065f46; color: #34d399; border: none; }
+.status-badge.monitoring { background: #1e3a8a; color: #60a5fa; border: none; }
+.status-badge.resolved { background: #334155; color: #94a3b8; border: none; }
+
+.ai-resource-table th {
+  border-bottom: 2px solid #334155;
+  color: #94a3b8;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 10px;
 }
 
-.back-button,
-.ghost-button,
-.primary-button {
-  min-height: 38px;
-  transition: color .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+.ai-resource-table td {
+  border-bottom: 1px solid #1e293b;
+  padding: 12px 10px;
+  font-size: 13px;
 }
 
-.back-button:hover,
-.ghost-button:hover,
-.primary-button:hover,
-.tab-button:hover,
-.tab-button.active {
-  border-color: var(--detail-accent);
-  box-shadow: var(--detail-glow);
+.priority-tag { font-family: ui-monospace, monospace; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; }
+.priority-tag.immediate { background: #7f1d1d; color: #fca5a5; }
+.priority-tag.high { background: #78350f; color: #fdba74; }
+.priority-tag.staged { background: #1e3a8a; color: #93c5fd; }
+
+/* Scientific Data Provenance Watermarks */
+.provenance-tag {
+  display: block;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  color: #475569;
+  text-transform: uppercase;
+  margin-top: 12px;
+  text-align: right;
 }
 
-.ghost-button:hover,
-.back-button:hover { transform: translateY(-1px); }
+.forecast-timeline { 
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px; 
+}
+
+.forecast-point {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #0f172a;
+  border-left: 4px solid #38bdf8;
+  border-radius: 0 6px 6px 0;
+}
+
+.forecast-point.critical { border-left-color: #dc2626; }
+.forecast-point.warning { border-left-color: #d97706; }
+
+.forecast-point strong { font-family: ui-monospace, monospace; font-size: 14px; color: #e2e8f0; }
+.forecast-point p { margin: 0; color: #94a3b8; line-height: 1.5; }
+
+.detail-header, .header-navigation, .header-actions, .hero-status, .panel-heading, .row-title, .tab-intro, .map-toolbar, .map-footer { display: flex; align-items: center; }
+.detail-header { justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+.header-navigation, .header-actions { gap: 11px; flex-wrap: wrap; }
+.back-button, .ghost-button, .primary-button { border: 1px solid rgba(148,163,184,.25); color: #e2e8f0; background: transparent; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 12px; font-weight: 600; transition: .15s ease; }
+.back-button:hover, .ghost-button:hover { border-color: #38bdf8; color: #ffffff; background: rgba(56, 189, 248, 0.1); }
+.breadcrumb-separator { color: #475569; }.breadcrumb-current { color: #94a3b8; font-size: 13px; }
+.primary-button { background: #0284c7; border-color: #0284c7; color: #ffffff; }.primary-button:hover { background: #0369a1; border-color: #0369a1; }
 
 .hero-copy h1,
 .tab-intro h2,
@@ -1695,6 +1823,12 @@ onMounted(async () => {
 .priority-tag.immediate { color: #ef4444; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); }
 .priority-tag.high { color: #f59e0b; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); }
 .priority-tag.staged { color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+/* Cascade card color coding */
+.cascade-red { border-left: 4px solid #fb7185; }
+.cascade-orange { border-left: 4px solid #fb923c; }
+.cascade-yellow { border-left: 4px solid #fbbf24; }
+.cascade-green { border-left: 4px solid #4ade80; }
 
 .cascade-timeline-grid {
   display: grid;

@@ -2,29 +2,42 @@
   "ai_available": true,
   "is_fallback": false,
   "is_mock_demo": true,
-  "situational_assessment": "MOCK DEMO: Active event confirmed. Autonomous threat monitoring active across multi-agency channels.",
+  "situational_assessment": "MOCK DEMO: Active event confirmed. Autonomous threat monitoring active across multi-agency channels. Multi-sector response coordinated.",
   "threat_level": "CRITICAL",
+  "country_context": "FEMA Region 6 Jurisdiction: Port Fourchon Sector, Louisiana",
+  "severity_assessment": "Critical-level incident with rapid expansion trajectory. Multi-agency coordination underway with federal asset mobilization.",
+  "immediate_actions": [
+    "Activate Emergency Operations Center and Joint Field Office protocols",
+    "Issue evacuation orders for residential zones within 5km perimeter",
+    "Deploy USCG Sector New Orleans assets to primary staging area"
+  ],
   "predictive_cascade": [
     {
       "timeframe": "6 Hours",
       "perimeter_delta_km2": 45.5,
-      "spread_direction": "Projected expansion along active terrain vectors",
-      "primary_risk": "Perimeter breach of secondary safety buffers",
-      "secondary_threat": "Localized infrastructure stress & power distribution disruption"
+      "spread_direction": "Projected expansion SSW along active terrain vectors at 12 m/s wind influence",
+      "primary_risk": "Perimeter breach of secondary safety buffers, facility exposure",
+      "secondary_threat": "Localized infrastructure stress & power distribution disruption",
+      "color_code": "RED",
+      "spread_polygon": [[29.8, -90.2], [29.9, -90.1], [29.8, -90.0], [29.7, -90.1]]
     },
     {
       "timeframe": "12 Hours",
       "perimeter_delta_km2": 95.0,
-      "spread_direction": "Downwind/downstream expansion threatening municipal corridors",
-      "primary_risk": "Transit artery congestion & access denial",
-      "secondary_threat": "Emergency services response delay"
+      "spread_direction": "Downwind/downstream expansion threatening municipal corridors, heading ENE at 8 m/s",
+      "primary_risk": "Transit artery congestion & access denial to evacuation routes",
+      "secondary_threat": "Emergency services response delay and medical facility access compromise",
+      "color_code": "ORANGE",
+      "spread_polygon": [[29.9, -90.1], [30.0, -89.9], [29.8, -89.8], [29.7, -90.0], [29.6, -90.1]]
     },
     {
       "timeframe": "24 Hours",
       "perimeter_delta_km2": 150.0,
-      "spread_direction": "Stabilization dependent on active containment & meteorological shifts",
-      "primary_risk": "Long-term humanitarian displacement",
-      "secondary_threat": "Economic and environmental recovery requirements"
+      "spread_direction": "Stabilization dependent on active containment & meteorological shifts, residual NW drift",
+      "primary_risk": "Long-term humanitarian displacement and shelter saturation",
+      "secondary_threat": "Economic and environmental recovery requirements exceed immediate capacity",
+      "color_code": "YELLOW",
+      "spread_polygon": [[30.0, -90.0], [30.1, -89.8], [30.0, -89.6], [29.8, -89.7], [29.7, -89.9], [29.8, -90.1]]
     }
   ],
   "critical_infrastructure": [
@@ -33,49 +46,108 @@
       "facility_type": "Hospital",
       "distance_km": 3.4,
       "risk_level": "HIGH",
-      "action_required": "Activate auxiliary backup generators & prepare triage expansion"
+      "action_required": "Activate auxiliary backup generators & prepare triage expansion; pre-position MH-60T Jayhawk assets",
+      "entry_time_hours": 3,
+      "confidence": 92
     },
     {
       "facility_name": "Municipal Power & Distribution Grid Substation",
       "facility_type": "Power Grid",
       "distance_km": 5.1,
       "risk_level": "MODERATE",
-      "action_required": "Deploy perimeter fire/flood barriers & monitor circuit load"
+      "action_required": "Deploy perimeter fire/flood barriers & monitor circuit load; coordinate with utility crews",
+      "entry_time_hours": 6,
+      "confidence": 85
+    },
+    {
+      "facility_name": "Baton Rouge Regional Water Treatment Facility",
+      "facility_type": "Water Treatment",
+      "distance_km": 12.3,
+      "risk_level": "MODERATE",
+      "action_required": "Switch to emergency potable water reserves; activate boil-water advisory protocols",
+      "entry_time_hours": 12,
+      "confidence": 78
     }
   ],
   "evacuation_corridors": {
-    "primary_corridor": "Major Highway Artery outbound",
-    "alternative_route": "Secondary County Connector Routes Eastbound",
+    "primary_corridor": "I-49 North (Baton Rouge Corridor)",
+    "capacity_vehicles_per_hour": 3200,
+    "estimated_clearance_hours": 4.5,
     "choke_points": [
-      "Interchange Bridge Crossing (Potential bottleneck)",
-      "Single-lane feeder roads"
+      {
+        "location": "Interchange Bridge Crossing (US-61 on I-49)",
+        "impact": "CRITICAL",
+        "width_meters": 28
+      },
+      {
+        "location": "Single-lane feeder roads (Highway 231)",
+        "impact": "HIGH",
+        "width_meters": 8
+      }
     ],
     "safe_assembly_zones": [
-      "Community Sports Complex",
-      "Regional Civic Exhibition Center"
-    ],
-    "estimated_clearance_time_hours": 4.5
+      {
+        "name": "Community Sports Complex",
+        "latitude": 30.45,
+        "longitude": -91.20,
+        "capacity_people": 2500
+      },
+      {
+        "name": "Regional Civic Exhibition Center",
+        "latitude": 30.52,
+        "longitude": -91.15,
+        "capacity_people": 4200
+      }
+    ]
   },
   "resource_matrix": [
     {
-      "resource": "Heavy First Responder Units",
-      "quantity": "12 Squads",
-      "assigned_agency": "State & Municipal Emergency Management",
-      "priority": "IMMEDIATE"
+      "resource": "Helicopter",
+      "quantity": 4,
+      "unit_measure": "Units",
+      "assigned_agency": "USCG Sector New Orleans",
+      "deployment_location": "Port of South Louisiana, Baton Rouge Base",
+      "estimated_arrival_minutes": 28,
+      "priority": 1,
+      "confidence": 95
     },
     {
-      "resource": "Emergency Medical Transport",
-      "quantity": "8 Advanced Life Support Ambulances",
+      "resource": "Ambulance",
+      "quantity": 12,
+      "unit_measure": "Vehicles",
       "assigned_agency": "Regional EMS & Red Cross",
-      "priority": "HIGH"
+      "deployment_location": "Staging Area A (Baton Rouge Convention Center)",
+      "estimated_arrival_minutes": 45,
+      "priority": 1,
+      "confidence": 89
+    },
+    {
+      "resource": "Fire Engine",
+      "quantity": 8,
+      "unit_measure": "Vehicles",
+      "assigned_agency": "Louisiana State Fire Marshal",
+      "deployment_location": "Forward Operating Base (Highway 61)",
+      "estimated_arrival_minutes": 32,
+      "priority": 2,
+      "confidence": 91
+    },
+    {
+      "resource": "Rescue Team",
+      "quantity": 6,
+      "unit_measure": "Teams",
+      "assigned_agency": "FEMA Urban Search & Rescue",
+      "deployment_location": "Joint Field Office Activation (Baton Rouge)",
+      "estimated_arrival_minutes": 120,
+      "priority": 2,
+      "confidence": 82
     }
   ],
   "vulnerable_demographics": {
     "facilities_at_risk": [
-      "Senior Care Center",
-      "Municipal Elementary Schools"
+      "Senior Care Center (Assisted Living, 450 residents)",
+      "Municipal Elementary Schools (Lakeside District, 1200 students)"
     ],
     "estimated_displaced_citizens": 12000,
-    "special_needs_assistance_required": "High-priority medical transport required for 45 non-ambulatory citizens."
+    "special_needs_assistance_required": "High-priority medical transport required for 45 non-ambulatory citizens; wheelchair accessibility critical for 120 additional residents."
   }
 }

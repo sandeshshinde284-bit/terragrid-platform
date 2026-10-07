@@ -209,7 +209,11 @@ def find_incident_by_id(incident_id: str, db: Session):
 
 
 @router.post("/{incident_id}/deep-analysis")
-async def generate_deep_incident_analysis(incident_id: str, db: Session = Depends(get_db)):
+async def generate_deep_incident_analysis(
+    incident_id: str, 
+    db: Session = Depends(get_db),
+    use_mock: bool = Query(False, description="Bypass Vertex AI and return rich mock demonstration dossier")
+):
     """
     Tier 2 Deep Tactical AI Dossier: Generates an exhaustive, unscripted 8-tab
     crisis intelligence dossier (6h/12h/24h predictive cascade, critical infrastructure,
@@ -236,7 +240,11 @@ async def generate_deep_incident_analysis(incident_id: str, db: Session = Depend
         }
 
         from backend.services.decision_support import get_decision_support_service
-        dossier = get_decision_support_service().generate_deep_tactical_dossier(incident_dict)
+        dossier = get_decision_support_service().generate_deep_tactical_dossier(
+            incident_dict, 
+            use_mock=use_mock, 
+            db_session=db
+        )
 
         # Cache dossier in PostgreSQL
         try:

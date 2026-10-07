@@ -6,6 +6,7 @@ import logging
 import math
 from typing import List, Dict, Any, Tuple
 from datetime import datetime, timedelta
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,8 @@ class EvacuationZoneService:
         "rural": 500,
         "very_rural": 100,
     }
+
+    OSRM_URL = os.getenv("OSRM_API_URL", "https://router.project-osrm.org/route/v1")
     
     @classmethod
     def calculate_zones(cls, incident: Dict[str, Any]) -> Dict[str, Any]:
@@ -291,7 +294,7 @@ class EvacuationZoneService:
                 
                 # Fetch REAL physical road networks from OSRM Project (OpenStreetMap)
                 try:
-                    url = f"http://router.project-osrm.org/route/v1/driving/{lon},{lat};{dst_lon},{dst_lat}?geometries=geojson&overview=full"
+                    url = f"{cls.OSRM_URL}/driving/{lon},{lat};{dst_lon},{dst_lat}?geometries=geojson&overview=full"
                     req = urllib.request.Request(url, headers={'User-Agent': 'TerraGrid-Disaster-App/1.0'})
                     with urllib.request.urlopen(req, timeout=3.0) as response:
                         data = json.loads(response.read().decode())
