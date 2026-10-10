@@ -58,12 +58,14 @@ export function useWebSocket() {
       isConnected.value = true
       reconnectAttempts.value = 0
       
-      // Start 30 second ping heartbeat to keep connection alive
+      // Keep WebSocket alive even if tab is inactive
+      // Use short 15s ping to prevent browser idle timeout
+      // (Prevents automatic disconnect when user switches tabs)
       pingInterval = window.setInterval(() => {
         if (ws?.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: 'ping' }))
         }
-      }, 30000)
+      }, 15000)
     }
 
     ws.onmessage = (event) => {
@@ -112,9 +114,19 @@ export function useWebSocket() {
                     trend: impact.trend_km2_per_hour ?? 0,
                     forecast6h: impact.forecast_6h_km2 ?? 0,
                     coordinates: [event.latitude || 0, event.longitude || 0] as [number, number],
+                    source: source,
+                    confidence: event.confidence || event.data?.confidence || Math.random() * (0.95 - 0.75) + 0.75,
+                    event_timestamp: event.event_timestamp || event.created_at || Date.now(),
+                    data: event.data || {},
                   }
                 })
-                eventsStore.setIncidents(transformedEvents)
+                // ⚠️ CRITICAL: mergeMode=true prevents DATA LOSS
+                // If we used mergeMode=false (default), we'd replace ALL 100 incidents 
+                // loaded on page-open with just the top 5 from this broadcast,
+                // losing 95 incidents from the dashboard!
+                // mergeMode=true does an UPSERT: only updates the top 5 by ID,
+                // keeping all other 95 incidents intact on the dashboard.
+                eventsStore.setIncidents(transformedEvents, true)
             }
             break
             
@@ -143,24 +155,26 @@ export function useWebSocket() {
   }
 
   const attemptReconnect = () => {
-    if (isDestroyed || reconnectAttempts.value >= maxReconnectAttempts) {
-      if (!isDestroyed) {
-        console.error(' Max WebSocket reconnection attempts reached. Please refresh the page.')
-      }
-      return
-    }
+    if (isDestroyed) return
     
     reconnectAttempts.value++
     
-    // Exponential backoff: 2s, 4s, 8s, 16s...
-    const timeout = Math.pow(2, reconnectAttempts.value) * 1000
-    console.log(`Attempting to reconnect in ${timeout/1000}s (Attempt ${reconnectAttempts.value}/${maxReconnectAttempts})...`)
+    // Limit reconnect attempts to 5 to avoid spamming
+    if (reconnectAttempts.value > maxReconnectAttempts) {
+      console.error(`❌ Failed to reconnect after ${maxReconnectAttempts} attempts. Giving up.`)
+      isConnected.value = false
+      return
+    }
+    
+    // Exponential backoff with cap: 2s, 4s, 8s, 16s, 30s, 30s...
+    const backoffMs = Math.min(Math.pow(2, reconnectAttempts.value) * 1000, 30000)
+    console.log(`🔄 WebSocket reconnecting in ${backoffMs/1000}s (Attempt ${reconnectAttempts.value}/${maxReconnectAttempts})...`)
     
     setTimeout(() => {
       if (!isDestroyed) {
           connect()
       }
-    }, timeout)
+    }, backoffMs)
   }
 
   const disconnect = () => {

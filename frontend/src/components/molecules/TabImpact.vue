@@ -21,7 +21,7 @@
               <span class="facility-type-tag">{{ fac.facility_type }}</span>
               <span class="facility-risk" :class="fac.risk_level.toLowerCase()">{{ fac.risk_level }} RISK</span>
             </div>
-            <h4 style="margin: 0; font-size: 16px; color: #ffffff;">{{ fac.facility_name }}</h4>
+            <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #f8fafc; line-height: 1.3;">{{ fac.facility_name }}</h4>
             <div class="facility-meta">
               <span>📍 Distance: {{ fac.distance_km }} km from epicenter</span>
             </div>
@@ -29,8 +29,8 @@
               <strong>Directive:</strong> {{ fac.action_required }}
             </div>
             <div class="facility-confidence" v-if="fac.confidence !== undefined" style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 18px; color: #94a3b8;">
-              <div style="flex: 1; background: rgba(255, 255, 255, 0.1); border-radius: 2px; height: 4px; overflow: hidden;">
-                <div style="background: linear-gradient(90deg, #fbbf24, #38bdf8); height: 100%; width: 100%;" :style="{ width: `${fac.confidence}%` }"></div>
+             <div style="flex: 1; background: rgba(255, 255, 255, 0.08); border-radius: 3px; height: 5px; overflow: hidden;">
+                <div style="background: linear-gradient(90deg, #fbbf24, #38bdf8); height: 100%; width: 100%; border-radius: 3px;" :style="{ width: `${fac.confidence}%` }"></div>
               </div>
               <span style="min-width: 30px; text-align: right;">{{ fac.confidence }}%</span>
             </div>
@@ -93,6 +93,34 @@ defineEmits(['launch'])
 </script>
 
 <style scoped>
+.impact-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tab-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  margin-bottom: 24px;
+}
+
+.tab-intro h2 {
+  margin: 0;
+  font-size: 28px;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.tab-intro p {
+  margin: 8px 0 0 0;
+  color: #94a3b8;
+  font-size: 16px;
+}
+
 .glass-panel {
   background: #0f172a;
   border: 1px solid #1e293b;
@@ -126,52 +154,101 @@ defineEmits(['launch'])
   margin-top: 14px;
 }
 
+
 .ai-facility-card {
   background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  min-height: 280px;
+  transition: all 0.2s ease;
+}
+
+.ai-facility-card:hover {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);
+  transform: translateY(-2px);
 }
 
 .facility-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .facility-type-tag {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: #38bdf8;
-  background: rgba(14, 165, 233, 0.15);
-  padding: 2px 8px;
+  background: rgba(14, 165, 233, 0.2);
+  padding: 4px 10px;
   border-radius: 4px;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .facility-risk {
-  font-size: 16px;
-  font-weight: 800;
-  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
   border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.facility-risk.critical { color: #ef4444; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); }
-.facility-risk.high { color: #f59e0b; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); }
-.facility-risk.moderate { color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); }
 
+.facility-risk.critical { 
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.facility-risk.high { 
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.facility-risk.moderate { 
+  color: #93c5fd;
+  background: rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
 .facility-meta {
-  font-size: 18px;
+  font-size: 14px;
   color: #94a3b8;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .facility-action {
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 1.6;
   color: #cbd5e1;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.facility-action strong {
+  color: #f8fafc;
+  font-weight: 700;
 }
 
 /* Phase 2 Fallback styling */
@@ -244,6 +321,12 @@ defineEmits(['launch'])
   .glass-panel { padding: 16px !important; }
   .panel-heading { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 16px !important; }
   h2, h3 { font-size: 16px !important; }
+  
+  /* Facility grid responsive */
+  .ai-facility-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
   .ai-resource-table th, .ai-resource-table td { padding: 8px 6px !important; font-size: 15px !important; white-space: nowrap; }
   .resource-matrix-table-wrapper { padding-bottom: 12px; margin-bottom: -12px; }
   .priority-tag { font-size: 16px !important; padding: 2px 6px !important; }

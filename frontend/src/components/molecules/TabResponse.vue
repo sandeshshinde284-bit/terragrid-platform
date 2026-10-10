@@ -13,7 +13,7 @@
       <article class="glass-panel" style="padding: 16px; margin-bottom: 20px; border-left: 4px solid var(--detail-accent);">
         <p style="margin: 0; font-size: 18px; color: #f8fafc; line-height: 1.6;">
           <strong style="color: var(--detail-accent); font-family: ui-monospace, monospace; margin-right: 8px;">TACTICAL BRIEFING:</strong> 
-          {{ deepDossier.situational_assessment }}
+          {{ deepDossier.severity_assessment || 'Situational assessment pending...' }}
         </p>
       </article>
 

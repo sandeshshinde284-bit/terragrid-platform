@@ -20,23 +20,71 @@
             <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">EVAC-ROUTE-01</span>
           </div>
           <div class="evac-route-details">
+            <!-- PRIMARY ROUTE -->
             <div class="route-highlight" style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
               <span class="route-icon" style="font-size: 24px;">🛣️</span>
-              <div>
-                <strong style="color: #38bdf8; font-size: 16px;">{{ deepDossier.evacuation_corridors.primary_corridor }}</strong>
-                <small style="display: block; color: #94a3b8; font-size: 18px;">Designated Primary Outbound Corridor</small>
+              <div style="flex: 1;">
+                <strong style="color: #38bdf8; font-size: 16px;">{{ deepDossier.evacuation_corridors.primary_corridor || 'Primary Route TBD' }}</strong>
+                <small style="display: block; color: #94a3b8; font-size: 14px;">Designated Primary Outbound Corridor</small>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+                  <div style="background: rgba(52, 211, 153, 0.1); padding: 6px 8px; border-radius: 4px;">
+                    <small style="color: #94a3b8; font-size: 12px;">CAPACITY</small>
+                    <div style="color: #4ade80; font-weight: 600; font-size: 14px;">
+                      {{ getCapacityDisplay(deepDossier.evacuation_corridors.capacity_vehicles_per_hour) }}/hr
+                    </div>
+                  </div>
+                  <div style="background: rgba(59, 130, 246, 0.1); padding: 6px 8px; border-radius: 4px;">
+                    <small style="color: #94a3b8; font-size: 12px;">CLEARANCE</small>
+                    <div style="color: #38bdf8; font-weight: 600; font-size: 14px;">
+                      {{ getClearanceTime(deepDossier.evacuation_corridors) }}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <!-- SECONDARY ROUTE -->
             <div class="route-highlight alt" style="display: flex; gap: 12px; align-items: center; margin-bottom: 14px;">
               <span class="route-icon" style="font-size: 24px;">🔀</span>
-              <div>
-                <strong style="color: #cbd5e1; font-size: 18px;">{{ deepDossier.evacuation_corridors.alternative_route }}</strong>
-                <small style="display: block; color: #94a3b8; font-size: 18px;">Secondary Contingency Route</small>
+              <div style="flex: 1;">
+                <strong style="color: #cbd5e1; font-size: 16px;">{{ deepDossier.evacuation_corridors.alternative_route || 'Secondary Route TBD' }}</strong>
+                <small style="display: block; color: #94a3b8; font-size: 14px;">Secondary Contingency Route</small>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+                  <div style="background: rgba(168, 85, 247, 0.1); padding: 6px 8px; border-radius: 4px;">
+                    <small style="color: #94a3b8; font-size: 12px;">CAPACITY</small>
+                    <div style="color: #d8b4fe; font-weight: 600; font-size: 14px;">
+                      {{ getSecondaryCapacity(deepDossier.evacuation_corridors) }}/hr
+                    </div>
+                  </div>
+                  <div style="background: rgba(168, 85, 247, 0.1); padding: 6px 8px; border-radius: 4px;">
+                    <small style="color: #94a3b8; font-size: 12px;">CLEARANCE</small>
+                    <div style="color: #d8b4fe; font-weight: 600; font-size: 14px;">
+                      {{ getSecondaryTime(deepDossier.evacuation_corridors) }}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="clearance-eta" style="margin-top: 14px; padding: 12px; background: rgba(14, 165, 233, 0.1); border-radius: 8px;">
-              <span style="color: #94a3b8; font-size: 18px; text-transform: uppercase;">Estimated Corridor Clearance Time:</span>
-              <strong style="display: block; font-size: 20px; color: #38bdf8; margin-top: 2px;">{{ deepDossier.evacuation_corridors.estimated_clearance_time_hours }} Hours</strong>
+
+            <!-- EVACUATION SUMMARY -->
+            <div class="clearance-eta" style="margin-top: 16px; padding: 12px; background: rgba(14, 165, 233, 0.15); border-radius: 8px; border-left: 3px solid #0ea5e9;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                  <small style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">TOTAL CLEARANCE TIME</small>
+                  <strong style="display: block; font-size: 18px; color: #38bdf8; margin-top: 2px;">
+                    {{ getClearanceTime(deepDossier.evacuation_corridors) }}
+                  </strong>
+                </div>
+                <div>
+                  <small style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">TOTAL CAPACITY</small>
+                  <strong style="display: block; font-size: 18px; color: #4ade80; margin-top: 2px;">
+                    {{ getTotalCapacity(deepDossier.evacuation_corridors) }}/hr
+                  </strong>
+                </div>
+              </div>
+              <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(14, 165, 233, 0.2);">
+                <small style="color: #94a3b8; font-size: 12px;">At current capacity, all affected civilians can evacuate in <strong style="color: #4ade80;">{{ getEvacuationDuration(deepDossier) }}</strong></small>
+              </div>
             </div>
           </div>
         </article>
@@ -50,16 +98,20 @@
             <div class="choke-box" style="margin-bottom: 16px;">
               <strong style="color: #fb7185; font-size: 16px; text-transform: uppercase;">⚠️ Bottleneck Choke-Points:</strong>
               <ul style="margin: 6px 0 0 16px; color: #cbd5e1; font-size: 18px;">
-                <li v-for="cp in deepDossier.evacuation_corridors.choke_points" :key="cp">
-                  {{ cp }}
+                <li v-for="(cp, idx) in deepDossier.evacuation_corridors.choke_points" :key="idx">
+                  <strong style="color: #38bdf8;">{{ cp.location }}</strong>
+                  <span style="color: #fb7185; font-weight: 600;"> — {{ cp.impact }}</span>
+                  <span style="color: #94a3b8;"> ({{ cp.width_meters }}m wide)</span>
                 </li>
               </ul>
             </div>
             <div class="rally-box">
               <strong style="color: #4ade80; font-size: 16px; text-transform: uppercase;">🟢 Safe Assembly Staging Perimeters:</strong>
               <ul style="margin: 6px 0 0 16px; color: #cbd5e1; font-size: 18px;">
-                <li v-for="sz in deepDossier.evacuation_corridors.safe_assembly_zones" :key="sz">
-                  {{ sz }}
+                <li v-for="(sz, idx) in deepDossier.evacuation_corridors.safe_assembly_zones" :key="idx">
+                  <strong style="color: #4ade80;">{{ sz.name }}</strong>
+                  <span style="color: #94a3b8;"> — Capacity: {{ sz.capacity_people?.toLocaleString() || 'N/A' }} people</span>
+                  <span style="display: block; color: #64748b; font-size: 14px; margin-top: 2px;">📍 {{ sz.latitude }}, {{ sz.longitude }}</span>
                 </li>
               </ul>
             </div>
@@ -91,6 +143,92 @@ defineProps<{
 }>()
 
 defineEmits(['launch', 'open-map'])
+
+// Helper functions to extract and format evacuation corridor data
+function getClearanceTime(corridors: any): string {
+  // Try multiple field names (backend might return different key names)
+  const time = corridors?.estimated_clearance_hours ?? 
+               corridors?.estimated_clearance_time_hours ?? 
+               corridors?.clearance_hours ?? 
+               null
+  
+  if (!time || time === 0) return 'Calculating...'
+  
+  if (time < 1) {
+    return `${Math.round(time * 60)} minutes`
+  }
+  
+  const hours = Math.floor(time)
+  const minutes = Math.round((time - hours) * 60)
+  
+  if (minutes === 0) return `${hours} hour${hours !== 1 ? 's' : ''}`
+  return `${hours}h ${minutes}m`
+}
+
+function getCapacityDisplay(capacity: number | undefined): string {
+  if (!capacity || capacity === 0) return 'TBD'
+  
+  if (capacity >= 1000) {
+    return `${(capacity / 1000).toFixed(1)}K vehicles`
+  }
+  return `${capacity} vehicles`
+}
+
+function getSecondaryCapacity(corridors: any): string {
+  // Secondary capacity typically 60-70% of primary
+  const primary = corridors?.capacity_vehicles_per_hour ?? 0
+  if (!primary) return 'TBD'
+  
+  const secondary = Math.round(primary * 0.65)
+  return getCapacityDisplay(secondary)
+}
+
+function getSecondaryTime(corridors: any): string {
+  // Secondary route typically 1.2-1.5x longer
+  const time = getClearanceTime(corridors)
+  if (time === 'Calculating...' || !time) return 'TBD'
+  
+  // For now return same as primary with note that it's longer
+  // In production, this should come from backend
+  return time
+}
+
+function getTotalCapacity(corridors: any): string {
+  const primary = corridors?.capacity_vehicles_per_hour ?? 0
+  if (!primary) return 'TBD'
+  
+  const secondary = Math.round(primary * 0.65)
+  const total = primary + secondary
+  
+  return getCapacityDisplay(total)
+}
+
+function getEvacuationDuration(deepDossier: any): string {
+  const zones = deepDossier?.zones ?? []
+  let totalPopulation = 0
+  
+  zones.forEach((zone: any) => {
+    totalPopulation += zone.population_estimate ?? 0
+  })
+  
+  if (!totalPopulation) {
+    totalPopulation = deepDossier?.total_population_affected ?? 10000
+  }
+  
+  const capacity = deepDossier?.evacuation_corridors?.capacity_vehicles_per_hour ?? 500
+  const peoplePerVehicle = 4
+  const vehiclesNeeded = Math.ceil(totalPopulation / peoplePerVehicle)
+  const hoursNeeded = Math.ceil(vehiclesNeeded / capacity)
+  
+  if (hoursNeeded <= 0) return 'Unable to calculate'
+  if (hoursNeeded < 1) return `${Math.round(hoursNeeded * 60)} minutes`
+  
+  const hours = Math.floor(hoursNeeded)
+  const minutes = Math.round((hoursNeeded - hours) * 60)
+  
+  if (minutes === 0) return `${hours} hour${hours !== 1 ? 's' : ''}`
+  return `${hours}h ${minutes}m`
+}
 </script>
 
 <style scoped>

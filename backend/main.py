@@ -209,4 +209,13 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Configure Uvicorn with proper WebSocket timeout settings
+    # ws_ping_interval and ws_ping_timeout prevent idle disconnects
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=8000,
+        ws_ping_interval=30,       # Server sends ping every 30s
+        ws_ping_timeout=60,        # Wait up to 60s for pong response
+        timeout_keep_alive=120     # Keep-alive timeout for HTTP connections (not WS)
+    )

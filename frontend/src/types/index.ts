@@ -22,6 +22,7 @@ export interface IncidentLevel1 {
   id: string
   type: Event['type']
   location: string
+  location_name?: string  // Full location name (for TabSource display)
   severity: Event['severity']
   affectedArea: number
   affectedPopulation: number
@@ -32,6 +33,10 @@ export interface IncidentLevel1 {
   threatScore?: number  // Optional threat score (0-100)
   coordinates?: [number, number]  // lat, lng
   countryCode?: string  // Canonical 2-letter ISO country code (e.g., 'US', 'IN')
+  source?: string       // API Origin (e.g. nasa_eonet, USGS_EARTHQUAKES, GDACS)
+  confidence?: number   // Detection confidence (0-1, e.g., 0.98 = 98%)
+  event_timestamp?: string | Date // Original API timestamp when event was detected
+  data?: Record<string, any> // Raw JSON blob from API (complete telemetry)
 }
 
 // Expanded Incident Data (Level 2 - Drawer)

@@ -155,15 +155,27 @@ class BackgroundPollingService:
                 # Only broadcast if there are actual active connections to save overhead
                 if len(manager.active_connections) > 0:
                     logger.info("Broadcasting updates via WebSocket...")
-                    await manager.broadcast_json({
+                    
+                    # Limit to 5 incidents max to keep payload size <100KB
+                    # (Avoids timeout on slow connections)
+                    broadcast_incidents = new_incidents[:5]
+                    
+                    broadcast_msg = {
                         "type": "incidents_polled",
                         "timestamp": datetime.utcnow().isoformat(),
                         "data": {
                             "total_events": new_count,
                             "changes": changes,
-                            "events": new_incidents[:50] # Send top 50 to avoid huge payloads
+                            "events": broadcast_incidents
                         }
-                    })
+                    }
+                    
+                    # Log payload size for diagnostics
+                    import json as json_module
+                    payload_size_kb = len(json_module.dumps(broadcast_msg)) / 1024
+                    logger.debug(f"WebSocket broadcast payload: {payload_size_kb:.1f} KB")
+                    
+                    await manager.broadcast_json(broadcast_msg)
             except Exception as ws_e:
                 logger.error(f"WebSocket broadcast failed: {str(ws_e)}")
             

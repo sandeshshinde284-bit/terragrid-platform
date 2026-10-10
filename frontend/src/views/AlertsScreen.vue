@@ -176,7 +176,7 @@ const alerts = computed<Alert[]>(() => {
   return eventsStore.allIncidents.map((incident, index) => {
     const score = incident.threatScore ?? 50
     let severity: 'critical' | 'high' | 'medium' | 'low' = 'low'
-    if (score >= 80 || incident.severity === 'critical') severity = 'critical'
+    if (score >= 80) severity = 'critical'
     else if (score >= 65 || incident.severity === 'high') severity = 'high'
     else if (score >= 40 || incident.severity === 'medium') severity = 'medium'
 
@@ -202,7 +202,7 @@ const briefText = computed(() => {
   const incidents = eventsStore.allIncidents.length
   const area = eventsStore.totalAffectedArea.toFixed(0)
   const population = (eventsStore.totalAffectedPopulation / 1000).toFixed(0)
-  const critical = eventsStore.allIncidents.filter(i => (i.threatScore ?? 0) >= 80 || i.severity === 'critical').length
+  const critical = eventsStore.allIncidents.filter(i => (i.threatScore ?? 0) >= 80 || i.severity === 'high').length
   
   return `GLOBAL THREAT INTELLIGENCE BRIEF: TerraGrid is actively monitoring ${incidents} verified disaster incidents worldwide across 5 real-time satellite and sensor feeds. High-threat clusters identify ${critical} priority emergencies affecting ~${population}K residents and ${area} km² of territory. AI decision support models are operational.`
 })
@@ -248,7 +248,7 @@ onMounted(async () => {
               id: event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id || `event-${index}-${Date.now()}`,
               type: event.event_type || 'fire',
               location: event.location_name || 'Unknown',
-              severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
+              severity: (severity === 'critical' ? 'high' : severity === 'low' ? 'low' : severity === 'medium' ? 'medium' : 'high') as 'low' | 'medium' | 'high',
               status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
               threatScore: impact.risk_score ?? 50,
               detectionTime: new Date(event.event_timestamp || Date.now()),
@@ -289,13 +289,6 @@ onMounted(async () => {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-}
-
-.filter-tabs {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  flex-wrap: wrap;
 }
 
 .filter-tabs {

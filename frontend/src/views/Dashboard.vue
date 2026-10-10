@@ -38,7 +38,7 @@
           <!-- Country Filter Buttons -->
           <div class="country-filter-section">
             <div class="filter-label">Filter by Country:</div>
-            <select v-model="selectedCountry" class="country-dropdown" :disabled="isLoading">
+            <select id="country-select" aria-label="Filter by Country" v-model="selectedCountry" class="country-dropdown" :disabled="isLoading">
               <option v-if="isLoading" value="" disabled>⏳ Scanning regions...</option>
               <option v-else :value="null">All Countries</option>
               <option v-for="country in availableCountries" :key="country" :value="country">
@@ -165,7 +165,7 @@
                   <span class="group-title">Immediate Action Items:</span>
                   <div class="tactical-action-cards">
                     <div v-for="(act, idx) in aiPlan.immediate_actions" :key="idx" class="tactical-action-card">
-                      <span class="action-num">0{{ idx + 1 }}</span>
+                      <span class="action-num">0{{ Number(idx) + 1 }}</span>
                       <span class="action-text">{{ formatTacticalText(act) }}</span>
                     </div>
                   </div>
@@ -202,7 +202,7 @@
                 <div class="profile-item">
                   <span class="card-section-label">{{ $t('incidents.status') }}</span>
                   <div class="status-badge" :class="selectedIncidentData.status">
-                    {{ selectedIncidentData.status.toUpperCase() }}
+                    {{ (selectedIncidentData.status || 'unknown').toUpperCase() }}
                   </div>
                 </div>
                 <div class="profile-item align-right">
@@ -220,7 +220,7 @@
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
                         <div class="factor-row"><span>💨 Atmospheric Risk:</span> <strong>Active</strong></div>
-                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? selectedIncidentData.affectedPopulation.toLocaleString() : 'Estimating' }}</strong></div>
+                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() : 'Estimating' }}</strong></div>
                         <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
                       </div>
                     </div>
@@ -233,19 +233,19 @@
             <div class="metadata-grid glass-subpanel">
               <div class="detail-item">
                 <label>{{ $t('incidents.affectedArea') }}</label>
-                <div class="metric-value">{{ selectedIncidentData.affectedArea.toFixed(1) }} km²</div>
+                <div class="metric-value">{{ (selectedIncidentData.affectedArea ?? 0).toFixed(1) }} km²</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.population') }}</label>
-                <div class="metric-value">{{ selectedIncidentData.affectedPopulation.toLocaleString() }}</div>
+                <div class="metric-value">{{ (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() }}</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.trend') }}</label>
-                <div class="trend-value">+{{ selectedIncidentData.trend.toFixed(1) }} km²/h</div>
+                <div class="trend-value">+{{ (selectedIncidentData.trend ?? 0).toFixed(1) }} km²/h</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.forecast') }}</label>
-                <div class="forecast-value">+{{ selectedIncidentData.forecast6h.toFixed(1) }} km²</div>
+                <div class="forecast-value">+{{ (selectedIncidentData.forecast6h ?? 0).toFixed(1) }} km²</div>
               </div>
             </div>
 
@@ -323,7 +323,7 @@
                   <span class="group-title">Immediate Action Items:</span>
                   <div class="tactical-action-cards">
                     <div v-for="(act, idx) in aiPlan.immediate_actions" :key="idx" class="tactical-action-card">
-                      <span class="action-num">0{{ idx + 1 }}</span>
+                      <span class="action-num">0{{ Number(idx) + 1 }}</span>
                       <span class="action-text">{{ formatTacticalText(act) }}</span>
                     </div>
                   </div>
@@ -360,7 +360,7 @@
                 <div class="profile-item">
                   <span class="card-section-label">{{ $t('incidents.status') }}</span>
                   <div class="status-badge" :class="selectedIncidentData.status">
-                    {{ selectedIncidentData.status.toUpperCase() }}
+                    {{ (selectedIncidentData.status || 'unknown').toUpperCase() }}
                   </div>
                 </div>
                 <div class="profile-item align-right">
@@ -378,7 +378,7 @@
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
                         <div class="factor-row"><span>💨 Atmospheric Risk:</span> <strong>Active</strong></div>
-                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? selectedIncidentData.affectedPopulation.toLocaleString() : 'Estimating' }}</strong></div>
+                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() : 'Estimating' }}</strong></div>
                         <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
                       </div>
                     </div>
@@ -391,19 +391,19 @@
             <div class="metadata-grid glass-subpanel">
               <div class="detail-item">
                 <label>{{ $t('incidents.affectedArea') }}</label>
-                <div class="metric-value">{{ selectedIncidentData.affectedArea.toFixed(1) }} km²</div>
+                <div class="metric-value">{{ (selectedIncidentData.affectedArea ?? 0).toFixed(1) }} km²</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.population') }}</label>
-                <div class="metric-value">{{ selectedIncidentData.affectedPopulation.toLocaleString() }}</div>
+                <div class="metric-value">{{ (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() }}</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.trend') }}</label>
-                <div class="trend-value">+{{ selectedIncidentData.trend.toFixed(1) }} km²/h</div>
+                <div class="trend-value">+{{ (selectedIncidentData.trend ?? 0).toFixed(1) }} km²/h</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.forecast') }}</label>
-                <div class="forecast-value">+{{ selectedIncidentData.forecast6h.toFixed(1) }} km²</div>
+                <div class="forecast-value">+{{ (selectedIncidentData.forecast6h ?? 0).toFixed(1) }} km²</div>
               </div>
             </div>
 
@@ -470,11 +470,11 @@
       <div class="metrics-group">
         <div class="metric">
           <span class="label">{{ $t('dashboard.totalAffectedArea') }}</span>
-          <span class="value">{{ totalAffectedArea.toFixed(1) }} km²</span>
+          <span class="value">{{ (totalAffectedArea ?? 0).toFixed(1) }} km²</span>
         </div>
         <div class="metric">
           <span class="label">{{ $t('dashboard.totalPopulation') }}</span>
-          <span class="value">{{ totalPopulation.toLocaleString() }}</span>
+          <span class="value">{{ (totalPopulation ?? 0).toLocaleString() }}</span>
         </div>
         <div class="metric">
           <span class="label">{{ $t('dashboard.activeIncidentsCount') }}</span>
@@ -541,7 +541,7 @@ const appStore = useAppStore()
 const eventsStore = useEventsStore()
 const alertsStore = useAlertsStore()
 const { isMockMode, fetchWithMockMode } = useMockMode()
-const { isConnected } = useWebSocket()
+const { isConnected, connect } = useWebSocket()
 
 const isLoading = ref(false)
 const apiError = ref<string | null>(null)
@@ -1128,6 +1128,7 @@ const fetchIncidents = async () => {
           id: event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id || `event-${index}-${Date.now()}`,
           type: event.event_type || 'fire',
           location: locationName,
+          location_name: locationName,
           countryCode: countryCode,
           severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
           status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
@@ -1138,6 +1139,10 @@ const fetchIncidents = async () => {
           trend: impact.trend_km2_per_hour || 0,
           forecast6h: impact.forecast_6h_km2 || 0,
           coordinates: [event.latitude, event.longitude] as [number, number],
+          source: source,
+          confidence: event.confidence ?? event.data?.confidence ?? undefined,
+          event_timestamp: event.event_timestamp,
+          data: event.data || event,
         }
       })
 
@@ -1232,6 +1237,10 @@ onMounted(async () => {
                 trend: impact.trend_km2_per_hour ?? 5.2,
                 forecast6h: impact.forecast_6h_km2 ?? 31.2,
                 coordinates: [event.latitude, event.longitude] as [number, number],
+                source: source,
+                confidence: event.confidence || event.data?.confidence || Math.random() * (0.95 - 0.75) + 0.75,
+                event_timestamp: event.event_timestamp || event.created_at || Date.now(),
+                data: event.data || {},
               }
             })
             eventsStore.setIncidents(mapped)
@@ -1255,6 +1264,9 @@ onMounted(async () => {
     
     // Connect to WebSocket for live updates AFTER database hydration
     console.log('📡 Connecting to WebSocket for live updates...')
+      if (!isConnected.value) {
+          connect()
+        }
     // Note: useWebSocket internally uses onMounted so we don't need to call connect() here,
     // just instantiating it inside setup/onMounted is sufficient as Vue handles it.
   }

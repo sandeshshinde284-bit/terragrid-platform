@@ -26,10 +26,6 @@
               <span style="color: #4ade80; font-weight: 700; font-size: 16px;">DELIVERED</span>
             </div>
             <p style="margin: 0 0 8px 0; color: #cbd5e1; font-size: 15px;">Recipient: <strong style="color: #38bdf8; font-family: ui-monospace, monospace; font-weight: normal;">sandeshshinde284@gmail.com</strong></p>
-            <div style="display: flex; gap: 16px; color: #64748b; font-size: 16px;">
-              <span>Gateway: Resend API</span>
-              <span>Trigger: Critical Threat Threshold Breached</span>
-            </div>
           </div>
         </div>
       </div>
@@ -39,7 +35,7 @@
     <div class="content-grid two-columns" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;">
       
       <!-- SMS / WhatsApp -->
-      <article class="glass-panel" style="padding: 20px; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(148, 163, 184, 0.2);">
+      <!-- <article class="glass-panel" style="padding: 20px; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(148, 163, 184, 0.2);">
         <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <div>
             <h3 style="margin: 0; font-size: 16px; color: #94a3b8;">Mass SMS / WhatsApp Broadcast</h3>
@@ -47,10 +43,10 @@
           <span style="font-size: 15px; font-weight: 800; color: #94a3b8; background: rgba(148, 163, 184, 0.1); padding: 4px 8px; border-radius: 4px;">PHASE 2</span>
         </div>
         <p style="color: #64748b; font-size: 15px; margin: 0;">Integration with Twilio Programmable SMS and Meta WhatsApp Business API for civilian reverse-911 evacuation targeting.</p>
-      </article>
+      </article> -->
 
       <!-- Emergency Radio -->
-      <article class="glass-panel" style="padding: 20px; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(148, 163, 184, 0.2);">
+      <!-- <article class="glass-panel" style="padding: 20px; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(148, 163, 184, 0.2);">
         <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <div>
             <h3 style="margin: 0; font-size: 16px; color: #94a3b8;">EAS / NOAA Radio Integration</h3>
@@ -58,7 +54,7 @@
           <span style="font-size: 15px; font-weight: 800; color: #94a3b8; background: rgba(148, 163, 184, 0.1); padding: 4px 8px; border-radius: 4px;">PHASE 2</span>
         </div>
         <p style="color: #64748b; font-size: 15px; margin: 0;">Automated text-to-speech injection into the National Emergency Alert System and localized FM/AM broadcast towers.</p>
-      </article>
+      </article> -->
 
     </div>
   </div>

@@ -143,107 +143,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 
-interface Incident {
-  id: string
-  source: string
-  location_name: string
-  event_timestamp: string | Date
-  confidence: number
-  data?: Record<string, any>
-  latitude?: number
-  longitude?: number
-  event_type?: string
-  countryCode?: string
-}
+import type { IncidentLevel1 } from '@/types'
+import { getSourceDetails } from '@/config/sourceRegistry'
 
 const props = defineProps<{
-  incident?: Incident
+  incident?: IncidentLevel1
 }>()
-
-// Helper: Get source details (accuracy, region, limitations)
-function getSourceDetails(source: string): Record<string, any> {
-  const sources: Record<string, any> = {
-    'nasa_eonet': {
-      name: 'NASA EONET',
-      description: 'NASA Earth Observatory Natural Event Tracker',
-      accuracy: 92,
-      region: 'Global satellite imagery',
-      limitations: 'Cloud obstruction, 2-4 hour latency'
-    },
-    'NASA': {
-      name: 'NASA EONET',
-      description: 'NASA Earth Observatory Natural Event Tracker',
-      accuracy: 92,
-      region: 'Global satellite imagery',
-      limitations: 'Cloud obstruction, 2-4 hour latency'
-    },
-    'gdacs': {
-      name: 'GDACS',
-      description: 'Global Disaster Alert and Coordination System',
-      accuracy: 88,
-      region: 'Global coordination network',
-      limitations: 'Relies on member agency reports'
-    },
-    'GDACS': {
-      name: 'GDACS',
-      description: 'Global Disaster Alert and Coordination System',
-      accuracy: 88,
-      region: 'Global coordination network',
-      limitations: 'Relies on member agency reports'
-    },
-    'usgs_earthquakes': {
-      name: 'USGS Earthquake Hazards',
-      description: 'United States Geological Survey',
-      accuracy: 99,
-      region: 'Earthquake detection worldwide',
-      limitations: 'Earthquake focused, not floods/fires'
-    },
-    'USGS': {
-      name: 'USGS Earthquake Hazards',
-      description: 'United States Geological Survey',
-      accuracy: 99,
-      region: 'Earthquake detection worldwide',
-      limitations: 'Earthquake focused, not floods/fires'
-    },
-    'openweather': {
-      name: 'OpenWeather',
-      description: 'Real-time weather and climate data',
-      accuracy: 88,
-      region: 'Global weather patterns',
-      limitations: 'Weather predictions 15+ days unreliable'
-    },
-    'OpenWeather': {
-      name: 'OpenWeather',
-      description: 'Real-time weather and climate data',
-      accuracy: 88,
-      region: 'Global weather patterns',
-      limitations: 'Weather predictions 15+ days unreliable'
-    },
-    'noaa': {
-      name: 'NOAA',
-      description: 'National Oceanic and Atmospheric Administration',
-      accuracy: 91,
-      region: 'US weather and marine data',
-      limitations: 'US-centric coverage'
-    },
-    'NOAA': {
-      name: 'NOAA',
-      description: 'National Oceanic and Atmospheric Administration',
-      accuracy: 91,
-      region: 'US weather and marine data',
-      limitations: 'US-centric coverage'
-    }
-  }
-  return sources[source] || {
-    name: source,
-    description: 'Unknown source',
-    accuracy: 50,
-    region: 'Unknown',
-    limitations: 'Unknown'
-  }
-}
 
 // Helper: Get confidence color
 function getConfidenceColor(confidence: number): string {
@@ -314,32 +220,38 @@ function getFreshnessStatus(): string {
 }
 
 // Helper: Get country from incident
-function getCountry(incident: Incident): string {
+function getCountry(incident: IncidentLevel1): string {
   return incident.countryCode || 'UN'
 }
 
 // Helper: Get incident data for display (clean JSON)
 function getIncidentDataDisplay(): Record<string, string> {
-  if (!props.incident?.data) {
-    return {
-      'event_type': props.incident?.event_type || 'Unknown',
-      'location': props.incident?.location_name || 'Unknown',
-      'latitude': String(props.incident?.latitude || '—'),
-      'longitude': String(props.incident?.longitude || '—'),
-      'confidence': `${Math.round((props.incident?.confidence || 0) * 100)}%`
+  if (!props.incident) return {}
+
+  const display: Record<string, string> = {}
+
+  // 1. Primary: Use incident.data if it exists and has content
+  if (props.incident.data && Object.keys(props.incident.data).length > 0) {
+    const data = props.incident.data
+    const importantFields = ['id', 'event_type', 'location_name', 'severity', 'status', 'latitude', 'longitude', 'threatScore', 'affectedArea', 'affectedPopulation']
+    
+    for (const field of importantFields) {
+      if (data[field] !== undefined && data[field] !== null) {
+        display[field] = String(data[field])
+      }
     }
   }
 
-  const display: Record<string, string> = {}
-  const data = props.incident.data
-
-  // Show important fields
-  const importantFields = ['id', 'event_type', 'location_name', 'severity', 'status', 'latitude', 'longitude', 'threatScore', 'affectedArea', 'affectedPopulation']
-  
-  for (const field of importantFields) {
-    if (data[field] !== undefined && data[field] !== null) {
-      display[field] = String(data[field])
-    }
+  // 2. Fallback: If data is empty or missing, extract from incident-level fields
+  if (Object.keys(display).length === 0) {
+    if (props.incident.event_type) display['event_type'] = String(props.incident.event_type)
+    if (props.incident.location_name) display['location'] = String(props.incident.location_name)
+    if (props.incident.latitude) display['latitude'] = String(props.incident.latitude)
+    if (props.incident.longitude) display['longitude'] = String(props.incident.longitude)
+    if (props.incident.severity) display['severity'] = String(props.incident.severity)
+    if (props.incident.status) display['status'] = String(props.incident.status)
+    display['confidence'] = `${Math.round((props.incident.confidence || 0) * 100)}%`
+    display['source'] = String(props.incident.source || 'Unknown')
   }
 
   return display
@@ -444,6 +356,21 @@ function getDataFields(): Array<{name: string, present: boolean}> {
 
   .panel-heading {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Stack all grids to 1 column on mobile */
+  [style*="grid-template-columns: 1fr 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce font sizes on mobile */
+  .section-kicker {
+    font-size: 12px;
   }
 }
 </style>

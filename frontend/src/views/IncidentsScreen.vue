@@ -46,6 +46,15 @@
               <option value="low">{{ $t('common.low') }}</option>
             </select>
           </div>
+
+          <div class="filter-group">
+            <select v-model="filterCountry" class="filter-select">
+              <option value="">🌎 Filter by Country - All</option>
+              <option v-for="country in availableCountries" :key="country" :value="country">
+                {{ country }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -83,9 +92,9 @@
                 <span class="status-badge" :class="incident.status">{{ incident.status.toUpperCase() }}</span>
               </td>
               <td class="threat-cell">{{ incident.threatScore }}/100</td>
-              <td class="area-cell">{{ incident.affectedArea.toFixed(1) }} km²</td>
+              <td class="area-cell">{{ (incident.affectedArea ?? 0).toFixed(1) }} km²</td>
               <td class="population-cell">{{ (incident.affectedPopulation / 1000).toFixed(0) }}K</td>
-              <td class="trend-cell">+{{ incident.trend.toFixed(1) }} km²/h</td>
+              <td class="trend-cell">+{{ (incident.trend ?? 0).toFixed(1) }} km²/h</td>
               <td class="time-cell">{{ formatDate(incident.detectionTime) }}</td>
               <td class="action-cell">
                 <span class="action-badge">{{ getRecommendedAction(incident) }}</span>
@@ -120,6 +129,7 @@ const searchQuery = ref('')
 const filterType = ref('')
 const filterStatus = ref('')
 const filterSeverity = ref('')
+const filterCountry = ref('')
 const selectedIncidentData = ref<IncidentLevel1 | null>(null)
 const expandedIncidentId = ref<string | null>(null)
 
@@ -282,8 +292,26 @@ const filteredIncidents = computed(() => {
       }
     }
 
-    return matchSearch && matchType && matchStatus && matchSeverity
+    // 5. Country Filter
+    let matchCountry = true
+    if (filterCountry.value) {
+      const selected = filterCountry.value.toUpperCase()
+      const incCountry = (incident.countryCode || 'UN').toUpperCase()
+      matchCountry = incCountry === selected
+    }
+
+    return matchSearch && matchType && matchStatus && matchSeverity && matchCountry
   })
+})
+
+const availableCountries = computed(() => {
+  const countries = new Set<string>()
+  eventsStore.allIncidents.forEach((incident) => {
+    if (incident.countryCode && incident.countryCode !== 'UN') {
+      countries.add(incident.countryCode.toUpperCase())
+    }
+  })
+  return Array.from(countries).sort()
 })
 
 const totalArea = computed(() => 

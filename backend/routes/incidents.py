@@ -258,7 +258,7 @@ async def get_all_incidents(
             if original_id and str(original_id).startswith(('event_', 'event-')):
                 response_dict['id'] = original_id
             else:
-                response_dict['id'] = f"event_{incident.id}"
+                response_dict['id'] = incident.data.get('id') if (incident.data and 'id' in incident.data and str(incident.data['id']).startswith('event_')) else f"event_{incident.id}"
             
             # Database columns are authoritative
             response_dict['location_name'] = incident.location_name or 'Unknown'
@@ -655,7 +655,7 @@ async def get_incidents_by_country(
             
             # Prepare incident response
             incident_data = incident.data or {}
-            incident_data['id'] = incident_data.get('id') or f"event_{incident.id}"
+            incident_data['id'] = incident_data.get('id') if str(incident_data.get('id', '')).startswith('event_') else f"event_{incident.id}"
             incident_data['location'] = incident.location_name
             incident_data['type'] = incident.event_type
             incident_data['severity'] = incident.severity or 'medium'

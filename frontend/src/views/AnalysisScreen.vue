@@ -22,7 +22,7 @@
 
       <template v-else>
       <div class="selector-panel glass-panel">
-        <select v-model="selectedIncidentId" class="incident-select">
+        <select id="analysis-select" aria-label="Select Incident" v-model="selectedIncidentId" class="incident-select">
           <option value="">{{ $t('analysis.selectIncident') }}</option>
           <option v-for="incident in eventsStore.allIncidents" :key="incident.id" :value="incident.id">
             {{ incident.type.toUpperCase() }} - {{ incident.location }}
@@ -61,21 +61,21 @@
           <div class="metrics-comparison">
             <div class="comparison-item">
               <span class="label">{{ $t('incidents.affectedArea') }}</span>
-              <span class="before">{{ (selectedIncident.affectedArea * 0.3).toFixed(1) }} km²</span>
+              <span class="before">{{ ((selectedIncident.affectedArea ?? 0) * 0.3).toFixed(1) }} km²</span>
               <span class="arrow">→</span>
-              <span class="after">{{ selectedIncident.affectedArea.toFixed(1) }} km²</span>
+              <span class="after">{{ (selectedIncident.affectedArea ?? 0).toFixed(1) }} km²</span>
             </div>
             <div class="comparison-item">
               <span class="label">{{ $t('incidents.population') }}</span>
-              <span class="before">{{ (selectedIncident.affectedPopulation * 0.4).toLocaleString() }}</span>
+              <span class="before">{{ ((selectedIncident.affectedPopulation ?? 0) * 0.4).toLocaleString() }}</span>
               <span class="arrow">→</span>
-              <span class="after">{{ selectedIncident.affectedPopulation.toLocaleString() }}</span>
+              <span class="after">{{ (selectedIncident.affectedPopulation ?? 0).toLocaleString() }}</span>
             </div>
             <div class="comparison-item">
               <span class="label">{{ $t('incidents.threatScore') }}</span>
-              <span class="before">{{ Math.max(20, selectedIncident.threatScore - 30) }}/100</span>
+              <span class="before">{{ Math.max(20, (selectedIncident?.threatScore ?? 50) - 30) }}/100</span>
               <span class="arrow">→</span>
-              <span class="after">{{ selectedIncident.threatScore }}/100</span>
+              <span class="after">{{ selectedIncident?.threatScore ?? 50 }}/100</span>
             </div>
           </div>
         </div>

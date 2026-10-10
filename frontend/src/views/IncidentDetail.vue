@@ -15,8 +15,8 @@
             <div class="scanner-header">
               <span class="scanner-radar-icon">📡</span>
               <div class="scanner-titles">
-                <h4>SYNTHESIZING CRISIS INTELLIGENCE DOSSIER</h4>
-                <small>PROCESSING MULTI-SOURCE SATELLITE & ATMOSPHERIC TELEMETRY</small>
+                <h4> ANALYZING INCIDENT DATA & GENERATING RESPONSE PLAN</h4>
+                <small>Gathering data from multiple sources...</small>
               </div>
             </div>
 
@@ -159,7 +159,7 @@
                 <span class="gauge-icon mono-icon">◱</span>
                 <div class="gauge-info">
                   <span class="gauge-label">PERIMETER GROWTH</span>
-                  <strong class="gauge-value">+{{ incident.trend.toFixed(1) }} km²/h</strong>
+                  <strong class="gauge-value">+{{ (incident.trend ?? 0).toFixed(1) }} km²/h</strong>
                   <small class="gauge-desc">6h Projected +{{ formatNumber(incident.forecast6h) }} km²</small>
                 </div>
               </div>
@@ -217,7 +217,7 @@
                   <!-- <li v-for="(action, index) in (aiInsights.length > 0 ? aiInsights : detail.recommendedActions)" :key="action.id || action.title"> -->
                   <!-- Now only shows REAL AI data from aiPlan.immediate_actions -->
                   <li v-for="(action, index) in aiInsights" :key="action.id">
-                    <span class="action-number">0{{ index + 1 }}</span><div><strong>{{ action.action }}</strong><p>{{ action.description || '' }}</p></div><span class="priority" :class="`priority-${action.severity}`">{{ action.severity }}</span>
+                    <span class="action-number">0{{ Number(index) + 1 }}</span><div><strong>{{ action.action }}</strong><p>{{ action.reason || action.details || '' }}</p></div><span class="priority" :class="`priority-${action.severity}`">{{ action.severity }}</span>
                   </li>
                 </ol>
               </article>
@@ -411,10 +411,10 @@ const isAnalyzingDossier = ref(false)
 const scannerActive = ref(false)
 const currentStepIndex = ref(0)
 const analysisSteps = [
-  'Fusing NASA thermal telemetry with OpenWeather wind vectors...',
-  'Cross-referencing municipal hospital & bridge infrastructure...',
-  'Running 6H/12H/24H Predictive Cascade simulation...',
-  'Synthesizing Multi-Agency Evacuation & Deployment Dossier...'
+  'Loading satellite imagery & weather data from multiple sources...',
+  'Identifying critical facilities within impact zone...',
+  'Forecasting event progression for 6, 12, and 24 hours ahead...',
+  'Generating evacuation strategy & resource allocation plan...'
 ]
 
 async function launchDeepAnalysis() {
