@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 import math
 import logging
@@ -77,8 +77,41 @@ class DecisionSupportService:
             return fallback_plan
 
         try:
+            # The existing 6 APIs (NASA EONET, GDACS, USGS, OpenWeather, NOAA) provide complete India coverage
+            # Code preserved for future use if/when IMD opens their API for public access
+            
+            # from .imd_weather import IMDWeatherService
+            # latitude = incident.get("latitude", 0)
+            # longitude = incident.get("longitude", 0)
+            # has_imd_data = IMDWeatherService.is_india_location(latitude, longitude)
+            
+            # Build data sources list
+            data_sources = ["NASA EONET", "GDACS", "USGS", "OpenWeather", "NOAA"]
+            # if has_imd_data:
+            #     data_sources.insert(0, "IMD (India Meteorological Department)")
+            
+            logger.info(f"[GEMINI ANALYSIS] Data sources for {location}: {', '.join(data_sources)}")
+            
             location_context = get_location_context(location)
             agencies_list = "\n            ".join([f"- {agency}" for agency in location_context["secondary_agencies"]])
+            
+            # Build IMD-specific context if applicable (COMMENTED OUT - see note above)
+            # imd_context = ""
+            # if has_imd_data:
+            #     incident_data = incident.get("data", {})
+            #     monsoon_status = incident_data.get("monsoon_status", "Not specified")
+            #     precipitation = incident_data.get("precipitation", "Not measured")
+            #     imd_alerts = incident_data.get("alert", "No specific alert")
+            #     
+            #     imd_context = f"""
+            # CRITICAL: IMD (INDIA METEOROLOGICAL DEPARTMENT) DATA AVAILABLE
+            # This incident is within India. IMD data takes priority for weather analysis:
+            # - Monsoon Status: {monsoon_status}
+            # - Rainfall Forecast: {precipitation}mm
+            # - IMD Alert: {imd_alerts}
+            # """
+            
+            imd_context = ""
             
             prompt = f"""
             You are a Senior Disaster Response Incident Commander (military-grade) operating the TerraGrid Emergency Intelligence System.
@@ -90,6 +123,9 @@ class DecisionSupportService:
             - Calculated Threat Score: {threat_score} / 100
             - Estimated Population at Risk: {pop_at_risk:,} civilians
 
+            DATA SOURCES INTEGRATED:
+            {', '.join(data_sources)}
+
             LOCATION-SPECIFIC CONTEXT:
             - Primary Agency: {location_context['primary_agency']}
             - Secondary Agencies:
@@ -97,7 +133,17 @@ class DecisionSupportService:
             - Key Staging Areas: {", ".join(location_context['staging_areas'][:2])}
             - Average Response Times: Helicopter {location_context['avg_response_times_minutes']['helicopter']} min, Ambulance {location_context['avg_response_times_minutes']['ambulance']} min
 
+            {imd_context}
+
             STRICT OPERATIONAL DIRECTIVES:
+
+            CAUSAL CHAIN EXTRACTION:
+            You MUST include these four fields in your JSON response:
+            1. trigger_event: What is the root cause of this disaster? (single sentence)
+            2. infrastructure_factors: What systems/capacities are being overwhelmed? (array of 2-3 bullet points)
+            3. predicted_outcome: What will happen if this continues unabated? (1-2 sentences)
+            4. historical_reference: What similar past event does this resemble? (specific past incident with year/location)
+
             1. DO NOT give generic advice. Use highly specific, tactical, and military/FEMA-style terminology (e.g., 'Triage', 'Perimeter Containment', 'Forward Operating Base').
             2. FORMATTING MANDATE: Output MUST be written in crisp, professional Sentence Case (e.g., 'Initiate Joint Field Office activation...', NOT 'INITIATE JOINT...'). Do NOT use monolithic all-caps.
             3. Keep action bullets punchy and actionable (maximum 2 lines per bullet).
@@ -113,7 +159,7 @@ class DecisionSupportService:
             Return ONLY the JSON object. Do not wrap in markdown code blocks.
             """
 
-            logger.info(f"[GEMINI PROMPT - Response Plan] Location: {location}, Event: {event_type}")
+            #logger.info(f"[GEMINI PROMPT - Response Plan] Location: {location}, Event: {event_type}, IMD Available: {has_imd_data}")
             logger.debug(f"[GEMINI PROMPT FULL]\n{prompt}")
 
             response = self.model.generate_content(prompt)
@@ -131,11 +177,11 @@ class DecisionSupportService:
                 logger.debug(f"[GEMINI RESPONSE CLEANED]\n{cleaned_text}")
                 
                 plan = json.loads(cleaned_text)
-                logger.info(f"✅ Generated AI Decision Support Plan for {location} via Vertex AI. Actions: {len(plan.get('immediate_actions', []))}")
+                logger.info(f"âœ… Generated AI Decision Support Plan for {location} via Vertex AI. Actions: {len(plan.get('immediate_actions', []))}")
                 return plan
 
         except Exception as e:
-            logger.error(f"❌ CRITICAL VERTEX AI FAILURE: {type(e).__name__} - {str(e)}")
+            logger.exception(f"âŒ CRITICAL VERTEX AI FAILURE: {type(e).__name__} - {str(e)}")
             logger.warning("Vertex AI decision support generation failed. Returning tactical fallback.")
 
         return fallback_plan
@@ -266,12 +312,12 @@ class DecisionSupportService:
             - Location / Jurisdiction: {location}
             - Coordinates: Lat {lat}, Lon {lon}
             - Calculated Threat Score: {threat_score} / 100
-            - Impacted Area: {area_km2} km²
+            - Impacted Area: {area_km2} kmÂ²
             - Population at Immediate Risk: {pop_at_risk:,} citizens
             - Atmospheric Telemetry (OpenWeather):
-              • Surface Wind Speed: {wind_speed} m/s | Wind Gusts: {wind_gust} m/s
-              • Relative Humidity: {humidity}% | Ambient Temp: {temperature}°C
-              • Barometric Pressure: {pressure} hPa | Weather: {weather_desc}
+              â€¢ Surface Wind Speed: {wind_speed} m/s | Wind Gusts: {wind_gust} m/s
+              â€¢ Relative Humidity: {humidity}% | Ambient Temp: {temperature}Â°C
+              â€¢ Barometric Pressure: {pressure} hPa | Weather: {weather_desc}
             - Source Telemetry: {source}
 
             LOCATION-SPECIFIC CONTEXT:
@@ -285,6 +331,14 @@ class DecisionSupportService:
             {gis_injection}
 
             STRICT OUTPUT CONSTRAINTS:
+
+            CAUSAL CHAIN EXTRACTION:
+            You MUST include these four fields in your JSON response:
+            1. trigger_event: What is the root cause of this disaster? (single sentence)
+            2. infrastructure_factors: What systems/capacities are being overwhelmed? (array of 2-3 bullet points)
+            3. predicted_outcome: What will happen if this continues unabated? (1-2 sentences)
+            4. historical_reference: What similar past event does this resemble? (specific past incident with year/location)
+
             1. "quantity" MUST be INTEGER ONLY (e.g., 5, NOT "4-6")
             2. "priority" MUST be 1 (IMMEDIATE), 2 (HIGH), or 3 (STAGED) ONLY
             3. "estimated_arrival_minutes" MUST be INTEGER ONLY
@@ -319,11 +373,11 @@ class DecisionSupportService:
                 logger.debug(f"[GEMINI RESPONSE CLEANED]\n{cleaned_text}")
                 
                 dossier = json.loads(cleaned_text)
-                logger.info(f"✅ Generated Tier 2 Deep Tactical AI Dossier for {location} via Vertex AI. Cascades: {len(dossier.get('cascade_predictions', []))}, Resources: {len(dossier.get('resource_matrix', []))}, Infrastructure: {len(dossier.get('infrastructure_impact', []))}")
+                logger.info(f"âœ… Generated Tier 2 Deep Tactical AI Dossier for {location} via Vertex AI. Cascades: {len(dossier.get('cascade_predictions', []))}, Resources: {len(dossier.get('resource_matrix', []))}, Infrastructure: {len(dossier.get('infrastructure_impact', []))}")
                 return dossier
 
         except Exception as e:
-            logger.error(f"❌ VERTEX AI DEEP DOSSIER FAILURE: {type(e).__name__} - {str(e)}")
+            logger.exception(f"âŒ VERTEX AI DEEP DOSSIER FAILURE: {type(e).__name__} - {str(e)}")
             logger.warning("Returning operational contingency dossier.")
 
         return fallback_dossier

@@ -64,7 +64,14 @@ DEEP_DOSSIER_SCHEMA_TEXT = """
 {
   "country_context": "string (e.g. 'FEMA Region 6 Jurisdiction: Port Fourchon Sector, Louisiana')",
   "severity_assessment": "string (2-3 sentence tactical overview in sentence case)",
-  "immediate_actions": ["string (Action 1)", "string (Action 2)", "string (Action 3)"],
+  "trigger_event": "string (e.g., 'Northeast monsoon bringing 120mm rainfall')",
+  "infrastructure_factors": [
+    "string (e.g., 'Dam drainage capacity only 80mm/h')",
+    "string (e.g., 'Upstream gates opened at emergency flow rate')"
+  ],
+  "predicted_outcome": "string (e.g., 'Flash flooding at 4 PM')",
+  "historical_reference": "string (e.g., 'Similar to Oct 2019 (500 displaced)')",
+  "immediate_actions": ["string (Action 1)", "string (Action 2)", "string (Action 3)", "string (Action 4)", "string (Action 5)"],
   "resource_matrix": [
     {
       "resource": "string (enum: Helicopter, Ambulance, Fire Engine, Water Truck, Search Dog, Rescue Team, Mobile Hospital, Water Purification Unit)",
@@ -136,7 +143,14 @@ RESPONSE_PLAN_SCHEMA_TEXT = """
 {
   "country_context": "string (e.g. 'FEMA Region 6 Jurisdiction: Port Fourchon Sector, Louisiana')",
   "severity_assessment": "string (2-sentence tactical overview in sentence case)",
-  "immediate_actions": ["string (Action 1)", "string (Action 2)", "string (Action 3)"],
+  "trigger_event": "string (e.g., 'Northeast monsoon bringing 120mm rainfall')",
+  "infrastructure_factors": [
+    "string (e.g., 'Dam drainage capacity only 80mm/h')",
+    "string (e.g., 'Upstream gates opened at emergency flow rate')"
+  ],
+  "predicted_outcome": "string (e.g., 'Flash flooding at 4 PM')",
+  "historical_reference": "string (e.g., 'Similar to Oct 2019 (500 displaced)')",
+  "immediate_actions": ["string (Action 1)", "string (Action 2)", "string (Action 3)", "string (Action 4)", "string (Action 5)"],
   "resource_allocation": [
     {
       "resource": "string (enum: Helicopter, Ambulance, Fire Engine, Water Truck, Search Dog, Rescue Team, Mobile Hospital, Water Purification Unit)",

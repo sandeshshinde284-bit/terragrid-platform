@@ -1,5 +1,6 @@
 import { ref, onUnmounted, onMounted } from 'vue'
 import { useEventsStore } from '@/stores'
+import countriesData from '@/data/countries.json' with { type: 'json' }
 
 export function useWebSocket() {
   const eventsStore = useEventsStore()
@@ -9,7 +10,35 @@ export function useWebSocket() {
   const maxReconnectAttempts = 5
   let ws: WebSocket | null = null
   let pingInterval: number | null = null
-  let isDestroyed = false // Flag to prevent reconnect loops on unmount
+  let isDestroyed = false
+
+  /**
+   * Resolve country code from location name using same logic as Dashboard
+   * Supports: "City, Country Code" or alias resolution
+   */
+  const resolveCountryCode = (locationName: string): string => {
+    if (!locationName) return 'UN'
+    
+    const aliases = countriesData.aliases || {}
+    
+    // Strategy 1: Extract last comma-separated part if it looks like a code
+    const parts = locationName.split(',')
+    if (parts.length > 1) {
+      const potential = parts[parts.length - 1].trim()
+      if (potential && potential.length <= 3 && /^[A-Z]{2,3}$/.test(potential)) {
+        return potential
+      }
+    }
+    
+    // Strategy 2: Check aliases (case-insensitive)
+    const upper = locationName.toUpperCase().trim()
+    if (aliases[upper as keyof typeof aliases]) {
+      return aliases[upper as keyof typeof aliases]
+    }
+    
+    // Strategy 3: Return UN for unknown
+    return 'UN'
+  }
   
   const connect = () => {
     // Connect to WebSocket using the current host, changing protocol to ws/wss
@@ -55,25 +84,34 @@ export function useWebSocket() {
             
             // Only update store if there are actual changes
             if (message.data.changes.new > 0 || message.data.changes.updated > 0 || message.data.changes.removed > 0) {
-                // Update the Pinia store with the fresh real-time data
-                // Transform the raw backend DB events into the IncidentLevel1 format expected by the frontend
-                const transformedEvents = message.data.events.map((e: any) => {
-                  const impact = e.data?.impact || e.impact || {}
+                // Transform WebSocket events to IncidentLevel1 format (consistent with Dashboard)
+                const transformedEvents = message.data.events.map((event: any, index: number) => {
+                  const impact = event.data?.impact || event.impact || {}
+                  const locationName = event.location_name || event.location || 'Unknown'
+                  const severity = (event.severity || 'medium').toLowerCase()
+                  const source = event.source || event.data?.source || 'unknown'
+                  
+                  // Use consistent country code resolution (matches Dashboard logic)
+                  const countryCode = resolveCountryCode(locationName)
+                  
+                  // Preserve original ID if available, else use canonical format
+                  const originalId = event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id
+                  const resolvedId = originalId ? String(originalId) : `event_${event.id || index + 1}`
                   
                   return {
-                    id: String(e.id || e.data?.id || `inc-${Math.random()}`),
-                    type: e.event_type || 'other',
-                    location: e.location_name || 'Unknown',
-                    countryCode: e.data?.countryCode || 'UN',
-                    severity: e.severity || 'medium',
-                    status: e.status || 'active',
-                    threatScore: impact.risk_score || 50,
-                    detectionTime: new Date(e.event_timestamp || e.created_at || Date.now()),
-                    affectedArea: impact.affected_area_km2 || 0,
-                    affectedPopulation: impact.affected_population || 0,
-                    trend: impact.trend_km2_per_hour || 0,
-                    forecast6h: impact.forecast_6h_km2 || 0,
-                    coordinates: [e.latitude, e.longitude] as [number, number],
+                    id: resolvedId,
+                    type: event.event_type || 'other',
+                    location: locationName,
+                    countryCode: countryCode,
+                    severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
+                    status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
+                    threatScore: impact.risk_score ?? 50,
+                    detectionTime: new Date(event.event_timestamp || event.created_at || Date.now()),
+                    affectedArea: impact.affected_area_km2 ?? 0,
+                    affectedPopulation: impact.affected_population ?? 0,
+                    trend: impact.trend_km2_per_hour ?? 0,
+                    forecast6h: impact.forecast_6h_km2 ?? 0,
+                    coordinates: [event.latitude || 0, event.longitude || 0] as [number, number],
                   }
                 })
                 eventsStore.setIncidents(transformedEvents)

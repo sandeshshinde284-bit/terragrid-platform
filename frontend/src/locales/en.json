@@ -61,15 +61,6 @@
     "satellite": "Satellite Imagery",
     "comparison": "Comparison"
   },
-  "askTheMap": {
-    "title": "Ask the Map",
-    "placeholder": "Ask me anything about the disaster zones...",
-    "send": "Send",
-    "examples": "Examples:",
-    "example1": "How many people are in evacuation zones?",
-    "example2": "Show me safe routes",
-    "example3": "What's the threat level in this area?"
-  },
   "alerts": {
     "title": "Alerts & Broadcasts",
     "critical": "Critical",

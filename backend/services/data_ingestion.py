@@ -15,6 +15,8 @@ from .gdacs import GDACSService
 from .usgs_earthquake import USGSEarthquakeService
 from .noaa import NOAAService
 from .openweather import OpenWeatherService
+# Code below is kept for future use when IMD API approval is done
+# from .imd_weather import IMDWeatherService
 from .pubsub_service import PubSubService
 from .impact_analysis import ImpactAnalysisService
 
@@ -81,6 +83,34 @@ class DataIngestionService:
                     all_events.extend(resp)
                 else:
                     results["sources"][name] = {"count": 0, "status": "empty"}
+            
+            results["total_events"] = len(all_events)
+            
+            # Code preserved for future use if IMD opens their API
+            # 
+            # if india_events:
+            #     logger.info(f"[IMD] Found {len(india_events)} incidents in India, fetching additional IMD data...")
+            #     imd_tasks = [
+            #         IMDWeatherService.fetch_events(
+            #             latitude=e.get("latitude", 0),
+            #             longitude=e.get("longitude", 0),
+            #             use_mock=use_mock
+            #         )
+            #         for e in india_events
+            #     ]
+            #     imd_responses = await asyncio.gather(*imd_tasks, return_exceptions=True)
+            #     
+            #     imd_total = 0
+            #     for resp in imd_responses:
+            #         if isinstance(resp, list):
+            #             all_events.extend(resp)
+            #             imd_total += len(resp)
+            #     
+            #     results["sources"]["imd_weather"] = {"count": imd_total, "status": "success"}
+            #     logger.info(f"[IMD] Added {imd_total} additional weather events from IMD")
+            # else:
+            #     logger.info("[IMD] No India-based incidents detected, skipping IMD")
+            #     results["sources"]["imd_weather"] = {"count": 0, "status": "no_india_incidents"}
             
             results["total_events"] = len(all_events)
             
@@ -282,7 +312,11 @@ class DataIngestionService:
                     logger.debug(f"Flushed new event to session: {evt_type} at {lat},{lon}")
                 else:
                     # Update existing event
-                    existing_event.data = safe_event_data
+                    # CRITICAL FIX: Preserve internally generated data (like deep_dossier) during polling updates!
+                    preserved_data = dict(existing_event.data or {})
+                    preserved_data.update(safe_event_data)
+                    existing_event.data = preserved_data
+                    
                     existing_event.severity = event_data.get("severity", existing_event.severity)
                     existing_event.location_name = location_name
                     existing_event.updated_at = datetime.utcnow()

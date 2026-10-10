@@ -34,17 +34,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/AnalysisScreen.vue'),
     meta: {
       title: 'Analysis - TerraGrid',
-      requiresAuth: false,
-    },
-  },
-  {
-    path: '/ask-map',
-    name: 'AskTheMap',
-    component: () => import('@/views/AskTheMapScreen.vue'),
-    meta: {
-      title: 'Ask the Map - TerraGrid',
-      requiresAuth: false,
-    },
+      requiresAuth: false
+    }
   },
   {
     path: '/alerts',

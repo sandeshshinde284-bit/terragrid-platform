@@ -38,8 +38,9 @@
           <!-- Country Filter Buttons -->
           <div class="country-filter-section">
             <div class="filter-label">Filter by Country:</div>
-            <select v-model="selectedCountry" class="country-dropdown">
-              <option :value="null">All Countries</option>
+            <select v-model="selectedCountry" class="country-dropdown" :disabled="isLoading">
+              <option v-if="isLoading" value="" disabled>⏳ Scanning regions...</option>
+              <option v-else :value="null">All Countries</option>
               <option v-for="country in availableCountries" :key="country" :value="country">
                 {{ getCountryName(country) }}
               </option>
@@ -527,6 +528,7 @@ import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
 import IncidentCard from '@/components/molecules/IncidentCard.vue'
 import MapComponent from '@/components/organisms/MapComponent.vue'
+import COUNTRIES_DATA from '@/data/countries.json' with { type: 'json' }
 import { useAppStore } from '@/stores'
 import { useEventsStore } from '@/stores'
 import { useAlertsStore } from '@/stores'
@@ -770,7 +772,10 @@ const groupedByCountry = computed(() => {
 const availableCountries = computed(() => {
   const countries = new Set<string>()
   eventsStore.allIncidents.forEach(incident => {
-    const country = incident.countryCode
+    let country = incident.countryCode
+    if (!country || country === 'UN') {
+      country = resolveCountryCode(incident.location, incident.type, incident.coordinates?.[0], incident.coordinates?.[1])
+    }
     if (country && country !== 'UN') countries.add(country)
   })
   return Array.from(countries).sort()
@@ -1011,30 +1016,21 @@ const getCountryName = (code: string): string => {
 }
 
 /**
- * 50 US State postal codes + territories.
- * Collapses states like "FL", "TX", "CA", "CO" into the canonical country "US".
+ * US regional codes (states, territories, freely associated, military postal).
+ * Constructed from countries.json to keep all data in one source of truth.
+ * Collapses US state abbreviations (FL, TX, CA, CO) into canonical country code "US".
  */
-    const US_STATE_CODES = new Set([
-        // 50 States
-        'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-        'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-        'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-        'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-        'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
-
-        // Federal District & Territories
-        'DC', 'PR', 'VI', 'GU', 'MP', 'AS',
-
-        // Freely Associated States
-        'FM', 'MH', 'PW',
-
-        // Military Postal Regions
-        'AA', 'AE', 'AP'
-    ]);
+const US_STATE_CODES = new Set([
+  ...COUNTRIES_DATA.us_states,
+  ...COUNTRIES_DATA.us_territories,
+  ...COUNTRIES_DATA.us_freely_associated,
+  ...COUNTRIES_DATA.us_military_postal
+])
 
 /**
  * Resolves a reliable, canonical 2-letter ISO country code from location and source.
- * Prevents US state abbreviations (FL, TX) and marine zones (Mississippi Sound) from leaking into the country dropdown.
+ * Uses countries.json as source of truth instead of hardcoding.
+ * Prevents US state abbreviations (FL, TX) and marine zones from leaking into country filters.
  */
 const resolveCountryCode = (locationName: string, source: string, lat?: number, lon?: number): string => {
   const src = (source || '').toUpperCase()
@@ -1045,35 +1041,44 @@ const resolveCountryCode = (locationName: string, source: string, lat?: number, 
   if (!locationName) return 'UN'
   const locUpper = locationName.toUpperCase()
   
-  // 2. Full country names & common US aliases
-  if (locUpper.includes('UNITED STATES') || locUpper.includes('USA') || locUpper.endsWith(', US') || locUpper.endsWith(' US')) {
-    return 'US'
+  // 2. Check full country name aliases from countries.json (e.g., "UNITED STATES" → "US")
+  const alias = COUNTRIES_DATA.aliases[locUpper as keyof typeof COUNTRIES_DATA.aliases]
+  if (alias && COUNTRIES_DATA.countries[alias as keyof typeof COUNTRIES_DATA.countries]) {
+    return alias
   }
-  if (locUpper.includes('INDIA')) return 'IN'
-  if (locUpper.includes('CHINA')) return 'CN'
-  if (locUpper.includes('NEPAL')) return 'NP'
-  if (locUpper.includes('JAPAN')) return 'JP'
-  if (locUpper.includes('CHILE')) return 'CL'
-  if (locUpper.includes('PHILIPPINES')) return 'PH'
-  if (locUpper.includes('INDONESIA')) return 'ID'
-  if (locUpper.includes('CANADA')) return 'CA'
-  if (locUpper.includes('AUSTRALIA')) return 'AU'
-  if (locUpper.includes('MEXICO')) return 'MX'
   
+  // 3. Also check partial matches at start (e.g., "United States of America" contains "UNITED STATES")
+  for (const [fullName, code] of Object.entries(COUNTRIES_DATA.aliases)) {
+    if (locUpper.includes(fullName)) {
+      if (COUNTRIES_DATA.countries[code as keyof typeof COUNTRIES_DATA.countries]) {
+        return code
+      }
+    }
+  }
+  
+  // 4. Extract last part after comma (typical format: "City, StateCode" or "City, CountryCode")
   const locParts = locationName.split(',')
   const lastPart = locParts.length > 0 ? locParts[locParts.length - 1].trim().toUpperCase() : ''
   
-  // 3. Special case: 'IN' (Indiana vs India). Lon ~ 60-100 is India, Lon < -50 is Indiana, US
+  // 5. Special case: 'IN' disambiguation (Indiana vs India)
+  // If lon is 50-100, it's India; otherwise it's US Indiana
   if (lastPart === 'IN') {
     return (lon !== undefined && lon > 50 && lon < 100) ? 'IN' : 'US'
   }
   
-  // 4. US State code detection (e.g., "Apalachicola, FL" -> "US")
+  // 6. US State code detection (e.g., "Apalachicola, FL" → "US")
   if (US_STATE_CODES.has(lastPart)) {
     return 'US'
   }
   
-  // 5. Genuine 2-letter ISO country code verification via Intl API
+  // 7. Verify 2-letter code exists in countries.json
+  if (/^[A-Z]{2}$/.test(lastPart)) {
+    if (COUNTRIES_DATA.countries[lastPart as keyof typeof COUNTRIES_DATA.countries]) {
+      return lastPart
+    }
+  }
+  
+  // 8. Fallback: use Intl API as last resort for validation
   if (/^[A-Z]{2}$/.test(lastPart)) {
     try {
       const name = regionNames.of(lastPart)
@@ -1160,10 +1165,15 @@ const fetchIncidents = async () => {
   } catch (error) {
     console.error('Failed to fetch incidents:', error)
     apiError.value = error instanceof Error ? error.message : 'Failed to fetch data'
-      //// Fallback to mock data on error
-      //eventsStore.initMockData()
-      // Strict live testing: No mock fallback on network error
-    eventsStore.setIncidents([])
+    
+    // Use feature flag to decide whether to fallback to mock data
+    if (isMockMode.value) {
+      console.log('🧪 Mock mode enabled: Loading fallback mock data...')
+      eventsStore.initMockData()
+    } else {
+      console.log('🌐 Live mode: No fallback, showing empty state')
+      eventsStore.setIncidents([])
+    }
   } finally {
     isLoading.value = false
   }
@@ -1173,9 +1183,9 @@ const fetchIncidents = async () => {
  * Load alerts from store (can be extended to fetch from backend)
  */
 const loadAlerts = () => {
-  if (alertsStore.criticalInsights.length === 0) {
-    // COMMENTED OUT (Live Mode): Never show mock insights as fallback
-    // alertsStore.initMockInsights()
+  if (alertsStore.criticalInsights.length === 0 && isMockMode.value) {
+    console.log('🧪 Mock mode enabled: Loading fallback mock insights...')
+    alertsStore.initMockInsights()
   }
 }
 
@@ -1191,11 +1201,13 @@ onMounted(async () => {
       ? 'http://localhost:8000'
       : window.location.origin
       
-    const response = await fetch(`${host}/api/v1/incidents?limit=50`)
+    const response = await fetch(`${host}/api/v1/incidents?limit=100&offset=0`)
     
     if (response.ok) {
-        const rawIncidents = await response.json()
-        if (rawIncidents && rawIncidents.length > 0) {
+        const apiResponse = await response.json()
+        // NEW API returns { data: [...], pagination: {...}, filters: {...} }
+        const rawIncidents = apiResponse.data || apiResponse
+        if (rawIncidents && Array.isArray(rawIncidents) && rawIncidents.length > 0) {
             // Re-use the existing transformation logic from fetchIncidents
             const mapped = rawIncidents.map((event: any, index: number) => {
               const impact = event.impact || {}

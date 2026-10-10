@@ -1,5 +1,14 @@
 <template>
-  <header class="header glass-panel">
+    <div 
+      v-if="appStore.isBackendMockModeEnabled" 
+      class="header-simulation-banner"
+      style="background: rgba(56, 189, 248, 0.15); border-bottom: 1px solid rgba(56, 189, 248, 0.4); color: #bae6fd; padding: 6px 16px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-align: center;"
+    >
+      <span>ℹ️</span>
+      <span><strong>SIMULATION MODE ACTIVE</strong>: Showing demonstration data for evaluation. Real-time sensor streaming is paused.</span>
+    </div>
+
+    <header class="header glass-panel">
     <div class="header-left">
       <div class="logo" @click="goHome" style="cursor: pointer;">
         <span class="logo-icon">🌍</span>
@@ -8,10 +17,9 @@
       <nav class="nav-menu">
         <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
         <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
-        <RouterLink to="/map" :class="{ active: isActive('/map') }">🗺️ Map</RouterLink>
-        <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">📈 Analysis</RouterLink>
-        <RouterLink to="/ask-map" :class="{ active: isActive('/ask-map') }">🤖 Ask Map</RouterLink>
-        <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">🚨 Alerts</RouterLink>
+        <RouterLink to="/map" :class="{ active: isActive('/map') }">◎ Live Map</RouterLink>
+        <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">⌁ Deep Analysis</RouterLink>
+        <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
       </nav>
     </div>
 
@@ -99,13 +107,6 @@
         @click="closeMobileMenu"
       >
         📈 Analysis
-      </RouterLink>
-      <RouterLink 
-        to="/ask-map" 
-        :class="{ active: isActive('/ask-map') }"
-        @click="closeMobileMenu"
-      >
-        🤖 Ask Map
       </RouterLink>
       <RouterLink 
         to="/alerts" 

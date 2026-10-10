@@ -9,7 +9,7 @@
           <div class="phase2-tag">PHASE 2 ROADMAP</div>
           <h2>Predictive Cascade & Satellite Analysis</h2>
           <p>
-            Multi-spectral satellite change detection, historical RAG incident matching, and predictive cascade modeling (Feature 9) are scheduled for delivery in <strong>Phase 2</strong>.
+            Multi-spectral satellite change detection, historical RAG incident matching, and predictive cascade modeling are scheduled for delivery in <strong>Phase 2</strong>.
           </p>
           <div class="phase2-note">
             Real-time multi-hazard disaster monitoring, threat scoring, and AI decision support are fully operational on the <strong>Dashboard</strong> and <strong>Incidents</strong> screens.

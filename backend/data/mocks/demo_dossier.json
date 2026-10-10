@@ -19,25 +19,88 @@
       "primary_risk": "Perimeter breach of secondary safety buffers, facility exposure",
       "secondary_threat": "Localized infrastructure stress & power distribution disruption",
       "color_code": "RED",
-      "spread_polygon": [[29.8, -90.2], [29.9, -90.1], [29.8, -90.0], [29.7, -90.1]]
+      "spread_polygon": [
+        [
+          29.8,
+          -90.2
+        ],
+        [
+          29.9,
+          -90.1
+        ],
+        [
+          29.8,
+          -90
+        ],
+        [
+          29.7,
+          -90.1
+        ]
+      ]
     },
     {
       "timeframe": "12 Hours",
-      "perimeter_delta_km2": 95.0,
+      "perimeter_delta_km2": 95,
       "spread_direction": "Downwind/downstream expansion threatening municipal corridors, heading ENE at 8 m/s",
       "primary_risk": "Transit artery congestion & access denial to evacuation routes",
       "secondary_threat": "Emergency services response delay and medical facility access compromise",
       "color_code": "ORANGE",
-      "spread_polygon": [[29.9, -90.1], [30.0, -89.9], [29.8, -89.8], [29.7, -90.0], [29.6, -90.1]]
+      "spread_polygon": [
+        [
+          29.9,
+          -90.1
+        ],
+        [
+          30,
+          -89.9
+        ],
+        [
+          29.8,
+          -89.8
+        ],
+        [
+          29.7,
+          -90
+        ],
+        [
+          29.6,
+          -90.1
+        ]
+      ]
     },
     {
       "timeframe": "24 Hours",
-      "perimeter_delta_km2": 150.0,
+      "perimeter_delta_km2": 150,
       "spread_direction": "Stabilization dependent on active containment & meteorological shifts, residual NW drift",
       "primary_risk": "Long-term humanitarian displacement and shelter saturation",
       "secondary_threat": "Economic and environmental recovery requirements exceed immediate capacity",
       "color_code": "YELLOW",
-      "spread_polygon": [[30.0, -90.0], [30.1, -89.8], [30.0, -89.6], [29.8, -89.7], [29.7, -89.9], [29.8, -90.1]]
+      "spread_polygon": [
+        [
+          30,
+          -90
+        ],
+        [
+          30.1,
+          -89.8
+        ],
+        [
+          30,
+          -89.6
+        ],
+        [
+          29.8,
+          -89.7
+        ],
+        [
+          29.7,
+          -89.9
+        ],
+        [
+          29.8,
+          -90.1
+        ]
+      ]
     }
   ],
   "critical_infrastructure": [
@@ -89,7 +152,7 @@
       {
         "name": "Community Sports Complex",
         "latitude": 30.45,
-        "longitude": -91.20,
+        "longitude": -91.2,
         "capacity_people": 2500
       },
       {
@@ -149,5 +212,13 @@
     ],
     "estimated_displaced_citizens": 12000,
     "special_needs_assistance_required": "High-priority medical transport required for 45 non-ambulatory citizens; wheelchair accessibility critical for 120 additional residents."
-  }
+  },
+  "trigger_event": "Northeast monsoon system bringing 120mm rainfall over 24-36 hours, coinciding with upstream dam release operations.",
+  "infrastructure_factors": [
+    "Primary drainage system capacity is 80mm/hour, insufficient for forecasted rainfall rates of 120mm/24hr.",
+    "Upstream dam at 95% capacity gates opened at 2:00 AM releasing controlled flow of 500 cumecs into primary channel.",
+    "Secondary overflow channels blocked by debris from previous events, reducing effective discharge capacity by 40%."
+  ],
+  "predicted_outcome": "Rapid rise in water levels expected by 3:00 PM, with peak water crest reaching 4-6 meters above normal channel levels at 4:15 PM. Flash flooding in Chintamani city center (elevation 650m) with water surge spreading to adjacent low-lying areas within 30 minutes.",
+  "historical_reference": "Similar to October 2019 Southwest monsoon event in same sector: 118mm rainfall over 24hr, dam release of 480 cumecs, resulted in 500 people displaced, 3 casualties, economic loss of .3M. Recovery period was 2 weeks for transportation, 4 weeks for utilities."
 }

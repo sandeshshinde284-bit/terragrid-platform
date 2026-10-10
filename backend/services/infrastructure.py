@@ -6,6 +6,7 @@ import math
 from typing import List, Dict, Any
 from functools import lru_cache
 import os
+import socket
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +16,13 @@ class InfrastructureService:
     infrastructure (hospitals, fire stations, schools, power grids, bridges).
     Provides hard GIS data to Vertex AI to prevent hallucination.
     Includes LRU caching to prevent Overpass API rate limits.
+    
+    **NOTE:** Overpass API is frequently overloaded/rate-limited. Failures are
+    gracefully handled by returning empty results (non-blocking).
     """
     OVERPASS_URL = os.getenv("OVERPASS_API_URL", "https://overpass-api.de/api/interpreter")
-    OVERPASS_TIMEOUT = int(os.getenv("OVERPASS_API_TIMEOUT", 6))
+    OVERPASS_TIMEOUT = int(os.getenv("OVERPASS_API_TIMEOUT", 12))  # Increased from 8s (Overpass API is slow)
+    OVERPASS_RETRIES = int(os.getenv("OVERPASS_API_RETRIES", 3))   # Increased from 2 retries
 
     @staticmethod
     def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -34,8 +39,9 @@ class InfrastructureService:
     @lru_cache(maxsize=128)
     def _cached_overpass_query(cls, rounded_lat: float, rounded_lon: float, radius_m: int) -> Dict[str, Any]:
         """
-        Executes and caches the Overpass query. 
+        Executes and caches the Overpass query with retry logic.
         Coordinates are rounded to 2 decimal places (~1km precision) to maximize cache hits.
+        Returns empty dict on timeout/failure (non-blocking).
         """
         query = f"""
         [out:json][timeout:5];
@@ -57,13 +63,42 @@ class InfrastructureService:
         data = urllib.parse.urlencode({'data': query}).encode('utf-8')
         req = urllib.request.Request(url, data=data, headers={'User-Agent': 'TerraGrid-Disaster-App/1.0'})
         
-        with urllib.request.urlopen(req, timeout=cls.OVERPASS_TIMEOUT) as response:
-            return json.loads(response.read().decode())
+        # Retry logic for transient failures with exponential backoff
+        last_error = None
+        for attempt in range(cls.OVERPASS_RETRIES):
+            try:
+                logger.debug(f"[OSM] Attempt {attempt + 1}/{cls.OVERPASS_RETRIES} to query Overpass API (timeout={cls.OVERPASS_TIMEOUT}s)")
+                with urllib.request.urlopen(req, timeout=cls.OVERPASS_TIMEOUT) as response:
+                    result = json.loads(response.read().decode())
+                    logger.debug(f"[OSM] Query succeeded: {len(result.get('elements', []))} elements found")
+                    return result
+            except (socket.timeout, urllib.error.URLError, TimeoutError) as e:
+                last_error = e
+                logger.debug(f"[OSM] Attempt {attempt + 1} failed: {type(e).__name__}: {e}")
+                if attempt < cls.OVERPASS_RETRIES - 1:
+                    # Exponential backoff with jitter: 2s, 4s, 8s (plus random 0-1s)
+                    import time
+                    import random
+                    wait_time = (2 ** (attempt + 1)) + random.uniform(0, 1)
+                    logger.debug(f"[OSM] Waiting {wait_time:.1f}s before retry {attempt + 2}...")
+                    time.sleep(wait_time)
+            except Exception as e:
+                # Other errors (JSON parse, connection reset, etc.) - don't retry
+                logger.warning(f"[OSM] Non-retriable error: {type(e).__name__}: {e}")
+                return {"elements": []}
+        
+        # All retries exhausted
+        logger.warning(f"[OSM] All {cls.OVERPASS_RETRIES} attempts failed. Last error: {last_error}")
+        return {"elements": []}  # Return empty result, don't block response
 
     @classmethod
     def get_nearby_facilities(cls, lat: float, lon: float, radius_km: float = 20.0) -> Dict[str, List[Dict[str, Any]]]:
         """
         Fetches physical infrastructure within the radius, categorized by type.
+        
+        **IMPORTANT:** This method is designed to be non-blocking. If Overpass API
+        times out or fails, it returns empty results rather than blocking the response.
+        This allows the AI dossier to still be generated even without OSM data.
         """
         clamped_radius_m = int(max(5.0, min(50.0, radius_km)) * 1000)
         
@@ -127,9 +162,14 @@ class InfrastructureService:
             for key in results:
                 results[key] = sorted(results[key], key=lambda x: x['distance_km'])[:5]
                 
-            logger.info(f"OSM (Overpass): Cached fetch returned {len(results['hospitals'])} hospitals, {len(results['critical_infrastructure'])} critical infrastructure points near {lat}, {lon}")
+            if any([results['hospitals'], results['fire_stations'], results['critical_infrastructure'], results['shelters']]):
+                logger.info(f"[OSM] Found {len(results['hospitals'])} hospitals, {len(results['fire_stations'])} fire stations, {len(results['critical_infrastructure'])} critical infrastructure near {lat}, {lon}")
+            else:
+                logger.debug(f"[OSM] No infrastructure found near {lat}, {lon} (this is OK - OSM may not have data for remote areas)")
+            
             return results
             
         except Exception as e:
-            logger.warning(f"OSM (Overpass API) fetch failed or timed out: {e}")
-            return results
+            # Non-blocking failure: log and return empty results
+            logger.warning(f"[OSM] Exception during facility lookup: {type(e).__name__}: {e}")
+            return results  # Return empty dict, don't crash

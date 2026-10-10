@@ -106,8 +106,15 @@ export const useEventsStore = defineStore('events', () => {
   )
 
   // Actions
-  const setIncidents = (newIncidents: IncidentLevel1[]) => {
-    incidents.value = newIncidents
+  const setIncidents = (newIncidents: IncidentLevel1[], mergeMode: boolean = false) => {
+    if (mergeMode && incidents.value.length > 0) {
+      // Merge mode: upsert by ID to avoid duplicate key errors
+      const existingMap = new Map(incidents.value.map(i => [i.id, i]))
+      newIncidents.forEach(ni => existingMap.set(ni.id, ni))
+      incidents.value = Array.from(existingMap.values())
+    } else {
+      incidents.value = newIncidents
+    }
     lastUpdated.value = new Date()
   }
 

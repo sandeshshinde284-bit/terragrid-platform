@@ -26,5 +26,13 @@
       "status": "Staged"
     }
   ],
-  "evacuation_guidance": "Primary egress via outbound highways. Avoid secondary routes due to potential debris."
+  "evacuation_guidance": "Primary egress via outbound highways. Avoid secondary routes due to potential debris.",
+  "trigger_event": "Northeast monsoon system bringing 120mm rainfall over 24-36 hours, coinciding with upstream dam release operations.",
+  "infrastructure_factors": [
+    "Primary drainage system capacity is 80mm/hour, insufficient for forecasted rainfall rates of 120mm/24hr.",
+    "Upstream dam at 95% capacity gates opened at 2:00 AM releasing controlled flow of 500 cumecs into primary channel.",
+    "Secondary overflow channels blocked by debris from previous events, reducing effective discharge capacity by 40%."
+  ],
+  "predicted_outcome": "Rapid rise in water levels expected by 3:00 PM, with peak water crest reaching 4-6 meters above normal channel levels at 4:15 PM. Flash flooding in Chintamani city center (elevation 650m) with water surge spreading to adjacent low-lying areas within 30 minutes.",
+  "historical_reference": "Similar to October 2019 Southwest monsoon event in same sector: 118mm rainfall over 24hr, dam release of 480 cumecs, resulted in 500 people displaced, 3 casualties, economic loss of .3M. Recovery period was 2 weeks for transportation, 4 weeks for utilities."
 }

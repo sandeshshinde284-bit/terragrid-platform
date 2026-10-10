@@ -16,6 +16,69 @@ if str(root_dir) not in sys.path:
 # Force gRPC (used by Google Gemini SDK) to use standard certifi root certificates on Windows
 os.environ["GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"] = certifi.where()
 
+# ==============================================================================
+# ENTERPRISE LOGGING CONFIGURATION
+# ==============================================================================
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Ensure logs directory exists
+log_dir = os.path.join(root_dir, 'terragrid-platform', 'logs')
+if not os.path.exists(log_dir):
+    try:
+        os.makedirs(log_dir)
+    except Exception:
+        # Fallback to current directory if path fails
+        log_dir = 'logs'
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+log_file_path = os.path.join(log_dir, 'terragrid.log')
+
+# Define standard format
+log_formatter = logging.Formatter(
+    fmt='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# 1. Rotating File Handler (Safe UTF-8, max 5MB per file, keep 3 backups)
+file_handler = RotatingFileHandler(
+    filename=log_file_path,
+    mode='a',
+    maxBytes=5 * 1024 * 1024,
+    backupCount=3,
+    encoding='utf-8'
+)
+file_handler.setFormatter(log_formatter)
+file_handler.setLevel(logging.INFO)
+
+# 2. Console Handler (Safe for Windows cp1252 to prevent crashes)
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setFormatter(log_formatter)
+console_handler.setLevel(logging.INFO)
+# Wrap stdout on Windows to replace unencodable characters (like emojis) with '?' instead of crashing
+if hasattr(sys.stdout, 'encoding') and sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+    import codecs
+    console_handler.stream = codecs.getwriter('utf-8')(sys.stdout.buffer, 'replace')
+
+# 3. Configure Root Logger
+root_logger = logging.getLogger()
+# Clear any default handlers uvicorn/fastapi might have attached early
+if root_logger.hasHandlers():
+    root_logger.handlers.clear()
+root_logger.setLevel(logging.INFO)
+root_logger.addHandler(file_handler)
+root_logger.addHandler(console_handler)
+
+# Override Uvicorn loggers to use our format
+logging.getLogger("uvicorn.access").handlers = [console_handler, file_handler]
+logging.getLogger("uvicorn.error").handlers = [console_handler, file_handler]
+
+logging.info("==================================================")
+logging.info("🚀 TERRAGRID FASTAPI SERVER INITIALIZING")
+logging.info("==================================================")
+
+
 # Import routes (supports both direct script execution and module execution)
 try:
     from .routes.disaster_data import router as disaster_router
@@ -48,7 +111,7 @@ async def lifespan(app: FastAPI):
         polling_service = get_polling_service()
         data_ingestion = DataIngestionService()
         if polling_service.start(data_ingestion):
-            print("[OK] Feature 3 (Background Polling) initialized successfully")
+            print("[OK] (Background Polling) initialized successfully")
         else:
             print("[WARN] Failed to start background polling")
     except Exception as e:

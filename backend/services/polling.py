@@ -106,7 +106,7 @@ class BackgroundPollingService:
     async def _async_polling_job(self):
         """Actual async polling logic"""
         if not self.polling_enabled:
-            logger.debug("⏸️ Polling disabled")
+            logger.debug("Polling disabled")
             return
 
         try:

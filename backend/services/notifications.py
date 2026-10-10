@@ -80,7 +80,7 @@ class NotificationService:
             
         incident_type = str(incident.get("event_type", "disaster")).upper()
         
-        subject = f"🔴 CRITICAL ALERT: {incident_type} detected near {location} (Threat: {threat_score}/100)"
+        subject = f"CRITICAL ALERT: {incident_type} detected near {location} (Threat: {threat_score}/100)"
         
         # Build HTML Body
         html_content = f"""
