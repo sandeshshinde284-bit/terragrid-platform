@@ -236,7 +236,7 @@ onMounted(async () => {
   // If navigated directly to /alerts, hydrate live incidents from PostgreSQL database
   if (eventsStore.allIncidents.length === 0) {
     try {
-      const host = window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin
+      const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
       const res = await fetch(`${host}/api/v1/incidents?limit=50`)
       if (res.ok) {
         const rawIncidents = await res.json()
