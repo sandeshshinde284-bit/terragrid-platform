@@ -229,31 +229,41 @@ class DecisionSupportService:
         osm_facilities = InfrastructureService.get_nearby_facilities(lat, lon, radius)
         osrm_routing = EvacuationZoneService.get_safe_routes({"latitude": lat, "longitude": lon, "event_type": event_type})
 
-        # Fetch Historical DB Data (Trigonometric precision bounds)
-        history_injection = "\n            HISTORICAL POSTGRESQL DATABASE CONTEXT:"
+        # Fetch Historical DB Data (RAG - Vector-based semantic search)
+        history_injection = "\n            HISTORICAL CONTEXT (RAG-RETRIEVED VIA VECTOR SIMILARITY):"
         if db_session:
             try:
-                # Convert 100km radius to rough degrees using cosine of latitude (avoids distortion at poles)
-                # 1 degree lat = ~111km everywhere. 1 degree lon = ~111km * cos(lat)
-                lat_deg = 100.0 / 111.0
-                lon_deg = 100.0 / (111.0 * math.cos(math.radians(lat)))
+                from .vector_rag_engine import VectorRAGEngine
+                rag_engine = VectorRAGEngine()
                 
-                past_events = db_session.query(Event).filter(
-                    Event.event_type == event_type,
-                    Event.latitude.between(lat - lat_deg, lat + lat_deg),
-                    Event.longitude.between(lon - lon_deg, lon + lon_deg),
-                    Event.severity.is_not(None)
-                ).order_by(desc(Event.created_at)).limit(10).all()
+                # Get RAG context using vector embeddings
+                rag_context = rag_engine.get_historical_context(
+                    current_incident=event_data,
+                    db_session=db_session,
+                    limit=5
+                )
+                history_injection += rag_context
                 
-                if past_events:
-                    critical_count = sum(1 for e in past_events if e.severity.lower() == 'critical')
-                    history_injection += f"\n            - {len(past_events)} similar {event_type} incidents recorded in this sector previously."
-                    history_injection += f"\n            - Highest historical severity recorded: {'CRITICAL' if critical_count > 0 else 'HIGH/MEDIUM'}."
-                    history_injection += "\n            - MANDATE: Incorporate regional historical precedent into the predictive cascade spread vectors."
-                else:
-                    history_injection += f"\n            - No similar {event_type} incidents recorded within 100km in the recent database timeline. This is a novel threat vector."
             except Exception as db_e:
-                history_injection += "\n            - Historical database query unavailable."
+                logger.warning(f"RAG retrieval failed: {db_e}, falling back to SQL search")
+                try:
+                    # Fallback: Use SQL spatial search if RAG fails
+                    lat_deg = 100.0 / 111.0
+                    lon_deg = 100.0 / (111.0 * math.cos(math.radians(lat)))
+                    
+                    past_events = db_session.query(Event).filter(
+                        Event.event_type == event_type,
+                        Event.latitude.between(lat - lat_deg, lat + lat_deg),
+                        Event.longitude.between(lon - lon_deg, lon + lon_deg),
+                        Event.severity.is_not(None)
+                    ).order_by(desc(Event.created_at)).limit(10).all()
+                    
+                    if past_events:
+                        history_injection += f"\n            - {len(past_events)} similar incidents from spatial search (fallback)"
+                    else:
+                        history_injection += f"\n            - No similar incidents found"
+                except:
+                    history_injection += "\n            - Historical database query unavailable."
         else:
             history_injection += "\n            - Historical database query bypassed."
 

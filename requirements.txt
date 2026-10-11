@@ -27,6 +27,7 @@ pytz==2024.1
 Pillow==10.1.0
 redis==5.0.1
 aioredis==2.0.1
+numpy>=1.26.0
 
 # Testing
 pytest==7.4.4
