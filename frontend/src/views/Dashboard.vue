@@ -1202,9 +1202,7 @@ onMounted(async () => {
     console.log('📥 Loading historical incidents from database (Feature 5)...')
     
     // Feature 5: Hydrate UI from database first so it survives restarts
-    const host = window.location.hostname === 'localhost'
-      ? 'http://localhost:8000'
-      : window.location.origin
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
       
     const response = await fetch(`${host}/api/v1/incidents?limit=100&offset=0`)
     

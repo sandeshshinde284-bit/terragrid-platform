@@ -44,10 +44,13 @@ export function useWebSocket() {
     // Connect to WebSocket using the current host, changing protocol to ws/wss
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     // For local dev, hardcode the backend port to 8000
-    const host = import.meta.env.MODE === 'production' 
-      ? window.location.host 
-      : 'localhost:8000'
-      
+    // Use VITE_API_URL if provided (stripping http/https), otherwise fallback to origin
+    let host = window.location.host;
+    if (import.meta.env.VITE_API_URL) {
+      host = import.meta.env.VITE_API_URL.replace(/^https?:\/\//, '');
+    } else if (import.meta.env.MODE !== 'production') {
+      host = 'localhost:8000';
+    }
     const wsUrl = `${protocol}//${host}/ws/dashboard`
     
     console.log(`📡 Attempting WebSocket connection to ${wsUrl}`)
