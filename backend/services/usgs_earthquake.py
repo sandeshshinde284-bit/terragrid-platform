@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 USGS Earthquake Hazards Program API Service
 Fetches real-time earthquake data from USGS
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class USGSEarthquakeService:
     """Service to fetch earthquake events from USGS API"""
     
-    BASE_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary"
+    BASE_URL = settings.USGS_EARTHQUAKE_URL
     
     MAGNITUDE_TO_SEVERITY = {
         'micro': 'low',      # < 2.0

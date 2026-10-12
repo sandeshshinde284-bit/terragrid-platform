@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 API Routes for Features 1 & 2
 - Feature 1: Real-Time Data Ingestion

@@ -15,7 +15,7 @@ class NOAAService:
     """Service to fetch weather and storm events from NOAA API"""
     
     BASE_URL = settings.NOAA_API_BASE_URL
-    ALERTS_URL = "https://api.weather.gov/alerts/active"
+    ALERTS_URL = f"{settings.NOAA_API_BASE_URL}/alerts/active"
     
     @classmethod
     async def fetch_events(cls, use_mock: bool = False) -> List[Dict[str, Any]]:
