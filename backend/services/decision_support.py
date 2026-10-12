@@ -1,3 +1,4 @@
+from backend.config import settings
 ﻿import os
 import json
 import math
@@ -17,15 +18,15 @@ class DecisionSupportService:
     """
 
     def __init__(self):
-        self.project_id = os.getenv("GCP_PROJECT_ID")
-        self.location = os.getenv("GCP_REGION", "us-central1")
+        self.project_id = settings.GCP_PROJECT_ID
+        self.location = settings.GCP_REGION
         self.model = None
 
         try:
             import vertexai
             from vertexai.generative_models import GenerativeModel
             
-            model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+            model_name = settings.GEMINI_MODEL
             
             if self.project_id:
                 # Initialize Vertex AI with GCP credentials

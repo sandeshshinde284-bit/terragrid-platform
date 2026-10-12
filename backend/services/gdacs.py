@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 GDACS (Global Disaster Alert & Coordination System) API Service
 Fetches disaster alerts and humanitarian data

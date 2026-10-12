@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 Feature 3A: Evacuation Zone Mapping Service
 Calculates evacuation zones around disaster incidents
@@ -39,7 +40,7 @@ class EvacuationZoneService:
         "very_rural": 100,
     }
 
-    OSRM_URL = os.getenv("OSRM_API_URL", "https://router.project-osrm.org/route/v1")
+    OSRM_URL = settings.OSRM_API_URL
     
     @classmethod
     def calculate_zones(cls, incident: Dict[str, Any]) -> Dict[str, Any]:

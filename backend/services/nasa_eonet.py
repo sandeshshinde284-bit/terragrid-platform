@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 NASA EONET (Earth Observation Natural Event Tracking) API Service
 Fetches real-time natural disaster events from NASA
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 class NASAEONETService:
     """Service to fetch disaster events from NASA EONET API"""
     
-    BASE_URL = "https://eonet.gsfc.nasa.gov/api/v3"
+    BASE_URL = settings.NASA_EONET_URL
     
     # Category mappings: NASA categories to our event types (keys lowercased for case-insensitive match)
     CATEGORY_MAPPING = {

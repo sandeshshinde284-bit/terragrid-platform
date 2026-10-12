@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 OpenWeatherMap API Service
 Fetches global weather alerts, storms, and extreme weather conditions
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 class OpenWeatherService:
     """Service to fetch global weather alerts from OpenWeatherMap API"""
     
-    BASE_URL = "https://api.openweathermap.org/data/2.5"
+    BASE_URL = settings.OPENWEATHER_API_URL
     
     # Cities to monitor globally - covers key disaster-prone regions
     MONITORED_CITIES = [
@@ -102,7 +103,7 @@ class OpenWeatherService:
                 return []
         
         # Strict Live Mode: No mock fallback parameter
-        api_key = os.getenv("OPENWEATHERMAP_API_KEY")
+        api_key = settings.OPENWEATHERMAP_API_KEY
         
         if not api_key:
             logger.warning("OPENWEATHERMAP_API_KEY not set in .env. Skipping OpenWeatherMap ingestion.")
@@ -110,7 +111,7 @@ class OpenWeatherService:
         
         try:
             events = []
-            api_key = os.getenv("OPENWEATHERMAP_API_KEY")
+            api_key = settings.OPENWEATHERMAP_API_KEY
             
             # Fetch weather for each city
             for lat, lon, city, country in cls.MONITORED_CITIES:

@@ -21,8 +21,8 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from backend.models import Base
-target_metadata = Base.metadata
+from backend.models.base import BaseModel
+target_metadata = BaseModel.metadata
 
 # Get DATABASE_URL from environment
 db_url = os.getenv("DATABASE_URL")

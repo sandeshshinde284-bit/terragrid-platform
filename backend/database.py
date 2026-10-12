@@ -1,4 +1,6 @@
+from backend.config import settings
 import os
+from backend.config import settings
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -7,10 +9,7 @@ from typing import Generator
 logger = logging.getLogger(__name__)
 
 # Retrieve database URL from environment
-SQLALCHEMY_DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql://terragrid_user:terragrid_pass@localhost:5432/terragrid_db"
-)
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 try:
     # Create the SQLAlchemy engine
