@@ -1195,12 +1195,6 @@ const loadAlerts = () => {
   }
 }
 
-watch(isMockMode, () => {
-  console.log(`🔄 Mock mode changed to: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'}`)
-  currentPage.value = 1  // Reset pagination
-  fetchIncidents()
-  loadAlerts()
-})
 
 onMounted(async () => {
   isLoading.value = true
@@ -1283,7 +1277,11 @@ watch(isMockMode, () => {
   console.log(`🔄 Mock mode changed to: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'}`)
   currentPage.value = 1  // Reset pagination
   fetchIncidents()
+  loadAlerts()
 })
+
+
+
 
 // Reset pagination when sort order, country filter, or event type filter changes
 watch([sortBy, selectedCountry, selectedEventType], () => {

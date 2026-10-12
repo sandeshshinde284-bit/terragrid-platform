@@ -198,8 +198,10 @@
                 <div class="summary-facts">
                   <div><span>Incident class</span><strong>{{ formatIncidentType(incident.type) }}</strong></div>
                   <div><span>Operational posture</span><strong>{{ operationalPosture }}</strong></div>
-                  <div><span>Data quality</span><strong>{{ detail.dataQuality }}%</strong></div>
-                  <div><span>Next review</span><strong>In {{ detail.nextReview }}</strong></div>
+                  <template v-if="appStore.isBackendMockModeEnabled">
+                    <div><span>Data quality</span><strong>{{ detail.dataQuality }}%</strong></div>
+                    <div><span>Next review</span><strong>In {{ detail.nextReview }}</strong></div>
+                  </template>
                 </div>
               </article>
               <article class="glass-panel action-panel">
