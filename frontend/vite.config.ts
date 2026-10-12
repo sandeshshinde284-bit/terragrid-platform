@@ -31,4 +31,10 @@ export default defineConfig({
     target: 'es2017',
     sourcemap: false,
   },
+  define: {
+    'process.env': {}
+  },
+  optimizeDeps: {
+    exclude: ['mapbox-gl']
+  }
 })

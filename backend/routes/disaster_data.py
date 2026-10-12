@@ -190,12 +190,12 @@ async def ingestion_status():
             "nasa_eonet": {
                 "enabled": True,
                 "description": "NASA Earth Observation Natural Event Tracking",
-                "endpoint": "https://eonet.gsfc.nasa.gov/api/v3"
+                "endpoint": settings.NASA_EONET_URL
             },
             "gdacs": {
                 "enabled": True,
                 "description": "Global Disaster Alert & Coordination System",
-                "endpoint": "https://www.gdacs.org/api/v1"
+                "endpoint": settings.GDACS_API_URL
             },
             "pubsub": {
                 "enabled": True,
