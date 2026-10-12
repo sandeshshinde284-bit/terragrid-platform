@@ -1195,6 +1195,13 @@ const loadAlerts = () => {
   }
 }
 
+watch(isMockMode, () => {
+  console.log(`🔄 Mock mode changed to: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'}`)
+  currentPage.value = 1  // Reset pagination
+  fetchIncidents()
+  loadAlerts()
+})
+
 onMounted(async () => {
   isLoading.value = true
   apiError.value = null

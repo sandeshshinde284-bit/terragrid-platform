@@ -5,7 +5,6 @@
 import { ref, computed } from 'vue'
 
 // Global mock mode state
-// Defaults to LIVE mode (false) unless the user has explicitly opted into mock mode before.
 const mockModeEnabled = ref(localStorage.getItem('mockMode') === 'true')
 
 export function useMockMode() {
