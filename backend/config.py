@@ -2,7 +2,7 @@ import os
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    # Database
+    # Databases
     DATABASE_URL: str = 'postgresql://terragrid_user:terragrid_pass@localhost:5432/terragrid_db'
     
     # Environment
