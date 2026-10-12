@@ -205,6 +205,13 @@ def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None
     if dev_mode:
         logger.debug("[MOCK-MODE] Development mode: mock access allowed")
         return True
+
+    # If the operator has explicitly turned on USE_MOCK_DATA (e.g. demo mode
+    # in production for evaluators), honor it without requiring a per-request
+    # admin token - the setting itself is the authorization.
+    if settings.USE_MOCK_DATA:
+        logger.debug("[MOCK-MODE] USE_MOCK_DATA enabled: mock access allowed")
+        return True
     
     # Production + no token = deny
     logger.warning("[MOCK-MODE] ✗ Unauthorized mock mode access attempted in production")

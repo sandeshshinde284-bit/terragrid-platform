@@ -668,7 +668,9 @@ async function fetchAIInsights() {
   aiLoading.value = true
   aiError.value = null
   try {
-    const response = await fetch(`/api/v1/incidents/${incidentId.value}/insights`)
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const mockParam = appStore.isBackendMockModeEnabled ? '?use_mock=true' : ''
+    const response = await fetch(`${host}/api/v1/incidents/${incidentId.value}/insights${mockParam}`)
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const data = await response.json()
     if (data.plan) {
