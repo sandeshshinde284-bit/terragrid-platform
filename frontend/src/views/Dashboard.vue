@@ -1103,7 +1103,8 @@ const fetchIncidents = async () => {
     
     console.log(`📡 Fetching incidents (Mode: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'})`)
     
-    const response = await fetchWithMockMode('http://localhost:8000/api/v1/ingest/all')
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const response = await fetchWithMockMode(`${host}/api/v1/ingest/all`)
     
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`)

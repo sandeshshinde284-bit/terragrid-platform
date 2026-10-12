@@ -2,6 +2,7 @@ import logging
 import json
 import os
 from typing import List, Dict, Any, Optional
+from backend.config import settings
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/api/v1/incidents", tags=["incidents"])
 # Load countries data once at startup
 _COUNTRIES_DATA: Optional[Dict[str, Any]] = None
 
-ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "admin-secret-key")  # In production, use proper auth
+ADMIN_TOKEN = settings.ADMIN_TOKEN
 
 
 def _load_countries_data() -> Dict[str, Any]:

@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     
     # Environment
     ENVIRONMENT: str = 'development'
+    ADMIN_TOKEN: str = 'admin-secret-key'
     ALLOWED_ORIGINS: str = 'http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173'
     USE_MOCK_DATA: bool = False
     
