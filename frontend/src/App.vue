@@ -13,7 +13,7 @@ const appStore = useAppStore()
 onMounted(async () => {
   // Fetch Backend-Driven UI Configuration (12-Factor App) globally
   try {
-    const host = window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
     const res = await fetch(`${host}/api/v1/config`)
     if (res.ok) {
       const config = await res.json()
