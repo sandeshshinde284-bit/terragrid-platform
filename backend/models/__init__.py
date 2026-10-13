@@ -1,4 +1,4 @@
-﻿# Models initialization
+# Models initialization
 from .base import BaseModel
 from .event import Event
 from .analysis import Analysis

@@ -1,1 +1,1 @@
-﻿# Backend initialization
+# Backend initialization

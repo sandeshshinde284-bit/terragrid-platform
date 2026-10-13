@@ -43,7 +43,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1 } from '@/types'
-import mapboxgl from 'mapbox-gl'
+import * as mapboxgl from 'mapbox-gl/esm'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 interface Props {
@@ -161,11 +161,10 @@ const initMap = () => {
     return
   }
 
-  mapboxgl.accessToken = appStore.mapboxToken
-
-  map.value = new mapboxgl.Map({
+    map.value = new mapboxgl.Map({
+    accessToken: appStore.mapboxToken,
     container: mapContainer.value,
-    style: MAP_STYLES.tactical, // Default to high-contrast tactical navigation night
+    style: MAP_STYLES.tactical,
     center: DEFAULT_CENTER,
     zoom: DEFAULT_ZOOM,
     projection: { name: 'mercator' },

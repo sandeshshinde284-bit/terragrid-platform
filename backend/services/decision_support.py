@@ -1,5 +1,5 @@
 from backend.config import settings
-﻿import os
+import os
 import json
 import math
 import logging
