@@ -3,9 +3,16 @@
     <Header />
 
     <div class="forecast-container">
-      <div v-if="loading" class="empty-state glass-panel">
-        <div class="empty-icon">🌦️</div>
-        <h3>Loading 7-day forecast...</h3>
+      <div v-if="loading" class="empty-state glass-panel tactical-loading-container">
+        <div class="radar-ping-ring">
+          <span class="radar-dot"></span>
+        </div>
+        <div class="loading-telemetry-text">
+          <strong class="cycling-step-text">Fetching 7-day weather forecast...</strong>
+        </div>
+        <div class="tactical-progress-track">
+          <div class="tactical-scan-laser"></div>
+        </div>
       </div>
 
       <div v-else-if="error" class="empty-state glass-panel">
@@ -625,4 +632,92 @@ onMounted(async () => {
     padding: 14px 16px;
   }
 }
+
+/* Tactical Loading Animation */
+.tactical-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 60px 20px;
+}
+.radar-ping-ring {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(14, 165, 233, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.radar-ping-ring::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1px solid rgba(14, 165, 233, 0.5);
+  animation: radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.radar-dot {
+  width: 12px;
+  height: 12px;
+  background-color: #0ea5e9;
+  border-radius: 50%;
+  box-shadow: 0 0 15px 4px rgba(14, 165, 233, 0.6);
+}
+.loading-telemetry-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.loading-phase-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.1);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+.cycling-step-text {
+  font-size: 14px;
+  color: #94a3b8;
+  font-family: monospace;
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+.tactical-progress-track {
+  width: 250px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.tactical-scan-laser {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #0ea5e9, transparent);
+  animation: scan-laser 2s linear infinite;
+}
+@keyframes radar-ping {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes scan-laser {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
 </style>
