@@ -156,6 +156,161 @@ class OpenWeatherService:
             return None
     
     @classmethod
+    async def fetch_forecast(cls, use_mock: bool = False) -> List[Dict[str, Any]]:
+        """
+        Fetch 5-day/3-hour-step forecasts for all monitored cities and collapse
+        each city's forecast into a day-by-day risk escalation timeline.
+
+        Uses the same free-tier OpenWeatherMap endpoint family as fetch_events()
+        (/data/2.5/forecast instead of /data/2.5/weather), the same API key, and
+        the same severity/type-mapping logic, so forecast risk and current-weather
+        risk can never drift out of sync with each other.
+
+        Args:
+            use_mock: If True, return mock data instead of calling API
+
+        Returns:
+            List of per-city forecast dicts, each with a "daily" list of
+            {date, risk_level, dominant_weather, max_wind_ms, min_temp_c, max_temp_c, total_rain_mm}
+        """
+        if use_mock:
+            logger.info(" OpenWeather Forecast: 🧪 MOCK MODE ENABLED via .env")
+            try:
+                import json
+                from pathlib import Path
+                mock_path = Path(__file__).parent.parent / "data" / "mocks" / "openweather_forecast.json"
+                with open(mock_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load OpenWeather forecast mock: {e}")
+                return []
+
+        api_key = settings.OPENWEATHERMAP_API_KEY
+
+        if not api_key:
+            logger.warning("OPENWEATHERMAP_API_KEY not set in .env. Skipping forecast ingestion.")
+            return []
+
+        forecasts = []
+        for lat, lon, city, country in cls.MONITORED_CITIES:
+            try:
+                forecast = await cls._fetch_city_forecast(lat, lon, city, country, api_key)
+                if forecast:
+                    forecasts.append(forecast)
+            except Exception as e:
+                logger.debug(f"Error fetching forecast for {city}, {country}: {str(e)}")
+                continue
+
+        logger.info(f"OpenWeatherMap: Fetched 5-day forecast for {len(forecasts)} cities")
+        return forecasts
+
+    @classmethod
+    async def _fetch_city_forecast(cls, lat: float, lon: float, city: str, country: str, api_key: str) -> Dict[str, Any] | None:
+        """Fetch and summarize the 5-day/3-hour-step forecast for a single city"""
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"{cls.BASE_URL}/forecast",
+                    params={
+                        "lat": lat,
+                        "lon": lon,
+                        "appid": api_key,
+                        "units": "metric",
+                    }
+                )
+                response.raise_for_status()
+                data = response.json()
+
+                daily = cls._summarize_forecast_by_day(data.get("list", []))
+                if not daily:
+                    return None
+
+                return {
+                    "city": city,
+                    "country": country,
+                    "latitude": lat,
+                    "longitude": lon,
+                    "source": "OPENWEATHER",
+                    "daily": daily,
+                }
+
+        except Exception as e:
+            logger.debug(f"Error fetching forecast for {city}: {str(e)}")
+            return None
+
+    @classmethod
+    def _summarize_forecast_by_day(cls, entries: List[Dict]) -> List[Dict[str, Any]]:
+        """
+        Collapse OpenWeatherMap's 3-hour-step forecast list (~40 entries over 5 days)
+        into one risk-escalation entry per calendar day, reusing the same severity
+        thresholds as the current-weather path.
+        """
+        from collections import defaultdict
+
+        by_day: Dict[str, List[Dict]] = defaultdict(list)
+        for entry in entries:
+            dt_txt = entry.get("dt_txt", "")
+            day_key = dt_txt.split(" ")[0] if dt_txt else None
+            if not day_key:
+                continue
+            by_day[day_key].append(entry)
+
+        daily_summaries = []
+        for day_key in sorted(by_day.keys()):
+            day_entries = by_day[day_key]
+
+            max_wind = 0.0
+            min_temp = float("inf")
+            max_temp = float("-inf")
+            total_rain = 0.0
+            worst_severity = "low"
+            dominant_weather = "clear"
+            severity_rank = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+
+            for entry in day_entries:
+                main = entry.get("main", {})
+                wind = entry.get("wind", {})
+                weather = entry.get("weather", [{}])[0]
+
+                temp = main.get("temp", 0)
+                humidity = main.get("humidity", 0)
+                wind_speed = wind.get("speed", 0)
+                rain_mm = entry.get("rain", {}).get("3h", 0)
+
+                min_temp = min(min_temp, temp)
+                max_temp = max(max_temp, temp)
+                max_wind = max(max_wind, wind_speed)
+                total_rain += rain_mm
+
+                event_type = weather.get("main", "").lower()
+                description = weather.get("description", "").lower()
+
+                severity = cls._determine_severity(event_type, wind_speed, temp, humidity, description)
+                if severity_rank.get(severity, 0) > severity_rank.get(worst_severity, 0):
+                    worst_severity = severity
+                    dominant_weather = cls._map_weather_type(event_type, description)
+
+            # Map internal severity scale to the UI's YELLOW/ORANGE/RED escalation bands
+            risk_level = {
+                "low": "GREEN",
+                "medium": "YELLOW",
+                "high": "ORANGE",
+                "critical": "RED",
+            }.get(worst_severity, "GREEN")
+
+            daily_summaries.append({
+                "date": day_key,
+                "risk_level": risk_level,
+                "dominant_weather": dominant_weather,
+                "max_wind_ms": round(max_wind, 1),
+                "min_temp_c": round(min_temp, 1) if min_temp != float("inf") else None,
+                "max_temp_c": round(max_temp, 1) if max_temp != float("-inf") else None,
+                "total_rain_mm": round(total_rain, 1),
+            })
+
+        return daily_summaries
+
+    @classmethod
     def _parse_weather(cls, weather_data: Dict, city: str, country: str) -> Dict[str, Any] | None:
         """Parse OpenWeatherMap weather data to internal event format"""
         try:

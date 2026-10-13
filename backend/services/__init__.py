@@ -3,6 +3,7 @@ from .nasa_eonet import NASAEONETService
 from .gdacs import GDACSService
 from .usgs_earthquake import USGSEarthquakeService
 from .noaa import NOAAService
+from .openweather import OpenWeatherService
 from .pubsub_service import PubSubService
 from .impact_analysis import ImpactAnalysisService
 from .data_ingestion import DataIngestionService
@@ -14,6 +15,7 @@ __all__ = [
     "GDACSService",
     "USGSEarthquakeService",
     "NOAAService",
+    "OpenWeatherService",
     "PubSubService",
     "ImpactAnalysisService",
     "DataIngestionService",

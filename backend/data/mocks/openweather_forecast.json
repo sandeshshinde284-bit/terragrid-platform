@@ -1,0 +1,30 @@
+[
+  {
+    "city": "Delhi",
+    "country": "IN",
+    "latitude": 28.6139,
+    "longitude": 77.209,
+    "source": "OPENWEATHER",
+    "daily": [
+      { "date": "2026-10-14", "risk_level": "YELLOW", "dominant_weather": "thunderstorm", "max_wind_ms": 11.2, "min_temp_c": 24.0, "max_temp_c": 31.5, "total_rain_mm": 8.0 },
+      { "date": "2026-10-15", "risk_level": "ORANGE", "dominant_weather": "thunderstorm", "max_wind_ms": 16.4, "min_temp_c": 25.0, "max_temp_c": 33.0, "total_rain_mm": 22.5 },
+      { "date": "2026-10-16", "risk_level": "RED", "dominant_weather": "thunderstorm", "max_wind_ms": 19.8, "min_temp_c": 26.0, "max_temp_c": 34.0, "total_rain_mm": 46.0 },
+      { "date": "2026-10-17", "risk_level": "ORANGE", "dominant_weather": "flood", "max_wind_ms": 14.1, "min_temp_c": 25.5, "max_temp_c": 32.0, "total_rain_mm": 30.0 },
+      { "date": "2026-10-18", "risk_level": "GREEN", "dominant_weather": "clear", "max_wind_ms": 5.2, "min_temp_c": 23.0, "max_temp_c": 30.0, "total_rain_mm": 0.0 }
+    ]
+  },
+  {
+    "city": "Dhaka",
+    "country": "BD",
+    "latitude": 23.8103,
+    "longitude": 90.4125,
+    "source": "OPENWEATHER",
+    "daily": [
+      { "date": "2026-10-14", "risk_level": "GREEN", "dominant_weather": "clear", "max_wind_ms": 4.0, "min_temp_c": 26.0, "max_temp_c": 32.0, "total_rain_mm": 0.0 },
+      { "date": "2026-10-15", "risk_level": "YELLOW", "dominant_weather": "flood", "max_wind_ms": 9.5, "min_temp_c": 26.5, "max_temp_c": 32.5, "total_rain_mm": 12.0 },
+      { "date": "2026-10-16", "risk_level": "GREEN", "dominant_weather": "clear", "max_wind_ms": 5.0, "min_temp_c": 26.0, "max_temp_c": 31.5, "total_rain_mm": 0.0 },
+      { "date": "2026-10-17", "risk_level": "GREEN", "dominant_weather": "clear", "max_wind_ms": 4.5, "min_temp_c": 26.0, "max_temp_c": 31.0, "total_rain_mm": 0.0 },
+      { "date": "2026-10-18", "risk_level": "GREEN", "dominant_weather": "clear", "max_wind_ms": 4.0, "min_temp_c": 25.5, "max_temp_c": 31.0, "total_rain_mm": 0.0 }
+    ]
+  }
+]

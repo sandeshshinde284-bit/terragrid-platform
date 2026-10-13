@@ -89,6 +89,7 @@ try:
     from .routes.websockets import router as ws_router
     from .routes.incidents import router as incidents_router
     from .routes.lineage_routes import router as lineage_router
+    from .routes.prepare import router as prepare_router
 except (ImportError, ValueError):
     from backend.routes.disaster_data import router as disaster_router
     from backend.routes.polling import router as polling_router
@@ -96,6 +97,7 @@ except (ImportError, ValueError):
     from backend.routes.websockets import router as ws_router
     from backend.routes.incidents import router as incidents_router
     from backend.routes.lineage_routes import router as lineage_router
+    from backend.routes.prepare import router as prepare_router
 
 # Load .env from project root
 load_dotenv(root_dir / ".env")
@@ -159,6 +161,7 @@ app.include_router(zones_router)
 app.include_router(ws_router)
 app.include_router(incidents_router)
 app.include_router(lineage_router)
+app.include_router(prepare_router)
 
 @app.get("/")
 def read_root():
