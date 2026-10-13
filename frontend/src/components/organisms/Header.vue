@@ -15,11 +15,31 @@
         <h1>TERRAGRID INTELLIGENCE</h1>
       </div>
       <nav class="nav-menu">
-        <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
-        <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
-        <RouterLink to="/map" :class="{ active: isActive('/map') }">◎ Live Map</RouterLink>
-        <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">⌁ Deep Analysis</RouterLink>
-        <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
+        <div class="nav-group">
+          <span class="nav-group-label">Prepare</span>
+          <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ Forecast</RouterLink>
+          <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 Risk Timeline</RouterLink>
+          <RouterLink to="/prepare/checklist" :class="{ active: isActive('/prepare/checklist') }">✅ Checklist</RouterLink>
+          <RouterLink to="/prepare/agency-alerts" :class="{ active: isActive('/prepare/agency-alerts') }">📨 Agency Alerts</RouterLink>
+        </div>
+
+        <div class="nav-divider"></div>
+
+        <div class="nav-group">
+          <span class="nav-group-label">Response</span>
+          <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
+          <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
+          <RouterLink to="/map" :class="{ active: isActive('/map') }">◎ Live Map</RouterLink>
+          <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">⌁ Deep Analysis</RouterLink>
+          <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
+        </div>
+
+        <div class="nav-divider"></div>
+
+        <div class="nav-group nav-group-disabled" title="Roadmap — not part of this prototype">
+          <span class="nav-group-label">Predict · Recover</span>
+          <span class="nav-roadmap-badge">Roadmap</span>
+        </div>
       </nav>
     </div>
 
@@ -68,41 +88,88 @@
   <!-- Mobile Navigation Drawer -->
   <Transition name="slide-left">
     <nav v-if="mobileMenuOpen" class="mobile-nav-drawer">
-      <RouterLink 
-        to="/" 
-        :class="{ active: isActive('/') }"
-        @click="closeMobileMenu"
-      >
-        📊 Dashboard
-      </RouterLink>
-      <RouterLink 
-        to="/incidents" 
-        :class="{ active: isActive('/incidents') }"
-        @click="closeMobileMenu"
-      >
-        📋 Incidents
-      </RouterLink>
-      <RouterLink 
-        to="/map" 
-        :class="{ active: isActive('/map') }"
-        @click="closeMobileMenu"
-      >
-        🗺️ Map
-      </RouterLink>
-      <RouterLink 
-        to="/analysis" 
-        :class="{ active: isActive('/analysis') }"
-        @click="closeMobileMenu"
-      >
-        📈 Analysis
-      </RouterLink>
-      <RouterLink 
-        to="/alerts" 
-        :class="{ active: isActive('/alerts') }"
-        @click="closeMobileMenu"
-      >
-        🚨 Alerts
-      </RouterLink>
+      <!-- Prepare Section -->
+      <div class="mobile-nav-section">
+        <div class="mobile-nav-section-title">Prepare</div>
+        <RouterLink
+          to="/prepare/forecast"
+          :class="{ active: isActive('/prepare/forecast') }"
+          @click="closeMobileMenu"
+        >
+          🌦️ Forecast
+        </RouterLink>
+        <RouterLink
+          to="/prepare/risk-timeline"
+          :class="{ active: isActive('/prepare/risk-timeline') }"
+          @click="closeMobileMenu"
+        >
+          📈 Risk Timeline
+        </RouterLink>
+        <RouterLink
+          to="/prepare/checklist"
+          :class="{ active: isActive('/prepare/checklist') }"
+          @click="closeMobileMenu"
+        >
+          ✅ Checklist
+        </RouterLink>
+        <RouterLink
+          to="/prepare/agency-alerts"
+          :class="{ active: isActive('/prepare/agency-alerts') }"
+          @click="closeMobileMenu"
+        >
+          📨 Agency Alerts
+        </RouterLink>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <!-- Response Section -->
+      <div class="mobile-nav-section">
+        <div class="mobile-nav-section-title">Response</div>
+        <RouterLink
+          to="/"
+          :class="{ active: isActive('/') }"
+          @click="closeMobileMenu"
+        >
+          📊 Dashboard
+        </RouterLink>
+        <RouterLink
+          to="/incidents"
+          :class="{ active: isActive('/incidents') }"
+          @click="closeMobileMenu"
+        >
+          📋 Incidents
+        </RouterLink>
+        <RouterLink
+          to="/map"
+          :class="{ active: isActive('/map') }"
+          @click="closeMobileMenu"
+        >
+          🗺️ Map
+        </RouterLink>
+        <RouterLink
+          to="/analysis"
+          :class="{ active: isActive('/analysis') }"
+          @click="closeMobileMenu"
+        >
+          📈 Analysis
+        </RouterLink>
+        <RouterLink
+          to="/alerts"
+          :class="{ active: isActive('/alerts') }"
+          @click="closeMobileMenu"
+        >
+          🚨 Alerts
+        </RouterLink>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <!-- Roadmap Section (disabled) -->
+      <div class="mobile-nav-section mobile-nav-section-disabled">
+        <div class="mobile-nav-section-title">Predict · Recover</div>
+        <div class="mobile-roadmap-badge">🔒 Coming — Roadmap</div>
+      </div>
 
       <!-- Settings Section Divider -->
       <div class="menu-divider"></div>
@@ -215,6 +282,8 @@ const closeMobileMenu = () => {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 
 .nav-menu :deep(a) {
@@ -242,6 +311,45 @@ const closeMobileMenu = () => {
   border-color: var(--accent-cyan);
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+}
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  text-transform: uppercase;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+
+.nav-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--glass-border);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.nav-group-disabled {
+  opacity: 0.55;
+}
+
+.nav-roadmap-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px dashed var(--glass-border);
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .header-center {
@@ -392,6 +500,19 @@ const closeMobileMenu = () => {
   .nav-menu :deep(a) {
     font-size: 10px;
     padding: 4px 8px;
+  }
+
+  .nav-group-label {
+    font-size: 8px;
+  }
+
+  .nav-divider {
+    height: 16px;
+  }
+
+  .nav-roadmap-badge {
+    font-size: 8px;
+    padding: 3px 6px;
   }
 
   .header-btn {
@@ -558,6 +679,34 @@ const closeMobileMenu = () => {
     height: 1px;
     background: rgba(255, 255, 255, 0.1);
     margin: 8px 0;
+  }
+
+  /* Mobile Nav Sections (Prepare / Response / Roadmap groups) */
+  .mobile-nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .mobile-nav-section-title {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 16px 4px 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    opacity: 0.8;
+  }
+
+  .mobile-nav-section-disabled {
+    opacity: 0.55;
+  }
+
+  .mobile-roadmap-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    color: var(--text-secondary);
   }
 
   /* Settings Section */
