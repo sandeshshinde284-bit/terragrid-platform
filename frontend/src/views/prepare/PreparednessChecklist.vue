@@ -80,6 +80,36 @@
                 <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
               </div>
 
+              <div class="progress-bar-row glass-panel" v-if="completionStats.total > 0">
+                <span class="progress-label">{{ completionStats.done }} / {{ completionStats.total }} complete</span>
+                <div class="progress-track">
+                  <div class="progress-fill" :style="{ width: completionStats.pct + '%' }"></div>
+                </div>
+                <span class="progress-pct">{{ completionStats.pct }}%</span>
+              </div>
+
+              <!-- Agency ownership filter: "what does Health Dept still owe me" -->
+              <div class="agency-filter" v-if="agencyOptions.length > 1">
+                <button
+                  type="button"
+                  class="agency-chip"
+                  :class="{ active: selectedAgency === 'ALL' }"
+                  @click="selectedAgency = 'ALL'"
+                >
+                  All agencies <span class="agency-count">{{ actionsPlan.actions.length }}</span>
+                </button>
+                <button
+                  v-for="opt in agencyOptions"
+                  :key="opt.agency"
+                  type="button"
+                  class="agency-chip"
+                  :class="{ active: selectedAgency === opt.agency }"
+                  @click="selectedAgency = opt.agency"
+                >
+                  {{ opt.agency }} <span class="agency-count">{{ opt.count }}</span>
+                </button>
+              </div>
+
               <div class="priority-section" v-for="tier in priorityTiers" :key="tier.priority" v-show="tier.actions.length > 0">
                 <div class="tier-header" :class="tier.className">
                   <span class="tier-dot"></span>
@@ -88,12 +118,25 @@
                 </div>
 
                 <div class="action-grid">
-                  <div v-for="(action, idx) in tier.actions" :key="idx" class="action-card glass-panel">
+                  <div
+                    v-for="(action, idx) in tier.actions"
+                    :key="idx"
+                    class="action-card glass-panel"
+                    :class="{ completed: isCompleted(action) }"
+                  >
                     <div class="action-top">
                       <span class="category-chip" :class="action.category.toLowerCase()">{{ categoryIcon(action.category) }} {{ action.category }}</span>
-                      <span class="deadline-chip">Before Day {{ action.deadline_day }}</span>
+                      <span class="deadline-chip" :class="deadlineInfo(action).urgency">{{ deadlineInfo(action).label }}</span>
                     </div>
-                    <p class="action-text">{{ action.action }}</p>
+                    <label class="action-check-row">
+                      <input
+                        type="checkbox"
+                        class="action-checkbox"
+                        :checked="isCompleted(action)"
+                        @change="toggleCompleted(action)"
+                      />
+                      <p class="action-text">{{ action.action }}</p>
+                    </label>
                     <div class="action-agency">
                       <span class="agency-icon">🏛️</span>
                       <span>{{ action.agency }}</span>
@@ -209,10 +252,107 @@ const sourceBadgeClass = computed(() => {
   return 'live'
 })
 
+// --- Completion tracking (PR6: interactive checklist) -----------------------
+// Persisted to localStorage, per-browser. Actions have no stable backend ID,
+// so completion is keyed by city + agency + action text. This persists
+// reliably for mock mode (the fixture text never changes) and for live mode
+// as long as the checklist isn't regenerated with different wording - an
+// inherent limitation until actions carry stable IDs from the backend
+// (would need DB-backed task identity, deferred - see PREPARE_PHASE_NOTES.md).
+const COMPLETED_STORAGE_KEY = 'terragrid_checklist_completed_v1'
+
+const loadCompletedFromStorage = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(COMPLETED_STORAGE_KEY)
+    if (!raw) return new Set()
+    const arr = JSON.parse(raw)
+    return new Set(Array.isArray(arr) ? arr : [])
+  } catch {
+    return new Set()
+  }
+}
+
+const saveCompletedToStorage = (keys: Set<string>) => {
+  try {
+    localStorage.setItem(COMPLETED_STORAGE_KEY, JSON.stringify([...keys]))
+  } catch {
+    // Best-effort only (private browsing, storage quota, etc.) - never block the UI on this.
+  }
+}
+
+const completedKeys = ref<Set<string>>(loadCompletedFromStorage())
+
+const actionKey = (action: PreparednessAction): string => {
+  const city = selectedCity.value
+  return `${city ? cityKey(city) : ''}::${action.agency}::${action.action}`
+}
+
+const isCompleted = (action: PreparednessAction) => completedKeys.value.has(actionKey(action))
+
+const toggleCompleted = (action: PreparednessAction) => {
+  const key = actionKey(action)
+  const next = new Set(completedKeys.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  completedKeys.value = next
+  saveCompletedToStorage(next)
+}
+
+const completionStats = computed(() => {
+  const actions = actionsPlan.value?.actions || []
+  const total = actions.length
+  const done = actions.filter(a => isCompleted(a)).length
+  return { total, done, pct: total > 0 ? Math.round((done / total) * 100) : 0 }
+})
+
+// --- Agency ownership filter (PR6) -------------------------------------------
+const selectedAgency = ref('ALL')
+
+const agencyOptions = computed(() => {
+  const actions = actionsPlan.value?.actions || []
+  const counts = new Map<string, number>()
+  for (const a of actions) counts.set(a.agency, (counts.get(a.agency) || 0) + 1)
+  return Array.from(counts.entries()).map(([agency, count]) => ({ agency, count }))
+})
+
+// --- Deadline tracking (PR6): resolve the relative "Day N" into an actual
+// forecast date and flag urgency against today's date. ----------------------
+const formatDay = (dateStr: string): string => {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+type Urgency = 'overdue' | 'today' | 'soon' | 'normal'
+
+const deadlineInfo = (action: PreparednessAction): { label: string; urgency: Urgency } => {
+  const day = selectedCity.value?.daily?.[action.deadline_day - 1]
+  if (!day) return { label: `Before Day ${action.deadline_day}`, urgency: 'normal' }
+
+  const deadlineDate = new Date(`${day.date}T00:00:00`)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diffDays = Math.round((deadlineDate.getTime() - today.getTime()) / 86400000)
+
+  let urgency: Urgency = 'normal'
+  if (diffDays < 0) urgency = 'overdue'
+  else if (diffDays === 0) urgency = 'today'
+  else if (diffDays === 1) urgency = 'soon'
+
+  const label = urgency === 'overdue'
+    ? `Overdue - was due ${formatDay(day.date)}`
+    : urgency === 'today'
+      ? `Due today (${formatDay(day.date)})`
+      : `Due ${formatDay(day.date)}`
+
+  return { label, urgency }
+}
+
 // Group the generated actions into IMMEDIATE / HIGH / STAGED tiers so the most
 // urgent work is always first, regardless of the order the model returned them in.
+// Also respects the agency ownership filter above.
 const priorityTiers = computed(() => {
-  const actions = actionsPlan.value?.actions || []
+  const all = actionsPlan.value?.actions || []
+  const actions = selectedAgency.value === 'ALL' ? all : all.filter(a => a.agency === selectedAgency.value)
   return [
     { priority: 1, label: 'Immediate', className: 'immediate', actions: actions.filter(a => a.priority === 1) },
     { priority: 2, label: 'High Priority', className: 'high', actions: actions.filter(a => a.priority === 2) },
@@ -278,6 +418,7 @@ watch(cities, (newCities) => {
 })
 
 watch(selectedKey, () => {
+  selectedAgency.value = 'ALL'
   if (selectedCity.value) fetchActionsForSelectedCity()
 })
 </script>
@@ -494,6 +635,77 @@ watch(selectedKey, () => {
   border: 1px solid rgba(234, 179, 8, 0.3);
 }
 
+.progress-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+}
+
+.progress-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #22c55e);
+  border-radius: 3px;
+  transition: width 0.25s ease;
+}
+
+.progress-pct {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  width: 36px;
+  text-align: right;
+}
+
+.agency-filter {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.agency-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.agency-chip.active {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+}
+
+.agency-count {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
 .priority-section {
   display: flex;
   flex-direction: column;
@@ -544,6 +756,11 @@ watch(selectedKey, () => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: opacity 0.15s ease;
+}
+
+.action-card.completed {
+  opacity: 0.55;
 }
 
 .action-top {
@@ -571,11 +788,41 @@ watch(selectedKey, () => {
   white-space: nowrap;
 }
 
+.deadline-chip.today {
+  color: #eab308;
+}
+
+.deadline-chip.overdue {
+  color: #ef4444;
+  font-weight: 800;
+}
+
+.action-check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.action-checkbox {
+  margin-top: 3px;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
 .action-text {
   font-size: 14px;
   font-weight: 600;
   margin: 0;
   line-height: 1.4;
+}
+
+.action-card.completed .action-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
 }
 
 .action-agency {
