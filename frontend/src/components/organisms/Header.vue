@@ -15,9 +15,35 @@
         <h1>TERRAGRID INTELLIGENCE</h1>
       </div>
       <nav class="nav-menu">
-        <div class="nav-row">
+        <!-- PHASE SELECTOR (Section 1) -->
+        <div class="phase-selector">
+          <button 
+            class="phase-btn" 
+            :class="{ active: activePhase === 'prepare' }"
+            @click="router.push('/prepare/forecast')"
+          >
+            PREPARE
+          </button>
+          <button 
+            class="phase-btn" 
+            :class="{ active: activePhase === 'response' }"
+            @click="router.push('/')"
+          >
+            RESPONSE
+          </button>
+          <button 
+            class="phase-btn roadmap" 
+            :class="{ active: activePhase === 'roadmap' }"
+            disabled
+            title="Coming soon"
+          >
+            PREDICT · RECOVER
+          </button>
+        </div>
+
+        <!-- FEATURE TABS (Section 2) - Changes based on active phase -->
+        <div class="nav-row" v-if="activePhase === 'prepare'">
           <div class="nav-group">
-            <span class="nav-group-label">Prepare</span>
             <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ Forecast</RouterLink>
             <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 Risk Timeline</RouterLink>
             <RouterLink to="/prepare/checklist" :class="{ active: isActive('/prepare/checklist') }">✅ Checklist</RouterLink>
@@ -25,23 +51,19 @@
           </div>
         </div>
 
-        <div class="nav-row-divider"></div>
-
-        <div class="nav-row">
+        <div class="nav-row" v-if="activePhase === 'response'">
           <div class="nav-group">
-            <span class="nav-group-label">Response</span>
             <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
             <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
             <RouterLink to="/map" :class="{ active: isActive('/map') }">◎ Live Map</RouterLink>
             <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">⌁ Deep Analysis</RouterLink>
             <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
           </div>
+        </div>
 
-          <div class="nav-divider"></div>
-
-          <div class="nav-group nav-group-disabled" title="Roadmap — not part of this prototype">
-            <span class="nav-group-label">Predict · Recover</span>
-            <span class="nav-roadmap-badge">Roadmap</span>
+        <div class="nav-row" v-if="activePhase === 'roadmap'">
+          <div class="nav-group nav-group-disabled">
+            <span class="nav-roadmap-badge">🔒 Coming — Roadmap</span>
           </div>
         </div>
       </nav>
@@ -92,8 +114,33 @@
   <!-- Mobile Navigation Drawer -->
   <Transition name="slide-left">
     <nav v-if="mobileMenuOpen" class="mobile-nav-drawer">
+      <!-- Mobile Nav Section with Phase Switcher -->
+      <div class="mobile-phase-selector">
+        <button 
+          :class="{ active: activePhase === 'prepare' }"
+          @click="router.push('/prepare/forecast')"
+        >
+          PREPARE
+        </button>
+        <button 
+          :class="{ active: activePhase === 'response' }"
+          @click="router.push('/')"
+        >
+          RESPONSE
+        </button>
+        <button 
+          :class="{ active: activePhase === 'roadmap' }"
+          @click="closeMobileMenu"
+          disabled
+        >
+          ROADMAP
+        </button>
+      </div>
+
+      <div class="menu-divider"></div>
+
       <!-- Prepare Section -->
-      <div class="mobile-nav-section">
+      <div class="mobile-nav-section" v-if="activePhase === 'prepare'">
         <div class="mobile-nav-section-title">Prepare</div>
         <RouterLink
           to="/prepare/forecast"
@@ -125,10 +172,8 @@
         </RouterLink>
       </div>
 
-      <div class="menu-divider"></div>
-
       <!-- Response Section -->
-      <div class="mobile-nav-section">
+      <div class="mobile-nav-section" v-if="activePhase === 'response'">
         <div class="mobile-nav-section-title">Response</div>
         <RouterLink
           to="/"
@@ -167,10 +212,8 @@
         </RouterLink>
       </div>
 
-      <div class="menu-divider"></div>
-
       <!-- Roadmap Section (disabled) -->
-      <div class="mobile-nav-section mobile-nav-section-disabled">
+      <div class="mobile-nav-section mobile-nav-section-disabled" v-if="activePhase === 'roadmap'">
         <div class="mobile-nav-section-title">Predict · Recover</div>
         <div class="mobile-roadmap-badge">🔒 Coming — Roadmap</div>
       </div>
@@ -202,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { useAppStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
@@ -214,6 +257,16 @@ const { locale } = useI18n()
 const selectedLanguage = ref(locale.value.toUpperCase())
 const is3D = computed(() => appStore.viewMode === '3d')
 const mobileMenuOpen = ref(false)
+
+// Detect active phase based on current route
+const activePhase = computed(() => {
+  const phaseMeta = route.meta.phase as string | undefined
+  if (phaseMeta === 'prepare') {
+    return 'prepare'
+  }
+  // Default to 'response' for all other routes (/, /incidents, /map, etc.)
+  return 'response'
+})
 
 const goHome = () => {
   router.push('/')
@@ -285,7 +338,49 @@ const closeMobileMenu = () => {
 .nav-menu {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+}
+
+.phase-selector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 0;
+}
+
+.phase-btn {
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: 2px solid var(--glass-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.phase-btn:hover:not(:disabled) {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(30, 144, 255, 0.1);
+}
+
+.phase-btn.active {
+  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  border-color: var(--accent-cyan);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+}
+
+.phase-btn.roadmap:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-style: dashed;
 }
 
 .nav-row {
@@ -294,6 +389,8 @@ const closeMobileMenu = () => {
   align-items: center;
   flex-wrap: wrap;
   row-gap: 4px;
+  min-height: 32px;
+  height: 32px;
 }
 
 .nav-row-divider {
@@ -666,6 +763,46 @@ const closeMobileMenu = () => {
     z-index: 999;
     overflow-y: auto;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .mobile-phase-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .mobile-phase-selector button {
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: 2px solid var(--glass-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+  }
+
+  .mobile-phase-selector button:hover:not(:disabled) {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    background: rgba(30, 144, 255, 0.1);
+  }
+
+  .mobile-phase-selector button.active {
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    border-color: var(--accent-cyan);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+  }
+
+  .mobile-phase-selector button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    border-style: dashed;
   }
 
   .mobile-nav-drawer :deep(a) {
