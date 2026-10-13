@@ -11,8 +11,8 @@ Updated as we go; reviewed in full once all 5 PREPARE features ship.
 |---|---------|--------|-------|
 | PR1 | 7-Day Forecast Dashboard | ✅ DONE | OpenWeatherMap `/data/2.5/forecast`, mock/live pure (0% cross-contamination) |
 | PR7 | Risk Escalation Timeline | ✅ DONE | Reuses PR1's endpoint, no new backend work |
-| PR2 | TBD | ⏳ NEXT | |
-| PR6 | TBD | ⏳ PENDING | |
+| PR2 | Preparedness Action Generator | ✅ DONE | Gemini via existing DecisionSupportService pattern; mock mode now reflects each city's own severity (routine vs. escalating) instead of one static fixture |
+| PR6 | TBD | ⏳ NEXT | |
 | PR4 | TBD | ⏳ PENDING | |
 
 (PR8 deferred earlier for fabrication risk; PR5/PR9/PR10 feasible but unscheduled.)
