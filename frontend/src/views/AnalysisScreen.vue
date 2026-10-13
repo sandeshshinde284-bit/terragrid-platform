@@ -7,12 +7,12 @@
         <div class="phase2-card glass-panel">
           <div class="phase2-icon">🛰️</div>
           <div class="phase2-tag">PHASE 2 ROADMAP</div>
-          <h2>Predictive Cascade & Satellite Analysis</h2>
+          <h2>Satellite Change Detection</h2>
           <p>
-            Multi-spectral satellite change detection, historical RAG incident matching, and predictive cascade modeling are scheduled for delivery in <strong>Phase 2</strong>.
+            Multi-spectral before/after satellite change detection for ground-truth verification is scheduled for delivery in <strong>Phase 2</strong>. Historical incident-matching results aren't surfaced in the UI yet either.
           </p>
           <div class="phase2-note">
-            Real-time multi-hazard disaster monitoring, threat scoring, and AI decision support are fully operational on the <strong>Dashboard</strong> and <strong>Incidents</strong> screens.
+            Predictive cascade modeling is already live — see <strong>Incident Detail → History</strong> tab. Real-time multi-hazard disaster monitoring, threat scoring, and AI decision support are fully operational on the <strong>Dashboard</strong> and <strong>Incidents</strong> screens.
           </div>
           <router-link to="/" class="return-dashboard-btn">
             ← Return to Live Dashboard
