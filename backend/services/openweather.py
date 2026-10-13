@@ -263,8 +263,9 @@ class OpenWeatherService:
             min_temp = float("inf")
             max_temp = float("-inf")
             total_rain = 0.0
-            worst_severity = "low"
-            dominant_weather = "clear"
+            worst_severity = None
+            dominant_weather = None
+            best_rain_for_tiebreak = -1.0
             severity_rank = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 
             for entry in day_entries:
@@ -284,11 +285,31 @@ class OpenWeatherService:
 
                 event_type = weather.get("main", "").lower()
                 description = weather.get("description", "").lower()
+                # OpenWeatherMap's own "weather.main" field (Clear, Clouds, Rain,
+                # Drizzle, Thunderstorm, Snow, Mist...) is already a clean, accurate
+                # label on its own - use it directly for display instead of forcing
+                # it through _map_weather_type(), which is built for *incident*
+                # categorization and collapses any non-severe condition (including
+                # plain "Clear") down to "other".
+                weather_label = weather.get("main", "Unknown")
 
                 severity = cls._determine_severity(event_type, wind_speed, temp, humidity, description)
-                if severity_rank.get(severity, 0) > severity_rank.get(worst_severity, 0):
+
+                # Pick the entry that best represents the day: highest severity first,
+                # and among equally-severe entries (including the common all-"low" day),
+                # the one with the most rain - so a calm-but-rainy day doesn't get
+                # mislabeled "clear" just because nothing crossed a severity threshold.
+                # worst_severity starts as None (not "low") so the first entry always
+                # sets a real, observed weather type instead of a hardcoded default.
+                is_more_severe = worst_severity is None or severity_rank.get(severity, 0) > severity_rank.get(worst_severity, 0)
+                is_tie_but_rainier = severity_rank.get(severity, 0) == severity_rank.get(worst_severity, 0) and rain_mm > best_rain_for_tiebreak
+                if is_more_severe or is_tie_but_rainier:
                     worst_severity = severity
-                    dominant_weather = cls._map_weather_type(event_type, description)
+                    dominant_weather = weather_label
+                    best_rain_for_tiebreak = rain_mm
+
+            worst_severity = worst_severity or "low"
+            dominant_weather = dominant_weather or "Clear"  # only if day_entries was somehow empty
 
             # Map internal severity scale to the UI's YELLOW/ORANGE/RED escalation bands
             risk_level = {
