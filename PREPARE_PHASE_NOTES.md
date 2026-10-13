@@ -1,0 +1,68 @@
+# PREPARE Phase — Build Log & Deferred Decisions
+
+Running notes for the PREPARE phase build (PR1 → PR7 → PR2 → PR6 → PR4).
+Purpose: capture open decisions and ideas raised during the build that we
+deliberately deferred, so nothing discussed gets lost between sessions.
+Updated as we go; reviewed in full once all 5 PREPARE features ship.
+
+## Build order & status
+
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| PR1 | 7-Day Forecast Dashboard | ✅ DONE | OpenWeatherMap `/data/2.5/forecast`, mock/live pure (0% cross-contamination) |
+| PR7 | Risk Escalation Timeline | ✅ DONE | Reuses PR1's endpoint, no new backend work |
+| PR2 | TBD | ⏳ NEXT | |
+| PR6 | TBD | ⏳ PENDING | |
+| PR4 | TBD | ⏳ PENDING | |
+
+(PR8 deferred earlier for fabrication risk; PR5/PR9/PR10 feasible but unscheduled.)
+
+## Deferred decisions — to revisit once PREPARE phase is complete
+
+### 1. Visual design polish pass
+Raised after PR1/PR7 shipped — current UI is functional and verified but has a
+"good, not winning" feel (font sizes, block spacing, overall polish didn't get
+a dedicated pass yet). Scrollbar/flag/wrap issues were fixed reactively as
+found, not as part of a deliberate design pass.
+
+**Recommendation given:** defer a consolidated visual-polish pass to after all
+5 PREPARE features ship, rather than interrupting feature velocity now.
+**Decision:** not explicitly confirmed by Bhai — implicitly deferred by moving
+straight to "next feature."
+
+### 2. AI-generated narrative analysis on the Risk Timeline
+Currently the escalation summary sentence ("Delhi escalates to RED by Day 3...")
+is rule-based templating, not AI. Raised: should Gemini actually analyze the
+5-day pattern (e.g. call out a squall pattern, flag that wind+rain combo is
+more dangerous than rain total alone suggests) instead of/alongside the
+template sentence?
+
+- Does **not** require a database — single-snapshot analysis, same stateless
+  pattern already used in `backend/services/decision_support.py`
+  (Vertex AI Gemini call with `use_mock` fallback).
+- A **database** only becomes necessary for a related but separate idea:
+  trend-over-time analysis ("this forecast got worse since yesterday's check",
+  "this is escalating faster than usual") — that needs stored historical
+  snapshots to compare against, which nothing currently persists.
+
+**Decision:** deferred until after PREPARE phase completes. Revisit then —
+AI-narrative (no DB) is a low-risk upgrade; DB-backed trend analysis is a
+larger, separate feature.
+
+### 3. Forecast data persistence
+Confirmed (by reading the code): `/api/v1/prepare/forecast` does not write to
+the database — every call re-fetches live from OpenWeatherMap (or re-reads
+the mock JSON) from scratch, nothing cached or stored.
+
+Not a problem for the hackathon demo scale, but matters if:
+- Multiple judges/users hit the dashboard simultaneously (repeated live API
+  calls vs. served cache)
+- We want historical trend data (see #2 above — this is the same gap)
+- OpenWeatherMap is unreachable during judging (live mode has no DB fallback
+  to serve from, by design — no silent mock fallback)
+
+**Decision:** deferred, same bucket as #2.
+
+---
+*This file is a working log, not a spec — update it inline as new open
+questions come up during PR2/PR6/PR4, don't wait until the end.*
