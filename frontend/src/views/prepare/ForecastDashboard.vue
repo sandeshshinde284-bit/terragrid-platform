@@ -3,9 +3,32 @@
     <Header />
 
     <div class="forecast-container">
-      <div v-if="loading" class="empty-state glass-panel">
-        <div class="empty-icon">🌦️</div>
-        <h3>Loading 7-day forecast...</h3>
+      <div v-if="loading" class="forecast-skeleton">
+        <div class="skeleton-status">
+          <span class="skeleton-pulse-dot"></span>
+          <span>Fetching 7-day weather forecast...</span>
+        </div>
+
+        <div class="skeleton-hero glass-panel">
+          <div class="sk-line sk-title shimmer"></div>
+          <div class="sk-line sk-subtitle shimmer"></div>
+        </div>
+
+        <div class="skeleton-filters">
+          <div class="sk-chip shimmer" v-for="n in 5" :key="n"></div>
+        </div>
+
+        <div class="skeleton-section" v-for="s in 2" :key="s">
+          <div class="sk-line sk-section-title shimmer"></div>
+          <div class="skeleton-grid">
+            <div class="skeleton-card glass-panel" v-for="n in 3" :key="n">
+              <div class="sk-line sk-card-title shimmer"></div>
+              <div class="skeleton-days">
+                <div class="sk-day shimmer" v-for="d in 5" :key="d"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-else-if="error" class="empty-state glass-panel">
@@ -256,6 +279,136 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Skeleton loading state */
+.forecast-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeleton-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.2px;
+}
+
+.skeleton-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-primary, #38bdf8);
+  box-shadow: 0 0 8px var(--accent-primary, #38bdf8);
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(56, 189, 248, 0.12) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerSweep 1.6s infinite;
+}
+
+@keyframes shimmerSweep {
+  100% { transform: translateX(100%); }
+}
+
+.sk-line {
+  border-radius: 6px;
+}
+
+.skeleton-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+}
+
+.sk-title {
+  width: 220px;
+  height: 22px;
+}
+
+.sk-subtitle {
+  width: 320px;
+  height: 14px;
+}
+
+.skeleton-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sk-chip {
+  width: 100px;
+  height: 32px;
+  border-radius: 20px;
+}
+
+.skeleton-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sk-section-title {
+  width: 160px;
+  height: 16px;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.skeleton-card {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sk-card-title {
+  width: 100px;
+  height: 16px;
+}
+
+.skeleton-days {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sk-day {
+  flex: 1 1 90px;
+  min-width: 90px;
+  height: 64px;
+  border-radius: 10px;
+}
+
 .forecast-screen {
   display: flex;
   flex-direction: column;

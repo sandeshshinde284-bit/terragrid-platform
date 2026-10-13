@@ -3,9 +3,28 @@
     <Header />
 
     <div class="timeline-container">
-      <div v-if="loading" class="empty-state glass-panel">
-        <div class="empty-icon">📈</div>
-        <h3>Loading risk timeline...</h3>
+      <div v-if="loading" class="timeline-skeleton">
+        <div class="skeleton-hero glass-panel">
+          <div class="sk-line sk-title shimmer"></div>
+          <div class="sk-line sk-subtitle shimmer"></div>
+          <div class="sk-select shimmer"></div>
+        </div>
+
+        <div class="sk-line sk-summary shimmer"></div>
+
+        <div class="skeleton-strip glass-panel">
+          <div class="skeleton-track">
+            <template v-for="n in 5" :key="n">
+              <div class="sk-node">
+                <div class="sk-line sk-day-label shimmer"></div>
+                <div class="sk-dot shimmer"></div>
+                <div class="sk-line sk-risk-label shimmer"></div>
+                <div class="sk-line sk-weather shimmer"></div>
+              </div>
+              <div v-if="n < 5" class="sk-connector shimmer"></div>
+            </template>
+          </div>
+        </div>
       </div>
 
       <div v-else-if="error" class="empty-state glass-panel">
@@ -212,6 +231,116 @@ watch(cities, (newCities) => {
 </script>
 
 <style scoped>
+/* Skeleton loading state */
+.timeline-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(56, 189, 248, 0.12) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerSweep 1.6s infinite;
+}
+
+@keyframes shimmerSweep {
+  100% { transform: translateX(100%); }
+}
+
+.sk-line {
+  border-radius: 6px;
+}
+
+.skeleton-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+}
+
+.sk-title {
+  width: 260px;
+  height: 22px;
+}
+
+.sk-subtitle {
+  width: 360px;
+  height: 14px;
+}
+
+.sk-select {
+  width: 240px;
+  height: 36px;
+  border-radius: 8px;
+  margin-top: 4px;
+}
+
+.sk-summary {
+  width: 100%;
+  height: 52px;
+  border-radius: 10px;
+}
+
+.skeleton-strip {
+  padding: 32px 24px;
+  overflow: hidden;
+}
+
+.skeleton-track {
+  display: flex;
+  align-items: center;
+}
+
+.sk-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 110px;
+}
+
+.sk-day-label {
+  width: 50px;
+  height: 11px;
+}
+
+.sk-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.sk-risk-label {
+  width: 60px;
+  height: 12px;
+}
+
+.sk-weather {
+  width: 70px;
+  height: 12px;
+}
+
+.sk-connector {
+  flex: 1;
+  height: 2px;
+  min-width: 20px;
+}
+
 .timeline-screen {
   display: flex;
   flex-direction: column;
