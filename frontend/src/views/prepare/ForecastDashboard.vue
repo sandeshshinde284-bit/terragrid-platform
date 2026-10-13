@@ -24,7 +24,7 @@
         <div class="forecast-hero glass-panel">
           <div class="hero-left">
             <h2>7-Day Risk Escalation</h2>
-            <span class="hero-meta">{{ cities.length }} monitored {{ cities.length === 1 ? 'city' : 'cities' }} across {{ countryGroups.length }} {{ countryGroups.length === 1 ? 'country' : 'countries' }} · OpenWeatherMap 5-day/3-hour forecast</span>
+            <span class="hero-meta">{{ cities.length }} cities monitored · updated from OpenWeatherMap</span>
           </div>
           <div class="hero-summary">
             <div v-for="level in ['RED', 'ORANGE', 'YELLOW', 'GREEN']" :key="level" class="summary-pill" :class="level.toLowerCase()">
@@ -34,8 +34,27 @@
           </div>
         </div>
 
+        <div class="country-filter">
+          <button
+            class="filter-chip"
+            :class="{ active: selectedCountry === 'ALL' }"
+            @click="selectedCountry = 'ALL'"
+          >
+            All <span class="filter-count">{{ cities.length }}</span>
+          </button>
+          <button
+            v-for="group in countryGroups"
+            :key="group.country"
+            class="filter-chip"
+            :class="{ active: selectedCountry === group.country, [group.worstRisk.toLowerCase()]: true }"
+            @click="selectedCountry = group.country"
+          >
+            {{ countryMeta(group.country).flag }} {{ countryMeta(group.country).name }} <span class="filter-count">{{ group.cities.length }}</span>
+          </button>
+        </div>
+
         <div class="country-sections">
-          <section v-for="group in countryGroups" :key="group.country" class="country-section">
+          <section v-for="group in filteredGroups" :key="group.country" class="country-section">
             <div class="country-header" :class="group.worstRisk.toLowerCase()">
               <span class="country-flag">{{ countryMeta(group.country).flag }}</span>
               <span class="country-name">{{ countryMeta(group.country).name }}</span>
@@ -181,6 +200,13 @@ const countryGroups = computed<CountryGroup[]>(() => {
   })
 })
 
+const selectedCountry = ref<string>('ALL')
+
+const filteredGroups = computed<CountryGroup[]>(() => {
+  if (selectedCountry.value === 'ALL') return countryGroups.value
+  return countryGroups.value.filter(g => g.country === selectedCountry.value)
+})
+
 const riskCounts = computed(() => {
   const counts: Record<string, number> = { RED: 0, ORANGE: 0, YELLOW: 0, GREEN: 0 }
   for (const city of cities.value) {
@@ -300,6 +326,49 @@ onMounted(async () => {
 .summary-pill.orange { background: rgba(249, 115, 22, 0.12); border-color: rgba(249, 115, 22, 0.4); color: #f97316; }
 .summary-pill.yellow { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.4); color: #eab308; }
 .summary-pill.green { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.4); color: #22c55e; }
+
+/* ---- Country filter ---- */
+
+.country-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-chip:hover {
+  border-color: var(--accent-cyan);
+  color: var(--text-primary);
+}
+
+.filter-chip.active {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  color: #04141a;
+}
+
+.filter-chip .filter-count {
+  opacity: 0.7;
+  font-size: 11px;
+}
+
+.filter-chip.active .filter-count {
+  opacity: 0.8;
+}
 
 /* ---- Country sections ---- */
 
