@@ -406,9 +406,10 @@ const closeMobileMenu = () => {
   font-size: 12px;
   font-weight: 600;
   padding: 6px 10px;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: all 0.2s ease;
-  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
   white-space: nowrap;
   position: relative;
 }

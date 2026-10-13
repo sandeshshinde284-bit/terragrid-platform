@@ -43,6 +43,7 @@
 
       <header class="detail-header sticky-header">
         <div class="header-navigation">
+          <span class="phase-indicator-badge">RESPONSE</span>
           <button class="primary-back-btn" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">
             <span class="back-arrow">←</span>
             <span class="back-text">Incidents Console</span>
@@ -777,6 +778,17 @@ function getCascadeColorHex(colorCode?: string): string {
 .back-button:hover, .ghost-button:hover { border-color: #0ea5e9; color: #7dd3fc; box-shadow: 0 0 16px rgba(14,165,233,.2); }
 .breadcrumb-separator { color: #475569; }.breadcrumb-current { color: #94a3b8; font-size: 18px; }
 .primary-button { background: #0ea5e9; border-color: #38bdf8; color: #03111b; font-weight: 700; }.primary-button:hover { background: #38bdf8; box-shadow: 0 0 22px rgba(14,165,233,.45); }
+.phase-indicator-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  border-radius: 5px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
 .incident-hero {
   display: flex;
   justify-content: space-between;
