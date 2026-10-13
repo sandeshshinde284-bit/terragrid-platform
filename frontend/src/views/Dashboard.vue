@@ -593,9 +593,7 @@ watch(
         loadingPhaseIndex.value = (loadingPhaseIndex.value + 1) % loadingPhases.length
       }, 850)
       
-      const host = window.location.hostname === 'localhost'
-        ? 'http://localhost:8000'
-        : window.location.origin
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
         
       const response = await fetch(`${host}/api/v1/incidents/${newId}/insights`)
       if (response.ok) {

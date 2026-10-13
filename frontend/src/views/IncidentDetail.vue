@@ -424,8 +424,6 @@ async function launchDeepAnalysis() {
   isAnalyzingDossier.value = true
   scannerActive.value = true
   currentStepIndex.value = 0
-
-  // Animate the neural scanner steps
   const stepInterval = setInterval(() => {
     if (currentStepIndex.value < analysisSteps.length - 1) {
       currentStepIndex.value++
@@ -433,7 +431,8 @@ async function launchDeepAnalysis() {
   }, 1100)
 
   try {
-    const res = await fetch(`/api/v1/incidents/${incidentId.value}/deep-analysis`, {
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const res = await fetch(`${host}/api/v1/incidents/${incidentId.value}/deep-analysis`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     })
@@ -457,7 +456,8 @@ async function launchDeepAnalysis() {
 async function checkExistingDossier() {
   if (!incidentId.value) return
   try {
-    const res = await fetch(`/api/v1/incidents/${incidentId.value}/deep-dossier`)
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const res = await fetch(`${host}/api/v1/incidents/${incidentId.value}/deep-dossier`)
     if (res.ok) {
       const data = await res.json()
       if (data.dossier) {
