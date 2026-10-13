@@ -1,15 +1,489 @@
 <template>
-  <div class="prepare-screen">
+  <div class="prepare-screen timeline-screen">
     <Header />
-    <PreparePlaceholder
-      icon="📈"
-      title="Risk Escalation Timeline"
-      description="Day-by-day escalation view ('Day 5: YELLOW, Day 3: ORANGE, Day 1: RED') built from the 7-Day Forecast Dashboard's real data. Depends on PR1 shipping first."
-    />
+
+    <div class="timeline-container">
+      <div v-if="loading" class="empty-state glass-panel">
+        <div class="empty-icon">📈</div>
+        <h3>Loading risk timeline...</h3>
+      </div>
+
+      <div v-else-if="error" class="empty-state glass-panel">
+        <div class="empty-icon">⚠️</div>
+        <h3>Couldn't load the timeline</h3>
+        <p>{{ error }}</p>
+      </div>
+
+      <div v-else-if="cities.length === 0" class="empty-state glass-panel">
+        <div class="empty-icon">📈</div>
+        <h3>No forecast data yet</h3>
+        <p>This builds directly on the 7-Day Forecast Dashboard's data. If OPENWEATHERMAP_API_KEY isn't set on the backend, there's nothing to show yet.</p>
+      </div>
+
+      <template v-else>
+        <div class="timeline-hero glass-panel">
+          <div class="hero-left">
+            <h2>Risk Escalation Timeline</h2>
+            <span class="hero-meta">How risk builds day by day for a single location, from the same 7-day forecast</span>
+          </div>
+          <select v-model="selectedKey" class="city-select">
+            <option v-for="city in sortedCities" :key="cityKey(city)" :value="cityKey(city)">
+              {{ city.city }}, {{ countryName(city.country) }} - worst: {{ worstRisk(city) }}
+            </option>
+          </select>
+        </div>
+
+        <div v-if="selectedCity" class="escalation-summary glass-panel" :class="summary.toneClass">
+          <span class="summary-icon">{{ summary.icon }}</span>
+          <span class="summary-text">{{ summary.text }}</span>
+        </div>
+
+        <div v-if="selectedCity" class="timeline-strip glass-panel">
+          <div class="timeline-track">
+            <template v-for="(day, index) in selectedCity.daily" :key="day.date">
+              <div class="timeline-node">
+                <span class="node-day-label">Day {{ index + 1 }}</span>
+                <span class="node-date">{{ formatDay(day.date) }}</span>
+                <div class="node-dot-wrap">
+                  <div class="node-dot" :class="day.risk_level.toLowerCase()">
+                    <span class="node-dot-inner"></span>
+                  </div>
+                </div>
+                <span class="node-risk-label" :class="day.risk_level.toLowerCase()">{{ day.risk_level }}</span>
+                <span class="node-weather">{{ weatherIcon(day.dominant_weather) }} {{ day.dominant_weather }}</span>
+                <span class="node-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
+              </div>
+              <div
+                v-if="index < selectedCity.daily.length - 1"
+                class="timeline-connector"
+                :class="[day.risk_level.toLowerCase(), connectorTrend(day.risk_level, selectedCity.daily[index + 1].risk_level)]"
+              ></div>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
 import Header from '@/components/organisms/Header.vue'
-import PreparePlaceholder from '@/components/molecules/PreparePlaceholder.vue'
+import { useMockMode } from '@/composables/useMockMode'
+
+interface DailyForecast {
+  date: string
+  risk_level: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
+  dominant_weather: string
+  max_wind_ms: number
+  min_temp_c: number | null
+  max_temp_c: number | null
+  total_rain_mm: number
+}
+
+interface CityForecast {
+  city: string
+  country: string
+  latitude: number
+  longitude: number
+  source: string
+  daily: DailyForecast[]
+}
+
+const { fetchWithMockMode } = useMockMode()
+
+const cities = ref<CityForecast[]>([])
+const loading = ref(true)
+const error = ref('')
+const selectedKey = ref('')
+
+const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
+
+const COUNTRY_NAMES: Record<string, string> = {
+  IN: 'India', NP: 'Nepal', CN: 'China', HK: 'Hong Kong', BD: 'Bangladesh',
+  PK: 'Pakistan', TH: 'Thailand', VN: 'Vietnam', SG: 'Singapore', MY: 'Malaysia',
+  IQ: 'Iraq', AE: 'UAE', ET: 'Ethiopia', KE: 'Kenya', RW: 'Rwanda', US: 'United States',
+}
+const countryName = (code: string) => COUNTRY_NAMES[code] || code
+
+const WEATHER_ICONS: Record<string, string> = {
+  clear: '☀️', clouds: '☁️', rain: '🌧️', drizzle: '🌦️', thunderstorm: '⛈️',
+  snow: '❄️', mist: '🌫️', fog: '🌫️', haze: '🌫️', smoke: '🌫️',
+  dust: '🌪️', sand: '🌪️', ash: '🌋', squall: '💨', tornado: '🌪️',
+}
+const weatherIcon = (label: string) => WEATHER_ICONS[(label || '').toLowerCase()] || '🌡️'
+
+const cityKey = (city: CityForecast) => `${city.city}-${city.country}`
+
+const worstRisk = (city: CityForecast): string => {
+  return city.daily.reduce((worst, day) => (RISK_RANK[day.risk_level] > RISK_RANK[worst] ? day.risk_level : worst), 'GREEN')
+}
+
+// Worst-risk cities first, so the default selection (and the top of the
+// dropdown) is whatever actually needs attention, not an alphabetical pick.
+const sortedCities = computed(() => {
+  return [...cities.value].sort((a, b) => RISK_RANK[worstRisk(b)] - RISK_RANK[worstRisk(a)])
+})
+
+const selectedCity = computed<CityForecast | null>(() => {
+  return cities.value.find(c => cityKey(c) === selectedKey.value) || null
+})
+
+const formatDay = (dateStr: string): string => {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+// A connector is "rising" if risk increases from one day to the next, "falling"
+// if it eases, "flat" otherwise - drives the connector's color/thickness so the
+// trajectory itself (not just each day's color) reads at a glance.
+const connectorTrend = (from: string, to: string): string => {
+  const diff = RISK_RANK[to] - RISK_RANK[from]
+  if (diff > 0) return 'rising'
+  if (diff < 0) return 'falling'
+  return 'flat'
+}
+
+// Plain-language summary of the whole trajectory: when risk peaks, what it
+// peaks at, and whether it's still climbing, already past its peak, or flat
+// the entire week - the actual "Day 5: YELLOW, Day 3: ORANGE, Day 1: RED"
+// escalation story PR7 is meant to tell, derived from real forecast data.
+const summary = computed(() => {
+  const city = selectedCity.value
+  if (!city || city.daily.length === 0) {
+    return { text: '', icon: '📈', toneClass: 'green' }
+  }
+
+  const daily = city.daily
+  let peakIndex = 0
+  for (let i = 1; i < daily.length; i++) {
+    if (RISK_RANK[daily[i].risk_level] > RISK_RANK[daily[peakIndex].risk_level]) peakIndex = i
+  }
+  const peak = daily[peakIndex]
+  const peakLabel = `Day ${peakIndex + 1} (${formatDay(peak.date)})`
+
+  if (peak.risk_level === 'GREEN') {
+    return { text: `${city.city} stays GREEN across all ${daily.length} days - no escalation expected.`, icon: '✅', toneClass: 'green' }
+  }
+
+  const isStillRising = peakIndex === daily.length - 1 && RISK_RANK[peak.risk_level] > RISK_RANK[daily[0].risk_level]
+  const afterPeakEases = peakIndex < daily.length - 1 && RISK_RANK[daily[daily.length - 1].risk_level] < RISK_RANK[peak.risk_level]
+
+  let trendText = ''
+  if (isStillRising) trendText = 'and is still climbing at the end of the window'
+  else if (afterPeakEases) trendText = `then eases back to ${daily[daily.length - 1].risk_level} by Day ${daily.length}`
+  else trendText = 'then holds'
+
+  return {
+    text: `${city.city} escalates to ${peak.risk_level} by ${peakLabel} - ${peak.dominant_weather.toLowerCase()}, ${peak.total_rain_mm.toFixed(0)}mm expected - ${trendText}.`,
+    icon: peak.risk_level === 'RED' ? '🔴' : peak.risk_level === 'ORANGE' ? '🟠' : '🟡',
+    toneClass: peak.risk_level.toLowerCase(),
+  }
+})
+
+onMounted(async () => {
+  try {
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const response = await fetchWithMockMode(`${host}/api/v1/prepare/forecast`)
+
+    if (!response.ok) {
+      throw new Error(`Backend returned ${response.status}`)
+    }
+
+    const json = await response.json()
+    cities.value = json.data || []
+
+    if (cities.value.length > 0) {
+      selectedKey.value = cityKey(sortedCities.value[0])
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Unknown error fetching forecast'
+  } finally {
+    loading.value = false
+  }
+})
+
+// Guard against the selected city disappearing from a future fetch (data refresh).
+watch(cities, (newCities) => {
+  if (newCities.length > 0 && !selectedCity.value) {
+    selectedKey.value = cityKey(sortedCities.value[0])
+  }
+})
 </script>
+
+<style scoped>
+.timeline-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  padding: 16px;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.timeline-hero {
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08), rgba(59, 130, 246, 0.04));
+}
+
+.hero-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hero-left h2 {
+  margin: 0;
+  font-size: 20px;
+  background: linear-gradient(90deg, var(--accent-cyan), #60a5fa);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.city-select {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 260px;
+}
+
+.escalation-summary {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-left: 4px solid var(--glass-border);
+}
+
+.escalation-summary.green { border-left-color: #22c55e; }
+.escalation-summary.yellow { border-left-color: #eab308; }
+.escalation-summary.orange { border-left-color: #f97316; }
+.escalation-summary.red { border-left-color: #ef4444; }
+
+.summary-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.summary-text {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.timeline-strip {
+  padding: 32px 24px;
+  overflow-x: auto;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary, #22d3ee) transparent;
+}
+
+.timeline-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.timeline-strip::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.timeline-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-strip::-webkit-scrollbar-thumb {
+  background: var(--accent-primary, #22d3ee);
+  border-radius: 3px;
+}
+
+.timeline-track {
+  display: flex;
+  align-items: flex-start;
+  min-width: min-content;
+}
+
+.timeline-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 110px;
+  text-align: center;
+}
+
+.node-day-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.node-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.node-dot-wrap {
+  padding: 8px 0;
+}
+
+.node-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid currentColor;
+}
+
+.node-dot-inner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.node-dot.green { color: #22c55e; box-shadow: 0 0 12px rgba(34, 197, 94, 0.3); }
+.node-dot.yellow { color: #eab308; box-shadow: 0 0 12px rgba(234, 179, 8, 0.35); }
+.node-dot.orange { color: #f97316; box-shadow: 0 0 14px rgba(249, 115, 22, 0.4); }
+.node-dot.red { color: #ef4444; box-shadow: 0 0 16px rgba(239, 68, 68, 0.5); }
+
+.node-risk-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.node-risk-label.green { color: #22c55e; }
+.node-risk-label.yellow { color: #eab308; }
+.node-risk-label.orange { color: #f97316; }
+.node-risk-label.red { color: #ef4444; }
+
+.node-weather {
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.node-metrics {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.timeline-connector {
+  height: 3px;
+  flex: 1;
+  min-width: 40px;
+  margin-top: 55px;
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+.timeline-connector.green { background: #22c55e; }
+.timeline-connector.yellow { background: #eab308; }
+.timeline-connector.orange { background: #f97316; }
+.timeline-connector.red { background: #ef4444; }
+
+.timeline-connector.rising { opacity: 1; height: 4px; }
+.timeline-connector.falling { opacity: 0.35; }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  gap: 16px;
+  margin: auto;
+}
+
+.empty-icon {
+  font-size: 64px;
+}
+
+.empty-state h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  max-width: 420px;
+}
+
+@media (max-width: 768px) {
+  .timeline-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .city-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .timeline-node {
+    min-width: 90px;
+  }
+}
+
+@media (max-width: 480px) {
+  .timeline-screen {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .timeline-container {
+    gap: 12px;
+  }
+
+  .timeline-strip {
+    padding: 20px 12px;
+  }
+
+  .timeline-strip::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 6px;
+    width: 32px;
+    background: linear-gradient(to right, transparent, rgba(10, 14, 22, 0.85));
+    pointer-events: none;
+  }
+}
+</style>
