@@ -15,30 +15,32 @@
         <h1>TERRAGRID INTELLIGENCE</h1>
       </div>
       <nav class="nav-menu">
-        <div class="nav-group">
-          <span class="nav-group-label">Prepare</span>
-          <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ Forecast</RouterLink>
-          <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 Risk Timeline</RouterLink>
-          <RouterLink to="/prepare/checklist" :class="{ active: isActive('/prepare/checklist') }">✅ Checklist</RouterLink>
-          <RouterLink to="/prepare/agency-alerts" :class="{ active: isActive('/prepare/agency-alerts') }">📨 Agency Alerts</RouterLink>
+        <div class="nav-row">
+          <div class="nav-group">
+            <span class="nav-group-label">Prepare</span>
+            <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ Forecast</RouterLink>
+            <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 Risk Timeline</RouterLink>
+            <RouterLink to="/prepare/checklist" :class="{ active: isActive('/prepare/checklist') }">✅ Checklist</RouterLink>
+            <RouterLink to="/prepare/agency-alerts" :class="{ active: isActive('/prepare/agency-alerts') }">📨 Agency Alerts</RouterLink>
+          </div>
         </div>
 
-        <div class="nav-divider"></div>
+        <div class="nav-row">
+          <div class="nav-group">
+            <span class="nav-group-label">Response</span>
+            <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
+            <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
+            <RouterLink to="/map" :class="{ active: isActive('/map') }">◎ Live Map</RouterLink>
+            <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">⌁ Deep Analysis</RouterLink>
+            <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
+          </div>
 
-        <div class="nav-group">
-          <span class="nav-group-label">Response</span>
-          <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
-          <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
-          <RouterLink to="/map" :class="{ active: isActive('/map') }">◎ Live Map</RouterLink>
-          <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">⌁ Deep Analysis</RouterLink>
-          <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
-        </div>
+          <div class="nav-divider"></div>
 
-        <div class="nav-divider"></div>
-
-        <div class="nav-group nav-group-disabled" title="Roadmap — not part of this prototype">
-          <span class="nav-group-label">Predict · Recover</span>
-          <span class="nav-roadmap-badge">Roadmap</span>
+          <div class="nav-group nav-group-disabled" title="Roadmap — not part of this prototype">
+            <span class="nav-group-label">Predict · Recover</span>
+            <span class="nav-roadmap-badge">Roadmap</span>
+          </div>
         </div>
       </nav>
     </div>
@@ -280,10 +282,16 @@ const closeMobileMenu = () => {
 
 .nav-menu {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-row {
+  display: flex;
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
-  row-gap: 6px;
+  row-gap: 4px;
 }
 
 .nav-menu :deep(a) {
