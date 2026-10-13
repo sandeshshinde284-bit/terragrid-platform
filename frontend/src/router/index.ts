@@ -64,6 +64,47 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: false,
     },
   },
+  // ---- PREPARE phase routes (added for Phase 2) ----
+  {
+    path: '/prepare/forecast',
+    name: 'PrepareForecast',
+    component: () => import('@/views/prepare/ForecastDashboard.vue'),
+    meta: {
+      title: '7-Day Forecast - TerraGrid',
+      requiresAuth: false,
+      phase: 'prepare',
+    },
+  },
+  {
+    path: '/prepare/risk-timeline',
+    name: 'PrepareRiskTimeline',
+    component: () => import('@/views/prepare/RiskTimeline.vue'),
+    meta: {
+      title: 'Risk Escalation Timeline - TerraGrid',
+      requiresAuth: false,
+      phase: 'prepare',
+    },
+  },
+  {
+    path: '/prepare/checklist',
+    name: 'PrepareChecklist',
+    component: () => import('@/views/prepare/PreparednessChecklist.vue'),
+    meta: {
+      title: 'Preparedness Checklist - TerraGrid',
+      requiresAuth: false,
+      phase: 'prepare',
+    },
+  },
+  {
+    path: '/prepare/agency-alerts',
+    name: 'PrepareAgencyAlerts',
+    component: () => import('@/views/prepare/AgencyAlerts.vue'),
+    meta: {
+      title: 'Agency Alert Templates - TerraGrid',
+      requiresAuth: false,
+      phase: 'prepare',
+    },
+  },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
