@@ -247,7 +247,16 @@ async def get_mock_mode():
 
 
 @router.post("/config/mock-mode")
-async def set_mock_mode(enabled: bool = Query(True, description="Enable or disable mock data")):
+async def set_mock_mode(
+    enabled: bool = Query(True, description="Enable or disable mock data"),
+    admin_token: str = Query(None, description="Admin token required")
+):
+    from fastapi import HTTPException, status
+    if admin_token != settings.ADMIN_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin authorization required to toggle global mock mode"
+        )
     """
     Enable or disable global mock data mode
     

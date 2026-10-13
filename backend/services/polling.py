@@ -118,8 +118,7 @@ class BackgroundPollingService:
 
             with SessionLocal() as db_session:
                 result = await self.data_ingestion_service.ingest_all_sources(
-                    use_mock=False, 
-                    db_session=db_session
+                    use_mock=settings.USE_MOCK_DATA, db_session=db_session
                 )
 
             new_incidents = result.get("events", [])

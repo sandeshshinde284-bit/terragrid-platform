@@ -1236,7 +1236,7 @@ onMounted(async () => {
                 forecast6h: impact.forecast_6h_km2 ?? 31.2,
                 coordinates: [event.latitude, event.longitude] as [number, number],
                 source: source,
-                confidence: event.confidence || event.data?.confidence || Math.random() * (0.95 - 0.75) + 0.75,
+                confidence: event.confidence || event.data?.confidence || 0,
                 event_timestamp: event.event_timestamp || event.created_at || Date.now(),
                 data: event.data || {},
               }

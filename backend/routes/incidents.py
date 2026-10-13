@@ -399,7 +399,7 @@ async def get_incident_insights(
             "incident_id": incident_id,
             "location": incident.location_name,
             "plan": plan,
-            "is_mock": use_mock
+            "is_mock": use_mock or bool(plan.get("is_fallback"))
         }
     except HTTPException:
         raise
@@ -471,7 +471,7 @@ async def generate_deep_incident_analysis(
             "incident_id": incident_id,
             "location": incident.location_name,
             "dossier": dossier,
-            "is_mock": use_mock
+            "is_mock": use_mock or bool(dossier.get("is_fallback"))
         }
     except HTTPException:
         raise
