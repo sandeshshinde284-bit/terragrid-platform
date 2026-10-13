@@ -5,7 +5,7 @@ import math
 import logging
 from typing import Dict, Any, List, Optional
 
-from .prompt_schemas import DEEP_DOSSIER_SCHEMA_TEXT, RESPONSE_PLAN_SCHEMA_TEXT, PREPAREDNESS_ACTIONS_SCHEMA_TEXT
+from .prompt_schemas import DEEP_DOSSIER_SCHEMA_TEXT, RESPONSE_PLAN_SCHEMA_TEXT, PREPAREDNESS_ACTIONS_SCHEMA_TEXT, AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT
 from .location_context import get_location_context
 
 logger = logging.getLogger(__name__)
@@ -300,6 +300,120 @@ class DecisionSupportService:
             logger.warning("Vertex AI preparedness action generation failed. Returning offline fallback.")
 
         return fallback_actions
+
+    def generate_agency_alerts(self, city_forecast: Dict[str, Any], use_mock: bool = False) -> Dict[str, Any]:
+        """
+        PR4: Agency Alert Templates (PREPARE phase).
+        Given a single city's 5-day forecast, generates distinct, audience-
+        appropriate alert messages for four agency types - FARMERS, HOSPITALS,
+        NGOS, MUNICIPAL_CORPS - each with its own channel, length, vocabulary
+        and tone, rather than one generic broadcast reused for everyone.
+
+        Args:
+            city_forecast: One city's entry from OpenWeatherService.fetch_forecast(),
+                i.e. {city, country, latitude, longitude, daily: [...]}.
+            use_mock: If True, bypasses Gemini and returns a rich fabricated
+                demonstration alert set.
+
+        Returns:
+            {risk_context, alerts: [{audience, channel, headline, message,
+             tone_rationale}], ai_available, is_fallback, is_mock_demo}
+        """
+        from .mock_data_loader import MockDataLoader
+
+        city = city_forecast.get("city", "Unknown City")
+        country = city_forecast.get("country", "")
+        daily = city_forecast.get("daily", [])
+
+        fallback_alerts = MockDataLoader.load_fallback_agency_alerts()
+
+        if use_mock:
+            # Mock mode still reflects the selected city's actual (mock) risk
+            # level, so switching cities doesn't show a RED thunderstorm alert
+            # set for a city whose own forecast is all GREEN.
+            severity_rank = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
+            is_routine = not daily or all(severity_rank.get(d.get("risk_level", "GREEN"), 0) == 0 for d in daily)
+            mock_alerts = MockDataLoader.load_mock_agency_alerts(routine=is_routine)
+            logger.info(f"Returning rich mock agency alerts for {city} (routine={is_routine})")
+            return mock_alerts
+
+        if not daily:
+            logger.warning(f"No forecast days available for {city}, {country} - cannot generate alerts.")
+            return fallback_alerts
+
+        if not self.model:
+            return fallback_alerts
+
+        try:
+            severity_rank = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
+            peak_day = max(daily, key=lambda d: severity_rank.get(d.get("risk_level", "GREEN"), 0))
+            peak_index = daily.index(peak_day) + 1
+
+            forecast_lines = "\n            ".join([
+                f"- Day {i + 1} ({d.get('date')}): {d.get('risk_level')} - {d.get('dominant_weather')}, "
+                f"{d.get('total_rain_mm', 0):.0f}mm rain, {d.get('max_wind_ms', 0):.0f}m/s wind, "
+                f"{d.get('min_temp_c', 0):.0f}-{d.get('max_temp_c', 0):.0f}C"
+                for i, d in enumerate(daily)
+            ])
+
+            prompt = f"""
+            You are a Senior Public Communications Officer operating the TerraGrid Intelligence System.
+            Given the 5-day risk escalation forecast below for {city}, {country}, draft FOUR distinct
+            alert messages warning different audiences about the SAME risk - one each for FARMERS,
+            HOSPITALS, NGOS, and MUNICIPAL_CORPS.
+
+            5-DAY FORECAST:
+            {forecast_lines}
+
+            PEAK RISK: Day {peak_index} ({peak_day.get('risk_level')}, {peak_day.get('dominant_weather')},
+            {peak_day.get('total_rain_mm', 0):.0f}mm rain, {peak_day.get('max_wind_ms', 0):.0f}m/s wind)
+
+            STRICT OPERATIONAL DIRECTIVES:
+            1. Each audience gets ONE alert. Do not merge audiences or skip one.
+            2. FARMERS: short, plain-language SMS. Concrete deadlines (today/tomorrow/day names),
+               practical field actions (harvest, livestock, avoid fields). No jargon.
+            3. HOSPITALS: clinical/operational tone. Specific protocol names, stock categories,
+               the clinical risk pathway driving admission surge. Written as an internal ops bulletin.
+            4. NGOS: coordination-level detail. Resource categories, timing windows, which partner
+               agency to align staging with. Written as a coordination brief.
+            5. MUNICIPAL_CORPS: numbered, directive-style public safety advisory covering both
+               internal infrastructure actions and the public-facing warning they must issue.
+            6. Every message must cite the SAME underlying forecast numbers (rain, wind, which day)
+               translated into that audience's own vocabulary - not generic weather language.
+            7. If every day is GREEN (no material risk), all four alerts should be low-key routine
+               status updates, not an invented crisis.
+            8. Return a clean JSON object matching THIS EXACT schema:
+            {AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT}
+
+            Return ONLY the JSON object. Do not wrap in markdown code blocks.
+            """
+
+            logger.info(f"[GEMINI PROMPT - Agency Alerts] City: {city}, {country}, Peak: Day {peak_index} ({peak_day.get('risk_level')})")
+            logger.debug(f"[GEMINI PROMPT FULL]\n{prompt}")
+
+            response = self.model.generate_content(prompt)
+            if response and response.text:
+                logger.debug(f"[GEMINI RESPONSE RAW]\n{response.text}")
+
+                cleaned_text = response.text.strip()
+                if cleaned_text.startswith("```json"):
+                    cleaned_text = cleaned_text[7:]
+                if cleaned_text.endswith("```"):
+                    cleaned_text = cleaned_text[:-3]
+                cleaned_text = cleaned_text.strip()
+
+                alerts_plan = json.loads(cleaned_text)
+                alerts_plan["ai_available"] = True
+                alerts_plan["is_fallback"] = False
+                alerts_plan["is_mock_demo"] = False
+                logger.info(f"Generated AI agency alerts for {city}, {country} via Vertex AI. Alerts: {len(alerts_plan.get('alerts', []))}")
+                return alerts_plan
+
+        except Exception as e:
+            logger.exception(f"Agency alert generation failed for {city}: {type(e).__name__} - {str(e)}")
+            logger.warning("Vertex AI agency alert generation failed. Returning offline fallback.")
+
+        return fallback_alerts
 
     def generate_deep_tactical_dossier(self, event_data: Dict[str, Any], use_mock: bool = False, db_session=None) -> Dict[str, Any]:
         """

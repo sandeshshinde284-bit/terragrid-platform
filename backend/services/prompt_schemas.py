@@ -181,3 +181,18 @@ PREPAREDNESS_ACTIONS_SCHEMA_TEXT = """
   ]
 }
 """
+
+AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT = """
+{
+  "risk_context": "string (1-2 sentence summary of the escalation window these alerts are warning about)",
+  "alerts": [
+    {
+      "audience": "string (enum: FARMERS, HOSPITALS, NGOS, MUNICIPAL_CORPS)",
+      "channel": "string (the realistic delivery channel for this audience - e.g. 'SMS Broadcast', 'Radio Advisory', 'Hospital Ops Bulletin', 'NGO Coordination Brief', 'Public Safety Advisory')",
+      "headline": "string (under 10 words, audience-appropriate urgency)",
+      "message": "string (the actual message body - length, vocabulary, and tone MUST fit the audience: short plain-language SMS for farmers, clinical/operational for hospitals, coordination-focused for NGOs, directive/public-safety for municipal corps)",
+      "tone_rationale": "string (1 sentence - why this length/tone/channel fits this specific audience)"
+    }
+  ]
+}
+"""

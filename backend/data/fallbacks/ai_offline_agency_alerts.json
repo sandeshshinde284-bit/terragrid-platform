@@ -1,0 +1,12 @@
+{
+  "risk_context": "AI ALERT GENERATION OFFLINE: Automated per-audience alert drafting is currently unavailable. Please issue alerts manually using established agency protocols for the current forecast risk level.",
+  "alerts": [
+    {
+      "audience": "MUNICIPAL_CORPS",
+      "channel": "Public Safety Advisory",
+      "headline": "Automated alert drafting unavailable",
+      "message": "Automated, audience-specific alert drafting is unavailable. Please issue advisories manually using established protocols for the current forecast risk level.",
+      "tone_rationale": "Automated, forecast-specific alert generation is unavailable - fall back to manual drafting until service is restored."
+    }
+  ]
+}

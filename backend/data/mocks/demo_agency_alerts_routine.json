@@ -1,0 +1,33 @@
+{
+  "risk_context": "MOCK DEMONSTRATION MODE: No material risk escalation forecast across the 5-day window - routine advisories only.",
+  "alerts": [
+    {
+      "audience": "FARMERS",
+      "channel": "SMS Broadcast",
+      "headline": "No severe weather expected this week",
+      "message": "WEATHER UPDATE: No severe weather expected over the next 5 days. Normal farming activity can continue. We'll alert you immediately if conditions change.",
+      "tone_rationale": "A short reassurance SMS, matching the low-key channel farmers already expect, without implying urgency that isn't there."
+    },
+    {
+      "audience": "HOSPITALS",
+      "channel": "Hospital Ops Bulletin",
+      "headline": "Routine conditions - no protocol activation needed",
+      "message": "OPS BULLETIN: Forecast shows no material risk escalation over the next 5 days. No flood-response protocol activation required. Maintain standard readiness levels.",
+      "tone_rationale": "Operational staff still need a formal all-clear bulletin so standing protocols are explicitly stood down, not just silence."
+    },
+    {
+      "audience": "NGOS",
+      "channel": "NGO Coordination Brief",
+      "headline": "No pre-positioning required this week",
+      "message": "COORDINATION BRIEF: No material risk escalation forecast for the next 5 days. No relief resource pre-positioning required at this time. Routine monitoring continues.",
+      "tone_rationale": "A brief routine status update keeps coordination partners informed without consuming a mobilization response."
+    },
+    {
+      "audience": "MUNICIPAL_CORPS",
+      "channel": "Public Safety Advisory",
+      "headline": "Routine - no special directives this week",
+      "message": "ADVISORY: No material risk escalation forecast over the next 5 days. No special infrastructure or public advisory directives required at this time.",
+      "tone_rationale": "Municipal corps still expect a formal advisory cadence, so an explicit routine status keeps the channel active rather than going quiet."
+    }
+  ]
+}

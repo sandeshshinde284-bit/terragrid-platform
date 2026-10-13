@@ -1,15 +1,761 @@
 <template>
-  <div class="prepare-screen">
+  <div class="prepare-screen alerts-screen">
     <Header />
-    <PreparePlaceholder
-      icon="📨"
-      title="Agency Alert Templates"
-      description="Per-audience pre-event messaging (farmers, hospitals, NGOs, municipal corps) — distinct from RESPONSE's live incident broadcasting on the Alerts tab."
-    />
+
+    <div class="alerts-container">
+      <div v-if="loading" class="empty-state glass-panel tactical-loading-container">
+        <div class="radar-ping-ring">
+          <span class="radar-dot"></span>
+        </div>
+        <div class="loading-telemetry-text">
+          <strong class="cycling-step-text">Fetching 7-day weather forecast...</strong>
+        </div>
+        <div class="tactical-progress-track">
+          <div class="tactical-scan-laser"></div>
+        </div>
+      </div>
+
+      <div v-else-if="error" class="empty-state glass-panel">
+        <div class="empty-icon">⚠️</div>
+        <h3>Couldn't load the alert templates</h3>
+        <p>{{ error }}</p>
+      </div>
+
+      <div v-else-if="cities.length === 0" class="empty-state glass-panel">
+        <div class="empty-icon">📨</div>
+        <h3>No forecast data yet</h3>
+        <p>This builds on the 7-Day Forecast Dashboard's data. If OPENWEATHERMAP_API_KEY isn't set on the backend, there's nothing to generate alert templates from yet.</p>
+      </div>
+
+      <template v-else>
+        <div class="alerts-hero glass-panel">
+          <div class="hero-left">
+            <h2>Agency Alert Templates</h2>
+            <span class="hero-meta">Per-audience pre-event messaging - distinct from RESPONSE's live incident alerts</span>
+          </div>
+        </div>
+
+        <div class="master-detail">
+          <!-- Always-visible, worst-first city list: scan every city's status
+               at a glance and jump straight to one with a single click - no
+               dropdown to open/scroll/close per city. -->
+          <nav class="city-rail glass-panel" aria-label="Cities by risk">
+            <button
+              v-for="city in sortedCities"
+              :key="cityKey(city)"
+              type="button"
+              class="rail-item"
+              :class="[worstRisk(city).toLowerCase(), { active: cityKey(city) === selectedKey }]"
+              @click="selectedKey = cityKey(city)"
+            >
+              <span class="rail-dot"></span>
+              <span class="rail-text">
+                <span class="rail-name">{{ city.city }}</span>
+                <span class="rail-country">{{ countryName(city.country) }}</span>
+              </span>
+              <span class="rail-risk">{{ worstRisk(city) }}</span>
+            </button>
+          </nav>
+
+          <div class="detail-panel">
+            <div v-if="alertsLoading" class="empty-state glass-panel tactical-loading-container actions-loading">
+              <div class="radar-ping-ring small">
+                <span class="radar-dot"></span>
+              </div>
+              <div class="loading-telemetry-text">
+                <strong class="cycling-step-text">Drafting agency alerts for {{ selectedCity?.city }}...</strong>
+              </div>
+            </div>
+
+            <div v-else-if="alertsError" class="empty-state glass-panel">
+              <div class="empty-icon">⚠️</div>
+              <h3>Couldn't generate the alerts</h3>
+              <p>{{ alertsError }}</p>
+            </div>
+
+            <template v-else-if="alertsPlan">
+              <div class="risk-context glass-panel" :class="selectedToneClass">
+                <span class="context-icon">{{ selectedToneIcon }}</span>
+                <span class="context-text">{{ alertsPlan.risk_context }}</span>
+                <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
+              </div>
+
+              <!-- Audience tabs: switch which single audience's template is shown,
+                   since each is written in a different voice for a different reader. -->
+              <div class="audience-tabs">
+                <button
+                  v-for="aud in alertsPlan.alerts"
+                  :key="aud.audience"
+                  type="button"
+                  class="audience-tab"
+                  :class="{ active: selectedAudience === aud.audience }"
+                  @click="selectedAudience = aud.audience"
+                >
+                  <span class="audience-icon">{{ audienceIcon(aud.audience) }}</span>
+                  {{ audienceLabel(aud.audience) }}
+                </button>
+              </div>
+
+              <div v-if="selectedAlert" class="alert-card glass-panel">
+                <div class="alert-top">
+                  <span class="channel-chip">{{ selectedAlert.channel }}</span>
+                  <button type="button" class="copy-btn" @click="copyMessage(selectedAlert)">
+                    {{ justCopied ? '✅ Copied' : '📋 Copy message' }}
+                  </button>
+                </div>
+                <h3 class="alert-headline">{{ selectedAlert.headline }}</h3>
+                <p class="alert-message">{{ selectedAlert.message }}</p>
+                <p class="alert-tone-rationale">
+                  <span class="rationale-label">Why this tone:</span> {{ selectedAlert.tone_rationale }}
+                </p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
 import Header from '@/components/organisms/Header.vue'
-import PreparePlaceholder from '@/components/molecules/PreparePlaceholder.vue'
+import { useMockMode } from '@/composables/useMockMode'
+
+interface DailyForecast {
+  date: string
+  risk_level: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
+  dominant_weather: string
+  max_wind_ms: number
+  min_temp_c: number | null
+  max_temp_c: number | null
+  total_rain_mm: number
+}
+
+interface CityForecast {
+  city: string
+  country: string
+  latitude: number
+  longitude: number
+  source: string
+  daily: DailyForecast[]
+}
+
+interface AgencyAlert {
+  audience: string
+  channel: string
+  headline: string
+  message: string
+  tone_rationale: string
+}
+
+interface AlertsPlan {
+  risk_context: string
+  alerts: AgencyAlert[]
+  ai_available?: boolean
+  is_fallback?: boolean
+  is_mock_demo?: boolean
+}
+
+const { fetchWithMockMode } = useMockMode()
+
+const cities = ref<CityForecast[]>([])
+const loading = ref(true)
+const error = ref('')
+const selectedKey = ref('')
+
+const alertsPlan = ref<AlertsPlan | null>(null)
+const alertsLoading = ref(false)
+const alertsError = ref('')
+const alertsSource = ref('')
+const selectedAudience = ref('')
+const justCopied = ref(false)
+
+const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
+
+const COUNTRY_NAMES: Record<string, string> = {
+  IN: 'India', NP: 'Nepal', CN: 'China', HK: 'Hong Kong', BD: 'Bangladesh',
+  PK: 'Pakistan', TH: 'Thailand', VN: 'Vietnam', SG: 'Singapore', MY: 'Malaysia',
+  IQ: 'Iraq', AE: 'UAE', ET: 'Ethiopia', KE: 'Kenya', RW: 'Rwanda', US: 'United States',
+}
+const countryName = (code: string) => COUNTRY_NAMES[code] || code
+
+const AUDIENCE_META: Record<string, { label: string; icon: string }> = {
+  FARMERS: { label: 'Farmers', icon: '🌾' },
+  HOSPITALS: { label: 'Hospitals', icon: '🏥' },
+  NGOS: { label: 'NGOs', icon: '🤝' },
+  MUNICIPAL_CORPS: { label: 'Municipal Corps', icon: '🏛️' },
+}
+const audienceLabel = (aud: string) => AUDIENCE_META[aud]?.label || aud
+const audienceIcon = (aud: string) => AUDIENCE_META[aud]?.icon || '📨'
+
+const cityKey = (city: CityForecast) => `${city.city}-${city.country}`
+
+const worstRisk = (city: CityForecast): string => {
+  return city.daily.reduce((worst, day) => (RISK_RANK[day.risk_level] > RISK_RANK[worst] ? day.risk_level : worst), 'GREEN')
+}
+
+const sortedCities = computed(() => {
+  return [...cities.value].sort((a, b) => RISK_RANK[worstRisk(b)] - RISK_RANK[worstRisk(a)])
+})
+
+const selectedCity = computed<CityForecast | null>(() => {
+  return cities.value.find(c => cityKey(c) === selectedKey.value) || null
+})
+
+const selectedToneClass = computed(() => {
+  if (!selectedCity.value) return 'green'
+  return worstRisk(selectedCity.value).toLowerCase()
+})
+
+const selectedToneIcon = computed(() => {
+  const tone = selectedToneClass.value
+  return tone === 'red' ? '🔴' : tone === 'orange' ? '🟠' : tone === 'yellow' ? '🟡' : '✅'
+})
+
+const sourceLabel = computed(() => alertsSource.value || '')
+const sourceBadgeClass = computed(() => {
+  if (alertsPlan.value?.is_mock_demo) return 'mock'
+  if (alertsPlan.value?.is_fallback) return 'fallback'
+  return 'live'
+})
+
+const selectedAlert = computed<AgencyAlert | null>(() => {
+  return alertsPlan.value?.alerts.find(a => a.audience === selectedAudience.value) || alertsPlan.value?.alerts[0] || null
+})
+
+const copyMessage = async (alert: AgencyAlert) => {
+  try {
+    await navigator.clipboard.writeText(alert.message)
+    justCopied.value = true
+    setTimeout(() => { justCopied.value = false }, 1800)
+  } catch {
+    // Clipboard API can be unavailable (older browsers, insecure context) -
+    // fail silently rather than block the user; the message is still on screen to select manually.
+  }
+}
+
+const apiHost = () => import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+
+const fetchAlertsForSelectedCity = async () => {
+  const city = selectedCity.value
+  if (!city) return
+
+  alertsLoading.value = true
+  alertsError.value = ''
+  alertsPlan.value = null
+
+  try {
+    const host = apiHost()
+    const params = new URLSearchParams({ city: city.city, country: city.country })
+    const response = await fetchWithMockMode(`${host}/api/v1/prepare/alerts?${params.toString()}`)
+
+    if (!response.ok) {
+      throw new Error(`Backend returned ${response.status}`)
+    }
+
+    const json = await response.json()
+    alertsPlan.value = json.data
+    alertsSource.value = json.source || ''
+    if (alertsPlan.value?.alerts?.length) {
+      selectedAudience.value = alertsPlan.value.alerts[0].audience
+    }
+  } catch (e) {
+    alertsError.value = e instanceof Error ? e.message : 'Unknown error generating alert templates'
+  } finally {
+    alertsLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  try {
+    const host = apiHost()
+    const response = await fetchWithMockMode(`${host}/api/v1/prepare/forecast`)
+
+    if (!response.ok) {
+      throw new Error(`Backend returned ${response.status}`)
+    }
+
+    const json = await response.json()
+    cities.value = json.data || []
+
+    if (cities.value.length > 0) {
+      selectedKey.value = cityKey(sortedCities.value[0])
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Unknown error fetching forecast'
+  } finally {
+    loading.value = false
+  }
+})
+
+watch(cities, (newCities) => {
+  if (newCities.length > 0 && !selectedCity.value) {
+    selectedKey.value = cityKey(sortedCities.value[0])
+  }
+})
+
+watch(selectedKey, () => {
+  if (selectedCity.value) fetchAlertsForSelectedCity()
+})
 </script>
+
+<style scoped>
+.alerts-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  padding: 16px;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.alerts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  font-size: 32px;
+}
+
+.alerts-hero {
+  padding: 18px 24px;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08), rgba(59, 130, 246, 0.04));
+}
+
+.hero-left h2 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  background: linear-gradient(90deg, #38bdf8, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Master-detail layout: an always-visible, worst-first city list beside the
+   detail panel, so every city's status is scannable at once - no dropdown
+   to open/scroll/close per city. */
+.master-detail {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.city-rail {
+  flex: 0 0 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.rail-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rail-item.active {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.rail-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rail-item.green .rail-dot { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
+.rail-item.yellow .rail-dot { background: #eab308; box-shadow: 0 0 6px rgba(234, 179, 8, 0.5); }
+.rail-item.orange .rail-dot { background: #f97316; box-shadow: 0 0 6px rgba(249, 115, 22, 0.5); }
+.rail-item.red .rail-dot { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
+
+.rail-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.rail-name {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rail-country {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.rail-risk {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.rail-item.green .rail-risk { color: #22c55e; }
+.rail-item.yellow .rail-risk { color: #eab308; }
+.rail-item.orange .rail-risk { color: #f97316; }
+.rail-item.red .rail-risk { color: #ef4444; }
+
+.detail-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.actions-loading {
+  padding: 32px 20px;
+}
+
+.risk-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-left: 3px solid var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.risk-context.green { border-left-color: #22c55e; }
+.risk-context.yellow { border-left-color: #eab308; }
+.risk-context.orange { border-left-color: #f97316; }
+.risk-context.red { border-left-color: #ef4444; }
+
+.context-icon {
+  font-size: 16px;
+}
+
+.context-text {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.source-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.source-badge.mock {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.source-badge.live {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.source-badge.fallback {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.audience-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.audience-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.audience-tab.active {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+}
+
+.audience-icon {
+  font-size: 14px;
+}
+
+.alert-card {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alert-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.channel-chip {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+.copy-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.alert-headline {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.alert-message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-line;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.alert-tone-rationale {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.rationale-label {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Tactical Loading Animation (matches ForecastDashboard.vue / RiskTimeline.vue / PreparednessChecklist.vue) */
+.tactical-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 60px 20px;
+}
+.radar-ping-ring {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(14, 165, 233, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.radar-ping-ring.small {
+  width: 36px;
+  height: 36px;
+}
+.radar-ping-ring::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1px solid rgba(14, 165, 233, 0.5);
+  animation: radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.radar-dot {
+  width: 12px;
+  height: 12px;
+  background-color: #0ea5e9;
+  border-radius: 50%;
+  box-shadow: 0 0 15px 4px rgba(14, 165, 233, 0.6);
+}
+.radar-ping-ring.small .radar-dot {
+  width: 8px;
+  height: 8px;
+}
+.loading-telemetry-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.cycling-step-text {
+  font-size: 14px;
+  color: #94a3b8;
+  font-family: monospace;
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+.tactical-progress-track {
+  width: 250px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.tactical-scan-laser {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #0ea5e9, transparent);
+  animation: scan-laser 2s linear infinite;
+}
+@keyframes radar-ping {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes scan-laser {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
+@media (max-width: 768px) {
+  .master-detail {
+    flex-direction: column;
+  }
+
+  .city-rail {
+    flex: 0 0 auto;
+    flex-direction: row;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-primary, #22d3ee) transparent;
+  }
+
+  .city-rail::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .city-rail::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .city-rail::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .city-rail::-webkit-scrollbar-thumb {
+    background: var(--accent-primary, #22d3ee);
+    border-radius: 3px;
+  }
+
+  .city-rail::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 6px;
+    width: 24px;
+    background: linear-gradient(to right, transparent, rgba(10, 14, 22, 0.85));
+    pointer-events: none;
+  }
+
+  .rail-item {
+    flex: 0 0 auto;
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .alerts-screen {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .alerts-hero {
+    padding: 14px 16px;
+  }
+}
+</style>

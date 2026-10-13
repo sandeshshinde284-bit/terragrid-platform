@@ -102,3 +102,62 @@ async def get_preparedness_actions(
     except Exception as e:
         logger.error(f"Preparedness action generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# PR4: Agency Alert Templates
+@router.get("/alerts")
+async def get_agency_alerts(
+    city: str = Query(..., description="City name, matching PR1's forecast output"),
+    country: str = Query("", description="ISO2 country code, matching PR1's forecast output"),
+    use_mock: bool = Query(False, description="Use mock data for testing"),
+):
+    """
+    PR4: Generate distinct, audience-appropriate alert templates (farmers,
+    hospitals, NGOs, municipal corps) for one city, tied to that city's 5-day
+    risk escalation forecast from PR1 - not one generic broadcast reused for
+    every audience.
+
+    Returns:
+        - risk_context: 1-2 sentence summary of what's driving the alerts
+        - alerts: list of {audience, channel, headline, message, tone_rationale}
+        - ai_available / is_fallback / is_mock_demo: transparent provenance flags
+    """
+    try:
+        forecasts = await OpenWeatherService.fetch_forecast(use_mock=use_mock)
+
+        city_forecast = next(
+            (
+                f for f in forecasts
+                if f.get("city", "").lower() == city.lower()
+                and (not country or f.get("country", "").lower() == country.lower())
+            ),
+            None,
+        )
+
+        if not city_forecast:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No forecast found for city='{city}' country='{country}'. "
+                       f"Fetch /api/v1/prepare/forecast first to see available cities.",
+            )
+
+        service = get_decision_support_service()
+        alerts_plan = service.generate_agency_alerts(city_forecast, use_mock=use_mock)
+
+        return {
+            "status": "success",
+            "city": city_forecast.get("city"),
+            "country": city_forecast.get("country"),
+            "source": (
+                "Mock demonstration data" if alerts_plan.get("is_mock_demo")
+                else "Gemini 2.5 Flash via Vertex AI" if alerts_plan.get("ai_available")
+                else "Offline fallback alert"
+            ),
+            "data": alerts_plan,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Agency alert generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
