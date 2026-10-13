@@ -165,3 +165,19 @@ RESPONSE_PLAN_SCHEMA_TEXT = """
   "evacuation_guidance": "string (Specific highway corridors, choke-point warnings, designated shelters)"
 }
 """
+
+PREPAREDNESS_ACTIONS_SCHEMA_TEXT = """
+{
+  "risk_context": "string (1-2 sentence summary of the escalation window driving these actions, e.g. 'Thunderstorm risk escalates to RED by Day 3 with 46mm rainfall and 20m/s winds.')",
+  "actions": [
+    {
+      "action": "string (specific, concrete task - e.g. 'Clear and desilt monsoon drains in low-lying wards')",
+      "agency": "string (specific real-world owning body - e.g. 'Municipal Corporation - Drainage Dept')",
+      "category": "string (enum: DRAINAGE, MEDICAL, EVACUATION, SUPPLIES, COMMUNICATION, INFRASTRUCTURE)",
+      "priority": "integer (1=IMMEDIATE, 2=HIGH, 3=STAGED)",
+      "deadline_day": "integer (1-5, which forecast day this must be completed before)",
+      "rationale": "string (1 sentence - why this action, tied to the specific weather/risk data given)"
+    }
+  ]
+}
+"""

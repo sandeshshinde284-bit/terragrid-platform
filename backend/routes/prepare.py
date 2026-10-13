@@ -13,6 +13,7 @@ import logging
 from datetime import datetime
 
 from ..services import OpenWeatherService
+from ..services.decision_support import get_decision_support_service
 
 logger = logging.getLogger(__name__)
 
@@ -42,4 +43,62 @@ async def get_forecast(use_mock: bool = Query(False, description="Use mock data 
         }
     except Exception as e:
         logger.error(f"Forecast fetch error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# PR2: Preparedness Action Generator
+@router.get("/actions")
+async def get_preparedness_actions(
+    city: str = Query(..., description="City name, matching PR1's forecast output"),
+    country: str = Query("", description="ISO2 country code, matching PR1's forecast output"),
+    use_mock: bool = Query(False, description="Use mock data for testing"),
+):
+    """
+    PR2: Generate an AI preparedness checklist (clear drains, stock supplies,
+    alert hospitals, position boats, etc.) for one city, tied to that city's
+    5-day risk escalation forecast from PR1.
+
+    Returns:
+        - risk_context: 1-2 sentence summary of what's driving the checklist
+        - actions: list of {action, agency, category, priority, deadline_day, rationale}
+        - ai_available / is_fallback / is_mock_demo: transparent provenance flags
+    """
+    try:
+        forecasts = await OpenWeatherService.fetch_forecast(use_mock=use_mock)
+
+        city_forecast = next(
+            (
+                f for f in forecasts
+                if f.get("city", "").lower() == city.lower()
+                and (not country or f.get("country", "").lower() == country.lower())
+            ),
+            None,
+        )
+
+        if not city_forecast:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No forecast found for city='{city}' country='{country}'. "
+                       f"Fetch /api/v1/prepare/forecast first to see available cities.",
+            )
+
+        service = get_decision_support_service()
+        actions_plan = service.generate_preparedness_actions(city_forecast, use_mock=use_mock)
+
+        return {
+            "status": "success",
+            "city": city_forecast.get("city"),
+            "country": city_forecast.get("country"),
+            "source": (
+                "Mock demonstration data" if actions_plan.get("is_mock_demo")
+                else "Gemini 2.5 Flash via Vertex AI" if actions_plan.get("ai_available")
+                else "Offline fallback checklist"
+            ),
+            "data": actions_plan,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Preparedness action generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

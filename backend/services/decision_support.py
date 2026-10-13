@@ -5,7 +5,7 @@ import math
 import logging
 from typing import Dict, Any, List, Optional
 
-from .prompt_schemas import DEEP_DOSSIER_SCHEMA_TEXT, RESPONSE_PLAN_SCHEMA_TEXT
+from .prompt_schemas import DEEP_DOSSIER_SCHEMA_TEXT, RESPONSE_PLAN_SCHEMA_TEXT, PREPAREDNESS_ACTIONS_SCHEMA_TEXT
 from .location_context import get_location_context
 
 logger = logging.getLogger(__name__)
@@ -186,6 +186,120 @@ class DecisionSupportService:
             logger.warning("Vertex AI decision support generation failed. Returning tactical fallback.")
 
         return fallback_plan
+
+    def generate_preparedness_actions(self, city_forecast: Dict[str, Any], use_mock: bool = False) -> Dict[str, Any]:
+        """
+        PR2: Preparedness Action Generator (PREPARE phase).
+        Given a single city's 5-day forecast (from PR1's /api/v1/prepare/forecast),
+        generates a concrete, agency-owned preparedness checklist (clear drains,
+        stock supplies, alert hospitals, position boats, etc.) tied to the specific
+        escalation pattern in that forecast - not generic advice.
+
+        Args:
+            city_forecast: One city's entry from OpenWeatherService.fetch_forecast(),
+                i.e. {city, country, latitude, longitude, daily: [...]}.
+            use_mock: If True, bypasses Gemini and returns a rich fabricated
+                demonstration checklist.
+
+        Returns:
+            {risk_context, actions: [{action, agency, category, priority,
+             deadline_day, rationale}], ai_available, is_fallback, is_mock_demo}
+        """
+        from .mock_data_loader import MockDataLoader
+
+        city = city_forecast.get("city", "Unknown City")
+        country = city_forecast.get("country", "")
+        daily = city_forecast.get("daily", [])
+
+        fallback_actions = MockDataLoader.load_fallback_preparedness_actions()
+
+        if use_mock:
+            # Mock mode still reflects the selected city's actual (mock) risk level,
+            # so switching cities in the UI doesn't show a RED thunderstorm checklist
+            # for a city whose own forecast is all GREEN.
+            severity_rank = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
+            is_routine = not daily or all(severity_rank.get(d.get("risk_level", "GREEN"), 0) == 0 for d in daily)
+            mock_actions = MockDataLoader.load_mock_preparedness_actions(routine=is_routine)
+            logger.info(f"Returning rich mock preparedness actions for {city} (routine={is_routine})")
+            return mock_actions
+
+        if not daily:
+            logger.warning(f"No forecast days available for {city}, {country} - cannot generate actions.")
+            return fallback_actions
+
+        if not self.model:
+            return fallback_actions
+
+        try:
+            severity_rank = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
+            peak_day = max(daily, key=lambda d: severity_rank.get(d.get("risk_level", "GREEN"), 0))
+            peak_index = daily.index(peak_day) + 1  # 1-based day number
+
+            forecast_lines = "\n            ".join([
+                f"- Day {i + 1} ({d.get('date')}): {d.get('risk_level')} - {d.get('dominant_weather')}, "
+                f"{d.get('total_rain_mm', 0):.0f}mm rain, {d.get('max_wind_ms', 0):.0f}m/s wind, "
+                f"{d.get('min_temp_c', 0):.0f}-{d.get('max_temp_c', 0):.0f}C"
+                for i, d in enumerate(daily)
+            ])
+
+            prompt = f"""
+            You are a Senior Disaster Preparedness Planner operating the TerraGrid Intelligence System.
+            Given the 5-day risk escalation forecast below for {city}, {country}, generate a concrete,
+            actionable preparedness checklist that named local agencies should execute BEFORE the risk
+            materializes - not generic advice.
+
+            5-DAY FORECAST:
+            {forecast_lines}
+
+            PEAK RISK: Day {peak_index} ({peak_day.get('risk_level')}, {peak_day.get('dominant_weather')},
+            {peak_day.get('total_rain_mm', 0):.0f}mm rain, {peak_day.get('max_wind_ms', 0):.0f}m/s wind)
+
+            STRICT OPERATIONAL DIRECTIVES:
+            1. Generate 5-7 specific, concrete actions (e.g. "Clear storm drains in Ward 12", NOT "prepare for the storm").
+            2. Each action must have a real-world owning agency type (municipal corporation, health dept,
+               fire/rescue, disaster management authority, police, relief dept, etc.) - tailor to the
+               country/region given.
+            3. "deadline_day" is the forecast day number (1-{len(daily)}) the action must be done BEFORE,
+               based on when that risk actually escalates in the data above - not a guess.
+            4. "priority" MUST be 1 (IMMEDIATE), 2 (HIGH), or 3 (STAGED) ONLY.
+            5. "rationale" must cite the specific forecast numbers driving that action (rain amount, wind
+               speed, which day) - not a generic justification.
+            6. Cover a mix of categories (drainage/infrastructure, medical, evacuation, supplies,
+               communication) rather than repeating one category.
+            7. If every day is GREEN (no material risk), return fewer, lower-priority routine-readiness
+               actions instead of inventing a crisis.
+            8. Return a clean JSON object matching THIS EXACT schema:
+            {PREPAREDNESS_ACTIONS_SCHEMA_TEXT}
+
+            Return ONLY the JSON object. Do not wrap in markdown code blocks.
+            """
+
+            logger.info(f"[GEMINI PROMPT - Preparedness Actions] City: {city}, {country}, Peak: Day {peak_index} ({peak_day.get('risk_level')})")
+            logger.debug(f"[GEMINI PROMPT FULL]\n{prompt}")
+
+            response = self.model.generate_content(prompt)
+            if response and response.text:
+                logger.debug(f"[GEMINI RESPONSE RAW]\n{response.text}")
+
+                cleaned_text = response.text.strip()
+                if cleaned_text.startswith("```json"):
+                    cleaned_text = cleaned_text[7:]
+                if cleaned_text.endswith("```"):
+                    cleaned_text = cleaned_text[:-3]
+                cleaned_text = cleaned_text.strip()
+
+                actions_plan = json.loads(cleaned_text)
+                actions_plan["ai_available"] = True
+                actions_plan["is_fallback"] = False
+                actions_plan["is_mock_demo"] = False
+                logger.info(f"Generated AI preparedness checklist for {city}, {country} via Vertex AI. Actions: {len(actions_plan.get('actions', []))}")
+                return actions_plan
+
+        except Exception as e:
+            logger.exception(f"Preparedness action generation failed for {city}: {type(e).__name__} - {str(e)}")
+            logger.warning("Vertex AI preparedness action generation failed. Returning offline fallback.")
+
+        return fallback_actions
 
     def generate_deep_tactical_dossier(self, event_data: Dict[str, Any], use_mock: bool = False, db_session=None) -> Dict[str, Any]:
         """
