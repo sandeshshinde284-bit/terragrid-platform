@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <GlassPanel 
     :severity="incident.severity"
     clickable

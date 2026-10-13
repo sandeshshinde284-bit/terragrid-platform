@@ -201,7 +201,7 @@ def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None
         return True
     
     # In development, mock mode is allowed (relies on environment)
-    dev_mode = os.getenv("ENVIRONMENT", "").lower() in ["dev", "development", "local"]
+    dev_mode = settings.ENVIRONMENT.lower() in ["dev", "development", "local"]
     if dev_mode:
         logger.debug("[MOCK-MODE] Development mode: mock access allowed")
         return True

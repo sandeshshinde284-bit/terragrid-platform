@@ -4,6 +4,7 @@ Fetches weather and meteorological data for India
 """
 import os
 import logging
+from backend.config import settings
 from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
@@ -15,9 +16,9 @@ class IMDWeatherService:
     Additional data source for incidents in India
     """
 
-    IMD_API_ENDPOINT = os.getenv("IMD_API_ENDPOINT", "https://api.imd.gov.in/v1/")
-    IMD_API_KEY = os.getenv("IMD_API_KEY")
-    IMD_API_JWT_TOKEN = os.getenv("IMD_API_JWT_TOKEN")
+    IMD_API_ENDPOINT = settings.IMD_API_ENDPOINT
+    IMD_API_KEY = settings.IMD_API_KEY
+    IMD_API_JWT_TOKEN = settings.IMD_API_JWT_TOKEN
 
     @staticmethod
     def is_india_location(latitude: float, longitude: float) -> bool:

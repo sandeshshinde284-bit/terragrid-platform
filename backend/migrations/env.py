@@ -1,4 +1,5 @@
 from logging.config import fileConfig
+from backend.config import settings
 import os
 from urllib.parse import quote
 from dotenv import load_dotenv
@@ -25,7 +26,7 @@ from backend.models.base import BaseModel
 target_metadata = BaseModel.metadata
 
 # Get DATABASE_URL from environment
-db_url = os.getenv("DATABASE_URL")
+db_url = settings.DATABASE_URL
 if db_url and "postgresql://" in db_url:
     # Parse and reconstruct URL to handle special characters
     import re

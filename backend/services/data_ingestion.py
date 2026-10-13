@@ -4,6 +4,7 @@ Orchestrates fetching from multiple APIs and storing in database
 """
 import os
 import logging
+from backend.config import settings
 import asyncio
 from typing import List, Dict, Any
 from datetime import datetime
@@ -56,7 +57,7 @@ class DataIngestionService:
         
         try:
             # Check global mock configuration
-            if os.getenv("USE_MOCK_DATA", "false").lower() == "true":
+            if settings.USE_MOCK_DATA:
                 use_mock = True
                 
             # 1. Fetch from all 5 sources concurrently in parallel using asyncio.gather
