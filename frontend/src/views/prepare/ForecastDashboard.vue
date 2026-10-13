@@ -3,31 +3,15 @@
     <Header />
 
     <div class="forecast-container">
-      <div v-if="loading" class="forecast-skeleton">
-        <div class="skeleton-status">
-          <span class="skeleton-pulse-dot"></span>
-          <span>Fetching 7-day weather forecast...</span>
+      <div v-if="loading" class="empty-state glass-panel tactical-loading-container">
+        <div class="radar-ping-ring">
+          <span class="radar-dot"></span>
         </div>
-
-        <div class="skeleton-hero glass-panel">
-          <div class="sk-line sk-title shimmer"></div>
-          <div class="sk-line sk-subtitle shimmer"></div>
+        <div class="loading-telemetry-text">
+          <strong class="cycling-step-text">Fetching 7-day weather forecast...</strong>
         </div>
-
-        <div class="skeleton-filters">
-          <div class="sk-chip shimmer" v-for="n in 5" :key="n"></div>
-        </div>
-
-        <div class="skeleton-section" v-for="s in 2" :key="s">
-          <div class="sk-line sk-section-title shimmer"></div>
-          <div class="skeleton-grid">
-            <div class="skeleton-card glass-panel" v-for="n in 3" :key="n">
-              <div class="sk-line sk-card-title shimmer"></div>
-              <div class="skeleton-days">
-                <div class="sk-day shimmer" v-for="d in 5" :key="d"></div>
-              </div>
-            </div>
-          </div>
+        <div class="tactical-progress-track">
+          <div class="tactical-scan-laser"></div>
         </div>
       </div>
 
@@ -279,136 +263,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Skeleton loading state */
-.forecast-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.skeleton-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  letter-spacing: 0.2px;
-}
-
-.skeleton-pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent-primary, #38bdf8);
-  box-shadow: 0 0 8px var(--accent-primary, #38bdf8);
-  animation: skeletonPulse 1.4s ease-in-out infinite;
-}
-
-@keyframes skeletonPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.7); }
-}
-
-.shimmer {
-  position: relative;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.shimmer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0,
-    rgba(56, 189, 248, 0.12) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  animation: shimmerSweep 1.6s infinite;
-}
-
-@keyframes shimmerSweep {
-  100% { transform: translateX(100%); }
-}
-
-.sk-line {
-  border-radius: 6px;
-}
-
-.skeleton-hero {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 20px;
-}
-
-.sk-title {
-  width: 220px;
-  height: 22px;
-}
-
-.sk-subtitle {
-  width: 320px;
-  height: 14px;
-}
-
-.skeleton-filters {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.sk-chip {
-  width: 100px;
-  height: 32px;
-  border-radius: 20px;
-}
-
-.skeleton-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sk-section-title {
-  width: 160px;
-  height: 16px;
-}
-
-.skeleton-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.skeleton-card {
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.sk-card-title {
-  width: 100px;
-  height: 16px;
-}
-
-.skeleton-days {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.sk-day {
-  flex: 1 1 90px;
-  min-width: 90px;
-  height: 64px;
-  border-radius: 10px;
-}
-
 .forecast-screen {
   display: flex;
   flex-direction: column;
@@ -778,4 +632,92 @@ onMounted(async () => {
     padding: 14px 16px;
   }
 }
+
+/* Tactical Loading Animation */
+.tactical-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 60px 20px;
+}
+.radar-ping-ring {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(14, 165, 233, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.radar-ping-ring::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1px solid rgba(14, 165, 233, 0.5);
+  animation: radar-ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.radar-dot {
+  width: 12px;
+  height: 12px;
+  background-color: #0ea5e9;
+  border-radius: 50%;
+  box-shadow: 0 0 15px 4px rgba(14, 165, 233, 0.6);
+}
+.loading-telemetry-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+.loading-phase-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.1);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+}
+.cycling-step-text {
+  font-size: 14px;
+  color: #94a3b8;
+  font-family: monospace;
+  animation: pulse-text 1.5s ease-in-out infinite;
+}
+.tactical-progress-track {
+  width: 250px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+.tactical-scan-laser {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #0ea5e9, transparent);
+  animation: scan-laser 2s linear infinite;
+}
+@keyframes radar-ping {
+  0% { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes scan-laser {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
 </style>
