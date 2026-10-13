@@ -13,7 +13,9 @@ Updated as we go; reviewed in full once all 5 PREPARE features ship.
 | PR7 | Risk Escalation Timeline | ✅ DONE | Reuses PR1's endpoint, no new backend work |
 | PR2 | Preparedness Action Generator | ✅ DONE | Gemini via existing DecisionSupportService pattern; mock mode now reflects each city's own severity (routine vs. escalating) instead of one static fixture |
 | PR6 | Preparedness Checklist UI | ✅ DONE | Checkboxes (localStorage-persisted), progress bar, deadlines resolved to real dates with urgency, agency ownership filter |
-| PR4 | TBD | ⏳ NEXT | |
+| PR4 | Agency Alert Templates | ✅ DONE | 4 audience-specific templates (Farmers/Hospitals/NGOs/Municipal Corps) per city from one Gemini call; routine-vs-escalating mock branching applied from the start (no repeat of the PR2 bug); master-detail city rail + audience tabs + copy-to-clipboard |
+
+**PREPARE phase build order complete (PR1 → PR7 → PR2 → PR6 → PR4).** Deferred decisions below are now open for discussion.
 
 (PR8 deferred earlier for fabrication risk; PR5/PR9/PR10 feasible but unscheduled.)
 
