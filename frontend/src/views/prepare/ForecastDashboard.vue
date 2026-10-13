@@ -477,26 +477,17 @@ onMounted(async () => {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(14, 165, 233, 0.55) transparent;
+  /* Scrolls by trackpad/touch/shift+wheel/drag when it doesn't fully fit -
+     no visible scrollbar at all, rather than fighting each browser's own
+     default button/track rendering (Chrome/Edge draw square arrow buttons
+     on their native scrollbar that CSS color/thumb rules alone don't
+     remove). */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .day-row::-webkit-scrollbar {
-  height: 5px;
-}
-
-.day-row::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.day-row::-webkit-scrollbar-thumb {
-  background: rgba(14, 165, 233, 0.55);
-  border-radius: 999px;
-}
-
-.day-row::-webkit-scrollbar-thumb:hover {
-  background: rgba(14, 165, 233, 0.8);
+  display: none;
 }
 
 .day-chip {
