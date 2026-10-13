@@ -49,14 +49,15 @@
             :class="{ active: selectedCountry === group.country, [group.worstRisk.toLowerCase()]: true }"
             @click="selectedCountry = group.country"
           >
-            {{ countryMeta(group.country).flag }} {{ countryMeta(group.country).name }} <span class="filter-count">{{ group.cities.length }}</span>
+            <img :src="flagUrl(group.country)" :alt="countryMeta(group.country).name" class="filter-flag" @error="onFlagError" />
+            {{ countryMeta(group.country).name }} <span class="filter-count">{{ group.cities.length }}</span>
           </button>
         </div>
 
         <div class="country-sections">
           <section v-for="group in filteredGroups" :key="group.country" class="country-section">
             <div class="country-header" :class="group.worstRisk.toLowerCase()">
-              <span class="country-flag">{{ countryMeta(group.country).flag }}</span>
+              <img :src="flagUrl(group.country)" :alt="countryMeta(group.country).name" class="country-flag" @error="onFlagError" />
               <span class="country-name">{{ countryMeta(group.country).name }}</span>
               <span class="country-count">{{ group.cities.length }} {{ group.cities.length === 1 ? 'city' : 'cities' }}</span>
               <span class="country-worst" :class="group.worstRisk.toLowerCase()">{{ riskEmoji(group.worstRisk) }} {{ group.worstRisk }}</span>
@@ -125,28 +126,43 @@ const error = ref('')
 const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
 const RISK_EMOJI: Record<string, string> = { GREEN: '🟢', YELLOW: '🟡', ORANGE: '🟠', RED: '🔴' }
 
-// Country metadata is purely cosmetic (name + flag for the grouping header) -
+// Country metadata is purely cosmetic (display name for the grouping header) -
 // it never changes risk calculation, which stays entirely backend-derived.
-const COUNTRY_META: Record<string, { name: string; flag: string }> = {
-  IN: { name: 'India', flag: '🇮🇳' },
-  NP: { name: 'Nepal', flag: '🇳🇵' },
-  CN: { name: 'China', flag: '🇨🇳' },
-  HK: { name: 'Hong Kong', flag: '🇭🇰' },
-  BD: { name: 'Bangladesh', flag: '🇧🇩' },
-  PK: { name: 'Pakistan', flag: '🇵🇰' },
-  TH: { name: 'Thailand', flag: '🇹🇭' },
-  VN: { name: 'Vietnam', flag: '🇻🇳' },
-  SG: { name: 'Singapore', flag: '🇸🇬' },
-  MY: { name: 'Malaysia', flag: '🇲🇾' },
-  IQ: { name: 'Iraq', flag: '🇮🇶' },
-  AE: { name: 'UAE', flag: '🇦🇪' },
-  ET: { name: 'Ethiopia', flag: '🇪🇹' },
-  KE: { name: 'Kenya', flag: '🇰🇪' },
-  RW: { name: 'Rwanda', flag: '🇷🇼' },
-  US: { name: 'United States', flag: '🇺🇸' },
+const COUNTRY_META: Record<string, { name: string }> = {
+  IN: { name: 'India' },
+  NP: { name: 'Nepal' },
+  CN: { name: 'China' },
+  HK: { name: 'Hong Kong' },
+  BD: { name: 'Bangladesh' },
+  PK: { name: 'Pakistan' },
+  TH: { name: 'Thailand' },
+  VN: { name: 'Vietnam' },
+  SG: { name: 'Singapore' },
+  MY: { name: 'Malaysia' },
+  IQ: { name: 'Iraq' },
+  AE: { name: 'UAE' },
+  ET: { name: 'Ethiopia' },
+  KE: { name: 'Kenya' },
+  RW: { name: 'Rwanda' },
+  US: { name: 'United States' },
 }
 
-const countryMeta = (code: string) => COUNTRY_META[code] || { name: code, flag: '🌐' }
+const countryMeta = (code: string) => COUNTRY_META[code] || { name: code }
+
+// Real flag images instead of flag emoji - emoji flags render as plain two-letter
+// text on Windows (no flag-emoji glyphs in its default font stack until very
+// recently), so they showed up as "IN"/"NP" instead of pictures. flagcdn.com
+// serves small flag PNGs by ISO 3166-1 alpha-2 code, which renders identically
+// across every OS/browser.
+const flagUrl = (code: string) => `https://flagcdn.com/w40/${code.toLowerCase()}.png`
+
+// If flagcdn.com is ever unreachable for a visitor, hide the broken-image icon
+// instead of leaving an ugly placeholder - the country name text still carries
+// the information on its own.
+const onFlagError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  target.style.display = 'none'
+}
 
 const riskEmoji = (level: string) => RISK_EMOJI[level] || '🟢'
 
@@ -370,6 +386,14 @@ onMounted(async () => {
   opacity: 0.8;
 }
 
+.filter-flag {
+  width: 16px;
+  height: 12px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 /* ---- Country sections ---- */
 
 .country-sections {
@@ -400,7 +424,12 @@ onMounted(async () => {
 .country-header.green { border-left-color: #22c55e; }
 
 .country-flag {
-  font-size: 20px;
+  width: 28px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 .country-name {
@@ -475,24 +504,16 @@ onMounted(async () => {
 
 .day-row {
   display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  /* Scrolls by trackpad/touch/shift+wheel/drag when it doesn't fully fit -
-     no visible scrollbar at all, rather than fighting each browser's own
-     default button/track rendering (Chrome/Edge draw square arrow buttons
-     on their native scrollbar that CSS color/thumb rules alone don't
-     remove). */
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.day-row::-webkit-scrollbar {
-  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  /* No horizontal scroll at all - a chip that doesn't fit wraps to the next
+     line instead of hiding off-screen behind a scrollbar whose presence
+     wasn't obvious. All 5 days are always visible without any interaction. */
 }
 
 .day-chip {
-  flex: 1;
-  min-width: 80px;
+  flex: 1 1 90px;
+  min-width: 90px;
   display: flex;
   flex-direction: column;
   align-items: center;
