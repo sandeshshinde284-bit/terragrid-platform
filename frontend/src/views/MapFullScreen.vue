@@ -362,11 +362,11 @@ const clearMarkers = () => {
 
 const renderMarkers = () => {
   if (!map.value || !layers.incidents) {
-    const mapInstance = map.value
     clearMarkers()
     return
   }
-  
+  const mapInstance = map.value   // FIXED: Moved outside the early return block
+
   clearMarkers()
 
   eventsStore.allIncidents.forEach(incident => {
@@ -408,16 +408,16 @@ const renderMarkers = () => {
 
     el.addEventListener('click', (e) => {
       e.stopPropagation()
-      map.value?.flyTo({
+      mapInstance.flyTo({              // FIXED: Use mapInstance
         center: [lon, lat],
-        zoom: Math.max(map.value.getZoom(), 5),
+        zoom: Math.max(mapInstance.getZoom(), 5),   // FIXED: Use mapInstance
         speed: 1.2
       })
     })
 
     const marker = new mapboxgl.Marker({ element: el })
       .setLngLat([lon, lat])
-      .addTo(map.value)
+      .addTo(mapInstance)             // FIXED: Use mapInstance
 
     markers.push(marker)
   })

@@ -197,15 +197,16 @@ const clearMarkers = () => {
 
 const renderMarkers = () => {
   if (!map.value) return
-  
+  const mapInstance = map.value  
+
   clearMarkers()
 
   activeIncidents.value.forEach(incident => {
     const lat = incident.coordinates ? incident.coordinates[0] : (incident as any).latitude
     const lon = incident.coordinates ? incident.coordinates[1] : (incident as any).longitude
-    
+
     if (lat === undefined || lon === undefined) return
-    
+
     const score = incident.threatScore ?? 50
     const color = getSeverityColor(score)
     const icon = getIncidentIcon(incident.type)
@@ -215,7 +216,7 @@ const renderMarkers = () => {
     // Create custom DOM element for the marker
     const el = document.createElement('div')
     el.className = 'custom-marker'
-    
+
     // Add pulsing effect for critical threats
     if (score >= 80) {
       const pulseRing = document.createElement('div')
@@ -229,7 +230,7 @@ const renderMarkers = () => {
     if (isSelected || isExpanded) {
       dot.classList.add('selected')
     }
-    
+
     dot.innerHTML = `<span>${icon}</span>`
     el.appendChild(dot)
 
@@ -237,18 +238,18 @@ const renderMarkers = () => {
     el.addEventListener('click', (e) => {
       e.stopPropagation()
       appStore.setSelectedIncident(incident.id)
-      
-      map.value?.flyTo({
+
+      mapInstance.flyTo({             
         center: [lon, lat],
-        zoom: Math.max(map.value.getZoom(), 5),
+        zoom: Math.max(mapInstance.getZoom(), 5),  
         speed: 1.2
       })
     })
 
     const marker = new mapboxgl.Marker({ element: el })
       .setLngLat([lon, lat])
-      .addTo(map.value)
-      
+      .addTo(mapInstance)            
+
     markers.push(marker)
   })
 }
