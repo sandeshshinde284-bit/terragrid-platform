@@ -477,6 +477,26 @@ onMounted(async () => {
   display: flex;
   gap: 6px;
   overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(14, 165, 233, 0.55) transparent;
+}
+
+.day-row::-webkit-scrollbar {
+  height: 5px;
+}
+
+.day-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.day-row::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 233, 0.55);
+  border-radius: 999px;
+}
+
+.day-row::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.8);
 }
 
 .day-chip {
