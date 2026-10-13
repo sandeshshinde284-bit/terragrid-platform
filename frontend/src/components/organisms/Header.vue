@@ -25,6 +25,8 @@
           </div>
         </div>
 
+        <div class="nav-row-divider"></div>
+
         <div class="nav-row">
           <div class="nav-group">
             <span class="nav-group-label">Response</span>
@@ -294,6 +296,13 @@ const closeMobileMenu = () => {
   row-gap: 4px;
 }
 
+.nav-row-divider {
+  height: 1px;
+  background: var(--glass-border);
+  opacity: 0.6;
+  margin: 2px 0;
+}
+
 .nav-menu :deep(a) {
   color: var(--text-secondary);
   text-decoration: none;
@@ -328,14 +337,19 @@ const closeMobileMenu = () => {
 }
 
 .nav-group-label {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  opacity: 0.7;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: var(--accent-cyan);
+  opacity: 0.9;
   text-transform: uppercase;
-  margin-right: 2px;
+  margin-right: 4px;
   white-space: nowrap;
+}
+
+.nav-group-disabled .nav-group-label {
+  color: var(--text-secondary);
+  opacity: 0.6;
 }
 
 .nav-divider {
@@ -511,7 +525,7 @@ const closeMobileMenu = () => {
   }
 
   .nav-group-label {
-    font-size: 8px;
+    font-size: 9px;
   }
 
   .nav-divider {
