@@ -106,6 +106,16 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/roadmap',
+    name: 'RoadmapPreview',
+    component: () => import('@/views/RoadmapPreview.vue'),
+    meta: {
+      title: 'Predict & Recover Roadmap - TerraGrid',
+      requiresAuth: false,
+      phase: 'roadmap',
+    },
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFound.vue'),

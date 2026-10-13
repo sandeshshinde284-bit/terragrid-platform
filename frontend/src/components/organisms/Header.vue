@@ -19,30 +19,30 @@
         <div class="phase-selector">
           <button
             class="phase-btn"
-            :class="{ active: activePhase === 'prepare' && !roadmapOpen }"
-            @click="openPhase('/prepare/forecast')"
+            :class="{ active: activePhase === 'prepare' }"
+            @click="router.push('/prepare/forecast')"
           >
             PREPARE
           </button>
           <button
             class="phase-btn"
-            :class="{ active: activePhase === 'response' && !roadmapOpen }"
-            @click="openPhase('/')"
+            :class="{ active: activePhase === 'response' }"
+            @click="router.push('/')"
           >
             RESPONSE
           </button>
           <button
             class="phase-btn roadmap"
-            :class="{ active: roadmapOpen }"
-            @click="toggleRoadmap"
-            title="Preview upcoming phases"
+            :class="{ active: activePhase === 'roadmap' }"
+            @click="router.push('/roadmap')"
+            title="Predict & Recover — coming soon"
           >
             PREDICT · RECOVER
           </button>
         </div>
 
         <!-- FEATURE TABS (Section 2) - Changes based on active phase -->
-        <div class="nav-row" v-if="!roadmapOpen && activePhase === 'prepare'">
+        <div class="nav-row" v-if="activePhase === 'prepare'">
           <div class="nav-group">
             <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ Forecast</RouterLink>
             <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 Risk Timeline</RouterLink>
@@ -51,7 +51,7 @@
           </div>
         </div>
 
-        <div class="nav-row" v-if="!roadmapOpen && activePhase === 'response'">
+        <div class="nav-row" v-if="activePhase === 'response'">
           <div class="nav-group">
             <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
             <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
@@ -61,10 +61,10 @@
           </div>
         </div>
 
-        <div class="nav-row nav-row-roadmap" v-if="roadmapOpen">
+        <div class="nav-row nav-row-roadmap" v-if="activePhase === 'roadmap'">
           <div class="nav-group nav-group-disabled">
-            <span class="nav-roadmap-badge">🔮 Predict — scope not yet finalized</span>
-            <span class="nav-roadmap-badge">♻️ Recover — scope not yet finalized</span>
+            <span class="nav-roadmap-badge">🔮 Predict — Coming soon</span>
+            <span class="nav-roadmap-badge">♻️ Recover — Coming soon</span>
           </div>
         </div>
       </nav>
@@ -118,20 +118,20 @@
       <!-- Mobile Nav Section with Phase Switcher -->
       <div class="mobile-phase-selector">
         <button
-          :class="{ active: activePhase === 'prepare' && !roadmapOpen }"
-          @click="openPhase('/prepare/forecast')"
+          :class="{ active: activePhase === 'prepare' }"
+          @click="router.push('/prepare/forecast')"
         >
           PREPARE
         </button>
         <button
-          :class="{ active: activePhase === 'response' && !roadmapOpen }"
-          @click="openPhase('/')"
+          :class="{ active: activePhase === 'response' }"
+          @click="router.push('/')"
         >
           RESPONSE
         </button>
         <button
-          :class="{ active: roadmapOpen }"
-          @click="toggleRoadmap"
+          :class="{ active: activePhase === 'roadmap' }"
+          @click="router.push('/roadmap'); closeMobileMenu()"
         >
           PREDICT · RECOVER
         </button>
@@ -139,15 +139,8 @@
 
       <div class="menu-divider"></div>
 
-      <!-- Roadmap Preview Section -->
-      <div class="mobile-nav-section mobile-nav-section-disabled" v-if="roadmapOpen">
-        <div class="mobile-nav-section-title">Predict · Recover</div>
-        <div class="mobile-roadmap-badge">🔮 Predict — scope not yet finalized</div>
-        <div class="mobile-roadmap-badge">♻️ Recover — scope not yet finalized</div>
-      </div>
-
       <!-- Prepare Section -->
-      <div class="mobile-nav-section" v-if="!roadmapOpen && activePhase === 'prepare'">
+      <div class="mobile-nav-section" v-if="activePhase === 'prepare'">
         <div class="mobile-nav-section-title">Prepare</div>
         <RouterLink
           to="/prepare/forecast"
@@ -180,7 +173,7 @@
       </div>
 
       <!-- Response Section -->
-      <div class="mobile-nav-section" v-if="!roadmapOpen && activePhase === 'response'">
+      <div class="mobile-nav-section" v-if="activePhase === 'response'">
         <div class="mobile-nav-section-title">Response</div>
         <RouterLink
           to="/"
@@ -258,28 +251,18 @@ const { locale } = useI18n()
 const selectedLanguage = ref(locale.value.toUpperCase())
 const is3D = computed(() => appStore.viewMode === '3d')
 const mobileMenuOpen = ref(false)
-const roadmapOpen = ref(false)
 
-// Detect active phase based on current route
+// Detect active phase based on current route. All three phases (prepare,
+// response, roadmap) are now real routes with meta.phase set, so this is
+// the single source of truth - no local toggle state needed.
 const activePhase = computed(() => {
   const phaseMeta = route.meta.phase as string | undefined
-  if (phaseMeta === 'prepare') {
-    return 'prepare'
+  if (phaseMeta === 'prepare' || phaseMeta === 'roadmap') {
+    return phaseMeta
   }
   // Default to 'response' for all other routes (/, /incidents, /map, etc.)
   return 'response'
 })
-
-// Navigate to a real phase (Prepare/Response) and close any open roadmap preview
-const openPhase = (path: string) => {
-  roadmapOpen.value = false
-  router.push(path)
-}
-
-// Toggle the Predict·Recover roadmap preview (no real routes exist for these yet)
-const toggleRoadmap = () => {
-  roadmapOpen.value = !roadmapOpen.value
-}
 
 const goHome = () => {
   router.push('/')
@@ -457,14 +440,14 @@ const closeMobileMenu = () => {
 }
 
 .nav-group-disabled {
-  opacity: 0.55;
+  opacity: 0.85;
 }
 
 .nav-roadmap-badge {
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
   border: 1px dashed var(--glass-border);
   color: var(--text-secondary);
   white-space: nowrap;
@@ -621,8 +604,8 @@ const closeMobileMenu = () => {
   }
 
   .nav-roadmap-badge {
-    font-size: 8px;
-    padding: 3px 6px;
+    font-size: 10px;
+    padding: 4px 8px;
   }
 
   .header-btn {
@@ -848,16 +831,6 @@ const closeMobileMenu = () => {
     opacity: 0.8;
   }
 
-  .mobile-nav-section-disabled {
-    opacity: 0.55;
-  }
-
-  .mobile-roadmap-badge {
-    font-size: 12px;
-    font-weight: 600;
-    padding: 8px 16px;
-    color: var(--text-secondary);
-  }
 
   /* Settings Section */
   .settings-section {
