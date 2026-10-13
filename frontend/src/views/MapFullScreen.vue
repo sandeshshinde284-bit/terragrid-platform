@@ -166,7 +166,7 @@ import { useRoute, useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1 } from '@/types'
-import mapboxgl from 'mapbox-gl'
+import * as mapboxgl from 'mapbox-gl/esm'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 const route = useRoute()
@@ -319,20 +319,17 @@ const setMode = (mode: MapMode) => {
 const initMap = () => {
   if (!mapContainer.value || !appStore.mapboxToken) return
 
-  mapboxgl.accessToken = appStore.mapboxToken
-
   map.value = new mapboxgl.Map({
-    container: mapContainer.value,
-    style: MAP_STYLES.tactical,
-    center: DEFAULT_CENTER,
-    zoom: DEFAULT_ZOOM,
-    pitch: appStore.viewMode === '3d' ? 55 : 0,
-    bearing: appStore.viewMode === '3d' ? -20 : 0,
-    projection: { name: 'mercator' },
-    minZoom: 1,
-    maxZoom: 18,
-    attributionControl: false
-  })
+  accessToken: appStore.mapboxToken,
+  container: mapContainer.value,
+  style: MAP_STYLES.tactical,
+  center: DEFAULT_CENTER,
+  zoom: DEFAULT_ZOOM,
+  projection: { name: 'mercator' },
+  minZoom: 1,
+  maxZoom: 18,
+  attributionControl: false
+})
 
   map.value.on('load', () => {
     renderMarkers()
@@ -368,7 +365,8 @@ const renderMarkers = () => {
     clearMarkers()
     return
   }
-  
+  const mapInstance = map.value   // FIXED: Moved outside the early return block
+
   clearMarkers()
 
   eventsStore.allIncidents.forEach(incident => {
@@ -410,16 +408,16 @@ const renderMarkers = () => {
 
     el.addEventListener('click', (e) => {
       e.stopPropagation()
-      map.value?.flyTo({
+      mapInstance.flyTo({              // FIXED: Use mapInstance
         center: [lon, lat],
-        zoom: Math.max(map.value.getZoom(), 5),
+        zoom: Math.max(mapInstance.getZoom(), 5),   // FIXED: Use mapInstance
         speed: 1.2
       })
     })
 
     const marker = new mapboxgl.Marker({ element: el })
       .setLngLat([lon, lat])
-      .addTo(map.value)
+      .addTo(mapInstance)             // FIXED: Use mapInstance
 
     markers.push(marker)
   })

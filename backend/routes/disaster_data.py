@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 API Routes for Features 1 & 2
 - Feature 1: Real-Time Data Ingestion
@@ -189,12 +190,12 @@ async def ingestion_status():
             "nasa_eonet": {
                 "enabled": True,
                 "description": "NASA Earth Observation Natural Event Tracking",
-                "endpoint": "https://eonet.gsfc.nasa.gov/api/v3"
+                "endpoint": settings.NASA_EONET_URL
             },
             "gdacs": {
                 "enabled": True,
                 "description": "Global Disaster Alert & Coordination System",
-                "endpoint": "https://www.gdacs.org/api/v1"
+                "endpoint": settings.GDACS_API_URL
             },
             "pubsub": {
                 "enabled": True,
@@ -246,7 +247,16 @@ async def get_mock_mode():
 
 
 @router.post("/config/mock-mode")
-async def set_mock_mode(enabled: bool = Query(True, description="Enable or disable mock data")):
+async def set_mock_mode(
+    enabled: bool = Query(True, description="Enable or disable mock data"),
+    admin_token: str = Query(None, description="Admin token required")
+):
+    from fastapi import HTTPException, status
+    if admin_token != settings.ADMIN_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin authorization required to toggle global mock mode"
+        )
     """
     Enable or disable global mock data mode
     

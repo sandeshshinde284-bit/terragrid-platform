@@ -1,43 +1,32 @@
 /**
- * Composable for managing Mock/Live data mode
- * Stores preference in localStorage and syncs with backend
+ * Composable for mock/live data mode.
+ *
+ * There is no manual UI toggle. Mock vs. live is driven entirely by the
+ * backend's USE_MOCK_DATA setting: App.vue fetches GET /api/v1/config on
+ * load, which returns `mock_mode_enabled: settings.USE_MOCK_DATA`, and
+ * stores it in appStore.isBackendMockModeEnabled. This composable just
+ * exposes that single source of truth to components.
+ *
+ * To switch modes, set USE_MOCK_DATA on the backend (Cloud Run env var,
+ * or .env locally) and restart/redeploy the backend - the frontend will
+ * pick it up automatically on next load.
  */
-import { ref, computed } from 'vue'
-
-// Global mock mode state
-const mockModeEnabled = ref(localStorage.getItem('mockMode') !== 'false')
+import { computed } from 'vue'
+import { useAppStore } from '@/stores'
 
 export function useMockMode() {
-  /**
-   * Get current mock mode status
-   */
-  const isMockMode = computed(() => mockModeEnabled.value)
+  const appStore = useAppStore()
 
   /**
-   * Toggle between mock and live data
+   * Current mock mode status, sourced from the backend's USE_MOCK_DATA config.
    */
-  const toggleMockMode = async () => {
-    mockModeEnabled.value = !mockModeEnabled.value
-    localStorage.setItem('mockMode', String(mockModeEnabled.value))
-
-    // Sync with backend
-    try {
-      const response = await fetch(
-        `http://localhost:8000/api/v1/config/mock-mode?enabled=${mockModeEnabled.value}`,
-        { method: 'POST' }
-      )
-      const data = await response.json()
-      console.log(`📡 Mock Mode: ${data.mode}`)
-    } catch (error) {
-      console.log('⚠️ Backend offline - using localStorage mock mode only')
-    }
-  }
+  const isMockMode = computed(() => appStore.isBackendMockModeEnabled)
 
   /**
    * Get query parameter for API calls
    */
   const getMockParam = () => {
-    return mockModeEnabled.value ? '?use_mock=true' : ''
+    return isMockMode.value ? '?use_mock=true' : ''
   }
 
   /**
@@ -45,24 +34,14 @@ export function useMockMode() {
    */
   const fetchWithMockMode = async (url: string, options = {}) => {
     const separator = url.includes('?') ? '&' : '?'
-    const mockParam = mockModeEnabled.value ? `${separator}use_mock=true` : ''
-    
-    return fetch(url + mockParam, options)
-  }
+    const mockParam = isMockMode.value ? `${separator}use_mock=true` : ''
 
-  /**
-   * Set mock mode explicitly
-   */
-  const setMockMode = (enabled: boolean) => {
-    mockModeEnabled.value = enabled
-    localStorage.setItem('mockMode', String(enabled))
+    return fetch(url + mockParam, options)
   }
 
   return {
     isMockMode,
-    toggleMockMode,
     getMockParam,
-    fetchWithMockMode,
-    setMockMode
+    fetchWithMockMode
   }
 }

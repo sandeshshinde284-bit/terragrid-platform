@@ -1,5 +1,6 @@
 import os
 import logging
+from backend.config import settings
 from typing import Dict, Any, List, Optional
 import resend
 
@@ -12,9 +13,9 @@ class NotificationService:
     """
     
     def __init__(self):
-        self.api_key = os.getenv("RESEND_API_KEY")
-        self.from_email = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
-        self.from_name = os.getenv("RESEND_FROM_NAME", "TerraGrid Alerts")
+        self.api_key = settings.RESEND_API_KEY
+        self.from_email = settings.RESEND_FROM_EMAIL
+        self.from_name = settings.RESEND_FROM_NAME
         
         # Prevent email spam on every 15-minute polling cycle
         self.sent_alerts = set()
@@ -75,7 +76,7 @@ class NotificationService:
 
         if not recipient_emails:
             # Pull default recipients from .env, fallback to test email if missing
-            env_recipients = os.getenv("ALERT_RECIPIENTS", "test@example.com")
+            env_recipients = settings.ALERT_RECIPIENTS
             recipient_emails = [email.strip() for email in env_recipients.split(",") if email.strip()]
             
         incident_type = str(incident.get("event_type", "disaster")).upper()

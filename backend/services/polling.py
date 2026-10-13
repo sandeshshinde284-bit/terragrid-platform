@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 Feature 3: Background Polling Service
 Auto-refreshes incident data every 15 minutes using APScheduler
@@ -26,7 +27,7 @@ class BackgroundPollingService:
         self.is_running: bool = False
         
         # Pull interval from .env (defaults to 15 if not set)
-        env_interval = os.getenv("POLLING_INTERVAL_MINUTES", "15")
+        env_interval = str(settings.POLLING_INTERVAL_MINUTES)
         try:
             self.refresh_interval_minutes = int(env_interval)
         except ValueError:
@@ -117,8 +118,7 @@ class BackgroundPollingService:
 
             with SessionLocal() as db_session:
                 result = await self.data_ingestion_service.ingest_all_sources(
-                    use_mock=False, 
-                    db_session=db_session
+                    use_mock=settings.USE_MOCK_DATA, db_session=db_session
                 )
 
             new_incidents = result.get("events", [])

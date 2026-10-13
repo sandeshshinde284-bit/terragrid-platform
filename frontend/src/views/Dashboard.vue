@@ -593,9 +593,7 @@ watch(
         loadingPhaseIndex.value = (loadingPhaseIndex.value + 1) % loadingPhases.length
       }, 850)
       
-      const host = window.location.hostname === 'localhost'
-        ? 'http://localhost:8000'
-        : window.location.origin
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
         
       const response = await fetch(`${host}/api/v1/incidents/${newId}/insights`)
       if (response.ok) {
@@ -1103,7 +1101,8 @@ const fetchIncidents = async () => {
     
     console.log(`📡 Fetching incidents (Mode: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'})`)
     
-    const response = await fetchWithMockMode('http://localhost:8000/api/v1/ingest/all')
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const response = await fetchWithMockMode(`${host}/api/v1/ingest/all`)
     
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`)
@@ -1194,6 +1193,7 @@ const loadAlerts = () => {
   }
 }
 
+
 onMounted(async () => {
   isLoading.value = true
   apiError.value = null
@@ -1236,7 +1236,7 @@ onMounted(async () => {
                 forecast6h: impact.forecast_6h_km2 ?? 31.2,
                 coordinates: [event.latitude, event.longitude] as [number, number],
                 source: source,
-                confidence: event.confidence || event.data?.confidence || Math.random() * (0.95 - 0.75) + 0.75,
+                confidence: event.confidence || event.data?.confidence || 0,
                 event_timestamp: event.event_timestamp || event.created_at || Date.now(),
                 data: event.data || {},
               }
@@ -1275,7 +1275,11 @@ watch(isMockMode, () => {
   console.log(`🔄 Mock mode changed to: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'}`)
   currentPage.value = 1  // Reset pagination
   fetchIncidents()
+  loadAlerts()
 })
+
+
+
 
 // Reset pagination when sort order, country filter, or event type filter changes
 watch([sortBy, selectedCountry, selectedEventType], () => {

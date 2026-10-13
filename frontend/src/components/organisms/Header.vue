@@ -35,18 +35,6 @@
     <div class="header-center"></div>
 
     <div class="header-right">
-      <!-- Mock/Live Data Toggle (Disabled for Strict Live Mode) -->
-      <!--
-      <button 
-        class="header-btn mock-toggle"
-        @click="toggleMockMode"
-        :class="{ active: mockModeEnabled }"
-        :title="mockModeEnabled ? 'Using Mock Data (Testing Mode)' : 'Using Live APIs (Production)'"
-      >
-        <span v-if="mockModeEnabled">🧪 MOCK</span>
-        <span v-else>🌐 LIVE</span>
-      </button>
-      -->
 
       <button 
         class="header-btn"
@@ -147,7 +135,6 @@ import { computed, ref } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { useAppStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
-import { useMockMode } from '@/composables/useMockMode'
 
 const router = useRouter()
 const route = useRoute()
@@ -156,9 +143,6 @@ const { locale } = useI18n()
 const selectedLanguage = ref(locale.value.toUpperCase())
 const is3D = computed(() => appStore.viewMode === '3d')
 const mobileMenuOpen = ref(false)
-
-// Mock mode toggle (shared composable - keeps Header and Dashboard in sync)
-const { isMockMode: mockModeEnabled, toggleMockMode } = useMockMode()
 
 const goHome = () => {
   router.push('/')

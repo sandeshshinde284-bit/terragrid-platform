@@ -1,3 +1,4 @@
+from backend.config import settings
 import urllib.request
 import urllib.parse
 import json
@@ -20,9 +21,9 @@ class InfrastructureService:
     **NOTE:** Overpass API is frequently overloaded/rate-limited. Failures are
     gracefully handled by returning empty results (non-blocking).
     """
-    OVERPASS_URL = os.getenv("OVERPASS_API_URL", "https://overpass-api.de/api/interpreter")
-    OVERPASS_TIMEOUT = int(os.getenv("OVERPASS_API_TIMEOUT", 12))  # Increased from 8s (Overpass API is slow)
-    OVERPASS_RETRIES = int(os.getenv("OVERPASS_API_RETRIES", 3))   # Increased from 2 retries
+    OVERPASS_URL = settings.OVERPASS_API_URL
+    OVERPASS_TIMEOUT = settings.OVERPASS_API_TIMEOUT  # Increased from 8s (Overpass API is slow)
+    OVERPASS_RETRIES = settings.OVERPASS_API_RETRIES   # Increased from 2 retries
 
     @staticmethod
     def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:

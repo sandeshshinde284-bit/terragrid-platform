@@ -2,6 +2,7 @@ import logging
 import json
 import os
 from typing import List, Dict, Any, Optional
+from backend.config import settings
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/api/v1/incidents", tags=["incidents"])
 # Load countries data once at startup
 _COUNTRIES_DATA: Optional[Dict[str, Any]] = None
 
-ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "admin-secret-key")  # In production, use proper auth
+ADMIN_TOKEN = settings.ADMIN_TOKEN
 
 
 def _load_countries_data() -> Dict[str, Any]:
@@ -200,9 +201,16 @@ def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None
         return True
     
     # In development, mock mode is allowed (relies on environment)
-    dev_mode = os.getenv("ENVIRONMENT", "").lower() in ["dev", "development", "local"]
+    dev_mode = settings.ENVIRONMENT.lower() in ["dev", "development", "local"]
     if dev_mode:
         logger.debug("[MOCK-MODE] Development mode: mock access allowed")
+        return True
+
+    # If the operator has explicitly turned on USE_MOCK_DATA (e.g. demo mode
+    # in production for evaluators), honor it without requiring a per-request
+    # admin token - the setting itself is the authorization.
+    if settings.USE_MOCK_DATA:
+        logger.debug("[MOCK-MODE] USE_MOCK_DATA enabled: mock access allowed")
         return True
     
     # Production + no token = deny
@@ -391,7 +399,7 @@ async def get_incident_insights(
             "incident_id": incident_id,
             "location": incident.location_name,
             "plan": plan,
-            "is_mock": use_mock
+            "is_mock": use_mock or bool(plan.get("is_fallback"))
         }
     except HTTPException:
         raise
@@ -463,7 +471,7 @@ async def generate_deep_incident_analysis(
             "incident_id": incident_id,
             "location": incident.location_name,
             "dossier": dossier,
-            "is_mock": use_mock
+            "is_mock": use_mock or bool(dossier.get("is_fallback"))
         }
     except HTTPException:
         raise

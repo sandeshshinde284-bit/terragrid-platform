@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 NOAA (National Oceanic and Atmospheric Administration) API Service
 Fetches severe weather, storms, and hurricane data
@@ -13,8 +14,8 @@ logger = logging.getLogger(__name__)
 class NOAAService:
     """Service to fetch weather and storm events from NOAA API"""
     
-    BASE_URL = "https://api.weather.gov"
-    ALERTS_URL = "https://api.weather.gov/alerts/active"
+    BASE_URL = settings.NOAA_API_BASE_URL
+    ALERTS_URL = f"{settings.NOAA_API_BASE_URL}/alerts/active"
     
     @classmethod
     async def fetch_events(cls, use_mock: bool = False) -> List[Dict[str, Any]]:

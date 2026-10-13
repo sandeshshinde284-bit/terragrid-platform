@@ -1,3 +1,4 @@
+from backend.config import settings
 """
 GDACS (Global Disaster Alert & Coordination System) API Service
 Fetches disaster alerts and humanitarian data
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class GDACSService:
     """Service to fetch disaster alerts from official GDACS GeoJSON API"""
     
-    BASE_URL = "https://www.gdacs.org/gdacsapi/api/Events/geteventlist/latest"
+    BASE_URL = f"{settings.GDACS_API_URL}/Events/geteventlist/latest"
     
     # Disaster type mappings
     DISASTER_MAPPING = {

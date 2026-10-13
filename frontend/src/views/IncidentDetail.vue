@@ -198,8 +198,10 @@
                 <div class="summary-facts">
                   <div><span>Incident class</span><strong>{{ formatIncidentType(incident.type) }}</strong></div>
                   <div><span>Operational posture</span><strong>{{ operationalPosture }}</strong></div>
-                  <div><span>Data quality</span><strong>{{ detail.dataQuality }}%</strong></div>
-                  <div><span>Next review</span><strong>In {{ detail.nextReview }}</strong></div>
+                  <template v-if="appStore.isBackendMockModeEnabled">
+                    <div><span>Data quality</span><strong>{{ detail.dataQuality }}%</strong></div>
+                    <div><span>Next review</span><strong>In {{ detail.nextReview }}</strong></div>
+                  </template>
                 </div>
               </article>
               <article class="glass-panel action-panel">
@@ -422,8 +424,6 @@ async function launchDeepAnalysis() {
   isAnalyzingDossier.value = true
   scannerActive.value = true
   currentStepIndex.value = 0
-
-  // Animate the neural scanner steps
   const stepInterval = setInterval(() => {
     if (currentStepIndex.value < analysisSteps.length - 1) {
       currentStepIndex.value++
@@ -431,7 +431,8 @@ async function launchDeepAnalysis() {
   }, 1100)
 
   try {
-    const res = await fetch(`/api/v1/incidents/${incidentId.value}/deep-analysis`, {
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const res = await fetch(`${host}/api/v1/incidents/${incidentId.value}/deep-analysis`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     })
@@ -455,7 +456,8 @@ async function launchDeepAnalysis() {
 async function checkExistingDossier() {
   if (!incidentId.value) return
   try {
-    const res = await fetch(`/api/v1/incidents/${incidentId.value}/deep-dossier`)
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const res = await fetch(`${host}/api/v1/incidents/${incidentId.value}/deep-dossier`)
     if (res.ok) {
       const data = await res.json()
       if (data.dossier) {
@@ -492,8 +494,6 @@ const threatLevel = computed(() => threatScore.value >= 80 ? 'Critical exposure'
 const threatRationale = computed(() => incident.value?.trend && incident.value.trend > 10 ? 'rapid expansion detected' : 'stable monitoring posture')
 const operationalPosture = computed(() => incident.value?.status === 'active' ? 'Full response' : incident.value?.status === 'monitoring' ? 'Enhanced monitoring' : 'Recovery')
 const summaryText = computed(() => incident.value ? `A ${formatIncidentType(incident.value.type).toLowerCase()} incident is affecting ${incident.value.location}. The current footprint covers ${formatNumber(incident.value.affectedArea)} km² and includes an estimated ${formatNumber(incident.value.affectedPopulation)} residents. Models indicate ${incident.value.trend > 0 ? 'continued expansion' : 'contraction'} over the next six hours, requiring coordinated field response and continuous verification.` : '')
-const verifiedEvidence = computed(() => detail.value.evidence.filter(item => item.status === 'Verified').length)
-const verifiedSources = computed(() => detail.value.sources.filter(item => item.status === 'Verified').length)
 
 function goTo(path: string) { router.push(path) }
 function formatNumber(value: number) { return new Intl.NumberFormat('en-US').format(value) }
@@ -501,19 +501,6 @@ function formatDate(value: Date) { return new Intl.DateTimeFormat('en-US', { mon
 function relativeTime(value: Date) { const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60000)); return minutes < 60 ? `${minutes}m ago` : `${Math.round(minutes / 60)}h ago` }
 function formatIncidentType(type: Event['type']) { return type.charAt(0).toUpperCase() + type.slice(1) }
 function formatStatus(status: IncidentLevel1['status']) { return status.charAt(0).toUpperCase() + status.slice(1) }
-function getTrendDirection(value: number) { return value >= 0 ? '↗' : '↘' }
-
-function getIncidentIcon(type?: string, location?: string): string {
-  const t = (type || '').toLowerCase()
-  const loc = (location || '').toLowerCase()
-  if (t.includes('fire') || loc.includes('fire')) return '🔥'
-  if (t.includes('flood') || loc.includes('flood')) return '💧'
-  if (t.includes('quake') || t.includes('seismic') || loc.includes('quake')) return '🌍'
-  if (t.includes('storm') || loc.includes('storm') || loc.includes('typhoon') || loc.includes('hurricane')) return '🌀'
-  if (t.includes('landslide')) return '⛰️'
-  if (t.includes('volcano')) return '🌋'
-  return '🌤️'
-}
 
 const isExportingZip = ref(false)
 
@@ -668,7 +655,9 @@ async function fetchAIInsights() {
   aiLoading.value = true
   aiError.value = null
   try {
-    const response = await fetch(`/api/v1/incidents/${incidentId.value}/insights`)
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const mockParam = appStore.isBackendMockModeEnabled ? '?use_mock=true' : ''
+    const response = await fetch(`${host}/api/v1/incidents/${incidentId.value}/insights${mockParam}`)
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const data = await response.json()
     if (data.plan) {
@@ -676,9 +665,14 @@ async function fetchAIInsights() {
       // Transform backend plan to frontend insights
       aiInsights.value = (data.plan.immediate_actions || []).map((action: string, idx: number) => ({
         id: `ai-action-${idx}`,
-        action,
-        timeUrgent: idx === 0,
-        severity: idx === 0 ? 'urgent' : idx === 1 ? 'high' : 'medium'
+        eventId: incidentId.value ,
+        severity: idx === 0 ? 'critical' : 'secondary',
+        action: action,
+        reason: 'AI-generated tactical directive based on current environmental telemetry.',
+        confidence: data.plan.confidence_score || 0.85,
+        estimatedAffected: data.plan.estimated_affected || 0,
+        timeUrgent: idx === 0 ? 'Immediate' : 'Monitor',
+        details: ''
       }))
     }
   } catch (err) {

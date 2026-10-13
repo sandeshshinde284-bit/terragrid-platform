@@ -1,7 +1,9 @@
+from backend.config import settings
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from backend.config import settings
 import sys
 import certifi
 from contextlib import asynccontextmanager
@@ -139,7 +141,7 @@ app = FastAPI(
 
 # Add CORS middleware to allow frontend requests
 # Dynamically load CORS origins from environment, fallback to localhost for dev
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
+allowed_origins = settings.ALLOWED_ORIGINS.split(",") if settings.ALLOWED_ORIGINS else []
 default_origins = [f"http://localhost:{port}" for port in range(5173, 5180)] + [f"http://127.0.0.1:{port}" for port in range(5173, 5180)]
 
 app.add_middleware(
@@ -164,8 +166,8 @@ def read_root():
         "status": "ok",
         "service": "TerraGrid API",
         "version": "1.0.0",
-        "environment": os.getenv("ENV","unknown"),
-        "database": "connected" if os.getenv("DATABASE_URL") else "not configured",
+        "environment": settings.ENVIRONMENT,
+        "database": "connected" if settings.DATABASE_URL else "not configured",
         "features": {
             "feature_1": "Real-Time Data Ingestion (NASA EONET + GDACS)",
             "feature_2": "Impact Analysis",
@@ -181,8 +183,8 @@ def get_app_config():
     a Backend-Driven UI pattern (Single Source of Truth).
     """
     return {
-        "mock_mode_enabled": os.getenv("USE_MOCK_DATA", "false").lower() == "true",
-        "environment": os.getenv("ENV", "development"),
+        "mock_mode_enabled": settings.USE_MOCK_DATA,
+        "environment": settings.ENVIRONMENT,
         "mapbox_token": os.getenv("MAPBOX_TOKEN", "")
     }
 
@@ -193,8 +195,8 @@ def health_check():
         "status": "healthy",
         "database": "PostgreSQL",
         "cache": "Redis",
-        "gcp_project": os.getenv("GOOGLE_CLOUD_PROJECT"),
-        "pubsub_topic": os.getenv("PUBSUB_TOPIC_ID"),
+        "gcp_project": settings.GCP_PROJECT_ID,
+        "pubsub_topic": settings.PUBSUB_TOPIC_ID,
         "timestamp": "2026-09-30T22:15:00Z"
     }
 

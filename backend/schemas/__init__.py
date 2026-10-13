@@ -1,1 +1,1 @@
-﻿# Schemas initialization
+# Schemas initialization

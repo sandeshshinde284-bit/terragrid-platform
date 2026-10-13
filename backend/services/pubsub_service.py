@@ -3,6 +3,7 @@ Google Cloud Pub/Sub Service
 Publishes real-time disaster events for processing
 """
 import logging
+from backend.config import settings
 import json
 import os
 from typing import Dict, Any, List
@@ -15,10 +16,10 @@ class PubSubService:
     """Service to publish events to Google Cloud Pub/Sub"""
     
     def __init__(self):
-        self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-        self.topic_id = os.getenv("PUBSUB_TOPIC_ID", "terragrid-events")
+        self.project_id = settings.GCP_PROJECT_ID
+        self.topic_id = settings.PUBSUB_TOPIC_ID
         self.publisher = None
-        self.enabled = os.getenv("USE_PUBSUB", "false").lower() == "true"
+        self.enabled = settings.USE_PUBSUB
         
         if not self.enabled:
             logger.info("Pub/Sub publishing is disabled via USE_PUBSUB=false")

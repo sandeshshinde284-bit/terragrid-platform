@@ -1,4 +1,4 @@
-﻿# Services initialization
+# Services initialization
 from .nasa_eonet import NASAEONETService
 from .gdacs import GDACSService
 from .usgs_earthquake import USGSEarthquakeService
