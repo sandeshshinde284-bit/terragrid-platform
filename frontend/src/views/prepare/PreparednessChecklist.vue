@@ -33,58 +33,78 @@
             <h2>Preparedness Checklist</h2>
             <span class="hero-meta">AI-generated actions tied to each city's forecast, grouped by urgency</span>
           </div>
-          <select v-model="selectedKey" class="city-select">
-            <option v-for="city in sortedCities" :key="cityKey(city)" :value="cityKey(city)">
-              {{ city.city }}, {{ countryName(city.country) }} - worst: {{ worstRisk(city) }}
-            </option>
-          </select>
         </div>
 
-        <div v-if="actionsLoading" class="empty-state glass-panel tactical-loading-container actions-loading">
-          <div class="radar-ping-ring small">
-            <span class="radar-dot"></span>
-          </div>
-          <div class="loading-telemetry-text">
-            <strong class="cycling-step-text">Generating preparedness checklist for {{ selectedCity?.city }}...</strong>
-          </div>
-        </div>
+        <div class="master-detail">
+          <!-- Always-visible, worst-first city list: scan every city's status
+               at a glance and jump straight to one with a single click - no
+               dropdown to open/scroll/close per city. -->
+          <nav class="city-rail glass-panel" aria-label="Cities by risk">
+            <button
+              v-for="city in sortedCities"
+              :key="cityKey(city)"
+              type="button"
+              class="rail-item"
+              :class="[worstRisk(city).toLowerCase(), { active: cityKey(city) === selectedKey }]"
+              @click="selectedKey = cityKey(city)"
+            >
+              <span class="rail-dot"></span>
+              <span class="rail-text">
+                <span class="rail-name">{{ city.city }}</span>
+                <span class="rail-country">{{ countryName(city.country) }}</span>
+              </span>
+              <span class="rail-risk">{{ worstRisk(city) }}</span>
+            </button>
+          </nav>
 
-        <div v-else-if="actionsError" class="empty-state glass-panel">
-          <div class="empty-icon">⚠️</div>
-          <h3>Couldn't generate the checklist</h3>
-          <p>{{ actionsError }}</p>
-        </div>
-
-        <template v-else-if="actionsPlan">
-          <div class="risk-context glass-panel" :class="selectedToneClass">
-            <span class="context-icon">{{ selectedToneIcon }}</span>
-            <span class="context-text">{{ actionsPlan.risk_context }}</span>
-            <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
-          </div>
-
-          <div class="priority-section" v-for="tier in priorityTiers" :key="tier.priority" v-show="tier.actions.length > 0">
-            <div class="tier-header" :class="tier.className">
-              <span class="tier-dot"></span>
-              <span class="tier-label">{{ tier.label }}</span>
-              <span class="tier-count">{{ tier.actions.length }}</span>
-            </div>
-
-            <div class="action-grid">
-              <div v-for="(action, idx) in tier.actions" :key="idx" class="action-card glass-panel">
-                <div class="action-top">
-                  <span class="category-chip" :class="action.category.toLowerCase()">{{ categoryIcon(action.category) }} {{ action.category }}</span>
-                  <span class="deadline-chip">Before Day {{ action.deadline_day }}</span>
-                </div>
-                <p class="action-text">{{ action.action }}</p>
-                <div class="action-agency">
-                  <span class="agency-icon">🏛️</span>
-                  <span>{{ action.agency }}</span>
-                </div>
-                <p class="action-rationale">{{ action.rationale }}</p>
+          <div class="detail-panel">
+            <div v-if="actionsLoading" class="empty-state glass-panel tactical-loading-container actions-loading">
+              <div class="radar-ping-ring small">
+                <span class="radar-dot"></span>
+              </div>
+              <div class="loading-telemetry-text">
+                <strong class="cycling-step-text">Generating preparedness checklist for {{ selectedCity?.city }}...</strong>
               </div>
             </div>
+
+            <div v-else-if="actionsError" class="empty-state glass-panel">
+              <div class="empty-icon">⚠️</div>
+              <h3>Couldn't generate the checklist</h3>
+              <p>{{ actionsError }}</p>
+            </div>
+
+            <template v-else-if="actionsPlan">
+              <div class="risk-context glass-panel" :class="selectedToneClass">
+                <span class="context-icon">{{ selectedToneIcon }}</span>
+                <span class="context-text">{{ actionsPlan.risk_context }}</span>
+                <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
+              </div>
+
+              <div class="priority-section" v-for="tier in priorityTiers" :key="tier.priority" v-show="tier.actions.length > 0">
+                <div class="tier-header" :class="tier.className">
+                  <span class="tier-dot"></span>
+                  <span class="tier-label">{{ tier.label }}</span>
+                  <span class="tier-count">{{ tier.actions.length }}</span>
+                </div>
+
+                <div class="action-grid">
+                  <div v-for="(action, idx) in tier.actions" :key="idx" class="action-card glass-panel">
+                    <div class="action-top">
+                      <span class="category-chip" :class="action.category.toLowerCase()">{{ categoryIcon(action.category) }} {{ action.category }}</span>
+                      <span class="deadline-chip">Before Day {{ action.deadline_day }}</span>
+                    </div>
+                    <p class="action-text">{{ action.action }}</p>
+                    <div class="action-agency">
+                      <span class="agency-icon">🏛️</span>
+                      <span>{{ action.agency }}</span>
+                    </div>
+                    <p class="action-rationale">{{ action.rationale }}</p>
+                  </div>
+                </div>
+              </div>
+            </template>
           </div>
-        </template>
+        </div>
       </template>
     </div>
   </div>
@@ -320,14 +340,101 @@ watch(selectedKey, () => {
   color: var(--text-secondary);
 }
 
-.city-select {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  padding: 8px 12px;
+/* Master-detail layout: an always-visible, worst-first city list beside the
+   detail panel, so every city's status is scannable at once - no dropdown
+   to open/scroll/close per city. */
+.master-detail {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.city-rail {
+  flex: 0 0 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
   border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.rail-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rail-item.active {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.rail-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rail-item.green .rail-dot { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
+.rail-item.yellow .rail-dot { background: #eab308; box-shadow: 0 0 6px rgba(234, 179, 8, 0.5); }
+.rail-item.orange .rail-dot { background: #f97316; box-shadow: 0 0 6px rgba(249, 115, 22, 0.5); }
+.rail-item.red .rail-dot { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
+
+.rail-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.rail-name {
   font-size: 13px;
-  min-width: 240px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rail-country {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.rail-risk {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.rail-item.green .rail-risk { color: #22c55e; }
+.rail-item.yellow .rail-risk { color: #eab308; }
+.rail-item.orange .rail-risk { color: #f97316; }
+.rail-item.red .rail-risk { color: #ef4444; }
+
+.detail-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .actions-loading {
@@ -583,9 +690,58 @@ watch(selectedKey, () => {
     padding: 14px 16px;
   }
 
-  .city-select {
-    min-width: 0;
+  /* Stack the city rail above the detail panel, and lay it out as a
+     horizontally scrollable row of compact chips rather than a tall
+     vertical list eating the screen before the checklist even shows. */
+  .master-detail {
+    flex-direction: column;
+  }
+
+  .city-rail {
+    flex: 0 0 auto;
+    flex-direction: row;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
     width: 100%;
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-primary, #22d3ee) transparent;
+  }
+
+  .city-rail::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .city-rail::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .city-rail::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .city-rail::-webkit-scrollbar-thumb {
+    background: var(--accent-primary, #22d3ee);
+    border-radius: 3px;
+  }
+
+  .city-rail::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 6px;
+    width: 24px;
+    background: linear-gradient(to right, transparent, rgba(10, 14, 22, 0.85));
+    pointer-events: none;
+  }
+
+  .rail-item {
+    flex: 0 0 auto;
+    min-width: 150px;
   }
 }
 </style>

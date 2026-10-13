@@ -33,39 +33,59 @@
             <h2>Risk Escalation Timeline</h2>
             <span class="hero-meta">How risk builds day by day for a single location, from the same 7-day forecast</span>
           </div>
-          <select v-model="selectedKey" class="city-select">
-            <option v-for="city in sortedCities" :key="cityKey(city)" :value="cityKey(city)">
-              {{ city.city }}, {{ countryName(city.country) }} - worst: {{ worstRisk(city) }}
-            </option>
-          </select>
         </div>
 
-        <div v-if="selectedCity" class="escalation-summary glass-panel" :class="summary.toneClass">
-          <span class="summary-icon">{{ summary.icon }}</span>
-          <span class="summary-text">{{ summary.text }}</span>
-        </div>
+        <div class="master-detail">
+          <!-- Always-visible, worst-first city list: scan every city's status
+               at a glance and jump straight to one with a single click - no
+               dropdown to open/scroll/close per city. -->
+          <nav class="city-rail glass-panel" aria-label="Cities by risk">
+            <button
+              v-for="city in sortedCities"
+              :key="cityKey(city)"
+              type="button"
+              class="rail-item"
+              :class="[worstRisk(city).toLowerCase(), { active: cityKey(city) === selectedKey }]"
+              @click="selectedKey = cityKey(city)"
+            >
+              <span class="rail-dot"></span>
+              <span class="rail-text">
+                <span class="rail-name">{{ city.city }}</span>
+                <span class="rail-country">{{ countryName(city.country) }}</span>
+              </span>
+              <span class="rail-risk">{{ worstRisk(city) }}</span>
+            </button>
+          </nav>
 
-        <div v-if="selectedCity" class="timeline-strip glass-panel">
-          <div class="timeline-track">
-            <template v-for="(day, index) in selectedCity.daily" :key="day.date">
-              <div class="timeline-node">
-                <span class="node-day-label">Day {{ index + 1 }}</span>
-                <span class="node-date">{{ formatDay(day.date) }}</span>
-                <div class="node-dot-wrap">
-                  <div class="node-dot" :class="day.risk_level.toLowerCase()">
-                    <span class="node-dot-inner"></span>
+          <div class="detail-panel">
+            <div v-if="selectedCity" class="escalation-summary glass-panel" :class="summary.toneClass">
+              <span class="summary-icon">{{ summary.icon }}</span>
+              <span class="summary-text">{{ summary.text }}</span>
+            </div>
+
+            <div v-if="selectedCity" class="timeline-strip glass-panel">
+              <div class="timeline-track">
+                <template v-for="(day, index) in selectedCity.daily" :key="day.date">
+                  <div class="timeline-node">
+                    <span class="node-day-label">Day {{ index + 1 }}</span>
+                    <span class="node-date">{{ formatDay(day.date) }}</span>
+                    <div class="node-dot-wrap">
+                      <div class="node-dot" :class="day.risk_level.toLowerCase()">
+                        <span class="node-dot-inner"></span>
+                      </div>
+                    </div>
+                    <span class="node-risk-label" :class="day.risk_level.toLowerCase()">{{ day.risk_level }}</span>
+                    <span class="node-weather">{{ weatherIcon(day.dominant_weather) }} {{ day.dominant_weather }}</span>
+                    <span class="node-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
                   </div>
-                </div>
-                <span class="node-risk-label" :class="day.risk_level.toLowerCase()">{{ day.risk_level }}</span>
-                <span class="node-weather">{{ weatherIcon(day.dominant_weather) }} {{ day.dominant_weather }}</span>
-                <span class="node-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
+                  <div
+                    v-if="index < selectedCity.daily.length - 1"
+                    class="timeline-connector"
+                    :class="[day.risk_level.toLowerCase(), connectorTrend(day.risk_level, selectedCity.daily[index + 1].risk_level)]"
+                  ></div>
+                </template>
               </div>
-              <div
-                v-if="index < selectedCity.daily.length - 1"
-                class="timeline-connector"
-                :class="[day.risk_level.toLowerCase(), connectorTrend(day.risk_level, selectedCity.daily[index + 1].risk_level)]"
-              ></div>
-            </template>
+            </div>
           </div>
         </div>
       </template>
@@ -347,16 +367,101 @@ watch(cities, (newCities) => {
   color: var(--text-secondary);
 }
 
-.city-select {
-  padding: 10px 14px;
+/* Master-detail layout: an always-visible, worst-first city list beside the
+   detail panel, so every city's status is scannable at once - no dropdown
+   to open/scroll/close per city. */
+.master-detail {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.city-rail {
+  flex: 0 0 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
   border-radius: 8px;
-  border: 1px solid var(--glass-border);
-  background: var(--bg-panel);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 600;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
-  min-width: 260px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.rail-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rail-item.active {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.rail-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rail-item.green .rail-dot { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
+.rail-item.yellow .rail-dot { background: #eab308; box-shadow: 0 0 6px rgba(234, 179, 8, 0.5); }
+.rail-item.orange .rail-dot { background: #f97316; box-shadow: 0 0 6px rgba(249, 115, 22, 0.5); }
+.rail-item.red .rail-dot { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
+
+.rail-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.rail-name {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rail-country {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.rail-risk {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.rail-item.green .rail-risk { color: #22c55e; }
+.rail-item.yellow .rail-risk { color: #eab308; }
+.rail-item.orange .rail-risk { color: #f97316; }
+.rail-item.red .rail-risk { color: #ef4444; }
+
+.detail-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .escalation-summary {
@@ -535,9 +640,47 @@ watch(cities, (newCities) => {
     align-items: flex-start;
   }
 
-  .city-select {
+  /* Stack the city rail above the detail panel, and lay it out as a
+     horizontally scrollable row of compact chips rather than a tall
+     vertical list eating the screen before the timeline even shows. */
+  .master-detail {
+    flex-direction: column;
+  }
+
+  .city-rail {
+    flex: 0 0 auto;
+    flex-direction: row;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
     width: 100%;
-    min-width: 0;
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-primary, #22d3ee) transparent;
+  }
+
+  .city-rail::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .city-rail::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .city-rail::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .city-rail::-webkit-scrollbar-thumb {
+    background: var(--accent-primary, #22d3ee);
+    border-radius: 3px;
+  }
+
+  .rail-item {
+    flex: 0 0 auto;
+    min-width: 150px;
   }
 
   .timeline-node {
@@ -566,6 +709,21 @@ watch(cities, (newCities) => {
     right: 0;
     bottom: 6px;
     width: 32px;
+    background: linear-gradient(to right, transparent, rgba(10, 14, 22, 0.85));
+    pointer-events: none;
+  }
+
+  .city-rail {
+    padding: 8px;
+  }
+
+  .city-rail::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 6px;
+    width: 24px;
     background: linear-gradient(to right, transparent, rgba(10, 14, 22, 0.85));
     pointer-events: none;
   }
