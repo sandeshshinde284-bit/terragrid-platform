@@ -16,10 +16,11 @@ Updated as we go; reviewed in full once all 5 PREPARE features ship.
 | PR4 | Agency Alert Templates | ✅ DONE | 4 audience-specific templates (Farmers/Hospitals/NGOs/Municipal Corps) per city from one Gemini call; routine-vs-escalating mock branching applied from the start (no repeat of the PR2 bug); master-detail city rail + audience tabs + copy-to-clipboard |
 | PR4 ext. | Agency Alert manual send (WhatsApp + Email) | ✅ DONE | Manual-only send of the drafted alert to a pre-approved demo recipient list, via WAHA (WhatsApp) and Resend (email). Separate recipient env vars per channel; `EMAIL_ALERT_RECIPIENTS` deliberately kept independent of the existing `ALERT_RECIPIENTS` used by RESPONSE phase's automatic incident emails. Shared `"Label:value"` recipient parsing extracted into `backend/services/recipients.py`, used by both channels. |
 | PR9 | Confidence-Based Alerting | ✅ DONE | `_summarize_forecast_by_day()` now computes `confidence_pct` (the % of a day's ~8 three-hour entries that agree with the day's chosen risk level) and `alert_recommended` (non-GREEN + confidence ≥ 70%) — real agreement-ratio math on data already fetched, not a fabricated score. Surfaced as a badge on Risk Timeline's per-day nodes and on Agency Alerts (plus a low-confidence warning banner there). |
+| PR5 | Evacuation Route Pre-Calculation | ✅ DONE | New `GET /api/v1/prepare/evacuation-routes` adapts RESPONSE phase's real OSRM-routed egress corridors (`EvacuationZoneService.get_safe_routes`, already live for Feature 3A) to run proactively per forecasted city — gated on PR9's `alert_recommended` so the real OSRM call only fires once a day is both elevated and well-supported, not for every city or a brief spike. Risk Timeline shows a "Pre-calculate routes" panel only on qualifying cities. |
 
-**PREPARE phase build order complete (PR1 → PR7 → PR2 → PR6 → PR4).** PR4 was later extended with manual WhatsApp/email send, and PR9 (Confidence-Based Alerting) has since also shipped.
+**PREPARE phase build order complete (PR1 → PR7 → PR2 → PR6 → PR4).** PR4 was later extended with manual WhatsApp/email send, and PR9 (Confidence-Based Alerting) and PR5 (Evacuation Route Pre-Calculation) have since also shipped.
 
-(PR8 deferred earlier for fabrication risk — no verified historical disaster dataset exists to build it on. PR5 up next; PR10 redefined to validate the real 5-day forecast, scheduled after PR5.)
+(PR8 deferred earlier for fabrication risk — no verified historical disaster dataset exists to build it on. PR10 — redefined to validate the real 5-day forecast — is next and last in the confirmed build order.)
 
 ## Deferred decisions — to revisit once PREPARE phase is complete
 
