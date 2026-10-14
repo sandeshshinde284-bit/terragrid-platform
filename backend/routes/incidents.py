@@ -378,6 +378,52 @@ async def get_satellite_validation(incident_id: str, db: Session = Depends(get_d
         raise HTTPException(status_code=500, detail=f"Satellite cross-validation failed: {str(e)}")
 
 
+@router.get("/{incident_id}/flood-detection")
+async def get_flood_detection(incident_id: str, db: Session = Depends(get_db)):
+    """
+    Feature 13: Sentinel-1 SAR Flood Detection via Google Earth Engine.
+
+    Runs a real backscatter change-detection analysis (Sentinel-1 VV,
+    pre/post incident composites, same orbit pass) over this incident's
+    own coordinates, masked against JRC Global Surface Water and SRTM
+    slope, connectivity-filtered - the published UN-SPIDER/DeVries et al.
+    methodology, ported to the Earth Engine Python API (see
+    backend/services/flood_detection_ee.py for the full citation and the
+    dB-vs-linear threshold note).
+
+    Best suited to flood/storm-type incidents - it will still run for
+    other event types, but a non-flood incident has no reason to show
+    meaningful backscatter change.
+
+    Blocking (synchronous Earth Engine calls) - run off the event loop.
+    """
+    import asyncio
+    from backend.services.flood_detection_ee import flood_detection_service
+
+    try:
+        incident = find_incident_by_id(incident_id, db)
+        if not incident:
+            raise HTTPException(status_code=404, detail=f"Incident '{incident_id}' not found")
+
+        incident_data = {
+            "latitude": incident.latitude,
+            "longitude": incident.longitude,
+            "location_name": incident.location_name,
+            "event_timestamp": incident.event_timestamp,
+        }
+
+        result = await asyncio.to_thread(flood_detection_service.detect_flood, incident_data)
+        result["incident_id"] = f"event_{incident.id}"
+        result.setdefault("location_name", incident.location_name)
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Flood detection failed for incident {incident_id}")
+        raise HTTPException(status_code=500, detail=f"Flood detection failed: {str(e)}")
+
+
 @router.get("/{incident_id}/insights")
 async def get_incident_insights(
     incident_id: str, 

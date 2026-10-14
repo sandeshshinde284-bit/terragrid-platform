@@ -20,6 +20,7 @@ google-cloud-secret-manager==2.16.4
 google-cloud-pubsub==2.18.4
 google-auth==2.25.2
 google-cloud-aiplatform==1.49.0
+earthengine-api==1.7.48
 setuptools==80.10.2
 
 # Utilities
