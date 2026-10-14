@@ -611,6 +611,59 @@ async def get_incidents_stats(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Statistics query failed")
 
 
+@router.post("/resources/optimize")
+async def optimize_resources(
+    resource_pool: Dict[str, int],
+    status: str = Query("active", description="Only allocate against incidents in this status"),
+    db: Session = Depends(get_db)
+):
+    """
+    Resource Optimization (RESPONSE feature #8).
+
+    Originally this existed only as an AI-guessed `resource_allocation`
+    field inside Gemini's dossier JSON - not a standalone, verifiable
+    computation. This endpoint replaces that with a deterministic
+    allocation: it pulls currently active incidents straight from the
+    database (their real, already-computed risk_score, affected_population
+    and humanitarian_impact.need_level - the same fields Feature 2's
+    impact analysis produces) and splits a resource pool the CALLER
+    declares across them by actual need, using largest-remainder
+    apportionment so the integers always sum exactly to the pool.
+
+    No resource pool is assumed or invented - the caller must declare
+    real on-hand quantities (e.g. {"medical_teams": 12, "water_tankers": 8}).
+    This deliberately does not do GPS-based physical dispatch (see PR3,
+    iceboxed in PREPARE_PHASE_NOTES.md for the same reason: no sovereign
+    access to real asset-location data).
+
+    Body:
+        resource_pool: {"<resource_type>": <quantity>, ...}
+
+    Query:
+        status: which incident status to allocate against (default "active")
+    """
+    from backend.services.resource_optimizer import ResourceOptimizerService
+
+    try:
+        incidents_query = db.query(Event).filter(Event.status == status).all()
+
+        incidents = []
+        for incident in incidents_query:
+            data = incident.data.copy() if incident.data else {}
+            data["id"] = f"event_{incident.id}"
+            data["location_name"] = incident.location_name or "Unknown"
+            incidents.append(data)
+
+        result = ResourceOptimizerService.optimize(incidents, resource_pool)
+        result["incidents_considered"] = len(incidents)
+        result["status_filter"] = status
+        return result
+
+    except Exception as e:
+        logger.exception("Resource optimization failed")
+        raise HTTPException(status_code=500, detail=f"Resource optimization failed: {str(e)}")
+
+
 @router.get("/grouped/by-country")
 async def get_incidents_by_country(
     db: Session = Depends(get_db),
