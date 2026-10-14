@@ -38,6 +38,7 @@
             title="Predict & Recover — coming soon"
           >
             PREDICT · RECOVER
+            <span class="soon-badge">SOON</span>
           </button>
         </div>
 
@@ -134,6 +135,7 @@
           @click="router.push('/roadmap'); closeMobileMenu()"
         >
           PREDICT · RECOVER
+          <span class="soon-badge">SOON</span>
         </button>
       </div>
 
@@ -374,21 +376,27 @@ const closeMobileMenu = () => {
 }
 
 .phase-btn.roadmap {
-  opacity: 0.75;
-  border-style: dashed;
-}
-
-.phase-btn.roadmap:hover {
-  opacity: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .phase-btn.roadmap.active {
-  opacity: 1;
-  border-style: solid;
   background: rgba(255, 255, 255, 0.06);
   border-color: var(--glass-border);
   color: var(--text-primary);
   box-shadow: none;
+}
+
+.soon-badge {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+  white-space: nowrap;
 }
 
 .nav-row {
@@ -480,8 +488,8 @@ const closeMobileMenu = () => {
 }
 
 .header-btn {
-  background: transparent;
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid var(--glass-border);
   color: var(--text-primary);
   padding: 6px 10px;
   border-radius: 4px;
