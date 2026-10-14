@@ -443,12 +443,17 @@ const closeMobileMenu = () => {
   border-color: var(--accent-cyan);
 }
 
+/* Deliberately NOT the same vibrant gradient fill as .phase-btn.active -
+   two stacked rows both using the exact same bold blue made it unclear
+   which level (phase vs. sub-tab) was the "main" selection. The sub-tab
+   gets a lighter tint instead, so PREPARE stays the one bold anchor and
+   Forecast reads as "selected within it", not a second competing fill. */
 .nav-menu :deep(a.active) {
-  color: #ffffff;
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
-  border-color: var(--accent-cyan);
+  color: var(--accent-cyan, #22d3ee);
+  background: rgba(34, 211, 238, 0.14);
+  border-color: var(--accent-cyan, #22d3ee);
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+  box-shadow: none;
 }
 
 .nav-group {
