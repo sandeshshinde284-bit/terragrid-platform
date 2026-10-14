@@ -55,8 +55,8 @@
           <div class="nav-group">
             <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
             <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
-            <RouterLink to="/map" :class="{ active: isActive('/map') }">◎ Live Map</RouterLink>
-            <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">⌁ Deep Analysis</RouterLink>
+            <RouterLink to="/map" :class="{ active: isActive('/map') }">🗺️ Live Map</RouterLink>
+            <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">📈 Deep Analysis</RouterLink>
             <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
           </div>
         </div>

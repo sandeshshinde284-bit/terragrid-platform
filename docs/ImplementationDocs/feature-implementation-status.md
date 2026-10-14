@@ -175,9 +175,18 @@ Known Issues:
    GCP credential independently proven live via a standalone local test script, but
    have not yet been re-verified through the actual running backend with that
    credential wired into `.env` — next concrete step, not a code gap.
-⚠️ evacuation_zones.py's area-type detection has a hardcoded ~8-city list and
-   defaults to dense-urban density elsewhere, producing unrealistic population
-   estimates outside those cities (flagged, not yet actioned — Bhai's call).
+✅ evacuation_zones.py's population estimate — was hardcoded to 8 California
+   cities with raw degree-distance matching, and applied full city-core
+   density uniformly out to a 100km radius, producing numbers like 176M
+   "affected" for a single fire. Fixed: real haversine distance, a global
+   city-density anchor list (reusing OpenWeatherService.MONITORED_CITIES),
+   realistic density tiers, a 40km zone-radius cap, and exposure weighting
+   so the outer "caution/alert" advisory bands count at a fraction of core
+   density instead of full density across their whole ring. Verified against
+   6 real locations: Mauna Loa 15.7M → 35.8K, a CA fire near LA 176M → 3.6M
+   (in line with LA County's actual population), Delhi earthquake ~28-36M
+   (in line with Delhi NCR's actual ~30M population) instead of multiples
+   of world population.
 ```
 
 **Feature Mapping to UI Tabs:**

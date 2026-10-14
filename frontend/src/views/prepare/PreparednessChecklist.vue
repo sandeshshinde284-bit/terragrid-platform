@@ -475,6 +475,31 @@ watch(selectedKey, () => {
   padding: 10px;
   max-height: 70vh;
   overflow-y: auto;
+  /* Themed scrollbar instead of the browser's default light-gray one, which
+     clashes against this panel's dark background. The mobile media query
+     below already themes this for horizontal scrolling; this covers the
+     vertical desktop case the same way. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary, #22d3ee) transparent;
+}
+
+.city-rail::-webkit-scrollbar {
+  width: 6px;
+}
+
+.city-rail::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.city-rail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.city-rail::-webkit-scrollbar-thumb {
+  background: var(--accent-primary, #22d3ee);
+  border-radius: 3px;
 }
 
 .rail-item {
