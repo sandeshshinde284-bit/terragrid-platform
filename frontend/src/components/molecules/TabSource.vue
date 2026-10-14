@@ -268,18 +268,25 @@ function getAuditLog(): Array<{action: string, timestamp: string, actor: string}
   ]
 }
 
-// Helper: Get data fields
+// Helper: Get data fields - checks both incident.data and top-level incident fields
 function getDataFields(): Array<{name: string, present: boolean}> {
-  const data = props.incident?.data || {}
+  if (!props.incident) return []
+
+  const data = props.incident.data || {}
+  const incident = props.incident
+
   return [
-    { name: 'Type', present: !!data.event_type },
-    { name: 'Location', present: !!data.location_name },
-    { name: 'Severity', present: !!data.severity },
-    { name: 'Status', present: !!data.status },
-    { name: 'Coordinates', present: !!data.latitude && !!data.longitude },
-    { name: 'Threat', present: !!data.threatScore },
-    { name: 'Area', present: !!data.affectedArea },
-    { name: 'Population', present: !!data.affectedPopulation }
+    { name: 'Type', present: !!(data.event_type || incident.event_type) },
+    { name: 'Location', present: !!(data.location_name || incident.location_name || incident.location) },
+    { name: 'Severity', present: !!(data.severity || incident.severity) },
+    { name: 'Status', present: !!(data.status || incident.status) },
+    { name: 'Coordinates', present: !!(
+      (data.latitude && data.longitude) ||
+      (incident.latitude && incident.longitude)
+    ) },
+    { name: 'Threat', present: !!(data.threatScore || incident.threatScore) },
+    { name: 'Area', present: !!(data.affectedArea || incident.affectedArea) },
+    { name: 'Population', present: !!(data.affectedPopulation || incident.affectedPopulation) }
   ]
 }
 </script>
