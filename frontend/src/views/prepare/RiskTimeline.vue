@@ -91,6 +91,41 @@
                 </template>
               </div>
             </div>
+
+            <!-- PR5: Evacuation Route Pre-Calculation. Only offered when at
+                 least one forecast day both carries elevated risk and clears
+                 PR9's confidence bar - a brief, low-agreement spike isn't
+                 worth spending a real OSRM routing call on. -->
+            <div v-if="selectedCity && hasQualifyingDay" class="evac-panel glass-panel">
+              <div class="evac-header">
+                <div class="evac-heading">
+                  <h3>Evacuation Route Pre-Calculation</h3>
+                  <span class="evac-subtext">
+                    {{ selectedCity.city }}'s forecast crosses into a confident, elevated risk day -
+                    pre-calculate real road-network egress routes now, before an incident exists.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  class="evac-calc-btn"
+                  :disabled="evacLoading"
+                  @click="fetchEvacuationRoutes"
+                >
+                  {{ evacLoading ? 'Calculating...' : (evacRoutes.length ? 'Recalculate routes' : 'Pre-calculate routes') }}
+                </button>
+              </div>
+
+              <p v-if="evacError" class="evac-error">⚠️ {{ evacError }}</p>
+
+              <div v-if="evacRoutes.length" class="evac-routes">
+                <div v-for="route in evacRoutes" :key="route.route_id" class="evac-route-card">
+                  <span class="evac-route-name">{{ route.name }}</span>
+                  <span class="evac-route-metric">{{ route.distance_km.toFixed(1) }} km</span>
+                  <span class="evac-route-metric">{{ route.estimated_time_hours.toFixed(1) }} hrs</span>
+                  <span class="evac-route-safety">Safety {{ route.safety_score }}/100</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </template>
@@ -108,6 +143,9 @@ import { usePrepareForecastStore, type PrepareCityForecast, type PrepareDailyFor
 type CityForecast = PrepareCityForecast
 
 const { fetchWithMockMode } = useMockMode()
+
+const apiHost = () =>
+  import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
 
 // Shared across all 4 PREPARE pages - fetched once, reused on tab switches
 // instead of each page re-fetching all ~40 cities independently (see
@@ -168,6 +206,60 @@ const sortedCities = computed(() => {
 
 const selectedCity = computed<CityForecast | null>(() => {
   return cities.value.find(c => cityKey(c) === selectedKey.value) || null
+})
+
+// PR5: whether this city has any day worth pre-calculating evacuation
+// routes for - mirrors the backend's own gate (non-GREEN + PR9 confidence
+// >= 70) so the button only appears when the backend would actually do
+// something with it.
+const hasQualifyingDay = computed(() => {
+  return !!selectedCity.value?.daily.some(day => day.alert_recommended)
+})
+
+interface EvacRoute {
+  route_id: string
+  name: string
+  distance_km: number
+  estimated_time_hours: number
+  safety_score: number
+}
+
+const evacLoading = ref(false)
+const evacError = ref('')
+const evacRoutes = ref<EvacRoute[]>([])
+
+const fetchEvacuationRoutes = async () => {
+  const city = selectedCity.value
+  if (!city) return
+
+  evacLoading.value = true
+  evacError.value = ''
+
+  try {
+    const host = apiHost()
+    const params = new URLSearchParams({ city: city.city, country: city.country })
+    const response = await fetchWithMockMode(`${host}/api/v1/prepare/evacuation-routes?${params}`)
+    const json = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(json.detail || `Backend returned ${response.status}`)
+    }
+    evacRoutes.value = json.routes || []
+    if (json.status === 'not_needed') {
+      evacError.value = json.reason || "This city's forecast no longer qualifies for route pre-calculation."
+    }
+  } catch (e) {
+    evacRoutes.value = []
+    evacError.value = e instanceof Error ? e.message : 'Unknown error pre-calculating routes'
+  } finally {
+    evacLoading.value = false
+  }
+}
+
+// A stale route set/error from the previous city shouldn't linger once the
+// operator switches to a different one.
+watch(selectedKey, () => {
+  evacRoutes.value = []
+  evacError.value = ''
 })
 
 const formatDay = (dateStr: string): string => {
@@ -521,6 +613,97 @@ watch(cities, (newCities) => {
   display: flex;
   align-items: flex-start;
   min-width: min-content;
+}
+
+.evac-panel {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.evac-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.evac-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.evac-heading h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.evac-subtext {
+  font-size: 12px;
+  color: var(--text-muted);
+  max-width: 560px;
+}
+
+.evac-calc-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.evac-calc-btn:hover:not(:disabled) {
+  background: rgba(249, 115, 22, 0.2);
+}
+
+.evac-calc-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.evac-error {
+  font-size: 12px;
+  color: #eab308;
+  margin: 0;
+}
+
+.evac-routes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.evac-route-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.evac-route-name {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.evac-route-metric {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.evac-route-safety {
+  font-size: 11px;
+  color: #22c55e;
+  font-weight: 600;
 }
 
 .timeline-node {
