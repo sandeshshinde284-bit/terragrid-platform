@@ -75,6 +75,11 @@
                       </div>
                     </div>
                     <span class="node-risk-label" :class="day.risk_level.toLowerCase()">{{ day.risk_level }}</span>
+                    <span
+                      class="node-confidence"
+                      :class="confidenceClass(day.confidence_pct)"
+                      :title="confidenceTooltip(day)"
+                    >{{ day.confidence_pct.toFixed(0) }}% agreement</span>
                     <span class="node-weather">{{ weatherIcon(day.dominant_weather) }} {{ day.dominant_weather }}</span>
                     <span class="node-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
                   </div>
@@ -98,7 +103,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
-import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
+import { usePrepareForecastStore, type PrepareCityForecast, type PrepareDailyForecast } from '@/stores'
 
 type CityForecast = PrepareCityForecast
 
@@ -126,6 +131,28 @@ const WEATHER_ICONS: Record<string, string> = {
   dust: '🌪️', sand: '🌪️', ash: '🌋', squall: '💨', tornado: '🌪️',
 }
 const weatherIcon = (label: string) => WEATHER_ICONS[(label || '').toLowerCase()] || '🌡️'
+
+// PR9 (confidence-based alerting): confidence_pct is the % of that day's own
+// 3-hour forecast entries that agreed with the chosen risk_level - a high
+// number means the whole day pointed the same way, a low number means only
+// a brief spike drove the color. Styled as its own tier so a low-agreement
+// RED doesn't read as confidently as a high-agreement one.
+const confidenceClass = (pct: number): string => {
+  if (pct >= 70) return 'confidence-high'
+  if (pct >= 40) return 'confidence-medium'
+  return 'confidence-low'
+}
+
+const confidenceTooltip = (day: PrepareDailyForecast): string => {
+  const base = `${day.confidence_pct.toFixed(0)}% of this day's 3-hour forecast readings agreed with the ${day.risk_level} call.`
+  if (day.alert_recommended) {
+    return `${base} Confidence is high enough to act on.`
+  }
+  if (day.risk_level === 'GREEN') {
+    return base
+  }
+  return `${base} Below the 70% bar for an auto-recommended alert - likely a brief spike rather than a sustained risk.`
+}
 
 const cityKey = (city: CityForecast) => `${city.city}-${city.country}`
 
@@ -554,6 +581,30 @@ watch(cities, (newCities) => {
 .node-risk-label.yellow { color: #eab308; }
 .node-risk-label.orange { color: #f97316; }
 .node-risk-label.red { color: #ef4444; }
+
+.node-confidence {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  cursor: help;
+}
+
+.node-confidence.confidence-high {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.node-confidence.confidence-medium {
+  color: #eab308;
+  background: rgba(234, 179, 8, 0.12);
+}
+
+.node-confidence.confidence-low {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
 
 .node-weather {
   font-size: 12px;

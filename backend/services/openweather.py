@@ -186,7 +186,8 @@ class OpenWeatherService:
 
         Returns:
             List of per-city forecast dicts, each with a "daily" list of
-            {date, risk_level, dominant_weather, max_wind_ms, min_temp_c, max_temp_c, total_rain_mm}
+            {date, risk_level, dominant_weather, max_wind_ms, min_temp_c, max_temp_c,
+             total_rain_mm, confidence_pct, alert_recommended}
         """
         if use_mock:
             logger.info(" OpenWeather Forecast: 🧪 MOCK MODE ENABLED via .env")
@@ -306,6 +307,17 @@ class OpenWeatherService:
             dominant_weather = None
             best_rain_for_tiebreak = -1.0
             severity_rank = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+            # PR9 (confidence-based alerting): each day is built from ~8
+            # independent 3-hour forecasts. If only one of those 8 reaches
+            # the day's worst severity and the rest are calm, that's a brief
+            # spike, not a sustained risk - alerting on it as confidently as
+            # a day where all 8 agree would be a false alarm. entry_severities
+            # collects every entry's own severity so we can measure, after
+            # the loop, what fraction of the day actually agrees with
+            # worst_severity - a real, computed-from-data signal, not an
+            # invented probability (OpenWeatherMap's free forecast tier has
+            # no confidence field of its own to use instead).
+            entry_severities: List[str] = []
 
             for entry in day_entries:
                 main = entry.get("main", {})
@@ -333,6 +345,7 @@ class OpenWeatherService:
                 weather_label = weather.get("main", "Unknown")
 
                 severity = cls._determine_severity(event_type, wind_speed, temp, humidity, description)
+                entry_severities.append(severity)
 
                 # Pick the entry that best represents the day: highest severity first,
                 # and among equally-severe entries (including the common all-"low" day),
@@ -358,6 +371,28 @@ class OpenWeatherService:
                 "critical": "RED",
             }.get(worst_severity, "GREEN")
 
+            # PR9 (confidence-based alerting): what fraction of the day's own
+            # 3-hour entries actually reached the severity we picked as the
+            # day's worst? A day where 7 of 8 entries are "high" is a
+            # sustained risk; a day where only 1 of 8 spikes to "high" and
+            # the rest are "low" is a brief, isolated reading - both would
+            # otherwise render as the same ORANGE node. This is computed
+            # directly from the entries already fetched above, not an
+            # invented number.
+            worst_rank = severity_rank.get(worst_severity, 0)
+            supporting_count = sum(
+                1 for s in entry_severities if severity_rank.get(s, 0) >= worst_rank
+            )
+            total_count = len(entry_severities)
+            confidence_pct = (
+                round(100 * supporting_count / total_count, 1) if total_count else 0.0
+            )
+            # Only worth an operator's attention if the forecast both says
+            # something is wrong (non-GREEN) and most of the day's entries
+            # agree on it - a lone noisy 3-hour spike shouldn't trigger the
+            # same alert recommendation as a sustained, well-supported one.
+            alert_recommended = risk_level != "GREEN" and confidence_pct >= 70
+
             daily_summaries.append({
                 "date": day_key,
                 "risk_level": risk_level,
@@ -366,6 +401,8 @@ class OpenWeatherService:
                 "min_temp_c": round(min_temp, 1) if min_temp != float("inf") else None,
                 "max_temp_c": round(max_temp, 1) if max_temp != float("-inf") else None,
                 "total_rain_mm": round(total_rain, 1),
+                "confidence_pct": confidence_pct,
+                "alert_recommended": alert_recommended,
             })
 
         return daily_summaries

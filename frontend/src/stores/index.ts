@@ -22,6 +22,11 @@ export interface PrepareDailyForecast {
   min_temp_c: number | null
   max_temp_c: number | null
   total_rain_mm: number
+  // PR9 (confidence-based alerting): what % of the day's own 3-hour forecast
+  // entries actually agreed with the chosen risk_level, computed from the
+  // forecast data itself - not a fabricated score.
+  confidence_pct: number
+  alert_recommended: boolean
 }
 
 export interface PrepareCityForecast {

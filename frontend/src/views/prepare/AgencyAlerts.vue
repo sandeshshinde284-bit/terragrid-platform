@@ -77,7 +77,18 @@
               <div class="risk-context glass-panel" :class="selectedToneClass">
                 <span class="context-icon">{{ selectedToneIcon }}</span>
                 <span class="context-text">{{ alertsPlan.risk_context }}</span>
+                <span
+                  v-if="worstDayConfidence"
+                  class="confidence-badge"
+                  :class="confidenceClass(worstDayConfidence.confidence_pct)"
+                  :title="`${worstDayConfidence.confidence_pct.toFixed(0)}% of that day's own 3-hour forecast readings agreed with its risk level.`"
+                >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% agreement</span>
                 <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
+              </div>
+
+              <div v-if="showLowConfidenceWarning" class="low-confidence-warning glass-panel">
+                ⚠️ Low forecast agreement ({{ worstDayConfidence?.confidence_pct.toFixed(0) }}%) on the day driving this risk level -
+                likely a brief spike rather than a sustained risk. Consider waiting for the next forecast cycle before alerting agencies.
               </div>
 
               <!-- Audience tabs: switch which single audience's template is shown,
@@ -233,6 +244,31 @@ const selectedToneClass = computed(() => {
 const selectedToneIcon = computed(() => {
   const tone = selectedToneClass.value
   return tone === 'red' ? '🔴' : tone === 'orange' ? '🟠' : tone === 'yellow' ? '🟡' : '✅'
+})
+
+// PR9 (confidence-based alerting): these alert templates are drafted from
+// the city's worst forecast day. If multiple days tie for worst risk_level,
+// surface the one with the LOWEST agreement - the most conservative read,
+// since that's the one most likely to be a brief spike rather than a
+// sustained risk worth alerting agencies over.
+const worstDayConfidence = computed(() => {
+  const city = selectedCity.value
+  if (!city || city.daily.length === 0) return null
+  const worstRank = city.daily.reduce((max, day) => Math.max(max, RISK_RANK[day.risk_level] ?? 0), 0)
+  const worstDays = city.daily.filter(day => (RISK_RANK[day.risk_level] ?? 0) === worstRank)
+  if (worstRank === 0 || worstDays.length === 0) return null
+  return worstDays.reduce((lowest, day) => (day.confidence_pct < lowest.confidence_pct ? day : lowest), worstDays[0])
+})
+
+const confidenceClass = (pct: number): string => {
+  if (pct >= 70) return 'confidence-high'
+  if (pct >= 40) return 'confidence-medium'
+  return 'confidence-low'
+}
+
+const showLowConfidenceWarning = computed(() => {
+  const day = worstDayConfidence.value
+  return !!day && !day.alert_recommended
 })
 
 const sourceLabel = computed(() => alertsSource.value || '')
@@ -629,6 +665,40 @@ watch(selectedKey, () => {
   font-weight: 600;
   line-height: 1.4;
   flex: 1;
+}
+
+.confidence-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.confidence-badge.confidence-high {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.confidence-badge.confidence-medium {
+  color: #eab308;
+  background: rgba(234, 179, 8, 0.12);
+}
+
+.confidence-badge.confidence-low {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.low-confidence-warning {
+  padding: 10px 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #eab308;
+  background: rgba(234, 179, 8, 0.08);
+  border-left: 3px solid #eab308;
 }
 
 .source-badge {
