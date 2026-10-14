@@ -433,6 +433,15 @@ onMounted(async () => {
   gap: 10px;
   padding: 10px 16px;
   width: 100%;
+  /* This is a <button>, and "glass-panel" in the template was never actually
+     defined in this file's scoped styles - every other element wearing that
+     class here (.forecast-hero, .empty-state) happens to set its own
+     background directly, so the missing class never showed. This one didn't,
+     so the "checking" state fell through to the browser's native button
+     background (flat light gray) instead of the app's dark theme. Setting
+     the background here directly instead of depending on that class. */
+  background: rgba(22, 29, 39, 0.72);
+  backdrop-filter: blur(14px);
   border: 1px solid var(--glass-border);
   border-radius: 10px;
   cursor: pointer;
@@ -442,8 +451,8 @@ onMounted(async () => {
   color: var(--text-primary);
 }
 
-.sot-badge.verified { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.08); }
-.sot-badge.degraded { border-color: rgba(234, 179, 8, 0.4); background: rgba(234, 179, 8, 0.08); }
+.sot-badge.verified { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.1); }
+.sot-badge.degraded { border-color: rgba(234, 179, 8, 0.45); background: rgba(234, 179, 8, 0.14); }
 .sot-badge.checking,
 .sot-badge.unknown { border-color: var(--glass-border); opacity: 0.8; }
 
@@ -465,6 +474,11 @@ onMounted(async () => {
   flex-direction: column;
   gap: 8px;
   padding: 14px 18px;
+  /* Same missing-glass-panel-class issue as .sot-badge above. */
+  background: rgba(22, 29, 39, 0.72);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
 }
 
 .sot-detail-row {
