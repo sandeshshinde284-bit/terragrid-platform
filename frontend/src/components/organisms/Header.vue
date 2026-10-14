@@ -458,6 +458,19 @@ const closeMobileMenu = () => {
   min-width: 0;
 }
 
+/* Hidden by default - only meant to appear below the 480px mobile
+   breakpoint (see @media (max-width: 480px) below, which sets
+   display: flex and gives .hamburger its actual icon styling). With no
+   default display rule here, this <button> had no explicit display at
+   all on desktop, so it rendered as a native, empty, un-styled browser
+   button - the .hamburger icon inside it only gets sized/styled inside
+   that same mobile media query, so outside of it this button collapsed
+   to a tiny default button nub sitting between the nav tabs and the
+   right-side controls. That's the stray dot that kept showing up there. */
+.mobile-menu-btn {
+  display: none;
+}
+
 .header-right {
   display: flex;
   align-items: center;
