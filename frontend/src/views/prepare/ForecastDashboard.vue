@@ -31,7 +31,32 @@
         <div class="forecast-hero glass-panel">
           <div class="hero-left">
             <h2>7-Day Risk Escalation</h2>
-            <span class="hero-meta">{{ cities.length }} cities monitored · updated from OpenWeatherMap</span>
+            <div class="hero-meta-row">
+              <span class="hero-meta">{{ cities.length }} cities monitored · updated from OpenWeatherMap</span>
+
+              <!-- PR10: Source of Truth. Audits the data behind every PREPARE
+                   feature on this page (and PR9's alerts / PR5's routes, which
+                   both build on the same fetch) - not whether the weather
+                   prediction is right, but whether what's displayed is actually
+                   backed by fresh, complete, sufficiently-sampled data.
+                   Deliberately a small pill next to the meta line (not a
+                   full-width banner) so it reads as supporting detail, not a
+                   second headline - but it still needs to look clickable on
+                   its own, so it spells out "Details" next to the arrow
+                   instead of relying on a bare chevron or a hover-only cue. -->
+              <button
+                type="button"
+                class="sot-chip"
+                :class="sotStatusClass"
+                :title="sotExpanded ? 'Hide data verification details' : 'Click to see data verification details'"
+                :aria-expanded="sotExpanded"
+                @click="sotExpanded = !sotExpanded"
+              >
+                <span class="sot-icon">{{ sotStatusIcon }}</span>
+                <span class="sot-text">{{ sotStatusText }}</span>
+                <span class="sot-chevron">Details {{ sotExpanded ? '▲' : '▼' }}</span>
+              </button>
+            </div>
           </div>
           <div class="hero-summary">
             <div v-for="level in ['RED', 'ORANGE', 'YELLOW', 'GREEN']" :key="level" class="summary-pill" :class="level.toLowerCase()">
@@ -40,22 +65,6 @@
             </div>
           </div>
         </div>
-
-        <!-- PR10: Source of Truth. Audits the data behind every PREPARE
-             feature on this page (and PR9's alerts / PR5's routes, which
-             both build on the same fetch) - not whether the weather
-             prediction is right, but whether what's displayed is actually
-             backed by fresh, complete, sufficiently-sampled data. -->
-        <button
-          type="button"
-          class="sot-badge glass-panel"
-          :class="sotStatusClass"
-          @click="sotExpanded = !sotExpanded"
-        >
-          <span class="sot-icon">{{ sotStatusIcon }}</span>
-          <span class="sot-text">{{ sotStatusText }}</span>
-          <span class="sot-chevron">{{ sotExpanded ? '▲' : '▼' }}</span>
-        </button>
 
         <div v-if="sotExpanded" class="sot-details glass-panel">
           <div v-if="sotLoading" class="sot-detail-row">Checking...</div>
@@ -306,11 +315,14 @@ const sotStatusIcon = computed(() => {
 })
 
 const sotStatusText = computed(() => {
+  // Short on purpose now that this lives as a small pill next to the meta
+  // line, not a full-width banner - the "Details ▼" label already in the
+  // template says explicitly that there's more to click into.
   if (sotLoading.value) return 'Verifying data source...'
   if (sotError.value) return "Couldn't verify data source"
   return sourceOfTruth.value?.overall === 'verified'
     ? 'Data source verified'
-    : 'Data source degraded - see details'
+    : 'Data source degraded'
 })
 
 const fetchSourceOfTruth = async () => {
@@ -387,6 +399,13 @@ onMounted(async () => {
   -webkit-text-fill-color: transparent;
 }
 
+.hero-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .hero-meta {
   font-size: 12px;
   color: var(--text-secondary);
@@ -426,13 +445,20 @@ onMounted(async () => {
 .summary-pill.yellow { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.4); color: #eab308; }
 .summary-pill.green { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.4); color: #22c55e; }
 
-/* ---- PR10: Source of Truth ---- */
-.sot-badge {
-  display: flex;
+/* ---- PR10: Source of Truth ----
+   A compact pill next to the hero's meta line, not a full-width banner -
+   it's supporting detail about data trust, not a second headline competing
+   with the forecast itself. But a small chip can easily read as "just a
+   label" instead of a button, so this leans on several cues at once so it's
+   unambiguous: a visible border (pill/button shape, matching the
+   .filter-chip buttons used elsewhere on this page), an explicit "Details ▼"
+   segment (not just a bare arrow), a hover state that visibly reacts, and a
+   native title tooltip for anyone who pauses over it. */
+.sot-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  width: 100%;
+  gap: 8px;
+  padding: 5px 12px;
   /* This is a <button>, and "glass-panel" in the template was never actually
      defined in this file's scoped styles - every other element wearing that
      class here (.forecast-hero, .empty-state) happens to set its own
@@ -441,32 +467,37 @@ onMounted(async () => {
      background (flat light gray) instead of the app's dark theme. Setting
      the background here directly instead of depending on that class. */
   background: rgba(22, 29, 39, 0.72);
-  backdrop-filter: blur(14px);
   border: 1px solid var(--glass-border);
-  border-radius: 10px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   text-align: left;
   color: var(--text-primary);
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
 }
 
-.sot-badge.verified { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.1); }
-.sot-badge.degraded { border-color: rgba(234, 179, 8, 0.45); background: rgba(234, 179, 8, 0.14); }
-.sot-badge.checking,
-.sot-badge.unknown { border-color: var(--glass-border); opacity: 0.8; }
+.sot-chip:hover {
+  border-color: var(--accent-cyan, #22d3ee);
+  transform: translateY(-1px);
+}
+
+.sot-chip.verified { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.1); }
+.sot-chip.verified:hover { border-color: rgba(34, 197, 94, 0.7); }
+.sot-chip.degraded { border-color: rgba(234, 179, 8, 0.45); background: rgba(234, 179, 8, 0.14); }
+.sot-chip.degraded:hover { border-color: rgba(234, 179, 8, 0.75); }
+.sot-chip.checking,
+.sot-chip.unknown { border-color: var(--glass-border); opacity: 0.85; }
 
 .sot-icon {
-  font-size: 15px;
-}
-
-.sot-text {
-  flex: 1;
+  font-size: 13px;
 }
 
 .sot-chevron {
   font-size: 10px;
-  opacity: 0.7;
+  opacity: 0.75;
+  padding-left: 6px;
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .sot-details {
