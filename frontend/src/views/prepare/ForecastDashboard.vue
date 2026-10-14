@@ -41,6 +41,53 @@
           </div>
         </div>
 
+        <!-- PR10: Source of Truth. Audits the data behind every PREPARE
+             feature on this page (and PR9's alerts / PR5's routes, which
+             both build on the same fetch) - not whether the weather
+             prediction is right, but whether what's displayed is actually
+             backed by fresh, complete, sufficiently-sampled data. -->
+        <button
+          type="button"
+          class="sot-badge glass-panel"
+          :class="sotStatusClass"
+          @click="sotExpanded = !sotExpanded"
+        >
+          <span class="sot-icon">{{ sotStatusIcon }}</span>
+          <span class="sot-text">{{ sotStatusText }}</span>
+          <span class="sot-chevron">{{ sotExpanded ? '▲' : '▼' }}</span>
+        </button>
+
+        <div v-if="sotExpanded" class="sot-details glass-panel">
+          <div v-if="sotLoading" class="sot-detail-row">Checking...</div>
+          <div v-else-if="sotError" class="sot-detail-row sot-error">⚠️ {{ sotError }}</div>
+          <template v-else-if="sourceOfTruth">
+            <div class="sot-detail-row">
+              <strong>Freshness:</strong>
+              <span v-if="sourceOfTruth.freshness.note">{{ sourceOfTruth.freshness.note }}</span>
+              <span v-else>
+                Cache is {{ sourceOfTruth.freshness.cache_age_seconds }}s old
+                (TTL {{ sourceOfTruth.freshness.cache_ttl_seconds }}s) -
+                {{ sourceOfTruth.freshness.stale ? 'stale' : 'fresh' }}
+              </span>
+            </div>
+            <div class="sot-detail-row">
+              <strong>Completeness:</strong>
+              {{ sourceOfTruth.completeness.returned_city_count }} / {{ sourceOfTruth.completeness.monitored_city_count }} monitored cities returned.
+              <span v-if="sourceOfTruth.completeness.note">{{ sourceOfTruth.completeness.note }}</span>
+              <span v-else-if="sourceOfTruth.completeness.missing_cities.length">
+                Missing: {{ sourceOfTruth.completeness.missing_cities.map((c: any) => c.city).join(', ') }}
+              </span>
+            </div>
+            <div class="sot-detail-row">
+              <strong>Sufficiency:</strong>
+              {{ sourceOfTruth.sufficiency.total_days_checked }} forecast days checked;
+              {{ sourceOfTruth.sufficiency.cities_with_thin_days.length }}
+              {{ sourceOfTruth.sufficiency.cities_with_thin_days.length === 1 ? 'city has' : 'cities have' }}
+              at least one day built from too few readings to fully trust its confidence score.
+            </div>
+          </template>
+        </div>
+
         <div class="country-filter">
           <button
             class="filter-chip"
@@ -110,6 +157,9 @@ interface CountryGroup {
 }
 
 const { fetchWithMockMode } = useMockMode()
+
+const apiHost = () =>
+  import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
 
 // Shared across all 4 PREPARE pages - fetched once, reused on tab switches
 // instead of each page re-fetching all ~40 cities independently (see
@@ -230,8 +280,61 @@ const formatDay = (dateStr: string): string => {
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
+// PR10: Source of Truth
+interface SourceOfTruth {
+  overall: 'verified' | 'degraded'
+  freshness: { cache_age_seconds: number | null; cache_ttl_seconds: number; stale: boolean; note: string | null }
+  completeness: { monitored_city_count: number; returned_city_count: number; missing_cities: Array<{ city: string; country: string }>; note: string | null }
+  sufficiency: { total_days_checked: number; cities_with_thin_days: Array<{ city: string; country: string; thin_days: unknown[] }> }
+}
+
+const sourceOfTruth = ref<SourceOfTruth | null>(null)
+const sotLoading = ref(false)
+const sotError = ref('')
+const sotExpanded = ref(false)
+
+const sotStatusClass = computed(() => {
+  if (sotLoading.value) return 'checking'
+  if (sotError.value) return 'unknown'
+  return sourceOfTruth.value?.overall === 'verified' ? 'verified' : 'degraded'
+})
+
+const sotStatusIcon = computed(() => {
+  if (sotLoading.value) return '⏳'
+  if (sotError.value) return '❓'
+  return sourceOfTruth.value?.overall === 'verified' ? '✅' : '⚠️'
+})
+
+const sotStatusText = computed(() => {
+  if (sotLoading.value) return 'Verifying data source...'
+  if (sotError.value) return "Couldn't verify data source"
+  return sourceOfTruth.value?.overall === 'verified'
+    ? 'Data source verified'
+    : 'Data source degraded - see details'
+})
+
+const fetchSourceOfTruth = async () => {
+  sotLoading.value = true
+  sotError.value = ''
+  try {
+    const host = apiHost()
+    const response = await fetchWithMockMode(`${host}/api/v1/prepare/source-of-truth`)
+    const json = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(json.detail || `Backend returned ${response.status}`)
+    }
+    sourceOfTruth.value = json
+  } catch (e) {
+    sourceOfTruth.value = null
+    sotError.value = e instanceof Error ? e.message : 'Unknown error checking data source'
+  } finally {
+    sotLoading.value = false
+  }
+}
+
 onMounted(async () => {
   await prepareForecastStore.ensureLoaded(fetchWithMockMode)
+  await fetchSourceOfTruth()
 })
 </script>
 
@@ -322,6 +425,62 @@ onMounted(async () => {
 .summary-pill.orange { background: rgba(249, 115, 22, 0.12); border-color: rgba(249, 115, 22, 0.4); color: #f97316; }
 .summary-pill.yellow { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.4); color: #eab308; }
 .summary-pill.green { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.4); color: #22c55e; }
+
+/* ---- PR10: Source of Truth ---- */
+.sot-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  width: 100%;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.sot-badge.verified { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.08); }
+.sot-badge.degraded { border-color: rgba(234, 179, 8, 0.4); background: rgba(234, 179, 8, 0.08); }
+.sot-badge.checking,
+.sot-badge.unknown { border-color: var(--glass-border); opacity: 0.8; }
+
+.sot-icon {
+  font-size: 15px;
+}
+
+.sot-text {
+  flex: 1;
+}
+
+.sot-chevron {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.sot-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 18px;
+}
+
+.sot-detail-row {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.sot-detail-row strong {
+  color: var(--text-primary);
+  margin-right: 4px;
+}
+
+.sot-detail-row.sot-error {
+  color: #eab308;
+}
 
 /* ---- Country filter ---- */
 

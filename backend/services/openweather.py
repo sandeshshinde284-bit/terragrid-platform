@@ -31,7 +31,12 @@ class OpenWeatherService:
     _forecast_cache: List[Dict[str, Any]] | None = None
     _forecast_cache_at: float = 0.0
     FORECAST_CACHE_TTL_SECONDS = 600  # 10 minutes
-    
+
+    # PR10 (source-of-truth validation): a full forecast day is 8 three-hour
+    # entries; below half of that, a day's risk_level/confidence_pct call is
+    # real but thin evidence (see _summarize_forecast_by_day).
+    MIN_SUFFICIENT_ENTRIES = 4
+
     # Cities to monitor globally - covers key disaster-prone regions
     MONITORED_CITIES = [
         # India
@@ -187,7 +192,8 @@ class OpenWeatherService:
         Returns:
             List of per-city forecast dicts, each with a "daily" list of
             {date, risk_level, dominant_weather, max_wind_ms, min_temp_c, max_temp_c,
-             total_rain_mm, confidence_pct, alert_recommended}
+             total_rain_mm, confidence_pct, alert_recommended, entries_count,
+             data_sufficient}
         """
         if use_mock:
             logger.info(" OpenWeather Forecast: 🧪 MOCK MODE ENABLED via .env")
@@ -244,6 +250,18 @@ class OpenWeatherService:
 
         logger.info(f"OpenWeatherMap: Fetched 5-day forecast for {len(forecasts)} cities (parallel, concurrency={cls._FORECAST_FETCH_CONCURRENCY})")
         return forecasts
+
+    @classmethod
+    def get_forecast_cache_age_seconds(cls) -> float | None:
+        """
+        PR10 (source-of-truth validation): how old is the forecast data
+        fetch_forecast() is currently serving from cache, in seconds.
+        None means no live fetch has ever populated the cache yet (e.g.
+        only mock mode has run, or the server just started).
+        """
+        if cls._forecast_cache is None:
+            return None
+        return round(time.monotonic() - cls._forecast_cache_at, 1)
 
     @classmethod
     async def _fetch_city_forecast(cls, client: httpx.AsyncClient, lat: float, lon: float, city: str, country: str, api_key: str) -> Dict[str, Any] | None:
@@ -393,6 +411,19 @@ class OpenWeatherService:
             # same alert recommendation as a sustained, well-supported one.
             alert_recommended = risk_level != "GREEN" and confidence_pct >= 70
 
+            # PR10 (source-of-truth validation): a full day of this forecast
+            # is 8 three-hour entries, but OpenWeatherMap's 5-day window
+            # starts from "now" (not midnight) and ends mid-day 5 - so the
+            # first and last calendar day in the window are naturally built
+            # from fewer entries than the middle days. confidence_pct above
+            # is still computed honestly either way, but "100% agreement"
+            # from 8 entries and "100% agreement" from 2 entries aren't the
+            # same strength of evidence, and nothing before this surfaced
+            # the difference. data_sufficient flags a day as backed by at
+            # least half a full day's readings (4 of 8) - below that, the
+            # call is real but thin, and callers should say so.
+            data_sufficient = total_count >= cls.MIN_SUFFICIENT_ENTRIES
+
             daily_summaries.append({
                 "date": day_key,
                 "risk_level": risk_level,
@@ -403,6 +434,8 @@ class OpenWeatherService:
                 "total_rain_mm": round(total_rain, 1),
                 "confidence_pct": confidence_pct,
                 "alert_recommended": alert_recommended,
+                "entries_count": total_count,
+                "data_sufficient": data_sufficient,
             })
 
         return daily_summaries

@@ -51,6 +51,120 @@ async def get_forecast(use_mock: bool = Query(False, description="Use mock data 
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# PR10: Source of Truth / Preparedness Validation
+#
+# Doesn't validate that the weather prediction itself is correct - no one
+# can audit that. Validates that what PREPARE phase is about to show the
+# user, or act on (PR9's alerts, PR5's route pre-calculation), is actually
+# backed by real, current, complete data from fetch_forecast() - the same
+# standard this whole branch (PHASE-2-PREPARE-SOURCE-OF-TRUTH-FIXES) was
+# opened to enforce. Three checks, all computed from data already being
+# fetched - no new external source, no new DB table:
+#   1. Freshness  - is the forecast live, or served from a stale cache?
+#   2. Completeness - did every monitored city actually come back, or did
+#      some silently drop out of the ~40-city fetch (fetch_one() swallows
+#      per-city errors and returns None - those cities just vanish today)?
+#   3. Sufficiency - is each day's risk/confidence call built from a full
+#      day's 3-hour readings, or a thin, partial slice (PR9's
+#      entries_count/data_sufficient, added alongside this)?
+
+@router.get("/source-of-truth")
+async def get_source_of_truth(use_mock: bool = Query(False, description="Use mock data for testing")):
+    """
+    PR10: Audit the forecast data backing every other PREPARE feature,
+    before it's shown to a user or acted on.
+
+    Returns:
+        - overall: "verified" (every city present, cache fresh or N/A in
+          mock mode, every day backed by sufficient readings) or
+          "degraded" (one or more checks below failed)
+        - cache_age_seconds: how old the live forecast cache is right now
+          (null in mock mode - mock data was never cached)
+        - missing_cities: monitored cities that didn't come back in this
+          fetch at all
+        - insufficient_days: per-city list of days whose risk/confidence
+          call was built from fewer than OpenWeatherService.MIN_SUFFICIENT_ENTRIES
+          three-hour readings
+    """
+    try:
+        forecasts = await OpenWeatherService.fetch_forecast(use_mock=use_mock)
+
+        # The mock fixture is a deliberately small demo set (8 cities), not
+        # a simulation of all ~40 MONITORED_CITIES - comparing it against
+        # the full live roster would flag "missing" cities that were never
+        # supposed to be there, which isn't what this check means to catch.
+        # Only meaningful in live mode, where a city vanishing really would
+        # mean fetch_one() silently swallowed an error for it.
+        missing_cities: list = []
+        if not use_mock:
+            returned_keys = {
+                (f.get("city", "").lower(), f.get("country", "").lower()) for f in forecasts
+            }
+            missing_cities = [
+                {"city": city, "country": country}
+                for _, _, city, country in OpenWeatherService.MONITORED_CITIES
+                if (city.lower(), country.lower()) not in returned_keys
+            ]
+
+        insufficient_days = []
+        total_days_checked = 0
+        for f in forecasts:
+            thin_days = [
+                {
+                    "date": d.get("date"),
+                    "entries_count": d.get("entries_count"),
+                    "risk_level": d.get("risk_level"),
+                }
+                for d in f.get("daily", [])
+                if d.get("data_sufficient") is False
+            ]
+            total_days_checked += len(f.get("daily", []))
+            if thin_days:
+                insufficient_days.append({
+                    "city": f.get("city"),
+                    "country": f.get("country"),
+                    "thin_days": thin_days,
+                })
+
+        cache_age_seconds = None if use_mock else OpenWeatherService.get_forecast_cache_age_seconds()
+        cache_stale = (
+            cache_age_seconds is not None
+            and cache_age_seconds > OpenWeatherService.FORECAST_CACHE_TTL_SECONDS
+        )
+
+        overall = "verified"
+        if missing_cities or insufficient_days or cache_stale:
+            overall = "degraded"
+
+        return {
+            "status": "success",
+            "overall": overall,
+            "checked_at": datetime.utcnow().isoformat(),
+            "freshness": {
+                "cache_age_seconds": cache_age_seconds,
+                "cache_ttl_seconds": OpenWeatherService.FORECAST_CACHE_TTL_SECONDS,
+                "stale": cache_stale,
+                "note": "Mock data is never cached." if use_mock else None,
+            },
+            "completeness": {
+                "monitored_city_count": len(OpenWeatherService.MONITORED_CITIES),
+                "returned_city_count": len(forecasts),
+                "missing_cities": missing_cities,
+                "note": (
+                    "Mock data is a deliberately smaller demo set - "
+                    "completeness isn't checked against it."
+                ) if use_mock else None,
+            },
+            "sufficiency": {
+                "total_days_checked": total_days_checked,
+                "cities_with_thin_days": insufficient_days,
+            },
+        }
+    except Exception as e:
+        logger.error(f"Source-of-truth validation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # PR2: Preparedness Action Generator
 @router.get("/actions")
 async def get_preparedness_actions(
