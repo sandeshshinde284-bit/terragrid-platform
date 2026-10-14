@@ -335,6 +335,49 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to fetch incident")
 
 
+@router.get("/{incident_id}/satellite-validation")
+async def get_satellite_validation(incident_id: str, db: Session = Depends(get_db)):
+    """
+    Feature 11: Image+Satellite Cross-Validation.
+
+    Fetches a REAL satellite image (NASA GIBS, no API key, free) centered
+    on this incident's own coordinates, and asks Gemini to visually check
+    whether what's actually in the image is consistent with the incident's
+    reported event_type and severity - an independent check against the
+    same NASA/GDACS/USGS/NOAA source feeds that reported the incident.
+
+    No fallback image is ever substituted if the real one can't be fetched;
+    no AI guess is returned if Gemini isn't configured. Both failure modes
+    report plainly instead.
+    """
+    from backend.services.satellite_cross_validation import satellite_cross_validation_service
+
+    try:
+        incident = find_incident_by_id(incident_id, db)
+        if not incident:
+            raise HTTPException(status_code=404, detail=f"Incident '{incident_id}' not found")
+
+        incident_data = {
+            "latitude": incident.latitude,
+            "longitude": incident.longitude,
+            "event_type": incident.event_type,
+            "severity": incident.severity,
+            "location_name": incident.location_name,
+            "event_timestamp": incident.event_timestamp,
+        }
+
+        result = await satellite_cross_validation_service.cross_validate(incident_data)
+        result["incident_id"] = f"event_{incident.id}"
+        result["location_name"] = incident.location_name
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Satellite cross-validation failed for incident {incident_id}")
+        raise HTTPException(status_code=500, detail=f"Satellite cross-validation failed: {str(e)}")
+
+
 @router.get("/{incident_id}/insights")
 async def get_incident_insights(
     incident_id: str, 

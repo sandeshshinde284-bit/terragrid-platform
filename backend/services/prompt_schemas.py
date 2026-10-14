@@ -196,3 +196,15 @@ AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT = """
   ]
 }
 """
+
+SATELLITE_CROSS_VALIDATION_SCHEMA_TEXT = """
+{
+  "visual_consistency": "string (CONSISTENT, PARTIALLY_CONSISTENT, INCONSISTENT, or INCONCLUSIVE only)",
+  "visible_evidence": [
+    "string (specific thing actually visible in the image, e.g. 'dense smoke plume over the northeast quadrant of the bounding box')"
+  ],
+  "confidence_percent": "integer (0-100, how confident is this visual read, given image resolution/cloud cover/time of day)",
+  "discrepancy_notes": "string (if PARTIALLY_CONSISTENT or INCONSISTENT, what doesn't match the reported event_type/severity; empty string if CONSISTENT)",
+  "reasoning": "string (2-3 sentences, what you actually see in the image and why it does or doesn't support the reported incident)"
+}
+"""
