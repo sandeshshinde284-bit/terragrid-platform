@@ -41,20 +41,29 @@ services:
   # Dockerfile/Cloud Run deploy - this keeps a real WhatsApp Web session
   # alive (linked by scanning a QR code once), which needs persistent
   # storage and an always-on process, not a scale-to-zero container.
-  # Run `docker-compose up waha`, then open http://localhost:3000/dashboard
-  # (or the /api/screenshot endpoint) to scan the QR code and link a number.
   #
-  # WAHA requires an API key by default (X-Api-Key header) - without one set
-  # here, it generates a random key on every startup and only prints it to
-  # the container logs, which is a bad fit for a demo you want to set up
-  # once and not babysit. CHANGE THIS before judging/sharing this compose
-  # file publicly - it's a placeholder, not a secret meant to ship as-is.
-  # The backend reads the same value via WAHA_API_KEY in your .env.
+  # One-time setup (run from the project root):
+  #   1. Generate real credentials into waha/.env (NOT this project's own
+  #      root .env - keeping it in its own subfolder means the two never
+  #      collide or get mixed up):
+  #        mkdir -p waha
+  #        docker run --rm -v "$(pwd)/waha":/app/env devlikeapro/waha init-waha /app/env
+  #      This prints a Dashboard username/password and an API key, and
+  #      writes them into waha/.env. waha/.env is gitignored automatically
+  #      (the root .gitignore's bare ".env" pattern matches at any depth) -
+  #      never commit it.
+  #   2. Copy the API key it printed into this project's own root .env as
+  #      WAHA_API_KEY=<that key> - the backend (backend/services/whatsapp.py)
+  #      needs the same key to authenticate its requests to WAHA.
+  #   3. docker-compose up waha, then open http://localhost:3000/dashboard
+  #      (login with the generated Dashboard username/password) and scan the
+  #      QR code to link a real WhatsApp number to the "default" session.
   waha:
     image: devlikeapro/waha
     container_name: terragrid-waha
-    environment:
-      WAHA_API_KEY: terragrid-waha-demo-key-change-me
+    env_file:
+      - path: ./waha/.env
+        required: false
     ports:
       - "3000:3000"
     volumes:
