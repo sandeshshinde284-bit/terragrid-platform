@@ -216,12 +216,14 @@ class VectorRAGEngine:
         Returns:
             Context string to inject into Gemini prompt
         """
+        location = current_incident.get("location_name", "unknown")
         try:
             # Step 1: Generate query embedding
             query_embedding = self.get_event_embedding(current_incident)
             if not query_embedding:
+                logger.info(f"[FEATURE_HEALTH] feature=historical_rag status=fallback location={location} reason=no_embedding")
                 return "\n(RAG service unavailable - using fallback)"
-            
+
             # Step 2: Retrieve similar incidents
             event_type = current_incident.get("event_type")
             similar_incidents = self.retrieve_similar_incidents(
@@ -230,11 +232,12 @@ class VectorRAGEngine:
                 event_type=event_type,
                 limit=limit
             )
-            
+
             # Step 3: Format context
             context = self.format_rag_context(similar_incidents)
+            logger.info(f"[FEATURE_HEALTH] feature=historical_rag status=success location={location} similar_incidents={len(similar_incidents)}")
             return context
-            
+
         except Exception as e:
-            logger.error(f"VectorRAGEngine: Error in get_historical_context ({type(e).__name__}: {e})")
+            logger.error(f"[FEATURE_HEALTH] feature=historical_rag status=error location={location} error={type(e).__name__}: {e}")
             return f"\n(RAG retrieval failed: {str(e)})"

@@ -124,6 +124,7 @@ class EarthEngineFloodDetectionService:
             OR an honest unavailable/error result. Never a fabricated area.
         """
         if not self.initialized:
+            logger.info(f"[FEATURE_HEALTH] feature=flood_detection_ee status=ee_unavailable location={incident.get('location_name', 'unknown')}")
             return {
                 "status": "ee_unavailable",
                 "ai_available": False,
@@ -152,9 +153,14 @@ class EarthEngineFloodDetectionService:
             event_timestamp = datetime.utcnow()
 
         try:
-            return self._run_analysis(latitude, longitude, location_name, event_timestamp)
+            result = self._run_analysis(latitude, longitude, location_name, event_timestamp)
+            logger.info(
+                f"[FEATURE_HEALTH] feature=flood_detection_ee status=success location={location_name} "
+                f"flood_area_hectares={result.get('flood_area_hectares')}"
+            )
+            return result
         except FloodDetectionError as e:
-            logger.warning(f"Flood detection failed for {location_name}: {e}")
+            logger.warning(f"[FEATURE_HEALTH] feature=flood_detection_ee status=analysis_failed location={location_name} error={e}")
             return {
                 "status": "analysis_failed",
                 "ai_available": False,
@@ -162,7 +168,7 @@ class EarthEngineFloodDetectionService:
                 "reason": str(e),
             }
         except Exception as e:
-            logger.error(f"Unexpected Earth Engine error for {location_name}: {type(e).__name__}: {e}")
+            logger.error(f"[FEATURE_HEALTH] feature=flood_detection_ee status=ee_error location={location_name} error={type(e).__name__}: {e}")
             return {
                 "status": "ee_error",
                 "ai_available": False,

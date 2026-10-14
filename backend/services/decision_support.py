@@ -178,13 +178,14 @@ class DecisionSupportService:
                 logger.debug(f"[GEMINI RESPONSE CLEANED]\n{cleaned_text}")
                 
                 plan = json.loads(cleaned_text)
-                logger.info(f"âœ… Generated AI Decision Support Plan for {location} via Vertex AI. Actions: {len(plan.get('immediate_actions', []))}")
+                logger.info(f"[FEATURE_HEALTH] feature=gemini_response_plan status=success location={location} actions={len(plan.get('immediate_actions', []))}")
                 return plan
 
         except Exception as e:
-            logger.exception(f"âŒ CRITICAL VERTEX AI FAILURE: {type(e).__name__} - {str(e)}")
+            logger.exception(f"[FEATURE_HEALTH] feature=gemini_response_plan status=error location={location} error={type(e).__name__}: {e}")
             logger.warning("Vertex AI decision support generation failed. Returning tactical fallback.")
 
+        logger.info(f"[FEATURE_HEALTH] feature=gemini_response_plan status=fallback location={location} model_initialized={self.model is not None}")
         return fallback_plan
 
     def generate_preparedness_actions(self, city_forecast: Dict[str, Any], use_mock: bool = False) -> Dict[str, Any]:
@@ -612,13 +613,14 @@ class DecisionSupportService:
                 logger.debug(f"[GEMINI RESPONSE CLEANED]\n{cleaned_text}")
                 
                 dossier = json.loads(cleaned_text)
-                logger.info(f"âœ… Generated Tier 2 Deep Tactical AI Dossier for {location} via Vertex AI. Cascades: {len(dossier.get('cascade_predictions', []))}, Resources: {len(dossier.get('resource_matrix', []))}, Infrastructure: {len(dossier.get('infrastructure_impact', []))}")
+                logger.info(f"[FEATURE_HEALTH] feature=gemini_deep_dossier status=success location={location} cascades={len(dossier.get('cascade_predictions', []))} resources={len(dossier.get('resource_matrix', []))} infrastructure={len(dossier.get('infrastructure_impact', []))}")
                 return dossier
 
         except Exception as e:
-            logger.exception(f"âŒ VERTEX AI DEEP DOSSIER FAILURE: {type(e).__name__} - {str(e)}")
+            logger.exception(f"[FEATURE_HEALTH] feature=gemini_deep_dossier status=error location={location} error={type(e).__name__}: {e}")
             logger.warning("Returning operational contingency dossier.")
 
+        logger.info(f"[FEATURE_HEALTH] feature=gemini_deep_dossier status=fallback location={location} model_initialized={self.model is not None}")
         return fallback_dossier
 
 

@@ -118,7 +118,7 @@ class SatelliteCrossValidationService:
                 event_timestamp=event_timestamp,
             )
         except SatelliteImageryError as e:
-            logger.warning(f"Satellite image fetch failed for {location_name}: {e}")
+            logger.warning(f"[FEATURE_HEALTH] feature=satellite_cross_validation status=image_unavailable location={location_name} error={e}")
             return {
                 "status": "image_unavailable",
                 "ai_available": False,
@@ -130,6 +130,7 @@ class SatelliteCrossValidationService:
         # Step 2: ask Gemini to visually assess the REAL image against the
         # reported incident. If Gemini itself isn't available, say so plainly.
         if not self.model:
+            logger.info(f"[FEATURE_HEALTH] feature=satellite_cross_validation status=ai_unavailable location={location_name}")
             return {
                 "status": "ai_unavailable",
                 "ai_available": False,
@@ -164,10 +165,11 @@ Respond with ONLY this JSON schema, no other text:
             assessment["ai_available"] = True
             assessment["is_fallback"] = False
             assessment["image_fetched"] = True
+            logger.info(f"[FEATURE_HEALTH] feature=satellite_cross_validation status=success location={location_name} visual_consistency={assessment.get('visual_consistency')}")
             return assessment
 
         except Exception as e:
-            logger.error(f"Gemini visual cross-validation failed: {type(e).__name__}: {e}")
+            logger.error(f"[FEATURE_HEALTH] feature=satellite_cross_validation status=ai_error location={location_name} error={type(e).__name__}: {e}")
             return {
                 "status": "ai_error",
                 "ai_available": False,
