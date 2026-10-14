@@ -372,7 +372,13 @@ onMounted(async () => {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary, #22d3ee) transparent;
 }
+.forecast-container::-webkit-scrollbar { width: 6px; }
+.forecast-container::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+.forecast-container::-webkit-scrollbar-track { background: transparent; }
+.forecast-container::-webkit-scrollbar-thumb { background: var(--accent-primary, #22d3ee); border-radius: 3px; }
 
 /* ---- Hero / summary strip ---- */
 
