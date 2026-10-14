@@ -6,7 +6,7 @@ import os
 import logging
 from backend.config import settings
 import asyncio
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +20,7 @@ from .openweather import OpenWeatherService
 # from .imd_weather import IMDWeatherService
 from .pubsub_service import PubSubService
 from .impact_analysis import ImpactAnalysisService
+from .lineage_tracker import LineageTracker
 
 logger = logging.getLogger(__name__)
 
@@ -206,44 +207,123 @@ class DataIngestionService:
     async def _process_event(self, event: Dict[str, Any], use_mock: bool = False, current_db = None, existing_event_map = None) -> None:
         """
         Process a single event:
-        1. Calculate impact
-        2. Store in database
-        3. Publish to Pub/Sub
-        
+        1. Record Layer 1 (raw) + Layer 2 (validation) lineage
+        2. Calculate impact (Layer 3 enrichment)
+        3. Store in database (Layer 4) and tie all 4 layers together
+        4. Publish to Pub/Sub
+
         Args:
             event: Event data to process
             use_mock: Whether using mock data
             current_db: Database session for persisting alerts
             existing_event_map: In-memory cache of existing events (Speed Win #5)
         """
+        pipeline_started_at = datetime.utcnow()
+        raw_event_id = None
+        validation_log_id = None
+        enrichment_log_id = None
+
         try:
+            # Source of Truth / Lineage - Layer 1: log this event exactly as it
+            # arrived from its source adapter, before any enrichment touches it.
+            # This isn't the raw HTTP body (fetch_events() already parsed that),
+            # but it is the untouched per-event record before TerraGrid changes
+            # anything about it - the honest boundary we can log without
+            # rewriting all 5 source adapters to thread raw bodies through.
+            pre_enrichment_snapshot = {k: v for k, v in event.items() if not isinstance(v, datetime)}
+            if current_db:
+                raw_event_id = await asyncio.to_thread(
+                    LineageTracker.log_raw_event,
+                    current_db,
+                    event.get("source", "unknown"),
+                    pre_enrichment_snapshot,
+                    200,
+                )
+
+                # Layer 2: minimal structural validation - the same fields the
+                # DB write below actually requires. Real failures here (missing
+                # coordinates, no event_type) would otherwise fail silently
+                # later when _store_event_sync tries to key off them.
+                validation_errors = []
+                if event.get("latitude") is None or event.get("longitude") is None:
+                    validation_errors.append({"coordinates": "missing latitude/longitude"})
+                if not event.get("event_type"):
+                    validation_errors.append({"event_type": "missing event_type"})
+                if not event.get("location_name"):
+                    validation_errors.append({"location_name": "missing location_name"})
+                validation_status = "FAIL" if validation_errors else "PASS"
+
+                validation_log_id = await asyncio.to_thread(
+                    LineageTracker.log_validation,
+                    current_db,
+                    raw_event_id,
+                    validation_status,
+                    validation_errors or None,
+                )
+
             # Calculate impact analysis (pass db_session for alert persistence)
             impact = ImpactAnalysisService.calculate_impact(event, db_session=current_db)
-            
+
             # Merge impact into event
             event["impact"] = impact
             event["ingested_at"] = datetime.utcnow().isoformat()
-            
+
+            # Layer 3: log the enrichment ImpactAnalysisService just performed -
+            # the event as received vs. the risk/impact fields it added.
+            if current_db and validation_log_id is not None:
+                enrichment_log_id = await asyncio.to_thread(
+                    LineageTracker.log_enrichment,
+                    current_db,
+                    validation_log_id,
+                    "impact_analysis",
+                    "ImpactAnalysisService",
+                    pre_enrichment_snapshot,
+                    {k: v for k, v in impact.items() if not isinstance(v, datetime)} if isinstance(impact, dict) else impact,
+                )
+
             # Store in database if session available (using asyncio.to_thread for non-blocking I/O)
+            final_event_id = None
             if current_db:
-                await asyncio.to_thread(self._store_event_sync, event, current_db, existing_event_map)
+                final_event_id = await asyncio.to_thread(self._store_event_sync, event, current_db, existing_event_map)
             elif self.db:
                 await self._store_event(event)
-            
+
+            # Layer 4: tie all 4 layers together now that we know the stored
+            # event's real DB id. Only create the chain when every upstream
+            # layer actually succeeded - a partial chain would be worse than
+            # no chain, since get_incident_lineage() treats "found" as "complete".
+            if current_db and final_event_id is not None and None not in (raw_event_id, validation_log_id, enrichment_log_id):
+                elapsed_ms = int((datetime.utcnow() - pipeline_started_at).total_seconds() * 1000)
+                await asyncio.to_thread(
+                    LineageTracker.create_lineage_chain,
+                    current_db,
+                    raw_event_id,
+                    validation_log_id,
+                    enrichment_log_id,
+                    final_event_id,
+                    "COMPLETE" if validation_status == "PASS" else "PARTIAL",
+                    elapsed_ms,
+                )
+
             # Publish to Pub/Sub if not using mock
             if not use_mock:
                 await self.pubsub.publish_event(event)
-            
+
             logger.debug(f"Processed event: {event.get('location_name')}")
-            
+
         except Exception as e:
             logger.error(f"Error in event processing: {str(e)}")
             raise
 
-    def _store_event_sync(self, event_data: Dict[str, Any], db, existing_event_map: Dict = None) -> None:
+    def _store_event_sync(self, event_data: Dict[str, Any], db, existing_event_map: Dict = None) -> Optional[int]:
         """
         Synchronously store event in database (used by background polling)
         Optimized with Speed Win #5 (in-memory lookup) and Speed Win #8 (db.flush)
+
+        Returns:
+            The stored/updated event's DB id, or None if the write failed
+            (needed by the lineage chain, which must point at a real Layer 4
+            record, not whatever id the event dict happened to carry in).
         """
         try:
             from ..models.event import Event
@@ -304,30 +384,33 @@ class DataIngestionService:
                         is_verified=event_data.get("is_verified"),
                         data=safe_event_data  # Store sanitized JSON
                     )
-                    
+
                     db.add(db_event)
                     # Speed Win #8: db.flush() instead of db.commit() to batch all disk I/O at the end
                     db.flush()
                     if existing_event_map is not None and key:
                         existing_event_map[key] = db_event
                     logger.debug(f"Flushed new event to session: {evt_type} at {lat},{lon}")
+                    return db_event.id
                 else:
                     # Update existing event
                     # CRITICAL FIX: Preserve internally generated data (like deep_dossier) during polling updates!
                     preserved_data = dict(existing_event.data or {})
                     preserved_data.update(safe_event_data)
                     existing_event.data = preserved_data
-                    
+
                     existing_event.severity = event_data.get("severity", existing_event.severity)
                     existing_event.location_name = location_name
                     existing_event.updated_at = datetime.utcnow()
                     db.flush()
                     logger.debug(f"Flushed updated event to session: {evt_type} at {lat},{lon}")
-            
+                    return existing_event.id
+
         except Exception as e:
             # Issue B: begin_nested() automatically rolls back to the savepoint!
             # We do NOT call db.rollback() because that would discard events #1 through N-1!
             logger.error(f"Failed to store event in database (savepoint rolled back): {str(e)}")
+            return None
     
     async def _store_event(self, event: Dict[str, Any]) -> None:
         """Store event in database"""
