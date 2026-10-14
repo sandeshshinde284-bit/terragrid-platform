@@ -1,6 +1,7 @@
 import { ref, onUnmounted, onMounted } from 'vue'
 import { useEventsStore } from '@/stores'
 import countriesData from '@/data/countries.json' with { type: 'json' }
+import { logFeature, logWarn, logError } from '@/utils/logger'
 
 export function useWebSocket() {
   const eventsStore = useEventsStore()
@@ -53,11 +54,11 @@ export function useWebSocket() {
     }
     const wsUrl = `${protocol}//${host}/ws/dashboard`
     
-    console.log(`📡 Attempting WebSocket connection to ${wsUrl}`)
+    logFeature('dashboard_websocket', 'info', { action: 'connecting', url: wsUrl })
     ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
-      console.log('🟢 WebSocket Connected')
+      logFeature('dashboard_websocket', 'success', { action: 'connected' })
       isConnected.value = true
       reconnectAttempts.value = 0
       
@@ -77,7 +78,7 @@ export function useWebSocket() {
         
         switch (message.type) {
           case 'connection_established':
-            console.log(' Connection confirmed by server')
+            logFeature('dashboard_websocket', 'info', { action: 'server_confirmed' })
             break
             
           case 'pong':
@@ -85,7 +86,7 @@ export function useWebSocket() {
             break
             
           case 'incidents_polled':
-            console.log(`📢 Real-time update received: ${message.data.total_events} events`)
+            logFeature('dashboard_websocket', 'info', { action: 'update_received', total_events: message.data.total_events })
             
             // Only update store if there are actual changes
             if (message.data.changes.new > 0 || message.data.changes.updated > 0 || message.data.changes.removed > 0) {
@@ -134,26 +135,25 @@ export function useWebSocket() {
             break
             
           default:
-            console.log('Unknown message type received:', message.type)
+            logWarn(`Received a WebSocket message type the dashboard doesn't handle: ${message.type}`)
         }
       } catch (err) {
-        console.error('Error parsing WebSocket message:', err)
+        logError('Could not parse an incoming WebSocket message as JSON', err)
       }
     }
 
     ws.onclose = (event) => {
-      console.log('🔴 WebSocket Disconnected', event.code)
+      logFeature('dashboard_websocket', 'warning', { action: 'disconnected', close_code: event.code })
       isConnected.value = false
       if (pingInterval) clearInterval(pingInterval)
-      
+
       if (!isDestroyed) {
           attemptReconnect()
       }
     }
 
     ws.onerror = (error) => {
-      console.error(' WebSocket Error:', error)
-      // The onclose event will fire immediately after onerror, triggering reconnect
+      logError('WebSocket connection error (a disconnect event will follow and trigger reconnect)', error)
     }
   }
 
@@ -164,14 +164,14 @@ export function useWebSocket() {
     
     // Limit reconnect attempts to 5 to avoid spamming
     if (reconnectAttempts.value > maxReconnectAttempts) {
-      console.error(`❌ Failed to reconnect after ${maxReconnectAttempts} attempts. Giving up.`)
+      logFeature('dashboard_websocket', 'error', { action: 'reconnect_abandoned', attempts: maxReconnectAttempts })
       isConnected.value = false
       return
     }
-    
+
     // Exponential backoff with cap: 2s, 4s, 8s, 16s, 30s, 30s...
     const backoffMs = Math.min(Math.pow(2, reconnectAttempts.value) * 1000, 30000)
-    console.log(`🔄 WebSocket reconnecting in ${backoffMs/1000}s (Attempt ${reconnectAttempts.value}/${maxReconnectAttempts})...`)
+    logFeature('dashboard_websocket', 'warning', { action: 'reconnecting', delay_seconds: backoffMs / 1000, attempt: reconnectAttempts.value, max_attempts: maxReconnectAttempts })
     
     setTimeout(() => {
       if (!isDestroyed) {

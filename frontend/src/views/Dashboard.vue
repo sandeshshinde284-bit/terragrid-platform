@@ -530,6 +530,7 @@ import IncidentCard from '@/components/molecules/IncidentCard.vue'
 import MapComponent from '@/components/organisms/MapComponent.vue'
 import COUNTRIES_DATA from '@/data/countries.json' with { type: 'json' }
 import { useAppStore } from '@/stores'
+import { logFeature, logWarn, logError } from '@/utils/logger'
 import { useEventsStore } from '@/stores'
 import { useAlertsStore } from '@/stores'
 import { useMockMode } from '@/composables/useMockMode'
@@ -601,7 +602,7 @@ watch(
         aiPlan.value = data.plan
       }
     } catch (err) {
-      console.warn('Failed to fetch AI insights plan:', err)
+      logWarn('Could not fetch the AI insights plan', err)
     } finally {
       if (loadingInterval) clearInterval(loadingInterval)
       isLoadingInsights.value = false
@@ -1099,7 +1100,7 @@ const fetchIncidents = async () => {
     isLoading.value = true
     apiError.value = null
     
-    console.log(`📡 Fetching incidents (Mode: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'})`)
+    logFeature('incidents_fetch', 'info', { action: 'started', mode: isMockMode.value ? 'mock' : 'live' })
     
     const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
     const response = await fetchWithMockMode(`${host}/api/v1/ingest/all`)
@@ -1110,7 +1111,7 @@ const fetchIncidents = async () => {
     
     const result = await response.json()
     const events = result.data?.events ?? []
-    console.log('Incidents loaded:', events.length, 'events (raw, global)')
+    logFeature('incidents_fetch', 'info', { action: 'raw_response_parsed', events: events.length })
     
     // Transform backend response to store format
     if (Array.isArray(events) && events.length > 0) {
@@ -1148,11 +1149,11 @@ const fetchIncidents = async () => {
       // Global Platform: Show all live disaster incidents worldwide sorted by threat score
       const incidents = mapped.sort((a, b) => (b.threatScore ?? 0) - (a.threatScore ?? 0))
 
-      console.log(`📍 Loaded ${incidents.length} global incident(s) worldwide across all sources`)
+      logFeature('incidents_fetch', 'success', { incidents: incidents.length })
       eventsStore.setIncidents(incidents)
     } else {
       // Live mode strictness: No mock fallbacks allowed
-      console.warn('No events from API. (Mock fallback disabled for strict live testing)')
+      logWarn('No events returned from the API (mock fallback is disabled in strict live mode)')
       
       // Look for failing sources to report in the banner
       const sources = result.data?.sources || {}
@@ -1167,15 +1168,15 @@ const fetchIncidents = async () => {
       eventsStore.setIncidents([])
     }
   } catch (error) {
-    console.error('Failed to fetch incidents:', error)
+    logFeature('incidents_fetch', 'error', { error: String(error) })
     apiError.value = error instanceof Error ? error.message : 'Failed to fetch data'
-    
+
     // Use feature flag to decide whether to fallback to mock data
     if (isMockMode.value) {
-      console.log('🧪 Mock mode enabled: Loading fallback mock data...')
+      logFeature('incidents_fetch', 'fallback', { action: 'loading_mock_data' })
       eventsStore.initMockData()
     } else {
-      console.log('🌐 Live mode: No fallback, showing empty state')
+      logFeature('incidents_fetch', 'info', { action: 'showing_empty_state', reason: 'live mode has no mock fallback' })
       eventsStore.setIncidents([])
     }
   } finally {
@@ -1188,7 +1189,7 @@ const fetchIncidents = async () => {
  */
 const loadAlerts = () => {
   if (alertsStore.criticalInsights.length === 0 && isMockMode.value) {
-    console.log('🧪 Mock mode enabled: Loading fallback mock insights...')
+    logFeature('alerts_insights', 'fallback', { action: 'loading_mock_insights' })
     alertsStore.initMockInsights()
   }
 }
@@ -1199,7 +1200,7 @@ onMounted(async () => {
   apiError.value = null
   
   try {
-    console.log('📥 Loading historical incidents from database (Feature 5)...')
+    logFeature('db_hydration', 'info', { action: 'started' })
     
     // Feature 5: Hydrate UI from database first so it survives restarts
     const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
@@ -1242,18 +1243,18 @@ onMounted(async () => {
               }
             })
             eventsStore.setIncidents(mapped)
-            console.log(`✅ Loaded ${mapped.length} historical incidents from DB`)
+            logFeature('db_hydration', 'success', { incidents: mapped.length })
         } else {
-            console.log('⚠️ Database is empty, waiting for polling/WebSockets to provide live data')
+            logFeature('db_hydration', 'info', { action: 'db_empty', note: 'waiting for polling/WebSockets to provide live data' })
             // Optionally run a manual fetch if DB is completely empty on first boot
             await fetchIncidents()
         }
     } else {
-        console.warn('Failed to load from database, falling back to REST ingestion')
+        logWarn('Could not load incidents from the database, falling back to REST ingestion')
         await fetchIncidents()
     }
   } catch (e: any) {
-    console.error('❌ Database hydration failed:', e)
+    logError('Database hydration failed', e)
     apiError.value = e.message
     await fetchIncidents()
   } finally {
@@ -1261,7 +1262,7 @@ onMounted(async () => {
     loadAlerts()
     
     // Connect to WebSocket for live updates AFTER database hydration
-    console.log('📡 Connecting to WebSocket for live updates...')
+    logFeature('dashboard_websocket', 'info', { action: 'connect_requested' })
       if (!isConnected.value) {
           connect()
         }
@@ -1272,7 +1273,7 @@ onMounted(async () => {
 
 // Watch for mock mode changes and refetch
 watch(isMockMode, () => {
-  console.log(`🔄 Mock mode changed to: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'}`)
+  logFeature('mock_mode', 'info', { action: 'changed', mode: isMockMode.value ? 'mock' : 'live' })
   currentPage.value = 1  // Reset pagination
   fetchIncidents()
   loadAlerts()

@@ -8,6 +8,7 @@
 import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useAppStore } from '@/stores'
+import { logFeature, logWarn } from '@/utils/logger'
 
 const appStore = useAppStore()
 onMounted(async () => {
@@ -21,10 +22,10 @@ onMounted(async () => {
       if (config.mapbox_token) {
         appStore.setMapboxToken(config.mapbox_token)
       }
-      console.log(`⚙️ Global Backend Config Loaded | MOCK_MODE: ${config.mock_mode_enabled}`)
+      logFeature('backend_config', 'success', { mock_mode: config.mock_mode_enabled })
     }
   } catch (err) {
-    console.warn('Failed to fetch global backend configuration, defaulting to Strict Live Mode', err)
+    logWarn('Could not reach the backend for global config, defaulting to strict live mode', err)
   }
 })
 </script>

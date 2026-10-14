@@ -24,18 +24,23 @@ os.environ["GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"] = certifi.where()
 import logging
 from logging.handlers import RotatingFileHandler
 
-# Ensure logs directory exists
-log_dir = os.path.join(root_dir, 'terragrid-platform', 'logs')
+# Ensure logs/backend/ exists (logs/ is the shared top-level folder; backend
+# and frontend logs each get their own subfolder so neither has to be
+# grepped out of the other). This used to double the project folder name
+# into the path (root_dir/terragrid-platform/logs), which silently wrote
+# logs to a stray nested directory instead of the real logs/ folder at the
+# repo root - fixed here.
+log_dir = os.path.join(root_dir, 'logs', 'backend')
 if not os.path.exists(log_dir):
     try:
         os.makedirs(log_dir)
     except Exception:
         # Fallback to current directory if path fails
-        log_dir = 'logs'
+        log_dir = os.path.join('logs', 'backend')
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
-log_file_path = os.path.join(log_dir, 'terragrid.log')
+log_file_path = os.path.join(log_dir, 'backend.log')
 
 # Define standard format
 log_formatter = logging.Formatter(
@@ -77,7 +82,7 @@ logging.getLogger("uvicorn.access").handlers = [console_handler, file_handler]
 logging.getLogger("uvicorn.error").handlers = [console_handler, file_handler]
 
 logging.info("==================================================")
-logging.info("🚀 TERRAGRID FASTAPI SERVER INITIALIZING")
+logging.info("TerraGrid FastAPI server initializing")
 logging.info("==================================================")
 
 
@@ -90,6 +95,7 @@ try:
     from .routes.incidents import router as incidents_router
     from .routes.lineage_routes import router as lineage_router
     from .routes.prepare import router as prepare_router
+    from .routes.client_logs import router as client_logs_router
 except (ImportError, ValueError):
     from backend.routes.disaster_data import router as disaster_router
     from backend.routes.polling import router as polling_router
@@ -98,6 +104,7 @@ except (ImportError, ValueError):
     from backend.routes.incidents import router as incidents_router
     from backend.routes.lineage_routes import router as lineage_router
     from backend.routes.prepare import router as prepare_router
+    from backend.routes.client_logs import router as client_logs_router
 
 # Load .env from project root
 load_dotenv(root_dir / ".env")
@@ -162,6 +169,7 @@ app.include_router(ws_router)
 app.include_router(incidents_router)
 app.include_router(lineage_router)
 app.include_router(prepare_router)
+app.include_router(client_logs_router)
 
 @app.get("/")
 def read_root():

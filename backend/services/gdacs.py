@@ -39,7 +39,7 @@ class GDACSService:
             List of event dictionaries
         """
         if use_mock:
-            logger.info(" GDACS: 🧪 MOCK MODE ENABLED via .env")
+            logger.info("GDACS: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
             try:
                 import json
                 from pathlib import Path
@@ -57,7 +57,7 @@ class GDACSService:
                 try:
                     data = response.json()
                 except Exception as json_err:
-                    logger.warning(f"GDACS returned non-JSON response. Returning empty list.")
+                    logger.warning(f"[FEATURE_HEALTH] feature=gdacs status=bad_response reason=response was not valid JSON")
                     return []
                 
                 events = []
@@ -67,11 +67,11 @@ class GDACSService:
                     if parsed:
                         events.append(parsed)
                 
-                logger.info(f" GDACS: Fetched {len(events)} events")
+                logger.info(f"[FEATURE_HEALTH] feature=gdacs status=success events_found={len(events)}")
                 return events
                 
         except Exception as e:
-            logger.error(f" GDACS API Error: {str(e)}")
+            logger.error(f"[FEATURE_HEALTH] feature=gdacs status=error error={type(e).__name__}: {e}")
             return []
     
     @classmethod

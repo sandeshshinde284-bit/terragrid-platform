@@ -121,6 +121,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useEventsStore } from '@/stores'
+import { logWarn } from '@/utils/logger'
 import type { IncidentLevel1 } from '@/types'
 
 const router = useRouter()
@@ -448,7 +449,7 @@ onMounted(async () => {
         }
       }
     } catch (err) {
-      console.warn('Failed to hydrate incidents in IncidentsScreen:', err)
+      logWarn('Could not hydrate incidents on the Incidents screen', err)
     }
   }
 })

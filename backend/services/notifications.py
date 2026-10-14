@@ -34,7 +34,7 @@ class NotificationService:
             logger.info("NotificationService (Resend) configured successfully.")
         else:
             self.is_configured = False
-            logger.warning("RESEND_API_KEY is not configured or is using the default template. Email alerts are disabled.")
+            logger.warning("[FEATURE_HEALTH] feature=resend_email status=no_api_key reason=RESEND_API_KEY not configured or still the default placeholder, email alerts are disabled")
 
     def send_critical_alert(self, incident: Dict[str, Any], zone_data: Optional[Dict[str, Any]] = None, recipient_emails: List[str] = None, db_session=None):
         """
@@ -137,7 +137,7 @@ class NotificationService:
                 try:
                     response = resend.Emails.send(params)
                     resend_email_id = response.get('id', 'unknown')
-                    logger.info(f"Email sent successfully! Resend ID: {resend_email_id}")
+                    logger.info(f"[FEATURE_HEALTH] feature=resend_email status=success resend_id={resend_email_id} location={location}")
                     self.sent_alerts.add(alert_signature)
                     
                     # Record alert in database
@@ -182,7 +182,7 @@ class NotificationService:
                         raise  # Re-raise to be caught by the outer block
 
         except Exception as e:
-            logger.exception(f"Failed to send Resend email after {max_retries} attempts.")
+            logger.exception(f"[FEATURE_HEALTH] feature=resend_email status=error attempts={max_retries} location={location}")
             return False
 
     def get_alert_email_recipients(self) -> List[Dict[str, str]]:

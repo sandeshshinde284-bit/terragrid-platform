@@ -124,14 +124,14 @@ class WhatsAppService:
                 )
 
             if response.status_code >= 400:
-                logger.warning(f"WAHA sendText failed ({response.status_code}): {response.text[:300]}")
+                logger.warning(f"[FEATURE_HEALTH] feature=waha_whatsapp status=error http_status={response.status_code} body={response.text[:300]}")
                 return {
                     "success": False,
                     "detail": f"WAHA rejected the send (HTTP {response.status_code}). Is the '{self.session}' session linked (QR scanned) and in WORKING state?",
                     "waha_response": self._safe_json(response),
                 }
 
-            logger.info(f"WhatsApp message sent to {recipient.label} ({recipient.phone_number}) via WAHA.")
+            logger.info(f"[FEATURE_HEALTH] feature=waha_whatsapp status=success recipient={recipient.label}")
             return {
                 "success": True,
                 "detail": f"Sent to {recipient.label}.",
@@ -139,7 +139,7 @@ class WhatsAppService:
             }
 
         except httpx.ConnectError:
-            logger.warning(f"Could not reach WAHA at {self.api_url} - is the waha container running?")
+            logger.warning(f"[FEATURE_HEALTH] feature=waha_whatsapp status=unreachable url={self.api_url} reason=connection refused, is the waha container running?")
             return {
                 "success": False,
                 "detail": f"Couldn't reach WAHA at {self.api_url}. Is the waha container running (docker-compose up waha)?",
@@ -152,7 +152,7 @@ class WhatsAppService:
                 "waha_response": None,
             }
         except Exception as e:
-            logger.exception(f"Unexpected error sending WhatsApp message: {str(e)}")
+            logger.exception(f"[FEATURE_HEALTH] feature=waha_whatsapp status=error error={type(e).__name__}: {e}")
             return {
                 "success": False,
                 "detail": f"Unexpected error: {str(e)}",

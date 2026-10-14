@@ -139,11 +139,11 @@ class EvacuationZoneService:
                 "timestamp": datetime.utcnow().isoformat(),
             }
             
-            logger.info(f"Calculated zones for {location_name}: {total_population} people affected")
+            logger.info(f"[FEATURE_HEALTH] feature=evacuation_zones status=success location={location_name} affected_population={total_population}")
             return result
             
         except Exception as e:
-            logger.error(f"Error calculating zones: {str(e)}")
+            logger.error(f"[FEATURE_HEALTH] feature=evacuation_zones status=error error={type(e).__name__}: {e}")
             return {"error": str(e), "zones": []}
     
     @classmethod
@@ -305,7 +305,7 @@ class EvacuationZoneService:
                             distance_km = route_obj['distance'] / 1000.0
                             estimated_time_hours = route_obj['duration'] / 3600.0
                 except Exception as osrm_err:
-                    logger.warning(f"OSRM real routing failed for {direction['name']}, falling back to geodesic vector: {osrm_err}")
+                    logger.warning(f"[FEATURE_HEALTH] feature=osrm_routing status=fallback direction={direction['name']} error={osrm_err} note=using straight-line geodesic vector instead of a real road route")
                 
                 # Fallback to geodesic line if OSRM fails (e.g. over oceans or rate limited)
                 if not route_coords:
@@ -341,11 +341,11 @@ class EvacuationZoneService:
                 "timestamp": datetime.utcnow().isoformat(),
             }
             
-            logger.info(f"Generated {len(routes)} physical escape routes for {incident.get('location_name')}")
+            logger.info(f"[FEATURE_HEALTH] feature=osrm_routing status=success routes_generated={len(routes)} location={incident.get('location_name')}")
             return result
             
         except Exception as e:
-            logger.error(f"Error calculating safe routes: {str(e)}")
+            logger.error(f"[FEATURE_HEALTH] feature=osrm_routing status=error error={type(e).__name__}: {e}")
             return {"error": str(e), "routes": []}
     
     @classmethod

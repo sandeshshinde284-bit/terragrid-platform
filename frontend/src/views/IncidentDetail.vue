@@ -297,6 +297,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1, Event } from '@/types'
+import { logWarn, logError } from '@/utils/logger'
 import JSZip from 'jszip'
 import TabSource from '@/components/molecules/TabSource.vue'
 import TabResponse from '@/components/molecules/TabResponse.vue'
@@ -443,7 +444,7 @@ async function launchDeepAnalysis() {
       deepDossier.value = data.dossier
     }
   } catch (err) {
-    console.error('Failed to generate deep AI dossier:', err)
+    logError('Could not generate the deep AI dossier for this incident', err)
   } finally {
     clearInterval(stepInterval)
     currentStepIndex.value = analysisSteps.length
@@ -645,7 +646,7 @@ async function exportSitRepZip() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   } catch (err) {
-    console.error('Failed to generate SitRep zip package:', err)
+    logError('Could not generate the SitRep zip package', err)
   } finally {
     isExportingZip.value = false
   }
@@ -678,7 +679,7 @@ async function fetchAIInsights() {
     }
   } catch (err) {
     aiError.value = err instanceof Error ? err.message : 'Failed to load AI insights'
-    console.error('[AIInsights]', aiError.value)
+    logError(`AI Insights tab error for this incident: ${aiError.value}`)
   } finally {
     aiLoading.value = false
   }
@@ -710,7 +711,7 @@ onMounted(async () => {
         }
       }
     } catch (err) {
-      console.warn('Failed to hydrate incidents on detail page:', err)
+      logWarn('Could not hydrate incidents on the incident detail page', err)
     }
   }
 

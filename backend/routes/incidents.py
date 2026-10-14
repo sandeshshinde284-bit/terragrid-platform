@@ -39,10 +39,10 @@ def _load_countries_data() -> Dict[str, Any]:
             if os.path.exists(path):
                 with open(path, 'r') as f:
                     _COUNTRIES_DATA = json.load(f)
-                    logger.info(f"✓ Loaded countries.json from {path}")
+                    logger.info(f"Loaded countries.json from {path}")
                     return _COUNTRIES_DATA
         
-        logger.warning("⚠ countries.json not found, using minimal fallback")
+        logger.warning("countries.json not found in any expected location, falling back to the minimal built-in country list")
         return {"countries": {}, "aliases": {}}
     except Exception as e:
         logger.error(f"Failed to load countries.json: {e}, using fallback")
@@ -147,7 +147,7 @@ def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
     if db_id is not None:
         event = db.query(Event).filter(Event.id == db_id).first()
         if event:
-            logger.debug(f"[FIND_INCIDENT] Found by numeric ID: {incident_id} → {db_id}")
+            logger.debug(f"[FIND_INCIDENT] Resolved numeric ID {incident_id} to DB id {db_id}")
             return event
     
     # 2. Query by external ID in JSONB data
@@ -170,7 +170,7 @@ def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
             f"event-{evt.id}" == clean_id or
             f"inc_{evt.id}" == clean_id or
             f"inc-{evt.id}" == clean_id):
-            logger.debug(f"[FIND_INCIDENT] Found by scan: {incident_id} → {evt.id}")
+            logger.debug(f"[FIND_INCIDENT] Resolved {incident_id} to DB id {evt.id} by scanning events")
             return evt
         
         data = evt.data or {}
@@ -197,7 +197,7 @@ def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None
     
     # If admin token is provided and valid, allow mock mode
     if admin_token and admin_token == ADMIN_TOKEN:
-        logger.info("[MOCK-MODE] ✓ Authorized admin accessing mock mode")
+        logger.info("[MOCK-MODE] Admin authorization confirmed, mock mode access granted")
         return True
     
     # In development, mock mode is allowed (relies on environment)
@@ -214,7 +214,7 @@ def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None
         return True
     
     # Production + no token = deny
-    logger.warning("[MOCK-MODE] ✗ Unauthorized mock mode access attempted in production")
+    logger.warning("[MOCK-MODE] Unauthorized mock mode access attempted in production, request blocked")
     return False
 
 
@@ -440,7 +440,7 @@ async def get_incident_insights(
     try:
         # Validate mock mode access
         if use_mock and not _validate_mock_mode_access(use_mock, admin_token):
-            logger.warning(f"[INSIGHTS] ✗ Unauthorized mock mode access for {incident_id}")
+            logger.warning(f"[INSIGHTS] Unauthorized mock mode access for {incident_id}, request blocked")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Mock mode requires admin authorization in production"
@@ -448,7 +448,7 @@ async def get_incident_insights(
         
         incident = find_incident_by_id(incident_id, db)
         if not incident:
-            logger.warning(f"[INSIGHTS] ✗ Incident not found: {incident_id}")
+            logger.warning(f"[INSIGHTS] Incident not found: {incident_id}")
             raise HTTPException(status_code=404, detail=f"Incident not found: {incident_id}")
         
         incident_dict = incident.data.copy() if incident.data else {}
@@ -521,7 +521,7 @@ async def generate_deep_incident_analysis(
         
         incident = find_incident_by_id(incident_id, db)
         if not incident:
-            logger.warning(f"[DEEP-DOSSIER] ✗ Not found: {incident_id}")
+            logger.warning(f"[DEEP-DOSSIER] Incident not found: {incident_id}")
             raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
         
         raw_data = incident.data or {}
@@ -550,7 +550,7 @@ async def generate_deep_incident_analysis(
             curr_data["deep_dossier"] = dossier
             incident.data = curr_data
             db.commit()
-            logger.info(f"[DEEP-DOSSIER] ✓ Cached for {incident_id}")
+            logger.info(f"[DEEP-DOSSIER] Cached dossier for {incident_id}")
         except Exception as cache_err:
             logger.warning(f"[DEEP-DOSSIER] Cache failed: {cache_err}")
             db.rollback()

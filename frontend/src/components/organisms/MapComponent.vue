@@ -40,6 +40,7 @@
 </template>
 
 <script setup lang="ts">
+import { logFeature, logError } from '@/utils/logger'
 import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1 } from '@/types'
@@ -174,12 +175,12 @@ const initMap = () => {
   })
 
   map.value.on('load', () => {
-    console.log('Mapbox initialized successfully')
+    logFeature('mapbox', 'success', { action: 'initialized' })
     renderMarkers()
   })
 
   map.value.on('error', (e) => {
-    console.error('Mapbox rendering error:', e)
+    logError('Mapbox reported a rendering error', e)
   })
 }
 

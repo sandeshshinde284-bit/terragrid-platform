@@ -129,7 +129,7 @@ class BackgroundPollingService:
             return
 
         try:
-            logger.info("🔄 Background polling: Fetching latest incidents...")
+            logger.info("Background polling: fetching latest incidents from all sources")
 
             # Fetch latest incidents
             from backend.database import SessionLocal

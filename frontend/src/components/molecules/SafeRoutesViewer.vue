@@ -102,6 +102,7 @@
 
 <script>
 import { defineComponent } from 'vue'
+import { logError } from '@/utils/logger'
 
 export default defineComponent({
   name: 'SafeRoutesViewer',
@@ -141,7 +142,7 @@ export default defineComponent({
         }
       } catch (err) {
         this.error = `Failed to fetch routes: ${err.message}`
-        console.error('Routes fetch error:', err)
+        logError('Could not fetch safe evacuation routes', err)
       } finally {
         this.loading = false
       }

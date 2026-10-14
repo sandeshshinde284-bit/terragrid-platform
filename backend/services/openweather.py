@@ -111,7 +111,7 @@ class OpenWeatherService:
         """
         # 12-Factor App: Strict Environment-Driven Mock Guard
         if use_mock:
-            logger.info(" OpenWeather: 🧪 MOCK MODE ENABLED via .env")
+            logger.info("OpenWeather: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
             try:
                 import json
                 from pathlib import Path
@@ -126,13 +126,13 @@ class OpenWeatherService:
         api_key = settings.OPENWEATHERMAP_API_KEY
         
         if not api_key:
-            logger.warning("OPENWEATHERMAP_API_KEY not set in .env. Skipping OpenWeatherMap ingestion.")
+            logger.warning("[FEATURE_HEALTH] feature=openweather_current status=no_api_key reason=OPENWEATHERMAP_API_KEY not set in .env")
             return []
-        
+
         try:
             events = []
             api_key = settings.OPENWEATHERMAP_API_KEY
-            
+
             # Fetch weather for each city
             for lat, lon, city, country in cls.MONITORED_CITIES:
                 try:
@@ -142,12 +142,12 @@ class OpenWeatherService:
                 except Exception as e:
                     logger.debug(f"Error fetching weather for {city}, {country}: {str(e)}")
                     continue
-            
-            logger.info(f"OpenWeatherMap: Fetched weather data for {len(events)} cities")
+
+            logger.info(f"[FEATURE_HEALTH] feature=openweather_current status=success cities_queried={len(cls.MONITORED_CITIES)} severe_events_found={len(events)}")
             return events
-            
+
         except Exception as e:
-            logger.error(f"OpenWeatherMap API Error: {str(e)}")
+            logger.error(f"[FEATURE_HEALTH] feature=openweather_current status=error error={type(e).__name__}: {e}")
             return []
     
     @classmethod
@@ -196,7 +196,7 @@ class OpenWeatherService:
              data_sufficient}
         """
         if use_mock:
-            logger.info(" OpenWeather Forecast: 🧪 MOCK MODE ENABLED via .env")
+            logger.info("OpenWeather forecast: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
             try:
                 import json
                 from pathlib import Path
@@ -210,7 +210,7 @@ class OpenWeatherService:
         api_key = settings.OPENWEATHERMAP_API_KEY
 
         if not api_key:
-            logger.warning("OPENWEATHERMAP_API_KEY not set in .env. Skipping forecast ingestion.")
+            logger.warning("[FEATURE_HEALTH] feature=openweather_forecast status=no_api_key reason=OPENWEATHERMAP_API_KEY not set in .env")
             return []
 
         # Serve from the short-lived in-memory cache when fresh. All four
@@ -248,7 +248,7 @@ class OpenWeatherService:
         cls._forecast_cache = forecasts
         cls._forecast_cache_at = now
 
-        logger.info(f"OpenWeatherMap: Fetched 5-day forecast for {len(forecasts)} cities (parallel, concurrency={cls._FORECAST_FETCH_CONCURRENCY})")
+        logger.info(f"[FEATURE_HEALTH] feature=openweather_forecast status=success cities_fetched={len(forecasts)} cities_queried={len(cls.MONITORED_CITIES)} concurrency={cls._FORECAST_FETCH_CONCURRENCY}")
         return forecasts
 
     @classmethod

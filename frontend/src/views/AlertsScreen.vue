@@ -112,6 +112,7 @@
 import { ref, computed, onMounted } from 'vue'
 import Header from '@/components/organisms/Header.vue'
 import { useEventsStore } from '@/stores'
+import { logWarn } from '@/utils/logger'
 
 const eventsStore = useEventsStore()
 const activeFilter = ref('all')
@@ -242,7 +243,7 @@ onMounted(async () => {
         }
       }
     } catch (err) {
-      console.warn('AlertsScreen: Failed to hydrate live incidents:', err)
+      logWarn('Could not hydrate live incidents on the Alerts screen', err)
     }
   }
 })

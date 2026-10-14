@@ -61,7 +61,7 @@ class NASAEONETService:
             List of event dictionaries
         """
         if use_mock:
-            logger.info(" NASA EONET: 🧪 MOCK MODE ENABLED via .env")
+            logger.info("NASA EONET: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
             try:
                 import json
                 from pathlib import Path
@@ -91,11 +91,11 @@ class NASAEONETService:
                     if parsed:
                         events.append(parsed)
                 
-                logger.info(f" NASA EONET: Fetched {len(events)} events")
+                logger.info(f"[FEATURE_HEALTH] feature=nasa_eonet status=success events_found={len(events)}")
                 return events
                 
         except Exception as e:
-            logger.error(f" NASA EONET API Error: {str(e)}")
+            logger.error(f"[FEATURE_HEALTH] feature=nasa_eonet status=error error={type(e).__name__}: {e}")
             return []
     
     @classmethod

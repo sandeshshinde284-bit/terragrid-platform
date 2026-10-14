@@ -96,6 +96,7 @@
 
 <script>
 import { defineComponent } from 'vue'
+import { logError } from '@/utils/logger'
 
 export default defineComponent({
   name: 'ZoneStatsPanel',
@@ -158,7 +159,7 @@ export default defineComponent({
         this.$emit('zones-loaded', data.data)
       } catch (err) {
         this.error = `Failed to calculate zones: ${err.message}`
-        console.error('Zone calculation error:', err)
+        logError('Could not calculate evacuation zones', err)
       } finally {
         this.loading = false
       }
