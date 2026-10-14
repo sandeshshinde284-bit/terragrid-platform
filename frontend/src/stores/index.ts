@@ -2,6 +2,117 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { IncidentLevel1, AIInsight, DashboardState } from '@/types'
 
+// Prepare Forecast Store
+//
+// PERF FIX: ForecastDashboard, RiskTimeline, PreparednessChecklist, and
+// AgencyAlerts each independently called GET /api/v1/prepare/forecast on
+// mount to build their city list/rail - so navigating between the four
+// PREPARE pages re-paid the cost of that fetch every single time, even
+// right after another PREPARE page had just loaded the exact same data.
+// This store fetches once and is shared by all four; ensureLoaded() is a
+// no-op if the cached data is still fresh, so switching tabs is instant.
+// The backend also carries its own short-lived cache (OpenWeatherService's
+// FORECAST_CACHE_TTL_SECONDS) as a second line of defense for a cold store
+// (e.g. a judge opening Agency Alerts directly via a shared link).
+export interface PrepareDailyForecast {
+  date: string
+  risk_level: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
+  dominant_weather: string
+  max_wind_ms: number
+  min_temp_c: number | null
+  max_temp_c: number | null
+  total_rain_mm: number
+}
+
+export interface PrepareCityForecast {
+  city: string
+  country: string
+  latitude: number
+  longitude: number
+  source: string
+  daily: PrepareDailyForecast[]
+}
+
+const PREPARE_FORECAST_FRESHNESS_MS = 5 * 60 * 1000 // 5 minutes
+
+export const usePrepareForecastStore = defineStore('prepareForecast', () => {
+  // State
+  // loading starts true (not false) so the very first page to mount shows
+  // its loader immediately instead of a one-frame "no data yet" flash
+  // before onMounted's ensureLoaded() call flips it. Once the first fetch's
+  // finally{} block runs, it settles to false and stays false across fresh
+  // navigations (ensureLoaded() is a no-op when isFresh, so it never touches
+  // loading again until data goes stale or a forced refresh happens).
+  const cities = ref<PrepareCityForecast[]>([])
+  const loading = ref(true)
+  const error = ref('')
+  const lastFetchedAt = ref(0)
+
+  // Getters
+  const isFresh = computed(() => cities.value.length > 0 && (Date.now() - lastFetchedAt.value) < PREPARE_FORECAST_FRESHNESS_MS)
+
+  const apiHost = () =>
+    import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+
+  // Actions
+  //
+  // fetchWithMockMode is passed in (from useMockMode() in the calling
+  // component) rather than imported directly here, since useMockMode()
+  // itself calls useAppStore() internally - cleaner to keep that composable
+  // usage in components and just hand this store the fetch function it
+  // produces.
+  //
+  // inFlight dedupes the case where two PREPARE pages mount in quick
+  // succession before the first fetch has resolved (e.g. the user clicks
+  // through tabs fast) - without it, both would see isFresh === false and
+  // fire their own fetch instead of sharing the one already in progress.
+  let inFlight: Promise<void> | null = null
+
+  const ensureLoaded = async (
+    fetchWithMockMode: (url: string, options?: Record<string, unknown>) => Promise<Response>,
+    force = false
+  ) => {
+    if (isFresh.value && !force) return
+    if (inFlight) return inFlight
+
+    loading.value = true
+    error.value = ''
+
+    inFlight = (async () => {
+      try {
+        const response = await fetchWithMockMode(`${apiHost()}/api/v1/prepare/forecast`)
+        if (!response.ok) {
+          throw new Error(`Backend returned ${response.status}`)
+        }
+        const json = await response.json()
+        cities.value = json.data || []
+        lastFetchedAt.value = Date.now()
+      } catch (e) {
+        error.value = e instanceof Error ? e.message : 'Unknown error fetching forecast'
+      } finally {
+        loading.value = false
+        inFlight = null
+      }
+    })()
+
+    return inFlight
+  }
+
+  return {
+    // State
+    cities,
+    loading,
+    error,
+    lastFetchedAt,
+
+    // Getters
+    isFresh,
+
+    // Actions
+    ensureLoaded,
+  }
+})
+
 // App Store
 export const useAppStore = defineStore('app', () => {
   // State

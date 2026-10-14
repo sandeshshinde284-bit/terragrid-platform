@@ -4,8 +4,10 @@ OpenWeatherMap API Service
 Fetches global weather alerts, storms, and extreme weather conditions
 Replaces NOAA for global coverage (not just US)
 """
+import asyncio
 import httpx
 import logging
+import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 import os
@@ -14,8 +16,21 @@ logger = logging.getLogger(__name__)
 
 class OpenWeatherService:
     """Service to fetch global weather alerts from OpenWeatherMap API"""
-    
+
     BASE_URL = settings.OPENWEATHER_API_URL
+
+    # PERF FIX: fetch_forecast() used to await each of the ~40 MONITORED_CITIES
+    # one at a time, each opening its own httpx.AsyncClient (fresh TLS handshake
+    # per city). That serialized ~40 round-trips end-to-end, which is what made
+    # every PREPARE-phase page (Forecast, Risk Timeline, Checklist, Agency
+    # Alerts - each of which independently calls this method on mount) take
+    # 3-5 minutes to load. Fixed by fetching all cities concurrently off one
+    # shared client, plus a short in-memory cache so the four pages don't each
+    # pay for a fresh 40-city fetch when navigated between in quick succession.
+    _FORECAST_FETCH_CONCURRENCY = 10
+    _forecast_cache: List[Dict[str, Any]] | None = None
+    _forecast_cache_at: float = 0.0
+    FORECAST_CACHE_TTL_SECONDS = 600  # 10 minutes
     
     # Cities to monitor globally - covers key disaster-prone regions
     MONITORED_CITIES = [
@@ -191,48 +206,72 @@ class OpenWeatherService:
             logger.warning("OPENWEATHERMAP_API_KEY not set in .env. Skipping forecast ingestion.")
             return []
 
-        forecasts = []
-        for lat, lon, city, country in cls.MONITORED_CITIES:
-            try:
-                forecast = await cls._fetch_city_forecast(lat, lon, city, country, api_key)
-                if forecast:
-                    forecasts.append(forecast)
-            except Exception as e:
-                logger.debug(f"Error fetching forecast for {city}, {country}: {str(e)}")
-                continue
+        # Serve from the short-lived in-memory cache when fresh. All four
+        # PREPARE-phase pages (Forecast, Risk Timeline, Checklist, Agency
+        # Alerts) call this independently on mount - without this, navigating
+        # between them re-pays the full 40-city fetch every single time.
+        now = time.monotonic()
+        if cls._forecast_cache is not None and (now - cls._forecast_cache_at) < cls.FORECAST_CACHE_TTL_SECONDS:
+            age = now - cls._forecast_cache_at
+            logger.info(f"OpenWeatherMap: Serving cached 5-day forecast ({len(cls._forecast_cache)} cities, age={age:.0f}s)")
+            return cls._forecast_cache
 
-        logger.info(f"OpenWeatherMap: Fetched 5-day forecast for {len(forecasts)} cities")
+        semaphore = asyncio.Semaphore(cls._FORECAST_FETCH_CONCURRENCY)
+
+        async def fetch_one(client: httpx.AsyncClient, lat: float, lon: float, city: str, country: str):
+            async with semaphore:
+                try:
+                    return await cls._fetch_city_forecast(client, lat, lon, city, country, api_key)
+                except Exception as e:
+                    logger.debug(f"Error fetching forecast for {city}, {country}: {str(e)}")
+                    return None
+
+        # One shared client (connection pooling) instead of a new client per
+        # city, fetched concurrently (bounded by the semaphore above) instead
+        # of one-at-a-time - this is what cuts ~40 sequential round-trips
+        # down to a handful of concurrent batches.
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            results = await asyncio.gather(*[
+                fetch_one(client, lat, lon, city, country)
+                for lat, lon, city, country in cls.MONITORED_CITIES
+            ])
+
+        forecasts = [f for f in results if f]
+
+        cls._forecast_cache = forecasts
+        cls._forecast_cache_at = now
+
+        logger.info(f"OpenWeatherMap: Fetched 5-day forecast for {len(forecasts)} cities (parallel, concurrency={cls._FORECAST_FETCH_CONCURRENCY})")
         return forecasts
 
     @classmethod
-    async def _fetch_city_forecast(cls, lat: float, lon: float, city: str, country: str, api_key: str) -> Dict[str, Any] | None:
-        """Fetch and summarize the 5-day/3-hour-step forecast for a single city"""
+    async def _fetch_city_forecast(cls, client: httpx.AsyncClient, lat: float, lon: float, city: str, country: str, api_key: str) -> Dict[str, Any] | None:
+        """Fetch and summarize the 5-day/3-hour-step forecast for a single city, using a shared client."""
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    f"{cls.BASE_URL}/forecast",
-                    params={
-                        "lat": lat,
-                        "lon": lon,
-                        "appid": api_key,
-                        "units": "metric",
-                    }
-                )
-                response.raise_for_status()
-                data = response.json()
-
-                daily = cls._summarize_forecast_by_day(data.get("list", []))
-                if not daily:
-                    return None
-
-                return {
-                    "city": city,
-                    "country": country,
-                    "latitude": lat,
-                    "longitude": lon,
-                    "source": "OPENWEATHER",
-                    "daily": daily,
+            response = await client.get(
+                f"{cls.BASE_URL}/forecast",
+                params={
+                    "lat": lat,
+                    "lon": lon,
+                    "appid": api_key,
+                    "units": "metric",
                 }
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            daily = cls._summarize_forecast_by_day(data.get("list", []))
+            if not daily:
+                return None
+
+            return {
+                "city": city,
+                "country": country,
+                "latitude": lat,
+                "longitude": lon,
+                "source": "OPENWEATHER",
+                "daily": daily,
+            }
 
         except Exception as e:
             logger.debug(f"Error fetching forecast for {city}: {str(e)}")

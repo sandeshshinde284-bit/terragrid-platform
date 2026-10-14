@@ -119,27 +119,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
+import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
 
-interface DailyForecast {
-  date: string
-  risk_level: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
-  dominant_weather: string
-  max_wind_ms: number
-  min_temp_c: number | null
-  max_temp_c: number | null
-  total_rain_mm: number
-}
-
-interface CityForecast {
-  city: string
-  country: string
-  latitude: number
-  longitude: number
-  source: string
-  daily: DailyForecast[]
-}
+type CityForecast = PrepareCityForecast
 
 interface AgencyAlert {
   audience: string
@@ -159,9 +144,11 @@ interface AlertsPlan {
 
 const { fetchWithMockMode } = useMockMode()
 
-const cities = ref<CityForecast[]>([])
-const loading = ref(true)
-const error = ref('')
+// Shared across all 4 PREPARE pages - fetched once, reused on tab switches
+// instead of each page re-fetching all ~40 cities independently (see
+// stores/index.ts for why this used to make every page load take minutes).
+const prepareForecastStore = usePrepareForecastStore()
+const { cities, loading, error } = storeToRefs(prepareForecastStore)
 const selectedKey = ref('')
 
 const alertsPlan = ref<AlertsPlan | null>(null)
@@ -268,24 +255,12 @@ const fetchAlertsForSelectedCity = async () => {
 }
 
 onMounted(async () => {
-  try {
-    const host = apiHost()
-    const response = await fetchWithMockMode(`${host}/api/v1/prepare/forecast`)
-
-    if (!response.ok) {
-      throw new Error(`Backend returned ${response.status}`)
-    }
-
-    const json = await response.json()
-    cities.value = json.data || []
-
-    if (cities.value.length > 0) {
-      selectedKey.value = cityKey(sortedCities.value[0])
-    }
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Unknown error fetching forecast'
-  } finally {
-    loading.value = false
+  // If another PREPARE page already loaded fresh forecast data, this
+  // resolves immediately and the watch(cities, ...) below picks the
+  // default selection from what's already there.
+  await prepareForecastStore.ensureLoaded(fetchWithMockMode)
+  if (cities.value.length > 0 && !selectedCity.value) {
+    selectedKey.value = cityKey(sortedCities.value[0])
   }
 })
 

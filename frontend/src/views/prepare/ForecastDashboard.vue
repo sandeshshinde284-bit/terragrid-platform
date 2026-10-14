@@ -96,27 +96,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
+import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
 
-interface DailyForecast {
-  date: string
-  risk_level: 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
-  dominant_weather: string
-  max_wind_ms: number
-  min_temp_c: number | null
-  max_temp_c: number | null
-  total_rain_mm: number
-}
-
-interface CityForecast {
-  city: string
-  country: string
-  latitude: number
-  longitude: number
-  source: string
-  daily: DailyForecast[]
-}
+type CityForecast = PrepareCityForecast
 
 interface CountryGroup {
   country: string
@@ -126,9 +111,11 @@ interface CountryGroup {
 
 const { fetchWithMockMode } = useMockMode()
 
-const cities = ref<CityForecast[]>([])
-const loading = ref(true)
-const error = ref('')
+// Shared across all 4 PREPARE pages - fetched once, reused on tab switches
+// instead of each page re-fetching all ~40 cities independently (see
+// stores/index.ts for why this used to make every page load take minutes).
+const prepareForecastStore = usePrepareForecastStore()
+const { cities, loading, error } = storeToRefs(prepareForecastStore)
 
 const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
 const RISK_EMOJI: Record<string, string> = { GREEN: '🟢', YELLOW: '🟡', ORANGE: '🟠', RED: '🔴' }
@@ -244,21 +231,7 @@ const formatDay = (dateStr: string): string => {
 }
 
 onMounted(async () => {
-  try {
-    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
-    const response = await fetchWithMockMode(`${host}/api/v1/prepare/forecast`)
-
-    if (!response.ok) {
-      throw new Error(`Backend returned ${response.status}`)
-    }
-
-    const json = await response.json()
-    cities.value = json.data || []
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Unknown error fetching forecast'
-  } finally {
-    loading.value = false
-  }
+  await prepareForecastStore.ensureLoaded(fetchWithMockMode)
 })
 </script>
 
