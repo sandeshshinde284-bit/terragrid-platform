@@ -688,26 +688,50 @@ async function fetchAIInsights() {
 onMounted(async () => {
   if (eventsStore.allIncidents.length === 0) {
     try {
+      // Mirrors Dashboard.vue's own db_hydration mapping exactly (same endpoint,
+      // same id-field priority, same response unwrapping) - this used to use a
+      // different, simplified mapping that (a) never unwrapped the endpoint's
+      // real { data: [...], pagination: ... } shape, so raw.length was always
+      // undefined and setIncidents() never ran, and (b) built a different id
+      // than Dashboard.vue does (e.id only, vs Dashboard's data?.id priority).
+      // Either bug alone was enough to make a direct page refresh show
+      // "Incident not found" even though the incident still exists - the store
+      // either never repopulated, or repopulated with an id that didn't match
+      // the one in the URL.
       const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
-      const res = await fetch(`${host}/api/v1/incidents?limit=100`)
+      const res = await fetch(`${host}/api/v1/incidents?limit=100&offset=0`)
       if (res.ok) {
-        const raw = await res.json()
-        if (raw && raw.length > 0) {
-          eventsStore.setIncidents(raw.map((e: any, idx: number) => ({
-            id: e.id || `event_${idx}`,
-            type: e.event_type || 'fire',
-            location: e.location_name || 'Unknown',
-            countryCode: e.countryCode || 'UN',
-            severity: e.severity || 'medium',
-            status: e.status || 'active',
-            threatScore: e.threatScore ?? e.impact?.risk_score ?? 50,
-            detectionTime: new Date(e.event_timestamp || e.detectionTime || Date.now()),
-            affectedArea: e.affectedArea ?? e.impact?.affected_area_km2 ?? 150,
-            affectedPopulation: e.affectedPopulation ?? e.impact?.affected_population ?? 50000,
-            trend: e.trend ?? e.impact?.trend_km2_per_hour ?? 5.2,
-            forecast6h: e.forecast6h ?? e.impact?.forecast_6h_km2 ?? 31.2,
-            coordinates: [e.latitude, e.longitude] as [number, number],
-          })))
+        const apiResponse = await res.json()
+        const rawIncidents = apiResponse.data || apiResponse
+        if (rawIncidents && Array.isArray(rawIncidents) && rawIncidents.length > 0) {
+          const mapped = rawIncidents.map((event: any, index: number) => {
+            const impact = event.impact || {}
+            const severity = (event.severity || 'medium').toLowerCase()
+            const locationName = event.location_name || 'Unknown'
+            const source = event.source || event.data?.source || 'unknown'
+
+            return {
+              id: event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id || `event-${index}-${Date.now()}`,
+              type: event.event_type || 'fire',
+              location: locationName,
+              location_name: locationName,
+              countryCode: event.countryCode || 'UN',
+              severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
+              status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
+              threatScore: impact.risk_score ?? event.threatScore ?? 50,
+              detectionTime: new Date(event.event_timestamp || Date.now()),
+              affectedArea: impact.affected_area_km2 ?? event.affectedArea ?? 150,
+              affectedPopulation: impact.affected_population ?? event.affectedPopulation ?? 50000,
+              trend: impact.trend_km2_per_hour ?? event.trend ?? 5.2,
+              forecast6h: impact.forecast_6h_km2 ?? event.forecast6h ?? 31.2,
+              coordinates: [event.latitude, event.longitude] as [number, number],
+              source: source,
+              confidence: event.confidence ?? event.data?.confidence ?? 0,
+              event_timestamp: event.event_timestamp || event.created_at || Date.now(),
+              data: event.data || {},
+            }
+          })
+          eventsStore.setIncidents(mapped)
         }
       }
     } catch (err) {
