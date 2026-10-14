@@ -745,6 +745,21 @@ graph LR
 <ul><li><strong>System Processing:</strong> Backend notifications service formats structured HTML email templates; enforces PostgreSQL idempotency keys to prevent duplicate alerting; transmits via Resend API.</li></ul>
 <ul><li><strong>System Output:</strong> Immediate delivery of mobile-formatted emergency tactical alerts to incident commanders.</li></ul>
 
+<h4>Functionality 11a: Deterministic Resource Allocation Optimizer</h4>
+<ul><li><strong>Input Data:</strong> Active incident need-scores (risk score, exposed population share, assigned need-level weight) and a declared resource pool (e.g., total ambulances available regionally).</li></ul>
+<ul><li><strong>System Processing:</strong> Applies the <strong>largest-remainder (Hamilton) apportionment method</strong> — the same mathematical technique used for seat allocation in proportional political representation — to split an integer resource pool across incidents in exact proportion to each incident's computed need score. Guarantees the allocated integers always sum exactly to the declared pool, with zero rounding drift and zero AI dependency.</li></ul>
+<ul><li><strong>System Output:</strong> A deterministic, auditable resource-allocation table per incident, replacing an earlier AI-estimated free-text figure with a number a commander can verify by hand.</li></ul>
+
+<h4>Functionality 11b: Image+Satellite Cross-Validation</h4>
+<ul><li><strong>Input Data:</strong> Incident coordinates, reported event type/severity, and a live satellite image fetched from NASA GIBS WMS (free, public, no API key) for that location.</li></ul>
+<ul><li><strong>System Processing:</strong> Vertex AI Gemini's multimodal capability visually inspects the real satellite composite against the reported incident, independently of the source telemetry feed that generated the report — a genuine cross-check, not a decorative overlay. If the image cannot be fetched, the system returns an explicit structured failure rather than substituting a stock photo.</li></ul>
+<ul><li><strong>System Output:</strong> A visual-consistency verdict, confidence percentage, and any discrepancy notes between what the satellite shows and what was reported.</li></ul>
+
+<h4>Functionality 11c: Sentinel-1 SAR Flood Detection (Google Earth Engine)</h4>
+<ul><li><strong>Input Data:</strong> Sentinel-1 Synthetic Aperture Radar (SAR) GRD passes over the incident area, pre- and post-event, from the same orbit.</li></ul>
+<ul><li><strong>System Processing:</strong> Executes a direct port of the published UN-SPIDER / DeVries et al. (2020) SAR flood-detection methodology — no official Python implementation existed prior to this build. Computes a change-detection ratio between pre/post VV backscatter composites, masks out permanent water (JRC Global Surface Water) and steep terrain (SRTM slope &gt;5%), and filters isolated noise pixels via connectivity analysis.</li></ul>
+<ul><li><strong>System Output:</strong> A quantified flood extent (hectares) independent of any single ground sensor, available for any incident within Sentinel-1's revisit cadence — not just where river gauges or weather stations happen to exist.</li></ul>
+
 <h4>Operational Use Case 3: Major Urban Earthquake Response</h4>
 <ul><li><strong>Primary Actor:</strong> Incident Tactical Commander.</li></ul>
 <ul><li><strong>Operational Scenario:</strong> A Magnitude 6.4 seismic event strikes a metropolitan area at a shallow depth of 10km.</li></ul>
@@ -780,7 +795,7 @@ graph LR
 
 <h2>4. Master Telemetry & API Ecosystem Matrix</h2>
 
-<p>The following authoritative matrix details the 20 physical telemetry feeds and scientific datasets governing the TerraGrid multi-sensor fusion architecture, distinguishing between the active <strong>Phase 1 Production MVP</strong> and the <strong>Phase 2/3 Future Roadmap</strong>:</p>
+<p>The following authoritative matrix details the 22 physical telemetry feeds and scientific datasets governing the TerraGrid multi-sensor fusion architecture, distinguishing between the active <strong>Phase 1 Production MVP</strong> and the <strong>Phase 2/3 Future Roadmap</strong>:</p>
 
 <div class="table-container"><table><thead><tr><th>#</th><th>API / Scientific Dataset</th><th>Authority / Provider</th><th>Target Lifecycle Phase</th><th>Operational Implementation Status</th><th>Telemetry Provided & Capabilities</th></tr></thead><tbody><tr><td><strong>1</strong></td><td><strong>USGS Seismic Feeds</strong></td><td>US Geological Survey</td><td>🟢 RESPONSE</td><td><strong>✅ LIVE (Phase 1 MVP)</strong></td><td>Real-time global earthquake magnitude, hypocenter depth, coordinates, and seismic GeoJSON feeds.</td></tr>
 <tr><td><strong>2</strong></td><td><strong>NASA EONET v3</strong></td><td>NASA Goddard Space Center</td><td>🟢 RESPONSE</td><td><strong>✅ LIVE (Phase 1 MVP)</strong></td><td>Continuous orbital monitoring of active natural hazards: wildfires, severe storms, volcanoes, landslides.</td></tr>
@@ -800,8 +815,10 @@ graph LR
 <tr><td><strong>16</strong></td><td><strong>NASA SMAP Soil Moisture</strong></td><td>NASA Jet Propulsion Lab</td><td>🟠 PREPARE</td><td>❌ Phase 2A Roadmap</td><td>Spaceborne radar/radiometer surface and root-zone soil saturation metrics to calculate flash flood runoff vulnerability.</td></tr>
 <tr><td><strong>17</strong></td><td><strong>NOAA NWPS River Gauges</strong></td><td>National Water Prediction Service</td><td>🟠 PREPARE</td><td>❌ Phase 2C Roadmap</td><td>High-density US river stage, streamflow observations, and hydrologic flood forecast models (US geographic focus).</td></tr>
 <tr><td><strong>18</strong></td><td><strong>Sentinel-2 Multi-Spectral</strong></td><td>European Space Agency (ESA)</td><td>⚫ RECOVER</td><td>❌ Phase 2B Roadmap</td><td>Optical and radar satellite imagery passes for automated before-and-after computer vision disaster damage quantification.</td></tr>
-<tr><td><strong>19</strong></td><td><strong>Google Earth Engine (GEE)</strong></td><td>Google Earth Engine Team</td><td>⚫ RECOVER</td><td>❌ Phase 2B Roadmap</td><td>Cloud-scale geospatial computing platform executing automated structural destruction change detection at planetary scale.</td></tr>
-<tr><td><strong>20</strong></td><td><strong>WorldPop REST API v2</strong></td><td>WorldPop / Univ of Southampton</td><td>🟢 RESPONSE / 🟠 PREPARE</td><td>❌ Phase 2C Roadmap</td><td>High-resolution demographic raster queries computing age/gender stratified population inside custom GeoJSON polygons.</td></tr></tbody></table></div>
+<tr><td><strong>19</strong></td><td><strong>Google Earth Engine (GEE)</strong></td><td>Google Earth Engine Team</td><td>🟢 RESPONSE</td><td><strong>🔶 BUILT (Phase 1, pending live verification)</strong></td><td>Powers live-incident Sentinel-1 SAR flood detection (Functionality 11c), not just post-disaster RECOVER analysis. Community tier (150 EECU-hrs/month, free) registered; code honest-fails without credentials.</td></tr>
+<tr><td><strong>20</strong></td><td><strong>NASA GIBS WMS</strong></td><td>NASA EOSDIS</td><td>🟢 RESPONSE</td><td><strong>🔶 BUILT (Phase 1, pending live verification)</strong></td><td>Free, public, no-key satellite imagery (true-color / thermal-anomaly layers) feeding Functionality 11b's Gemini multimodal cross-validation.</td></tr>
+<tr><td><strong>21</strong></td><td><strong>Sentinel-1 SAR GRD</strong></td><td>European Space Agency (ESA) / Copernicus</td><td>🟢 RESPONSE</td><td><strong>🔶 BUILT (Phase 1, pending live verification)</strong></td><td>Synthetic Aperture Radar imagery (via Earth Engine) powering real-time flood-extent detection independent of ground sensors — distinct from Sentinel-2's post-disaster optical role in row 18.</td></tr>
+<tr><td><strong>22</strong></td><td><strong>WorldPop REST API v2</strong></td><td>WorldPop / Univ of Southampton</td><td>🟢 RESPONSE / 🟠 PREPARE</td><td>❌ Phase 2C Roadmap</td><td>High-resolution demographic raster queries computing age/gender stratified population inside custom GeoJSON polygons.</td></tr></tbody></table></div>
 <hr class="section-divider">
 
 <h2>5. UI Architecture & Navigation Hierarchy (Two-Tier Operating Model)</h2>

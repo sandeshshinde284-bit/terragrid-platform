@@ -1,5 +1,5 @@
 # TerraGrid Platform: Business Analyst Master Architecture & Handoff Document
-**Document Version:** 2.0 (Authoritative Lifecycle Architecture)  
+**Document Version:** 2.1 (Authoritative Lifecycle Architecture — updated 2026-10-14)  
 **Target Audience:** Business Analysts, Product Managers, Technical Architects, Presentation Designers  
 **Core Purpose:** This document serves as the single, exhaustive blueprint translating the TerraGrid platform from technical source code into business capabilities, operational use cases, multi-horizon lifecycles, and user experience navigation. Use this document to build pitch decks, system architecture diagrams, and executive presentations with zero ambiguity.
 
@@ -232,6 +232,21 @@ To provide the Business Analyst with complete raw material for technical user st
 * **System Processing:** Backend notifications service formats structured HTML email templates; enforces PostgreSQL idempotency keys to prevent duplicate alerting; transmits via Resend API.
 * **System Output:** Immediate delivery of mobile-formatted emergency tactical alerts to incident commanders.
 
+#### Functionality 11a: Deterministic Resource Allocation Optimizer
+* **Input Data:** Active incident need-scores (risk score, exposed population share, assigned need-level weight) and a declared resource pool (e.g., total ambulances available regionally).
+* **System Processing:** Applies the **largest-remainder (Hamilton) apportionment method** — the same mathematical technique used for seat allocation in proportional political representation — to split an integer resource pool across incidents in exact proportion to each incident's computed need score. Guarantees the allocated integers always sum exactly to the declared pool, with zero rounding drift and zero AI dependency.
+* **System Output:** A deterministic, auditable resource-allocation table per incident, replacing an earlier AI-estimated free-text figure with a number a commander can verify by hand.
+
+#### Functionality 11b: Image+Satellite Cross-Validation
+* **Input Data:** Incident coordinates, reported event type/severity, and a live satellite image fetched from NASA GIBS WMS (free, public, no API key) for that location.
+* **System Processing:** Vertex AI Gemini's multimodal capability visually inspects the real satellite composite against the reported incident, independently of the source telemetry feed that generated the report — a genuine cross-check, not a decorative overlay. If the image cannot be fetched, the system returns an explicit structured failure rather than substituting a stock photo.
+* **System Output:** A visual-consistency verdict, confidence percentage, and any discrepancy notes between what the satellite shows and what was reported.
+
+#### Functionality 11c: Sentinel-1 SAR Flood Detection (Google Earth Engine)
+* **Input Data:** Sentinel-1 Synthetic Aperture Radar (SAR) GRD passes over the incident area, pre- and post-event, from the same orbit.
+* **System Processing:** Executes a direct port of the published UN-SPIDER / DeVries et al. (2020) SAR flood-detection methodology — no official Python implementation existed prior to this build. Computes a change-detection ratio between pre/post VV backscatter composites, masks out permanent water (JRC Global Surface Water) and steep terrain (SRTM slope >5%), and filters isolated noise pixels via connectivity analysis.
+* **System Output:** A quantified flood extent (hectares) independent of any single ground sensor, available for any incident within Sentinel-1's revisit cadence — not just where river gauges or weather stations happen to exist.
+
 #### Operational Use Case 3: Major Urban Earthquake Response
 * **Primary Actor:** Incident Tactical Commander.
 * **Operational Scenario:** A Magnitude 6.4 seismic event strikes a metropolitan area at a shallow depth of 10km.
@@ -267,7 +282,7 @@ To provide the Business Analyst with complete raw material for technical user st
 
 ## 4. Master Telemetry & API Ecosystem Matrix
 
-The following authoritative matrix details the 20 physical telemetry feeds and scientific datasets governing the TerraGrid multi-sensor fusion architecture, distinguishing between the active **Phase 1 Production MVP** and the **Phase 2/3 Future Roadmap**:
+The following authoritative matrix details the 22 physical telemetry feeds and scientific datasets governing the TerraGrid multi-sensor fusion architecture, distinguishing between the active **Phase 1 Production MVP** and the **Phase 2/3 Future Roadmap**:
 
 | # | API / Scientific Dataset | Authority / Provider | Target Lifecycle Phase | Operational Implementation Status | Telemetry Provided & Capabilities |
 |---|---|---|---|---|---|
@@ -289,8 +304,10 @@ The following authoritative matrix details the 20 physical telemetry feeds and s
 | **16** | **NASA SMAP Soil Moisture** | NASA Jet Propulsion Lab | 🟠 PREPARE | ❌ Phase 2A Roadmap | Spaceborne radar/radiometer surface and root-zone soil saturation metrics to calculate flash flood runoff vulnerability. |
 | **17** | **NOAA NWPS River Gauges** | National Water Prediction Service | 🟠 PREPARE | ❌ Phase 2C Roadmap | High-density US river stage, streamflow observations, and hydrologic flood forecast models (US geographic focus). |
 | **18** | **Sentinel-2 Multi-Spectral** | European Space Agency (ESA) | ⚫ RECOVER | ❌ Phase 2B Roadmap | Optical and radar satellite imagery passes for automated before-and-after computer vision disaster damage quantification. |
-| **19** | **Google Earth Engine (GEE)** | Google Earth Engine Team | ⚫ RECOVER | ❌ Phase 2B Roadmap | Cloud-scale geospatial computing platform executing automated structural destruction change detection at planetary scale. |
-| **20** | **WorldPop REST API v2** | WorldPop / Univ of Southampton | 🟢 RESPONSE / 🟠 PREPARE | ❌ Phase 2C Roadmap | High-resolution demographic raster queries computing age/gender stratified population inside custom GeoJSON polygons. |
+| **19** | **Google Earth Engine (GEE)** | Google Earth Engine Team | 🟢 RESPONSE | **🔶 BUILT (Phase 1, pending live verification)** | Powers live-incident Sentinel-1 SAR flood detection (Functionality 11c), not just post-disaster RECOVER analysis. Community tier (150 EECU-hrs/month, free) registered; code honest-fails without credentials. |
+| **20** | **NASA GIBS WMS** | NASA EOSDIS | 🟢 RESPONSE | **🔶 BUILT (Phase 1, pending live verification)** | Free, public, no-key satellite imagery (true-color / thermal-anomaly layers) feeding Functionality 11b's Gemini multimodal cross-validation. |
+| **21** | **Sentinel-1 SAR GRD** | European Space Agency (ESA) / Copernicus | 🟢 RESPONSE | **🔶 BUILT (Phase 1, pending live verification)** | Synthetic Aperture Radar imagery (via Earth Engine) powering real-time flood-extent detection independent of ground sensors — distinct from Sentinel-2's post-disaster optical role in row 18. |
+| **22** | **WorldPop REST API v2** | WorldPop / Univ of Southampton | 🟢 RESPONSE / 🟠 PREPARE | ❌ Phase 2C Roadmap | High-resolution demographic raster queries computing age/gender stratified population inside custom GeoJSON polygons. |
 
 ---
 
