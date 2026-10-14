@@ -399,6 +399,11 @@ const closeMobileMenu = () => {
   white-space: nowrap;
 }
 
+/* Visually separate the sub-tab row from the phase-selector row above it -
+   without this it just sat directly under the phase pills with the same
+   background, so the whole header read as one cluttered block. A faint
+   card (own background/border/radius) around the sub-tabs makes it read
+   as "a section of the header", not fused with the phase switcher. */
 .nav-row {
   display: flex;
   gap: 8px;
@@ -406,7 +411,12 @@ const closeMobileMenu = () => {
   flex-wrap: wrap;
   row-gap: 4px;
   min-height: 32px;
-  height: 32px;
+  height: auto;
+  width: fit-content;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
 }
 
 .nav-row-roadmap {
