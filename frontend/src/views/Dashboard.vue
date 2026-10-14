@@ -120,76 +120,14 @@
 
           <div class="detail-content">
             
-            <!-- 1. OPERATIONAL ACTION PLAN -->
-            <div class="ai-decision-plan">
-              <div class="ai-plan-header">
-                <span class="ai-pulse-dot"></span>
-                <label class="ai-plan-title">⚡ Operational Action Plan</label>
-                <span class="ai-engine-chip">Live Triage</span>
-              </div>
-              
-              <!-- High-Tech Tactical Loading State with Dynamic Stepper & Shimmer Skeletons -->
-              <div v-if="isLoadingInsights" class="ai-tactical-loading">
-                <div class="loading-radar-header">
-                  <div class="radar-ping-ring">
-                    <span class="radar-dot"></span>
-                  </div>
-                  <div class="loading-telemetry-text">
-                    <span class="loading-phase-tag">AI COGNITIVE PROCESSING ACTIVE</span>
-                    <strong class="cycling-step-text">{{ currentLoadingPhaseText }}</strong>
-                  </div>
-                </div>
-
-                <div class="tactical-progress-track">
-                  <div class="tactical-scan-laser"></div>
-                </div>
-
-                <!-- Ghost Skeleton Micro-Cards -->
-                <div class="skeleton-action-cards">
-                  <div class="skeleton-tag shimmer"></div>
-                  <div class="skeleton-card shimmer" v-for="n in 3" :key="n">
-                    <div class="sk-num">0{{ n }}</div>
-                    <div class="sk-lines">
-                      <div class="sk-line full"></div>
-                      <div class="sk-line half"></div>
-                    </div>
-                  </div>
-                  <div class="skeleton-evac shimmer"></div>
-                </div>
-              </div>
-              
-              <div v-else-if="aiPlan" class="ai-plan-content">
-                <div class="country-context-tag">{{ formatTacticalText(aiPlan.country_context) }}</div>
-                
-                <div class="tactical-group">
-                  <span class="group-title">Immediate Action Items:</span>
-                  <div class="tactical-action-cards">
-                    <div v-for="(act, idx) in aiPlan.immediate_actions" :key="idx" class="tactical-action-card">
-                      <span class="action-num">0{{ Number(idx) + 1 }}</span>
-                      <span class="action-text">{{ formatTacticalText(act) }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="tactical-group" v-if="aiPlan.evacuation_guidance">
-                  <span class="group-title">🛣️ Evacuation Routing:</span>
-                  <div class="evacuation-card">
-                    <p class="evac-text">{{ formatTacticalText(aiPlan.evacuation_guidance) }}</p>
-                  </div>
-                </div>
-
-                <div class="tactical-group" v-if="aiPlan.resource_allocation && aiPlan.resource_allocation.length">
-                  <span class="group-title">🚒 Resource Deployment:</span>
-                  <div class="resource-chip-grid">
-                    <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-chip">
-                      <strong class="res-label">{{ res.resource }}:</strong>
-                      <span class="res-qty">{{ res.quantity }}</span>
-                      <span class="res-status" :class="res.status ? res.status.toLowerCase() : ''">{{ res.status }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- 1. OPERATIONAL ACTION PLAN (TEASER VERSION) -->
+            <OperationalActionTeaser 
+              :aiPlan="aiPlan"
+              :isLoading="isLoadingInsights"
+              :error="null"
+              :incidentId="selectedIncidentData.id"
+              @navigateToInsights="() => { /* Router link handles this */ }"
+            />
 
             <!-- 2. INCIDENT PROFILE (Boxed & Padded) -->
             <div class="profile-card glass-subpanel">
@@ -277,77 +215,14 @@
           </div>
 
           <div class="detail-content">
-            <!-- 1. AI TACTICAL RESPONSE (Mobile) -->
-            <!-- 1. OPERATIONAL ACTION PLAN -->
-            <div class="ai-decision-plan">
-              <div class="ai-plan-header">
-                <span class="ai-pulse-dot"></span>
-                <label class="ai-plan-title">⚡ Operational Action Plan</label>
-                <span class="ai-engine-chip">Live Triage</span>
-              </div>
-              
-              <!-- High-Tech Tactical Loading State with Dynamic Stepper & Shimmer Skeletons -->
-              <div v-if="isLoadingInsights" class="ai-tactical-loading">
-                <div class="loading-radar-header">
-                  <div class="radar-ping-ring">
-                    <span class="radar-dot"></span>
-                  </div>
-                  <div class="loading-telemetry-text">
-                    <span class="loading-phase-tag">AI COGNITIVE PROCESSING ACTIVE</span>
-                    <strong class="cycling-step-text">{{ currentLoadingPhaseText }}</strong>
-                  </div>
-                </div>
-
-                <div class="tactical-progress-track">
-                  <div class="tactical-scan-laser"></div>
-                </div>
-
-                <!-- Ghost Skeleton Micro-Cards -->
-                <div class="skeleton-action-cards">
-                  <div class="skeleton-tag shimmer"></div>
-                  <div class="skeleton-card shimmer" v-for="n in 3" :key="n">
-                    <div class="sk-num">0{{ n }}</div>
-                    <div class="sk-lines">
-                      <div class="sk-line full"></div>
-                      <div class="sk-line half"></div>
-                    </div>
-                  </div>
-                  <div class="skeleton-evac shimmer"></div>
-                </div>
-              </div>
-              
-              <div v-else-if="aiPlan" class="ai-plan-content">
-                <div class="country-context-tag">{{ formatTacticalText(aiPlan.country_context) }}</div>
-                
-                <div class="tactical-group">
-                  <span class="group-title">Immediate Action Items:</span>
-                  <div class="tactical-action-cards">
-                    <div v-for="(act, idx) in aiPlan.immediate_actions" :key="idx" class="tactical-action-card">
-                      <span class="action-num">0{{ Number(idx) + 1 }}</span>
-                      <span class="action-text">{{ formatTacticalText(act) }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="tactical-group" v-if="aiPlan.evacuation_guidance">
-                  <span class="group-title">🛣️ Evacuation Routing:</span>
-                  <div class="evacuation-card">
-                    <p class="evac-text">{{ formatTacticalText(aiPlan.evacuation_guidance) }}</p>
-                  </div>
-                </div>
-
-                <div class="tactical-group" v-if="aiPlan.resource_allocation && aiPlan.resource_allocation.length">
-                  <span class="group-title">🚒 Resource Deployment:</span>
-                  <div class="resource-chip-grid">
-                    <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-chip">
-                      <strong class="res-label">{{ res.resource }}:</strong>
-                      <span class="res-qty">{{ res.quantity }}</span>
-                      <span class="res-status" :class="res.status ? res.status.toLowerCase() : ''">{{ res.status }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- 1. OPERATIONAL ACTION PLAN (TEASER VERSION - Mobile) -->
+            <OperationalActionTeaser 
+              :aiPlan="aiPlan"
+              :isLoading="isLoadingInsights"
+              :error="null"
+              :incidentId="selectedIncidentData.id"
+              @navigateToInsights="() => { /* Router link handles this */ }"
+            />
 
             <!-- 2. INCIDENT PROFILE (Mobile) -->
             <div class="profile-card glass-subpanel">
@@ -528,6 +403,7 @@ import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
 import IncidentCard from '@/components/molecules/IncidentCard.vue'
 import MapComponent from '@/components/organisms/MapComponent.vue'
+import OperationalActionTeaser from '@/components/molecules/OperationalActionTeaser.vue'
 import COUNTRIES_DATA from '@/data/countries.json' with { type: 'json' }
 import { useAppStore } from '@/stores'
 import { logFeature, logWarn, logError } from '@/utils/logger'
