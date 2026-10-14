@@ -36,9 +36,37 @@ services:
     networks:
       - terragrid-network
 
+  # WAHA - WhatsApp HTTP API (self-hosted, free, open-source)
+  # Powers the "Send via WhatsApp" button on Agency Alerts. Not part of the
+  # Dockerfile/Cloud Run deploy - this keeps a real WhatsApp Web session
+  # alive (linked by scanning a QR code once), which needs persistent
+  # storage and an always-on process, not a scale-to-zero container.
+  # Run `docker-compose up waha`, then open http://localhost:3000/dashboard
+  # (or the /api/screenshot endpoint) to scan the QR code and link a number.
+  #
+  # WAHA requires an API key by default (X-Api-Key header) - without one set
+  # here, it generates a random key on every startup and only prints it to
+  # the container logs, which is a bad fit for a demo you want to set up
+  # once and not babysit. CHANGE THIS before judging/sharing this compose
+  # file publicly - it's a placeholder, not a secret meant to ship as-is.
+  # The backend reads the same value via WAHA_API_KEY in your .env.
+  waha:
+    image: devlikeapro/waha
+    container_name: terragrid-waha
+    environment:
+      WAHA_API_KEY: terragrid-waha-demo-key-change-me
+    ports:
+      - "3000:3000"
+    volumes:
+      - waha_sessions:/app/.sessions
+    restart: unless-stopped
+    networks:
+      - terragrid-network
+
 volumes:
   postgres_data:
   redis_data:
+  waha_sessions:
 
 networks:
   terragrid-network:

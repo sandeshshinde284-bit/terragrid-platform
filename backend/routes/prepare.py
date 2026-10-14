@@ -9,11 +9,13 @@ into a per-city, per-day risk escalation timeline (GREEN/YELLOW/ORANGE/RED).
 No other external API is called for this feature.
 """
 from fastapi import APIRouter, Query, HTTPException
+from pydantic import BaseModel
 import logging
 from datetime import datetime
 
 from ..services import OpenWeatherService
 from ..services.decision_support import get_decision_support_service
+from ..services.whatsapp import get_whatsapp_service
 
 logger = logging.getLogger(__name__)
 
@@ -161,3 +163,49 @@ async def get_agency_alerts(
     except Exception as e:
         logger.error(f"Agency alert generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# PR4 extension: manual WhatsApp send for Agency Alerts, via WAHA.
+# Scope: manual only - an operator reviews the AI-drafted text, picks a
+# pre-approved demo recipient, and clicks Send. No automated/threshold-
+# triggered sending here (see PREPARE_PHASE_NOTES.md for that as a
+# separate, larger feature).
+
+@router.get("/alerts/recipients")
+async def get_whatsapp_recipients():
+    """
+    Pre-approved demo WhatsApp recipients (from WHATSAPP_RECIPIENTS env var),
+    for the frontend's recipient picker. Deliberately not arbitrary - see
+    WhatsAppService's docstring for why sends are restricted to this list.
+    """
+    service = get_whatsapp_service()
+    return {
+        "status": "success",
+        "configured": service.is_configured,
+        "recipients": service.get_recipients(),
+    }
+
+
+class SendWhatsAppAlertRequest(BaseModel):
+    phone_number: str
+    message: str
+
+
+@router.post("/alerts/send")
+async def send_whatsapp_alert(payload: SendWhatsAppAlertRequest):
+    """
+    Sends an already-drafted Agency Alert message to one pre-approved demo
+    WhatsApp recipient via WAHA. The frontend sends the exact message text
+    the operator reviewed on screen - this route does not regenerate or
+    alter it.
+    """
+    service = get_whatsapp_service()
+    result = await service.send_text(payload.phone_number, payload.message)
+
+    if not result["success"]:
+        raise HTTPException(status_code=502, detail=result["detail"])
+
+    return {
+        "status": "success",
+        "detail": result["detail"],
+    }

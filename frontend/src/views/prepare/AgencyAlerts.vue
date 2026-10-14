@@ -99,14 +99,34 @@
               <div v-if="selectedAlert" class="alert-card glass-panel">
                 <div class="alert-top">
                   <span class="channel-chip">{{ selectedAlert.channel }}</span>
-                  <button type="button" class="copy-btn" @click="copyMessage(selectedAlert)">
-                    {{ justCopied ? '✅ Copied' : '📋 Copy message' }}
-                  </button>
+                  <div class="alert-top-actions">
+                    <button type="button" class="copy-btn" @click="copyMessage(selectedAlert)">
+                      {{ justCopied ? '✅ Copied' : '📋 Copy message' }}
+                    </button>
+                    <template v-if="whatsappRecipients.length > 0">
+                      <select v-model="selectedRecipientPhone" class="recipient-select" aria-label="WhatsApp recipient">
+                        <option v-for="r in whatsappRecipients" :key="r.phone_number" :value="r.phone_number">
+                          {{ r.label }}
+                        </option>
+                      </select>
+                      <button
+                        type="button"
+                        class="send-whatsapp-btn"
+                        :disabled="sendingWhatsApp"
+                        @click="sendViaWhatsApp(selectedAlert)"
+                      >
+                        {{ sendingWhatsApp ? 'Sending…' : '💬 Send via WhatsApp' }}
+                      </button>
+                    </template>
+                  </div>
                 </div>
                 <h3 class="alert-headline">{{ selectedAlert.headline }}</h3>
                 <p class="alert-message">{{ selectedAlert.message }}</p>
                 <p class="alert-tone-rationale">
                   <span class="rationale-label">Why this tone:</span> {{ selectedAlert.tone_rationale }}
+                </p>
+                <p v-if="sendResult" class="send-result" :class="sendResult.success ? 'success' : 'error'">
+                  {{ sendResult.success ? '✅' : '⚠️' }} {{ sendResult.detail }}
                 </p>
               </div>
             </template>
@@ -224,6 +244,78 @@ const copyMessage = async (alert: AgencyAlert) => {
 
 const apiHost = () => import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
 
+// WhatsApp send (via WAHA, backend/services/whatsapp.py) - manual only: the
+// operator reviews the AI-drafted text on screen, picks one of a small,
+// pre-approved demo recipient list, and clicks Send. Deliberately not a
+// free-text phone number field - the backend only accepts the same
+// pre-approved list (see WhatsAppService's docstring for why).
+interface WhatsAppRecipient {
+  label: string
+  phone_number: string
+}
+
+const whatsappRecipients = ref<WhatsAppRecipient[]>([])
+const selectedRecipientPhone = ref('')
+const sendingWhatsApp = ref(false)
+const sendResult = ref<{ success: boolean; detail: string } | null>(null)
+
+const fetchWhatsAppRecipients = async () => {
+  try {
+    const host = apiHost()
+    const response = await fetchWithMockMode(`${host}/api/v1/prepare/alerts/recipients`)
+    if (!response.ok) return
+    const json = await response.json()
+    whatsappRecipients.value = json.recipients || []
+    if (whatsappRecipients.value.length > 0) {
+      selectedRecipientPhone.value = whatsappRecipients.value[0].phone_number
+    }
+  } catch {
+    // Non-critical - WhatsApp send controls just stay hidden if this fails.
+  }
+}
+
+const sendViaWhatsApp = async (alert: AgencyAlert) => {
+  if (!selectedRecipientPhone.value || sendingWhatsApp.value) return
+
+  sendingWhatsApp.value = true
+  sendResult.value = null
+
+  try {
+    const host = apiHost()
+    const response = await fetchWithMockMode(`${host}/api/v1/prepare/alerts/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone_number: selectedRecipientPhone.value,
+        // Headline + body, exactly as shown on screen - this route sends
+        // verbatim what the operator reviewed, never regenerates it.
+        message: `${alert.headline}\n\n${alert.message}`,
+      }),
+    })
+
+    const json = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(json.detail || `Backend returned ${response.status}`)
+    }
+
+    sendResult.value = { success: true, detail: json.detail || 'Sent.' }
+  } catch (e) {
+    sendResult.value = {
+      success: false,
+      detail: e instanceof Error ? e.message : 'Unknown error sending WhatsApp message',
+    }
+  } finally {
+    sendingWhatsApp.value = false
+  }
+}
+
+// Clear a stale send result when switching to a different alert - a "Sent
+// to X" banner from the Farmers alert shouldn't linger once the operator
+// has moved on to Hospitals.
+watch([selectedAudience, selectedKey], () => {
+  sendResult.value = null
+})
+
 const fetchAlertsForSelectedCity = async () => {
   const city = selectedCity.value
   if (!city) return
@@ -255,6 +347,8 @@ const fetchAlertsForSelectedCity = async () => {
 }
 
 onMounted(async () => {
+  fetchWhatsAppRecipients()
+
   // If another PREPARE page already loaded fresh forecast data, this
   // resolves immediately and the watch(cities, ...) below picks the
   // default selection from what's already there.
@@ -527,6 +621,14 @@ watch(selectedKey, () => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alert-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .channel-chip {
@@ -553,6 +655,57 @@ watch(selectedKey, () => {
 
 .copy-btn:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+.recipient-select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.send-whatsapp-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(37, 211, 102, 0.4);
+  background: rgba(37, 211, 102, 0.12);
+  color: #25d366;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.send-whatsapp-btn:hover:not(:disabled) {
+  background: rgba(37, 211, 102, 0.2);
+}
+
+.send-whatsapp-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.send-result {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.send-result.success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.send-result.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .alert-headline {

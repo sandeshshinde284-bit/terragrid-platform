@@ -22,6 +22,21 @@ class Settings(BaseSettings):
     RESEND_FROM_EMAIL: str = 'onboarding@resend.dev'
     RESEND_FROM_NAME: str = 'TerraGrid Alerts'
     ALERT_RECIPIENTS: str = 'test@example.com'
+
+    # WhatsApp (via WAHA - self-hosted WhatsApp HTTP API, see docker-compose.yml)
+    # WAHA_API_URL points at the WAHA container: http://waha:3000 when the
+    # backend itself runs inside docker-compose, http://localhost:3000 when
+    # the backend runs on the host with `docker-compose up waha` alongside it.
+    WAHA_API_URL: str = 'http://localhost:3000'
+    WAHA_SESSION: str = 'default'
+    # Must match the WAHA_API_KEY set on the waha service in docker-compose.yml
+    WAHA_API_KEY: str = ''
+    # Comma-separated "Label:phone_number" pairs, e.g.
+    # "Demo Phone 1:919812345678,Demo Phone 2:919812345679" - a fixed,
+    # pre-approved demo list (not arbitrary user input) so Agency Alerts can
+    # prove the WhatsApp integration works without a real per-audience/
+    # per-city contact directory, which doesn't exist yet.
+    WHATSAPP_RECIPIENTS: str = ''
     
     # External APIs
     OPENWEATHERMAP_API_KEY: str = ''
