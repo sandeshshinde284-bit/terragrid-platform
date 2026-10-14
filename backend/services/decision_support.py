@@ -453,49 +453,71 @@ class DecisionSupportService:
         from .evacuation_zones import EvacuationZoneService
         from backend.models.event import Event
         from sqlalchemy import desc
+        from concurrent.futures import ThreadPoolExecutor
 
-        # Fetch Hard GIS Data (OSM Infrastructure & OSRM Routes)
-        radius = math.sqrt(area_km2 / math.pi) if area_km2 > 0 else 10.0
-        osm_facilities = InfrastructureService.get_nearby_facilities(lat, lon, radius)
-        osrm_routing = EvacuationZoneService.get_safe_routes({"latitude": lat, "longitude": lon, "event_type": event_type})
-
-        # Fetch Historical DB Data (RAG - Vector-based semantic search)
-        history_injection = "\n            HISTORICAL CONTEXT (RAG-RETRIEVED VIA VECTOR SIMILARITY):"
-        if db_session:
+        def _fetch_historical_context() -> str:
+            """RAG vector search, falling back to a plain SQL spatial search, then to
+            a transparent 'unavailable' note. Every branch returns something usable -
+            this never comes back empty-handed, only less precise."""
+            injection = "\n            HISTORICAL CONTEXT (RAG-RETRIEVED VIA VECTOR SIMILARITY):"
+            if not db_session:
+                return injection + "\n            - Historical database query bypassed."
             try:
                 from .vector_rag_engine import VectorRAGEngine
                 rag_engine = VectorRAGEngine()
-                
-                # Get RAG context using vector embeddings
                 rag_context = rag_engine.get_historical_context(
                     current_incident=event_data,
                     db_session=db_session,
                     limit=5
                 )
-                history_injection += rag_context
-                
+                return injection + rag_context
             except Exception as db_e:
                 logger.warning(f"RAG retrieval failed: {db_e}, falling back to SQL search")
                 try:
-                    # Fallback: Use SQL spatial search if RAG fails
                     lat_deg = 100.0 / 111.0
                     lon_deg = 100.0 / (111.0 * math.cos(math.radians(lat)))
-                    
                     past_events = db_session.query(Event).filter(
                         Event.event_type == event_type,
                         Event.latitude.between(lat - lat_deg, lat + lat_deg),
                         Event.longitude.between(lon - lon_deg, lon + lon_deg),
                         Event.severity.is_not(None)
                     ).order_by(desc(Event.created_at)).limit(10).all()
-                    
                     if past_events:
-                        history_injection += f"\n            - {len(past_events)} similar incidents from spatial search (fallback)"
-                    else:
-                        history_injection += f"\n            - No similar incidents found"
-                except:
-                    history_injection += "\n            - Historical database query unavailable."
-        else:
-            history_injection += "\n            - Historical database query bypassed."
+                        return injection + f"\n            - {len(past_events)} similar incidents from spatial search (fallback)"
+                    return injection + f"\n            - No similar incidents found"
+                except Exception:
+                    return injection + "\n            - Historical database query unavailable."
+
+        # Fetch Hard GIS Data (OSM Infrastructure, OSRM Routes) and the RAG
+        # historical lookup IN PARALLEL - these 3 sources are independent of
+        # each other (none needs another's output), so there's no reason to
+        # wait on them one at a time. This is a fan-out/fan-in: we submit all
+        # 3, then block here until all 3 finish, so there's no concurrent use
+        # of db_session - only one worker touches it, and nothing else reads
+        # it until that worker is done. Each source already has its own
+        # internal try/except + fallback (see infrastructure.py, evacuation_zones.py,
+        # vector_rag_engine.py), so parallelizing them changes nothing about
+        # what data comes back - only how long we wait for it.
+        radius = math.sqrt(area_km2 / math.pi) if area_km2 > 0 else 10.0
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            osm_future = executor.submit(InfrastructureService.get_nearby_facilities, lat, lon, radius)
+            osrm_future = executor.submit(EvacuationZoneService.get_safe_routes, {"latitude": lat, "longitude": lon, "event_type": event_type})
+            history_future = executor.submit(_fetch_historical_context)
+
+            osm_facilities = osm_future.result()
+            osrm_routing = osrm_future.result()
+            history_injection = history_future.result()
+
+        osm_hit = any([osm_facilities.get("hospitals"), osm_facilities.get("fire_stations"), osm_facilities.get("critical_infrastructure"), osm_facilities.get("shelters")])
+        osrm_route_count = len(osrm_routing.get("routes") or [])
+        rag_used = "RAG-RETRIEVED" in history_injection and "unavailable" not in history_injection and "bypassed" not in history_injection
+        logger.info(
+            f"[FEATURE_HEALTH] feature=deep_dossier_sources status=summary "
+            f"osm={'hit' if osm_hit else 'empty'} "
+            f"osrm_routes={osrm_route_count} "
+            f"rag={'used' if rag_used else 'fallback'} "
+            f"location={location}"
+        )
 
         # Format GIS Data for Prompt Injection
         gis_injection = "\n            HARD GIS INFRASTRUCTURE (VERIFIED VIA OPENSTREETMAP):"

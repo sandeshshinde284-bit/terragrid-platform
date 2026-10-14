@@ -7,6 +7,8 @@ import logging
 import math
 from typing import List, Dict, Any, Tuple
 from datetime import datetime, timedelta
+from functools import lru_cache
+from concurrent.futures import ThreadPoolExecutor
 import os
 
 logger = logging.getLogger(__name__)
@@ -331,14 +333,106 @@ class EvacuationZoneService:
         
         return evacuation_times
     
+    # Target egress vectors (N, NE, E, SE) approximately 30-40km away
+    ROUTE_DIRECTIONS = [
+        {"name": "North", "bearing": 0, "lon_offset": 0, "lat_offset": 0.3},
+        {"name": "Northeast", "bearing": 45, "lon_offset": 0.25, "lat_offset": 0.25},
+        {"name": "East", "bearing": 90, "lon_offset": 0.3, "lat_offset": 0},
+        {"name": "Southeast", "bearing": 135, "lon_offset": 0.25, "lat_offset": -0.25},
+    ]
+
+    @classmethod
+    def _fetch_one_osrm_direction(cls, i: int, lon: float, lat: float, direction: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Fetch a single direction's road route from OSRM. Always returns a usable
+        route - a real OSRM road geometry when reachable, or a geodesic fallback
+        line when OSRM is unreachable/rate-limited. Either way the route list
+        comes back complete; this only ever changes HOW accurate one leg is,
+        never whether all 4 legs are present.
+        """
+        import urllib.request
+        import json
+
+        dst_lon = lon + direction["lon_offset"] * 2
+        dst_lat = lat + direction["lat_offset"] * 2
+
+        route_coords: List[Any] = []
+        distance_km = 0.0
+        estimated_time_hours = 0.0
+        used_real_osrm = False
+
+        try:
+            url = f"{cls.OSRM_URL}/driving/{lon},{lat};{dst_lon},{dst_lat}?geometries=geojson&overview=full"
+            req = urllib.request.Request(url, headers={'User-Agent': 'TerraGrid-Disaster-App/1.0'})
+            with urllib.request.urlopen(req, timeout=3.0) as response:
+                data = json.loads(response.read().decode())
+                if data.get('code') == 'Ok' and len(data.get('routes', [])) > 0:
+                    route_obj = data['routes'][0]
+                    route_coords = route_obj['geometry']['coordinates']
+                    distance_km = route_obj['distance'] / 1000.0
+                    estimated_time_hours = route_obj['duration'] / 3600.0
+                    used_real_osrm = True
+        except Exception as osrm_err:
+            logger.warning(f"[FEATURE_HEALTH] feature=osrm_routing status=fallback direction={direction['name']} error={osrm_err} note=using straight-line geodesic vector instead of a real road route")
+
+        # Fallback to geodesic line if OSRM fails (e.g. over oceans or rate limited)
+        if not route_coords:
+            route_coords = [[lon, lat], [dst_lon, dst_lat]]
+            distance_km = math.sqrt((direction["lon_offset"] * 111)**2 + (direction["lat_offset"] * 111)**2) * 2
+            estimated_time_hours = max(1.0, distance_km / 60.0)
+
+        safety_score = min(100, int(80 + distance_km * 0.5))
+
+        return {
+            "route_id": f"route_{i}",
+            "name": f"Route {i}: {direction['name']} Corridor",
+            "direction": direction["name"],
+            "distance_km": round(distance_km, 1),
+            "estimated_time_hours": round(estimated_time_hours, 1),
+            "capacity_vehicles_per_hour": 500 + (i * 100),
+            "safety_score": safety_score,
+            "coordinates": route_coords,
+            "properties": {
+                "name": f"Route {i}: {direction['name']}",
+                "distance": f"{round(distance_km, 1)} km",
+                "time": f"{round(estimated_time_hours, 1)} hours",
+                "safety": safety_score,
+            },
+            "_used_real_osrm": used_real_osrm,
+        }
+
+    @classmethod
+    @lru_cache(maxsize=128)
+    def _cached_safe_routes(cls, rounded_lat: float, rounded_lon: float, event_type: str) -> Tuple[Tuple[Dict[str, Any], ...], int]:
+        """
+        Computes the 4 evacuation routes and caches the result (coordinates rounded
+        to 2 decimal places, ~1km precision, to maximize cache hits on repeat
+        requests for the same incident). The 4 OSRM lookups run in parallel -
+        they're independent of each other, so there's no reason to wait on them
+        one at a time. Returns (routes, real_osrm_count) so the caller can log
+        how many of the 4 legs came from real OSRM data vs. a fallback line.
+        """
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [
+                executor.submit(cls._fetch_one_osrm_direction, i, rounded_lon, rounded_lat, direction)
+                for i, direction in enumerate(cls.ROUTE_DIRECTIONS, 1)
+            ]
+            routes = [f.result() for f in futures]
+
+        real_osrm_count = sum(1 for r in routes if r.get("_used_real_osrm"))
+        for r in routes:
+            r.pop("_used_real_osrm", None)
+
+        return tuple(routes), real_osrm_count
+
     @classmethod
     def get_safe_routes(cls, incident: Dict[str, Any]) -> Dict[str, Any]:
         """
         Identify safe evacuation routes from incident zone using real road networks.
-        
+
         Args:
             incident: Incident data with coordinates
-        
+
         Returns:
             routes_data: {
                 routes: [
@@ -349,82 +443,27 @@ class EvacuationZoneService:
                 ]
             }
         """
-        import urllib.request
-        import json
         try:
             lat = float(incident.get("latitude", 0))
             lon = float(incident.get("longitude", 0))
             event_type = incident.get("event_type", "other")
-            
-            routes = []
-            
-            # Target egress vectors (N, NE, E, SE) approximately 30-40km away
-            directions = [
-                {"name": "North", "bearing": 0, "lon_offset": 0, "lat_offset": 0.3},
-                {"name": "Northeast", "bearing": 45, "lon_offset": 0.25, "lat_offset": 0.25},
-                {"name": "East", "bearing": 90, "lon_offset": 0.3, "lat_offset": 0},
-                {"name": "Southeast", "bearing": 135, "lon_offset": 0.25, "lat_offset": -0.25},
-            ]
-            
-            for i, direction in enumerate(directions, 1):
-                dst_lon = lon + direction["lon_offset"] * 2
-                dst_lat = lat + direction["lat_offset"] * 2
-                
-                route_coords = []
-                distance_km = 0.0
-                estimated_time_hours = 0.0
-                
-                # Fetch REAL physical road networks from OSRM Project (OpenStreetMap)
-                try:
-                    url = f"{cls.OSRM_URL}/driving/{lon},{lat};{dst_lon},{dst_lat}?geometries=geojson&overview=full"
-                    req = urllib.request.Request(url, headers={'User-Agent': 'TerraGrid-Disaster-App/1.0'})
-                    with urllib.request.urlopen(req, timeout=3.0) as response:
-                        data = json.loads(response.read().decode())
-                        if data.get('code') == 'Ok' and len(data.get('routes', [])) > 0:
-                            route_obj = data['routes'][0]
-                            route_coords = route_obj['geometry']['coordinates']
-                            distance_km = route_obj['distance'] / 1000.0
-                            estimated_time_hours = route_obj['duration'] / 3600.0
-                except Exception as osrm_err:
-                    logger.warning(f"[FEATURE_HEALTH] feature=osrm_routing status=fallback direction={direction['name']} error={osrm_err} note=using straight-line geodesic vector instead of a real road route")
-                
-                # Fallback to geodesic line if OSRM fails (e.g. over oceans or rate limited)
-                if not route_coords:
-                    route_coords = [[lon, lat], [dst_lon, dst_lat]]
-                    distance_km = math.sqrt((direction["lon_offset"] * 111)**2 + (direction["lat_offset"] * 111)**2) * 2
-                    estimated_time_hours = max(1.0, distance_km / 60.0)
-                
-                # Calculate safety score (0-100)
-                safety_score = min(100, int(80 + distance_km * 0.5))
-                
-                route = {
-                    "route_id": f"route_{i}",
-                    "name": f"Route {i}: {direction['name']} Corridor",
-                    "direction": direction["name"],
-                    "distance_km": round(distance_km, 1),
-                    "estimated_time_hours": round(estimated_time_hours, 1),
-                    "capacity_vehicles_per_hour": 500 + (i * 100),
-                    "safety_score": safety_score,
-                    "coordinates": route_coords,
-                    "properties": {
-                        "name": f"Route {i}: {direction['name']}",
-                        "distance": f"{round(distance_km, 1)} km",
-                        "time": f"{round(estimated_time_hours, 1)} hours",
-                        "safety": safety_score,
-                    }
-                }
-                routes.append(route)
-            
+
+            rounded_lat = round(lat, 2)
+            rounded_lon = round(lon, 2)
+
+            routes_tuple, real_osrm_count = cls._cached_safe_routes(rounded_lat, rounded_lon, event_type)
+            routes = [dict(r) for r in routes_tuple]  # copy so callers can't mutate the cached entries
+
             result = {
                 "incident_id": incident.get("location_name", "Unknown"),
                 "incident_center": [lon, lat],
                 "routes": routes,
                 "timestamp": datetime.utcnow().isoformat(),
             }
-            
-            logger.info(f"[FEATURE_HEALTH] feature=osrm_routing status=success routes_generated={len(routes)} location={incident.get('location_name')}")
+
+            logger.info(f"[FEATURE_HEALTH] feature=osrm_routing status=success routes_generated={len(routes)} real_osrm_routes={real_osrm_count}/{len(routes)} location={incident.get('location_name')}")
             return result
-            
+
         except Exception as e:
             logger.error(f"[FEATURE_HEALTH] feature=osrm_routing status=error error={type(e).__name__}: {e}")
             return {"error": str(e), "routes": []}
