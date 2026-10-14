@@ -53,6 +53,8 @@
                 @click="sotExpanded = !sotExpanded"
               >
                 <span class="sot-icon">{{ sotStatusIcon }}</span>
+                <span class="sot-label">Source of Truth</span>
+                <span class="sot-divider">·</span>
                 <span class="sot-text">{{ sotStatusText }}</span>
                 <span class="sot-chevron">Details {{ sotExpanded ? '▲' : '▼' }}</span>
               </button>
@@ -458,7 +460,7 @@ onMounted(async () => {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 12px;
+  padding: 7px 14px;
   /* This is a <button>, and "glass-panel" in the template was never actually
      defined in this file's scoped styles - every other element wearing that
      class here (.forecast-hero, .empty-state) happens to set its own
@@ -467,10 +469,10 @@ onMounted(async () => {
      background (flat light gray) instead of the app's dark theme. Setting
      the background here directly instead of depending on that class. */
   background: rgba(22, 29, 39, 0.72);
-  border: 1px solid var(--glass-border);
+  border: 1.5px solid var(--glass-border);
   border-radius: 999px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-align: left;
   color: var(--text-primary);
@@ -490,13 +492,30 @@ onMounted(async () => {
 .sot-chip.unknown { border-color: var(--glass-border); opacity: 0.85; }
 
 .sot-icon {
-  font-size: 13px;
+  font-size: 15px;
+}
+
+/* Explicit "Source of Truth" label - without this the chip was just an
+   unlabeled status word ("Verified" / "Data source degraded"), so it read
+   as a vague warning rather than the name of the data-verification feature
+   it actually is. */
+.sot-label {
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--accent-cyan, #22d3ee);
+}
+
+.sot-chip.verified .sot-label { color: #22c55e; }
+.sot-chip.degraded .sot-label { color: #eab308; }
+
+.sot-divider {
+  opacity: 0.45;
 }
 
 .sot-chevron {
-  font-size: 10px;
-  opacity: 0.75;
-  padding-left: 6px;
+  font-size: 11px;
+  opacity: 0.8;
+  padding-left: 8px;
   border-left: 1px solid rgba(255, 255, 255, 0.15);
 }
 
