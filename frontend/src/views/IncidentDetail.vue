@@ -293,7 +293,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1, Event } from '@/types'
@@ -743,7 +743,20 @@ onMounted(async () => {
     fetchAIInsights()
     checkExistingDossier()
   }
+
+  // Handle query parameter to switch to AI Insights tab
+  const tabQuery = route.query.tab as string | undefined
+  if (tabQuery === 'ai-insights') {
+    activeTab.value = 'ai'
+  }
 })
+
+// Watch for query parameter changes
+watch(() => route.query.tab, (newTab) => {
+  if (newTab === 'ai-insights') {
+    activeTab.value = 'ai'
+  }
+}, { immediate: true })
 
 // Priority helper functions for resource matrix display
 function getPriorityClass(priority: number | string): string {

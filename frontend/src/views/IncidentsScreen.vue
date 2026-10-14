@@ -63,15 +63,42 @@
         <table class="incidents-table">
           <thead>
             <tr>
-              <th>Hazard Type</th>
-              <th>{{ $t('incidents.location') }}</th>
-              <th>Country</th>
-              <th>{{ $t('incidents.status') }}</th>
-              <th>{{ $t('incidents.threatScore') }}</th>
-              <th>{{ $t('incidents.affectedArea') }}</th>
-              <th>{{ $t('incidents.population') }}</th>
-              <th>{{ $t('incidents.trend') }}</th>
-              <th>{{ $t('incidents.detectionTime') }}</th>
+              <th @click="handleSort('type')" class="sortable">
+                Hazard Type
+                <span v-if="sortBy === 'type'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('location')" class="sortable">
+                {{ $t('incidents.location') }}
+                <span v-if="sortBy === 'location'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('country')" class="sortable">
+                Country
+                <span v-if="sortBy === 'country'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('status')" class="sortable">
+                {{ $t('incidents.status') }}
+                <span v-if="sortBy === 'status'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('threatScore')" class="sortable">
+                {{ $t('incidents.threatScore') }}
+                <span v-if="sortBy === 'threatScore'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('affectedArea')" class="sortable">
+                {{ $t('incidents.affectedArea') }}
+                <span v-if="sortBy === 'affectedArea'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('population')" class="sortable">
+                {{ $t('incidents.population') }}
+                <span v-if="sortBy === 'population'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('trend')" class="sortable">
+                {{ $t('incidents.trend') }}
+                <span v-if="sortBy === 'trend'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('detectionTime')" class="sortable">
+                {{ $t('incidents.detectionTime') }}
+                <span v-if="sortBy === 'detectionTime'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
               <th>Recommended Action</th>
               <th>Analysis</th>
             </tr>
@@ -133,6 +160,8 @@ const filterSeverity = ref('')
 const filterCountry = ref('')
 const selectedIncidentData = ref<IncidentLevel1 | null>(null)
 const expandedIncidentId = ref<string | null>(null)
+const sortBy = ref<string>('threatScore')
+const sortOrder = ref<'asc' | 'desc'>('desc')
 
 const iconMap: Record<string, string> = {
   flood: '💧',
@@ -302,6 +331,57 @@ const filteredIncidents = computed(() => {
     }
 
     return matchSearch && matchType && matchStatus && matchSeverity && matchCountry
+  }).sort((a, b) => {
+    let aVal: any, bVal: any
+
+    switch (sortBy.value) {
+      case 'threatScore':
+        aVal = a.threatScore ?? 0
+        bVal = b.threatScore ?? 0
+        break
+      case 'location':
+        aVal = (a.location || '').toLowerCase()
+        bVal = (b.location || '').toLowerCase()
+        break
+      case 'country':
+        aVal = (a.countryCode || '').toUpperCase()
+        bVal = (b.countryCode || '').toUpperCase()
+        break
+      case 'status':
+        aVal = (a.status || '').toLowerCase()
+        bVal = (b.status || '').toLowerCase()
+        break
+      case 'affectedArea':
+        aVal = a.affectedArea ?? 0
+        bVal = b.affectedArea ?? 0
+        break
+      case 'population':
+        aVal = a.affectedPopulation ?? 0
+        bVal = b.affectedPopulation ?? 0
+        break
+      case 'trend':
+        aVal = a.trend ?? 0
+        bVal = b.trend ?? 0
+        break
+      case 'detectionTime':
+        aVal = new Date(a.detectionTime).getTime()
+        bVal = new Date(b.detectionTime).getTime()
+        break
+      case 'type':
+        aVal = (a.type || '').toLowerCase()
+        bVal = (b.type || '').toLowerCase()
+        break
+      default:
+        return 0
+    }
+
+    // Handle string comparison
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      return sortOrder.value === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
+    }
+
+    // Handle numeric comparison
+    return sortOrder.value === 'asc' ? aVal - bVal : bVal - aVal
   })
 })
 
@@ -362,6 +442,15 @@ const viewIncident = (id: string) => {
 
 const toggleExpanded = (id: string) => {
   expandedIncidentId.value = expandedIncidentId.value === id ? null : id
+}
+
+const handleSort = (column: string) => {
+  if (sortBy.value === column) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = column
+    sortOrder.value = 'desc'
+  }
 }
 
 // Native browser internationalization for country names
@@ -568,6 +657,8 @@ onMounted(async () => {
   backdrop-filter: blur(12px);
   z-index: 10; /* CRITICAL: Keeps header strictly above the scrolling table rows */
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); /* Adds a subtle drop shadow to separate header from scrolling content */
+  display: table-header-group;
+  width: 100%;
 }
 
 /* Ensure the wrapper doesn't clip the sticky header shadow */
@@ -576,10 +667,14 @@ onMounted(async () => {
   overflow: auto;
   padding: 16px;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: block;
   position: relative; /* Helps context for sticky children */
+}
+
+.incidents-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .incidents-table th {
@@ -592,11 +687,33 @@ onMounted(async () => {
   text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.5px;
+  background: rgba(15, 23, 42, 0.95);
+  position: sticky;
+  top: 0;
+  z-index: 11;
+}
+
+.incidents-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.incidents-table th.sortable:hover {
+  background: rgba(30, 144, 255, 0.2);
+}
+
+.sort-indicator {
+  margin-left: 6px;
+  color: var(--accent-cyan);
+  font-weight: 900;
+  font-size: 14px;
 }
 
 /* Specific Column Widths */
 .incidents-table th:nth-child(1),
 .incidents-table td:nth-child(1) {
+  width: 12%;
   min-width: 130px;
   text-align: left;
 }
@@ -622,28 +739,71 @@ onMounted(async () => {
 
 .incidents-table th:nth-child(2),
 .incidents-table td:nth-child(2) {
-  width: 20%;
+  width: 15%;
   min-width: 140px;
 }
 
 /* Column 3: Country */
 .incidents-table th:nth-child(3),
 .incidents-table td:nth-child(3) {
-  min-width: 150px;
+  width: 12%;
+  min-width: 110px;
+}
+
+/* Column 4: Status */
+.incidents-table th:nth-child(4),
+.incidents-table td:nth-child(4) {
+  width: 10%;
+  min-width: 90px;
+}
+
+/* Column 5: Threat Score */
+.incidents-table th:nth-child(5),
+.incidents-table td:nth-child(5) {
+  width: 10%;
+  min-width: 95px;
+}
+
+/* Column 6: Affected Area */
+.incidents-table th:nth-child(6),
+.incidents-table td:nth-child(6) {
+  width: 10%;
+  min-width: 110px;
+}
+
+/* Column 7: Population */
+.incidents-table th:nth-child(7),
+.incidents-table td:nth-child(7) {
+  width: 10%;
+  min-width: 100px;
+}
+
+/* Column 8: Trend */
+.incidents-table th:nth-child(8),
+.incidents-table td:nth-child(8) {
+  width: 10%;
+  min-width: 110px;
+}
+
+/* Column 9: Detection Time */
+.incidents-table th:nth-child(9),
+.incidents-table td:nth-child(9) {
+  width: 11%;
+  min-width: 130px;
 }
 
 /* Column 10: Recommended Action */
 .incidents-table th:nth-child(10),
 .incidents-table td:nth-child(10) {
-  min-width: 240px;
-  width: 280px;
+  width: 12%;
+  min-width: 180px;
 }
 
 /* Column 11: Analysis (View Button) */
 .incidents-table th:nth-child(11),
 .incidents-table td:nth-child(11) {
-  min-width: 140px;
-  width: 140px;
+  width: 12%;
+  min-width: 120px;
   text-align: center;
   white-space: nowrap;
 }
