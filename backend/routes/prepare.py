@@ -16,6 +16,7 @@ from datetime import datetime
 from ..services import OpenWeatherService
 from ..services.decision_support import get_decision_support_service
 from ..services.whatsapp import get_whatsapp_service
+from ..services.notifications import notification_service
 
 logger = logging.getLogger(__name__)
 
@@ -201,6 +202,47 @@ async def send_whatsapp_alert(payload: SendWhatsAppAlertRequest):
     """
     service = get_whatsapp_service()
     result = await service.send_text(payload.phone_number, payload.message)
+
+    if not result["success"]:
+        raise HTTPException(status_code=502, detail=result["detail"])
+
+    return {
+        "status": "success",
+        "detail": result["detail"],
+    }
+
+
+# PR4 extension: manual email send for Agency Alerts, via Resend. Same
+# scope and allowlist reasoning as the WhatsApp send above - a fixed,
+# pre-approved demo recipient list (EMAIL_ALERT_RECIPIENTS), manual only.
+
+@router.get("/alerts/email-recipients")
+async def get_email_alert_recipients():
+    """
+    Pre-approved demo email recipients (from EMAIL_ALERT_RECIPIENTS env
+    var), for the frontend's email recipient picker.
+    """
+    return {
+        "status": "success",
+        "configured": notification_service.is_configured,
+        "recipients": notification_service.get_alert_email_recipients(),
+    }
+
+
+class SendEmailAlertRequest(BaseModel):
+    email: str
+    subject: str
+    message: str
+
+
+@router.post("/alerts/send-email")
+async def send_email_alert(payload: SendEmailAlertRequest):
+    """
+    Sends an already-drafted Agency Alert message to one pre-approved demo
+    email recipient via Resend. The frontend sends the exact subject/body
+    the operator reviewed on screen - this route does not regenerate it.
+    """
+    result = notification_service.send_alert_email(payload.email, payload.subject, payload.message)
 
     if not result["success"]:
         raise HTTPException(status_code=502, detail=result["detail"])

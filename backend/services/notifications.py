@@ -1,25 +1,33 @@
 import os
+import html
 import logging
 from backend.config import settings
 from typing import Dict, Any, List, Optional
 import resend
 
+from .recipients import parse_labeled_recipients
+
 logger = logging.getLogger(__name__)
 
 class NotificationService:
     """
-    Service responsible for dispatching external communications (like emails or SMS) 
+    Service responsible for dispatching external communications (like emails or SMS)
     to first responders and registered users when severe disasters are detected.
     """
-    
+
     def __init__(self):
         self.api_key = settings.RESEND_API_KEY
         self.from_email = settings.RESEND_FROM_EMAIL
         self.from_name = settings.RESEND_FROM_NAME
-        
+
         # Prevent email spam on every 15-minute polling cycle
         self.sent_alerts = set()
-        
+
+        # PREPARE phase's Agency Alerts manual email send - a fixed,
+        # pre-approved demo recipient list, same reasoning as
+        # WhatsAppService's WHATSAPP_RECIPIENTS (see whatsapp.py).
+        self.alert_email_recipients = parse_labeled_recipients(settings.EMAIL_ALERT_RECIPIENTS)
+
         if self.api_key and self.api_key != "re_your_api_key_from_resend_dashboard":
             resend.api_key = self.api_key
             self.is_configured = True
@@ -176,6 +184,74 @@ class NotificationService:
         except Exception as e:
             logger.exception(f"Failed to send Resend email after {max_retries} attempts.")
             return False
+
+    def get_alert_email_recipients(self) -> List[Dict[str, str]]:
+        """Pre-approved demo email recipients, for Agency Alerts' picker."""
+        return [{"label": r.label, "email": r.value} for r in self.alert_email_recipients]
+
+    def _find_alert_email_recipient(self, email: str) -> Optional[Any]:
+        return next((r for r in self.alert_email_recipients if r.value == email), None)
+
+    def send_alert_email(self, to_email: str, subject: str, body: str) -> Dict[str, Any]:
+        """
+        Sends a plain alert email to one pre-approved Agency Alerts demo
+        recipient. Unlike send_critical_alert above, this carries no
+        incident-specific formatting, DB persistence or spam-dedup - those
+        belong to RESPONSE phase's automatic incident emails, not this
+        manual, operator-reviewed send. Never raises - returns a structured
+        result so the route can surface a clear UI error either way.
+
+        Args:
+            to_email: Must match one of the EMAIL_ALERT_RECIPIENTS entries -
+                rejected otherwise, same allowlist reasoning as WhatsApp.
+            subject: Email subject line.
+            body: Plain-text message body, exactly as shown on screen.
+        """
+        if not self.is_configured:
+            return {
+                "success": False,
+                "detail": "Email sending isn't configured on this backend (RESEND_API_KEY missing).",
+            }
+
+        recipient = self._find_alert_email_recipient(to_email)
+        if not recipient:
+            return {
+                "success": False,
+                "detail": "That email isn't one of the pre-approved demo recipients.",
+            }
+
+        safe_body = html.escape(body).replace("\n", "<br>")
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+            <div style="background-color: #2563eb; color: white; padding: 20px;">
+                <h1 style="margin: 0; font-size: 20px;">TerraGrid Agency Alert</h1>
+            </div>
+            <div style="padding: 20px; background-color: #ffffff; color: #374151; font-size: 15px; line-height: 1.5;">
+                {safe_body}
+            </div>
+        </div>
+        """
+
+        try:
+            params = {
+                "from": f"{self.from_name} <{self.from_email}>",
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+            }
+            response = resend.Emails.send(params)
+            logger.info(f"Agency Alert email sent to {recipient.label} ({to_email}) via Resend.")
+            return {
+                "success": True,
+                "detail": f"Sent to {recipient.label}.",
+                "resend_id": response.get("id") if isinstance(response, dict) else None,
+            }
+        except Exception as e:
+            logger.exception(f"Failed to send Agency Alert email to {to_email}.")
+            return {
+                "success": False,
+                "detail": f"Resend error: {str(e)}",
+            }
 
 # Global singleton
 notification_service = NotificationService()

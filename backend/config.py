@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     RESEND_FROM_EMAIL: str = 'onboarding@resend.dev'
     RESEND_FROM_NAME: str = 'TerraGrid Alerts'
     ALERT_RECIPIENTS: str = 'test@example.com'
+    # Comma-separated "Label:email" pairs for Agency Alerts' manual email
+    # send - deliberately separate from ALERT_RECIPIENTS above, which is
+    # RESPONSE phase's automatic live-incident email list. Keeping them
+    # apart means testing Agency Alerts' demo send can never accidentally
+    # email the real incident-response recipient list.
+    EMAIL_ALERT_RECIPIENTS: str = ''
 
     # WhatsApp (via WAHA - self-hosted WhatsApp HTTP API, see docker-compose.yml)
     # WAHA_API_URL points at the WAHA container: http://waha:3000 when the

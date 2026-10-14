@@ -118,6 +118,21 @@
                         {{ sendingWhatsApp ? 'Sending…' : '💬 Send via WhatsApp' }}
                       </button>
                     </template>
+                    <template v-if="emailRecipients.length > 0">
+                      <select v-model="selectedRecipientEmail" class="recipient-select" aria-label="Email recipient">
+                        <option v-for="r in emailRecipients" :key="r.email" :value="r.email">
+                          {{ r.label }}
+                        </option>
+                      </select>
+                      <button
+                        type="button"
+                        class="send-email-btn"
+                        :disabled="sendingEmail"
+                        @click="sendViaEmail(selectedAlert)"
+                      >
+                        {{ sendingEmail ? 'Sending…' : '✉️ Send via Email' }}
+                      </button>
+                    </template>
                   </div>
                 </div>
                 <h3 class="alert-headline">{{ selectedAlert.headline }}</h3>
@@ -309,6 +324,70 @@ const sendViaWhatsApp = async (alert: AgencyAlert) => {
   }
 }
 
+// Email send (via Resend, backend/services/notifications.py) - same
+// manual, pre-approved-recipient-only pattern as WhatsApp above, just a
+// separate EMAIL_ALERT_RECIPIENTS list so testing this can never
+// accidentally email RESPONSE phase's real incident recipient list.
+interface EmailRecipient {
+  label: string
+  email: string
+}
+
+const emailRecipients = ref<EmailRecipient[]>([])
+const selectedRecipientEmail = ref('')
+const sendingEmail = ref(false)
+
+const fetchEmailRecipients = async () => {
+  try {
+    const host = apiHost()
+    const response = await fetchWithMockMode(`${host}/api/v1/prepare/alerts/email-recipients`)
+    if (!response.ok) return
+    const json = await response.json()
+    emailRecipients.value = json.recipients || []
+    if (emailRecipients.value.length > 0) {
+      selectedRecipientEmail.value = emailRecipients.value[0].email
+    }
+  } catch {
+    // Non-critical - email send controls just stay hidden if this fails.
+  }
+}
+
+const sendViaEmail = async (alert: AgencyAlert) => {
+  if (!selectedRecipientEmail.value || sendingEmail.value) return
+
+  sendingEmail.value = true
+  sendResult.value = null
+
+  try {
+    const host = apiHost()
+    const response = await fetchWithMockMode(`${host}/api/v1/prepare/alerts/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: selectedRecipientEmail.value,
+        subject: alert.headline,
+        // Exactly as shown on screen - this route sends verbatim what the
+        // operator reviewed, never regenerates it.
+        message: alert.message,
+      }),
+    })
+
+    const json = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(json.detail || `Backend returned ${response.status}`)
+    }
+
+    sendResult.value = { success: true, detail: json.detail || 'Sent.' }
+  } catch (e) {
+    sendResult.value = {
+      success: false,
+      detail: e instanceof Error ? e.message : 'Unknown error sending email',
+    }
+  } finally {
+    sendingEmail.value = false
+  }
+}
+
 // Clear a stale send result when switching to a different alert - a "Sent
 // to X" banner from the Farmers alert shouldn't linger once the operator
 // has moved on to Hospitals.
@@ -348,6 +427,7 @@ const fetchAlertsForSelectedCity = async () => {
 
 onMounted(async () => {
   fetchWhatsAppRecipients()
+  fetchEmailRecipients()
 
   // If another PREPARE page already loaded fresh forecast data, this
   // resolves immediately and the watch(cities, ...) below picks the
@@ -684,6 +764,26 @@ watch(selectedKey, () => {
 }
 
 .send-whatsapp-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.send-email-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  background: rgba(96, 165, 250, 0.12);
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.send-email-btn:hover:not(:disabled) {
+  background: rgba(96, 165, 250, 0.2);
+}
+
+.send-email-btn:disabled {
   opacity: 0.6;
   cursor: wait;
 }

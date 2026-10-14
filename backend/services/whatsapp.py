@@ -20,6 +20,7 @@ from typing import Dict, Any, List, Optional
 import httpx
 
 from backend.config import settings
+from .recipients import parse_labeled_recipients
 
 logger = logging.getLogger(__name__)
 
@@ -61,24 +62,10 @@ class WhatsAppService:
     def _parse_recipients(raw: str) -> List[WhatsAppRecipient]:
         """
         Parses "Label:phone_number,Label2:phone_number2" into a list of
-        WhatsAppRecipient. Silently skips malformed entries rather than
-        crashing service startup over a typo in .env.
+        WhatsAppRecipient, via the shared Label:value parser (recipients.py)
+        also used by email alert recipients.
         """
-        recipients: List[WhatsAppRecipient] = []
-        if not raw:
-            return recipients
-
-        for entry in raw.split(","):
-            entry = entry.strip()
-            if not entry or ":" not in entry:
-                continue
-            label, phone_number = entry.split(":", 1)
-            label = label.strip()
-            phone_number = phone_number.strip()
-            if label and phone_number:
-                recipients.append(WhatsAppRecipient(label, phone_number))
-
-        return recipients
+        return [WhatsAppRecipient(r.label, r.value) for r in parse_labeled_recipients(raw)]
 
     def get_recipients(self) -> List[Dict[str, str]]:
         """Pre-approved demo recipients, for the frontend's recipient picker."""
