@@ -15,7 +15,10 @@
         <h1>TERRAGRID INTELLIGENCE</h1>
       </div>
       <nav class="nav-menu">
-        <!-- PHASE SELECTOR (Section 1) -->
+        <!-- PHASE SELECTOR - the only thing left in the main header bar now.
+             Feature tabs moved to their own strip below (.tools-bar) so the
+             header stays a single compact row instead of growing tall with
+             a second row stacked inside the same glass-panel box. -->
         <div class="phase-selector">
           <button
             class="phase-btn"
@@ -41,33 +44,6 @@
             <span class="soon-badge">SOON</span>
           </button>
         </div>
-
-        <!-- FEATURE TABS (Section 2) - Changes based on active phase -->
-        <div class="nav-row" v-if="activePhase === 'prepare'">
-          <div class="nav-group">
-            <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ Forecast</RouterLink>
-            <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 Risk Timeline</RouterLink>
-            <RouterLink to="/prepare/checklist" :class="{ active: isActive('/prepare/checklist') }">✅ Checklist</RouterLink>
-            <RouterLink to="/prepare/agency-alerts" :class="{ active: isActive('/prepare/agency-alerts') }">📨 Agency Alerts</RouterLink>
-          </div>
-        </div>
-
-        <div class="nav-row" v-if="activePhase === 'response'">
-          <div class="nav-group">
-            <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
-            <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
-            <RouterLink to="/map" :class="{ active: isActive('/map') }">🗺️ Live Map</RouterLink>
-            <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">📈 Deep Analysis</RouterLink>
-            <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
-          </div>
-        </div>
-
-        <div class="nav-row nav-row-roadmap" v-if="activePhase === 'roadmap'">
-          <div class="nav-group nav-group-disabled">
-            <span class="nav-roadmap-badge">🔮 Predict — Coming soon</span>
-            <span class="nav-roadmap-badge">♻️ Recover — Coming soon</span>
-          </div>
-        </div>
       </nav>
     </div>
 
@@ -84,7 +60,7 @@
 
     <div class="header-right">
 
-      <button 
+      <button
         class="header-btn"
         @click="toggle3D"
         :class="{ active: is3D }"
@@ -95,9 +71,9 @@
 
       <label class="language-selector" for="header-language">
         <span>🌐</span>
-        <select 
-          id="header-language" 
-          v-model="selectedLanguage" 
+        <select
+          id="header-language"
+          v-model="selectedLanguage"
           @change="handleLanguageChange"
           aria-label="Select language"
         >
@@ -112,6 +88,40 @@
       </label>
     </div>
   </header>
+
+  <!-- ACTIVE TOOLS - a totally separate strip from the header above, not
+       nested in the same glass-panel box. Mirrors the mobile drawer's
+       existing section labels (see mobile-nav-section-title below) so a
+       first-time viewer has an explicit word for what this row is. -->
+  <div class="tools-bar">
+    <span class="tools-label">ACTIVE TOOLS</span>
+
+    <div class="nav-row" v-if="activePhase === 'prepare'">
+      <div class="nav-group">
+        <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ Forecast</RouterLink>
+        <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 Risk Timeline</RouterLink>
+        <RouterLink to="/prepare/checklist" :class="{ active: isActive('/prepare/checklist') }">✅ Checklist</RouterLink>
+        <RouterLink to="/prepare/agency-alerts" :class="{ active: isActive('/prepare/agency-alerts') }">📨 Agency Alerts</RouterLink>
+      </div>
+    </div>
+
+    <div class="nav-row" v-if="activePhase === 'response'">
+      <div class="nav-group">
+        <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
+        <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
+        <RouterLink to="/map" :class="{ active: isActive('/map') }">🗺️ Live Map</RouterLink>
+        <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">📈 Deep Analysis</RouterLink>
+        <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
+      </div>
+    </div>
+
+    <div class="nav-row nav-row-roadmap" v-if="activePhase === 'roadmap'">
+      <div class="nav-group nav-group-disabled">
+        <span class="nav-roadmap-badge">🔮 Predict — Coming soon</span>
+        <span class="nav-roadmap-badge">♻️ Recover — Coming soon</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Mobile Navigation Drawer -->
   <Transition name="slide-left">
@@ -335,8 +345,7 @@ const closeMobileMenu = () => {
 
 .nav-menu {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
 }
 
 .phase-selector {
@@ -399,11 +408,10 @@ const closeMobileMenu = () => {
   white-space: nowrap;
 }
 
-/* Visually separate the sub-tab row from the phase-selector row above it -
-   without this it just sat directly under the phase pills with the same
-   background, so the whole header read as one cluttered block. A faint
-   card (own background/border/radius) around the sub-tabs makes it read
-   as "a section of the header", not fused with the phase switcher. */
+/* The feature tabs now live in .tools-bar, a separate strip entirely
+   outside the header's glass-panel box (see below) - that strip already
+   carries its own background/border, so .nav-row itself goes back to a
+   plain flex row instead of being its own nested boxed-within-a-box. */
 .nav-row {
   display: flex;
   gap: 8px;
@@ -411,19 +419,42 @@ const closeMobileMenu = () => {
   flex-wrap: wrap;
   row-gap: 4px;
   min-height: 32px;
-  height: auto;
-  width: fit-content;
-  padding: 4px 6px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
 }
 
 .nav-row-roadmap {
   height: auto;
 }
 
-.nav-menu :deep(a) {
+/* ---- Active Tools strip - sibling of <header>, not nested inside it.
+   Keeping the phase selector and the feature tabs in two visually
+   separate elements (own background/border each) is what actually fixes
+   "the header is so big" - previously both lived inside the same
+   <header class="header glass-panel"> box, stacked as two rows, so the
+   whole thing grew tall and read as one dense block. This strip is its
+   own section, labelled, full width, so RESPONSE's 5 tabs never crowd a
+   box sized for the 3 phase buttons above it. */
+.tools-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  background: rgba(10, 14, 20, 0.55);
+  border-bottom: 1px solid var(--header-border, rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+}
+
+.tools-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+.tools-bar :deep(a) {
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 12px;
@@ -437,18 +468,18 @@ const closeMobileMenu = () => {
   position: relative;
 }
 
-.nav-menu :deep(a:hover) {
+.tools-bar :deep(a:hover) {
   color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.15);
   border-color: var(--accent-cyan);
 }
 
 /* Deliberately NOT the same vibrant gradient fill as .phase-btn.active -
-   two stacked rows both using the exact same bold blue made it unclear
-   which level (phase vs. sub-tab) was the "main" selection. The sub-tab
-   gets a lighter tint instead, so PREPARE stays the one bold anchor and
-   Forecast reads as "selected within it", not a second competing fill. */
-.nav-menu :deep(a.active) {
+   now that the tools strip is a physically separate element from the
+   header (not just a visually-boxed row within it), a softer active
+   tint still reads clearly without needing the bold fill the phase
+   button uses one section up. */
+.tools-bar :deep(a.active) {
   color: var(--accent-cyan, #22d3ee);
   background: rgba(34, 211, 238, 0.14);
   border-color: var(--accent-cyan, #22d3ee);
@@ -622,6 +653,15 @@ const closeMobileMenu = () => {
     gap: 12px;
   }
 
+  .tools-bar {
+    padding: 6px 12px;
+    gap: 10px;
+  }
+
+  .tools-label {
+    font-size: 9px;
+  }
+
   .logo h1 {
     font-size: 14px;
   }
@@ -630,11 +670,7 @@ const closeMobileMenu = () => {
     font-size: 20px;
   }
 
-  .nav-menu {
-    gap: 4px;
-  }
-
-  .nav-menu :deep(a) {
+  .tools-bar :deep(a) {
     font-size: 10px;
     padding: 4px 8px;
   }
@@ -684,6 +720,10 @@ const closeMobileMenu = () => {
   }
 
   .nav-menu {
+    display: none;
+  }
+
+  .tools-bar {
     display: none;
   }
 
