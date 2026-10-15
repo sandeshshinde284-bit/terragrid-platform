@@ -822,8 +822,8 @@ watch(selectedKey, () => {
 .copy-btn {
   padding: 6px 12px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   font-size: 12px;
   font-weight: 600;
@@ -831,7 +831,7 @@ watch(selectedKey, () => {
 }
 
 .copy-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .recipient-select {
