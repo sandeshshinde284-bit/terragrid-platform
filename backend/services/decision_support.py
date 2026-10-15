@@ -7,6 +7,7 @@ from typing import Dict, Any, List, Optional
 
 from .prompt_schemas import DEEP_DOSSIER_SCHEMA_TEXT, RESPONSE_PLAN_SCHEMA_TEXT, PREPAREDNESS_ACTIONS_SCHEMA_TEXT, AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT
 from .location_context import get_location_context
+from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
 
@@ -166,8 +167,9 @@ class DecisionSupportService:
             response = self.model.generate_content(prompt)
             if response and response.text:
                 logger.info(f"[GEMINI RESPONSE - Response Plan] Received response from Vertex AI")
+                log_raw_data("gemini", response.text, label="response_plan", context={"location": location, "event_type": event_type})
                 logger.debug(f"[GEMINI RESPONSE RAW]\n{response.text}")
-                
+
                 cleaned_text = response.text.strip()
                 if cleaned_text.startswith("```json"):
                     cleaned_text = cleaned_text[7:]
@@ -280,6 +282,7 @@ class DecisionSupportService:
 
             response = self.model.generate_content(prompt)
             if response and response.text:
+                log_raw_data("gemini", response.text, label="preparedness_actions", context={"city": city, "country": country})
                 logger.debug(f"[GEMINI RESPONSE RAW]\n{response.text}")
 
                 cleaned_text = response.text.strip()
@@ -394,6 +397,7 @@ class DecisionSupportService:
 
             response = self.model.generate_content(prompt)
             if response and response.text:
+                log_raw_data("gemini", response.text, label="agency_alerts", context={"city": city, "country": country})
                 logger.debug(f"[GEMINI RESPONSE RAW]\n{response.text}")
 
                 cleaned_text = response.text.strip()
@@ -622,6 +626,7 @@ class DecisionSupportService:
             response = self.model.generate_content(prompt)
             if response and response.text:
                 logger.info(f"[GEMINI RESPONSE - Deep Tactical Dossier] Received response from Vertex AI")
+                log_raw_data("gemini", response.text, label="deep_dossier", context={"location": location, "event_type": event_type, "threat_score": threat_score})
                 logger.debug(f"[GEMINI RESPONSE RAW]\n{response.text}")
                 
                 # Clean response text in case of markdown formatting

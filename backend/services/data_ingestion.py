@@ -21,6 +21,7 @@ from .openweather import OpenWeatherService
 from .pubsub_service import PubSubService
 from .impact_analysis import ImpactAnalysisService
 from .lineage_tracker import LineageTracker
+from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,11 @@ class DataIngestionService:
                 elif isinstance(resp, list):
                     results["sources"][name] = {"count": len(resp), "status": "success"}
                     all_events.extend(resp)
+                    # Raw cross-check log, folder-wise per source - see
+                    # backend/utils/data_logger.py. Separate from the
+                    # [FEATURE_HEALTH] summary line above/below, which stays
+                    # a lightweight count+status only.
+                    log_raw_data(name, resp)
                 else:
                     results["sources"][name] = {"count": 0, "status": "empty"}
             

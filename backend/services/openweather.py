@@ -11,6 +11,7 @@ import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 import os
+from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
 
@@ -248,6 +249,7 @@ class OpenWeatherService:
         cls._forecast_cache = forecasts
         cls._forecast_cache_at = now
 
+        log_raw_data("openweather_forecast", forecasts)
         logger.info(f"[FEATURE_HEALTH] feature=openweather_forecast status=success cities_fetched={len(forecasts)} cities_queried={len(cls.MONITORED_CITIES)} concurrency={cls._FORECAST_FETCH_CONCURRENCY}")
         return forecasts
 
