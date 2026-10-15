@@ -260,10 +260,12 @@ onMounted(() => {
 }
 
 .glass-panel {
-  background: var(--bg-panel);
-  border: 1px solid var(--glass-border);
+  background: rgba(26, 31, 46, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .settings-hero {
@@ -313,7 +315,7 @@ onMounted(() => {
 
 .card-desc {
   margin: 0;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -322,8 +324,8 @@ onMounted(() => {
   margin: 0;
   padding: 8px 10px;
   border-radius: 6px;
-  background: var(--bg-subtle);
-  color: var(--text-muted);
+  background: rgba(56, 189, 248, 0.08);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -365,12 +367,12 @@ onMounted(() => {
 }
 
 .recipient-info strong {
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.95);
   font-size: 13px;
 }
 
 .recipient-value {
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.65);
   font-size: 12px;
   overflow-wrap: anywhere;
 }
@@ -386,10 +388,16 @@ onMounted(() => {
   cursor: pointer;
   font-size: 13px;
   line-height: 1;
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .remove-btn:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.22);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+}
+
+.remove-btn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .remove-btn:disabled {
@@ -409,29 +417,46 @@ onMounted(() => {
   flex: 1 1 140px;
   padding: 8px 10px;
   border-radius: 6px;
-  border: 1px solid var(--glass-border);
-  background: var(--bg-subtle);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--text-primary);
   font-size: 13px;
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .form-input::placeholder {
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.5);
+  opacity: 1;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(56, 189, 248, 0.8);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .add-btn {
   padding: 8px 14px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .add-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+  transform: translateY(-1px);
+}
+
+.add-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .add-btn:disabled {

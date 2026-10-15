@@ -13,7 +13,7 @@
       <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
           <div>
-            <span class="section-kicker">PRIMARY SOURCE</span>
+            <span class="section-kicker">Primary Source</span>
             <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">{{ incident.source || 'Unknown' }}</h3>
           </div>
           <div style="text-align: right;">
@@ -61,7 +61,7 @@
       <!-- Source-Specific Details: Show actual data from this incident -->
       <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
-          <span class="section-kicker">INCIDENT DATA FROM {{ incident.source }}</span>
+          <span class="section-kicker">Incident Data from {{ incident.source }}</span>
           <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Raw telemetry that was ingested</h3>
         </div>
 
@@ -75,7 +75,7 @@
       <!-- Location-Specific Accuracy -->
       <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
-          <span class="section-kicker">LOCATION ACCURACY</span>
+          <span class="section-kicker">Location Accuracy</span>
           <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">{{ incident.location_name }} ({{ getCountry(incident) }})</h3>
         </div>
 
@@ -102,7 +102,7 @@
       <!-- Audit Trail: Who accessed this data -->
       <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
-          <span class="section-kicker">AUDIT TRAIL</span>
+          <span class="section-kicker">Audit Trail</span>
           <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Data custody & access log</h3>
         </div>
 
@@ -118,7 +118,7 @@
       <!-- Data Completeness -->
       <article class="glass-panel" style="padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
-          <span class="section-kicker">DATA COMPLETENESS</span>
+          <span class="section-kicker">Data Completeness</span>
           <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Which fields are populated from this source</h3>
         </div>
 

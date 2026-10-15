@@ -16,7 +16,7 @@
       <div class="content-grid two-columns">
         <article class="glass-panel" style="padding: 20px;">
           <div class="panel-heading">
-            <div><span class="section-kicker">SAFE TRANSIT</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Primary Evacuation Corridor</h3></div>
+            <div><span class="section-kicker">Safe Transit</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Primary Evacuation Corridor</h3></div>
             <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">EVAC-ROUTE-01</span>
           </div>
           <div class="evac-route-details">
@@ -91,7 +91,7 @@
 
         <article class="glass-panel" style="padding: 20px;">
           <div class="panel-heading">
-            <div><span class="section-kicker">HAZARD WARNING</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Critical Choke-Points & Assembly Zones</h3></div>
+            <div><span class="section-kicker">Hazard Warning</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Critical Choke-Points & Assembly Zones</h3></div>
             <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">EVAC-CHOKE-02</span>
           </div>
           <div class="choke-rally-grid">

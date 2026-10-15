@@ -43,7 +43,7 @@
           <article class="glass-panel" style="margin-bottom: 18px;">
             <div class="panel-heading">
               <div>
-                <span class="section-kicker">EXECUTIVE SUMMARY</span>
+                <span class="section-kicker">Executive Summary</span>
                 <h2 style="font-size: 18px; margin: 4px 0 0 0; color: #f8fafc; line-height: 1.4;">{{ aiPlan.country_context }}</h2>
               </div>
             </div>
@@ -55,7 +55,7 @@
           <article class="glass-panel">
             <div class="panel-heading">
               <div>
-                <span class="section-kicker">EVACUATION PROTOCOL</span>
+                <span class="section-kicker">Evacuation Protocol</span>
                 <h3 style="margin:0; font-size: 16px; color:#f8fafc;">Critical Transit Instructions</h3>
               </div>
             </div>
@@ -70,7 +70,7 @@
           <article class="glass-panel action-panel" style="height: 100%;">
             <div class="panel-heading" style="margin-bottom: 24px;">
               <div>
-                <span class="section-kicker">TACTICAL DIRECTIVES</span>
+                <span class="section-kicker">Tactical Directives</span>
                 <h3 style="margin:0; font-size: 16px; color:#f8fafc;">Immediate Action Plan</h3>
               </div>
               <span class="ai-chip" :class="getStatusClass()">{{ getStatusLabel() }}</span>

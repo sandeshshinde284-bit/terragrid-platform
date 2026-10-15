@@ -612,22 +612,25 @@ watch(selectedKey, () => {
   gap: 10px;
   padding: 9px 10px;
   border-radius: 8px;
-  border: 1px solid transparent;
-  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
   color: var(--text-primary);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .rail-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(4px);
 }
 
 .rail-item.active {
-  background: rgba(56, 189, 248, 0.1);
-  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.3), inset 0 0 8px rgba(56, 189, 248, 0.1);
 }
 
 .rail-dot {
@@ -663,16 +666,38 @@ watch(selectedKey, () => {
 }
 
 .rail-risk {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
   flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.rail-item.green .rail-risk { color: #22c55e; }
-.rail-item.yellow .rail-risk { color: #eab308; }
-.rail-item.orange .rail-risk { color: #f97316; }
-.rail-item.red .rail-risk { color: #ef4444; }
+.rail-item.green .rail-risk {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  text-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
+}
+
+.rail-item.yellow .rail-risk {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  text-shadow: 0 0 4px rgba(251, 191, 36, 0.3);
+}
+
+.rail-item.orange .rail-risk {
+  color: #fb923c;
+  background: rgba(251, 147, 60, 0.2);
+  text-shadow: 0 0 4px rgba(251, 147, 60, 0.4);
+}
+
+.rail-item.red .rail-risk {
+  color: #fca5a5;
+  background: rgba(252, 165, 165, 0.15);
+  text-shadow: 0 0 4px rgba(252, 165, 165, 0.3);
+}
 
 .detail-panel {
   flex: 1;

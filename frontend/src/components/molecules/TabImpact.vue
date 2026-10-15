@@ -12,14 +12,14 @@
       <!-- Critical Infrastructure Table -->
       <article class="glass-panel infrastructure-panel" style="padding: 20px; margin-bottom: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">VULNERABILITY MATRIX</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Exposed Critical Infrastructure</h3></div>
+          <div><span class="section-kicker">Vulnerability Matrix</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Exposed Critical Infrastructure</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">AI-IA-01</span>
         </div>
         <div class="ai-facility-grid">
           <div v-for="fac in deepDossier.critical_infrastructure" :key="fac.facility_name" class="ai-facility-card glass-subpanel">
             <div class="facility-top">
               <span class="facility-type-tag">{{ fac.facility_type }}</span>
-              <span class="facility-risk" :class="fac.risk_level.toLowerCase()">{{ fac.risk_level }} RISK</span>
+              <span class="facility-risk" :class="fac.risk_level.toLowerCase()">{{ fac.risk_level }} Risk</span>
             </div>
             <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.3;">{{ fac.facility_name }}</h4>
             <div class="facility-meta">
@@ -41,22 +41,22 @@
       <!-- Vulnerable Demographics -->
       <article class="glass-panel demographics-panel" style="padding: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">HUMAN IMPACT</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Vulnerable Demographics & Facilities</h3></div>
+          <div><span class="section-kicker">Human Impact</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Vulnerable Demographics & Facilities</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">AI-IA-02</span>
         </div>
         <div class="demographics-body">
           <div class="demo-stat-row" style="display: flex; gap: 24px; margin-bottom: 14px; flex-wrap: wrap;">
             <div class="demo-stat">
-              <span class="stat-label" style="display: block; font-size: 18px; color: var(--text-secondary); text-transform: uppercase;">Estimated Displaced Citizens: </span>
-              <strong class="stat-value" style="font-size: 16px; color: var(--accent-cyan);">{{ deepDossier.vulnerable_demographics.estimated_displaced_citizens.toLocaleString() }}</strong>
+              <span class="stat-label" style="display: block; font-size: 13px; color: rgba(255,255,255,0.65); text-transform: none; font-weight: 600;">Estimated Displaced Citizens: </span>
+              <strong class="stat-value" style="font-size: 20px; color: var(--accent-cyan); font-weight: 700; margin-top: 4px; display: block;">{{ deepDossier.vulnerable_demographics.estimated_displaced_citizens.toLocaleString() }}</strong>
             </div>
             <div class="demo-stat">
-              <span class="stat-label" style="display: block; font-size: 18px; color: var(--text-secondary); text-transform: uppercase;">Special Needs Transport: </span>
-              <span class="stat-desc" style="font-size: 18px; color: var(--text-secondary);">{{ deepDossier.vulnerable_demographics.special_needs_assistance_required }}</span>
+              <span class="stat-label" style="display: block; font-size: 13px; color: rgba(255,255,255,0.65); text-transform: none; font-weight: 600;">Special Needs Transport: </span>
+              <span class="stat-desc" style="font-size: 16px; color: rgba(255,255,255,0.9); margin-top: 4px; display: block;">{{ deepDossier.vulnerable_demographics.special_needs_assistance_required }}</span>
             </div>
           </div>
           <div class="facilities-at-risk-list" style="margin-top: 14px;">
-            <strong style="color: var(--accent-cyan); font-size: 18px; text-transform: uppercase;">High-Priority Facilities at Risk:</strong>
+            <strong style="color: var(--accent-cyan); font-size: 14px; text-transform: none; font-weight: 600;">High-Priority Facilities at Risk:</strong>
             <ul style="margin: 8px 0 0 16px; color: var(--text-secondary); font-size: 18px;">
               <li v-for="f in deepDossier.vulnerable_demographics.facilities_at_risk" :key="f">
                 {{ f }}

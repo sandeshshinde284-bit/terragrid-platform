@@ -12,7 +12,7 @@
       <!-- Tactical Briefing -->
       <article class="glass-panel" style="padding: 16px; margin-bottom: 20px; border-left: 4px solid var(--detail-accent);">
         <p style="margin: 0; font-size: 18px; color: var(--text-primary); line-height: 1.6;">
-          <strong style="color: var(--detail-accent); font-family: ui-monospace, monospace; margin-right: 8px;">TACTICAL BRIEFING:</strong> 
+          <strong style="color: var(--detail-accent); font-family: ui-monospace, monospace; margin-right: 8px;">Tactical Briefing:</strong>
           {{ deepDossier.severity_assessment || 'Situational assessment pending...' }}
         </p>
       </article>
@@ -20,7 +20,7 @@
       <!-- PHASED RESPONSE TIMELINE -->
       <article class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">OPERATIONAL PHASES</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">Response Timeline by Action Urgency</h3></div>
+          <div><span class="section-kicker">Operational Phases</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">Response Timeline by Action Urgency</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">PHASE-RESP-01</span>
         </div>
 
@@ -72,7 +72,7 @@
 
       <article class="glass-panel" style="padding: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">ASSET DEPLOYMENT</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">Operational Logistics Matrix</h3></div>
+          <div><span class="section-kicker">Asset Deployment</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">Operational Logistics Matrix</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">LOG-ASSET-01</span>
         </div>
         <div class="resource-matrix-table-wrapper" style="overflow-x: auto;">

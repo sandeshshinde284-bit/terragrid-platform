@@ -13,7 +13,7 @@
         <div v-for="(cascade, idx) in deepDossier.cascade_predictions" :key="idx" class="cascade-card glass-panel" :class="'cascade-border-' + cascade.color_code" style="padding: 20px; border-left-width: 4px;">
           <div class="cascade-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span class="time-tag" style="font-weight: 800; font-size: 16px;" :class="'text-' + cascade.color_code">
-              ⏱️ +{{ cascade.timeframe_hours }} HOURS
+              ⏱️ +{{ cascade.timeframe_hours }} hours
             </span>
             <span class="delta-badge" style="font-family: ui-monospace, monospace; font-size: 18px; font-weight: 700; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 4px;">
               +{{ cascade.perimeter_delta_km2.toFixed(1) }} km² EXPANSION

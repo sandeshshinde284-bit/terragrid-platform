@@ -11,7 +11,7 @@
     <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
       <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div>
-          <span class="section-kicker" style="color: #94a3b8; font-size: 15px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; display: block;">AUTOMATED DISPATCH</span>
+          <span class="section-kicker" style="color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: none; display: block;">Automated Dispatch</span>
           <h3 style="margin: 0; font-size: 18px; color: #f8fafc;">Commander Alert Engine</h3>
         </div>
         <span class="ai-chip live" style="font-size: 16px; font-weight: 800; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 4px 8px; border-radius: 4px;">LIVE</span>
