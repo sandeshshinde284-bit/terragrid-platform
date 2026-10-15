@@ -349,6 +349,30 @@ const fetchSourceOfTruth = async () => {
 onMounted(async () => {
   await prepareForecastStore.ensureLoaded(fetchWithMockMode)
   await fetchSourceOfTruth()
+
+  // Keyboard navigation for country filter buttons
+  const handleKeyboardNavigation = (e: KeyboardEvent) => {
+    const filterButtons = document.querySelectorAll('.filter-chip')
+    if (filterButtons.length === 0) return
+
+    const activeIndex = Array.from(filterButtons).findIndex((btn) => btn === document.activeElement)
+    let nextIndex = activeIndex
+
+    if (e.key === 'ArrowRight' && activeIndex < filterButtons.length - 1) {
+      nextIndex = activeIndex + 1
+      e.preventDefault()
+    } else if (e.key === 'ArrowLeft' && activeIndex > 0) {
+      nextIndex = activeIndex - 1
+      e.preventDefault()
+    } else {
+      return
+    }
+
+    ;(filterButtons[nextIndex] as HTMLButtonElement).focus()
+  }
+
+  window.addEventListener('keydown', handleKeyboardNavigation)
+  return () => window.removeEventListener('keydown', handleKeyboardNavigation)
 })
 </script>
 
@@ -411,7 +435,8 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
+  /* Consistent spacing with country sections */
 }
 
 .hero-meta {
@@ -573,11 +598,26 @@ onMounted(async () => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
+  /* Keyboard navigation support */
+  outline-offset: 2px;
 }
 
 .filter-chip:hover {
   border-color: var(--accent-cyan);
   color: var(--text-primary);
+}
+
+.filter-chip:focus {
+  outline: 2px solid var(--accent-cyan);
+}
+
+.filter-chip:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
 }
 
 .filter-chip.active {
@@ -601,14 +641,16 @@ onMounted(async () => {
   object-fit: cover;
   border-radius: 2px;
   flex-shrink: 0;
+  /* Match country-flag shadow for consistency */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 /* ---- Country sections ---- */
-
 .country-sections {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  /* Consistent spacing scale throughout */
 }
 
 .country-section {
@@ -674,10 +716,11 @@ onMounted(async () => {
 }
 
 .city-card {
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  /* Tighter padding and gaps for better density while maintaining readability */
   border-top: 3px solid var(--glass-border);
 }
 
@@ -714,34 +757,33 @@ onMounted(async () => {
 .day-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  /* No horizontal scroll at all - a chip that doesn't fit wraps to the next
-     line instead of hiding off-screen behind a scrollbar whose presence
-     wasn't obvious. All 5 days are always visible without any interaction. */
+  gap: 6px;
+  /* Tighter spacing to reduce density without horizontal scroll */
 }
 
 .day-chip {
-  flex: 1 1 90px;
-  min-width: 90px;
+  flex: 1 1 85px;
+  min-width: 85px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 10px 6px;
+  gap: 2px;
+  padding: 8px 4px;
   border-radius: 8px;
   border: 1px solid var(--glass-border);
   font-size: 11px;
   transition: transform 0.15s ease;
+  background-clip: padding-box;
 }
 
 .day-chip:hover {
   transform: translateY(-2px);
 }
 
-.day-chip.green { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.06); }
-.day-chip.yellow { border-color: rgba(234, 179, 8, 0.4); background: rgba(234, 179, 8, 0.06); }
-.day-chip.orange { border-color: rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.06); }
-.day-chip.red { border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.08); }
+.day-chip.green { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.12); }
+.day-chip.yellow { border-color: rgba(234, 179, 8, 0.4); background: rgba(234, 179, 8, 0.12); }
+.day-chip.orange { border-color: rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.12); }
+.day-chip.red { border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.14); }
 
 .day-date {
   font-weight: 700;
@@ -750,18 +792,23 @@ onMounted(async () => {
 }
 
 .day-icon {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
 }
 
 .day-weather {
   color: var(--text-primary);
   font-weight: 600;
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 .day-metrics {
   color: var(--text-muted);
   font-size: 10px;
+  margin-top: 1px;
+  line-height: 1.3;
+  /* Metrics now readable - font size kept at 10px, better spacing */
 }
 
 .empty-state {
