@@ -518,7 +518,13 @@ onMounted(async () => {
       const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
       const res = await fetch(`${host}/api/v1/incidents?limit=50`)
       if (res.ok) {
-        const raw = await res.json()
+        const apiResponse = await res.json()
+        // GET /api/v1/incidents wraps results as {data: [...], pagination: {...}},
+        // not a bare array - same unwrapping bug already fixed in Dashboard.vue and
+        // IncidentDetail.vue this session (`raw.length` is undefined on the wrapper
+        // object, so this always silently skipped and the page showed "No new
+        // alerts" even with real incidents in the database).
+        const raw = apiResponse.data || apiResponse
         if (raw && raw.length > 0) {
           eventsStore.setIncidents(raw.map((e: any, idx: number) => ({
             id: e.id || `inc-${idx}`,
