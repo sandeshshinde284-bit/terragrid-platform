@@ -5,6 +5,7 @@ from .analysis import Analysis
 from .alert import Alert
 from .geocoding import GeocodingCache
 from .lineage import RawEvent, ValidationLog, EnrichmentLog, LineageChain
+from .recipient import AlertRecipient
 
 __all__ = [
     "BaseModel",
@@ -15,5 +16,6 @@ __all__ = [
     "RawEvent",
     "ValidationLog",
     "EnrichmentLog",
-    "LineageChain"
+    "LineageChain",
+    "AlertRecipient"
 ]

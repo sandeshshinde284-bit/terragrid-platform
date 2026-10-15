@@ -1,13 +1,19 @@
 import os
 import html
 import logging
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from backend.config import settings
 from typing import Dict, Any, List, Optional
 import resend
+from sqlalchemy.orm import Session
 
-from .recipients import parse_labeled_recipients
+from . import alert_recipients
 
 logger = logging.getLogger(__name__)
+
+EMAIL_CHANNEL = "email"
 
 class NotificationService:
     """
@@ -23,10 +29,16 @@ class NotificationService:
         # Prevent email spam on every 15-minute polling cycle
         self.sent_alerts = set()
 
-        # PREPARE phase's Agency Alerts manual email send - a fixed,
-        # pre-approved demo recipient list, same reasoning as
-        # WhatsAppService's WHATSAPP_RECIPIENTS (see whatsapp.py).
-        self.alert_email_recipients = parse_labeled_recipients(settings.EMAIL_ALERT_RECIPIENTS)
+        # PREPARE phase's Agency Alerts manual email send - uses Gmail SMTP
+        # (see send_alert_email below), not Resend, so it can deliver to an
+        # operator-managed recipient list added at runtime via Settings
+        # instead of only the Resend account's own address.
+        self.gmail_user = settings.GMAIL_SMTP_USER
+        self.gmail_app_password = settings.GMAIL_SMTP_APP_PASSWORD
+        self.gmail_from_name = settings.GMAIL_SMTP_FROM_NAME
+        self.gmail_configured = bool(self.gmail_user and self.gmail_app_password)
+        if not self.gmail_configured:
+            logger.warning("[FEATURE_HEALTH] feature=gmail_smtp status=no_credentials reason=GMAIL_SMTP_USER/GMAIL_SMTP_APP_PASSWORD not configured, Agency Alerts email send is disabled")
 
         if self.api_key and self.api_key != "re_your_api_key_from_resend_dashboard":
             resend.api_key = self.api_key
@@ -185,39 +197,47 @@ class NotificationService:
             logger.exception(f"[FEATURE_HEALTH] feature=resend_email status=error attempts={max_retries} location={location}")
             return False
 
-    def get_alert_email_recipients(self) -> List[Dict[str, str]]:
-        """Pre-approved demo email recipients, for Agency Alerts' picker."""
-        return [{"label": r.label, "email": r.value} for r in self.alert_email_recipients]
+    def get_alert_email_recipients(self, db: Session) -> List[Dict[str, str]]:
+        """Operator-managed email recipients (Settings screen), for Agency Alerts' picker."""
+        return [
+            {"label": r.label, "email": r.value}
+            for r in alert_recipients.list_recipients(db, EMAIL_CHANNEL)
+        ]
 
-    def _find_alert_email_recipient(self, email: str) -> Optional[Any]:
-        return next((r for r in self.alert_email_recipients if r.value == email), None)
-
-    def send_alert_email(self, to_email: str, subject: str, body: str) -> Dict[str, Any]:
+    def send_alert_email(self, db: Session, to_email: str, subject: str, body: str) -> Dict[str, Any]:
         """
-        Sends a plain alert email to one pre-approved Agency Alerts demo
-        recipient. Unlike send_critical_alert above, this carries no
-        incident-specific formatting, DB persistence or spam-dedup - those
-        belong to RESPONSE phase's automatic incident emails, not this
-        manual, operator-reviewed send. Never raises - returns a structured
-        result so the route can surface a clear UI error either way.
+        Sends a plain alert email to one operator-managed Agency Alerts
+        recipient, via Gmail SMTP. Unlike send_critical_alert above, this
+        carries no incident-specific formatting, DB persistence or
+        spam-dedup - those belong to RESPONSE phase's automatic incident
+        emails, not this manual, operator-reviewed send. Never raises -
+        returns a structured result so the route can surface a clear UI
+        error either way.
+
+        Why Gmail SMTP and not Resend (used above for send_critical_alert):
+        Resend's onboarding@resend.dev test sender can only deliver to the
+        Resend account's own address (see GMAIL_SMTP_* comments in
+        config.py) - it can't reach recipients added at runtime via
+        Settings. Gmail SMTP has no such restriction.
 
         Args:
-            to_email: Must match one of the EMAIL_ALERT_RECIPIENTS entries -
-                rejected otherwise, same allowlist reasoning as WhatsApp.
+            to_email: Must match one of the recipients currently in the
+                alert_recipients table (channel='email') - rejected
+                otherwise, same allowlist reasoning as WhatsApp.
             subject: Email subject line.
             body: Plain-text message body, exactly as shown on screen.
         """
-        if not self.is_configured:
+        if not self.gmail_configured:
             return {
                 "success": False,
-                "detail": "Email sending isn't configured on this backend (RESEND_API_KEY missing).",
+                "detail": "Email sending isn't configured on this backend (GMAIL_SMTP_USER / GMAIL_SMTP_APP_PASSWORD missing).",
             }
 
-        recipient = self._find_alert_email_recipient(to_email)
+        recipient = alert_recipients.find_recipient_by_value(db, EMAIL_CHANNEL, to_email)
         if not recipient:
             return {
                 "success": False,
-                "detail": "That email isn't one of the pre-approved demo recipients.",
+                "detail": "That email isn't on the configured recipient list. Add it in Settings first.",
             }
 
         safe_body = html.escape(body).replace("\n", "<br>")
@@ -233,24 +253,27 @@ class NotificationService:
         """
 
         try:
-            params = {
-                "from": f"{self.from_name} <{self.from_email}>",
-                "to": [to_email],
-                "subject": subject,
-                "html": html_content,
-            }
-            response = resend.Emails.send(params)
-            logger.info(f"Agency Alert email sent to {recipient.label} ({to_email}) via Resend.")
+            message = MIMEMultipart("alternative")
+            message["Subject"] = subject
+            message["From"] = f"{self.gmail_from_name} <{self.gmail_user}>"
+            message["To"] = to_email
+            message.attach(MIMEText(body, "plain"))
+            message.attach(MIMEText(html_content, "html"))
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
+                server.login(self.gmail_user, self.gmail_app_password)
+                server.sendmail(self.gmail_user, [to_email], message.as_string())
+
+            logger.info(f"[FEATURE_HEALTH] feature=gmail_smtp status=success recipient={recipient.label}")
             return {
                 "success": True,
                 "detail": f"Sent to {recipient.label}.",
-                "resend_id": response.get("id") if isinstance(response, dict) else None,
             }
         except Exception as e:
-            logger.exception(f"Failed to send Agency Alert email to {to_email}.")
+            logger.exception(f"[FEATURE_HEALTH] feature=gmail_smtp status=error recipient_email={to_email}")
             return {
                 "success": False,
-                "detail": f"Resend error: {str(e)}",
+                "detail": f"Gmail SMTP error: {str(e)}",
             }
 
 # Global singleton

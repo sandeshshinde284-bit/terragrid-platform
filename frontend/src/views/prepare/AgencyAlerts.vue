@@ -129,6 +129,9 @@
                         {{ sendingWhatsApp ? 'Sending…' : '💬 Send via WhatsApp' }}
                       </button>
                     </template>
+                    <RouterLink v-else-if="!recipientsLoading" to="/settings" class="configure-recipients-link">
+                      💬 Add a WhatsApp recipient in Settings
+                    </RouterLink>
                     <template v-if="emailRecipients.length > 0">
                       <select v-model="selectedRecipientEmail" class="recipient-select" aria-label="Email recipient">
                         <option v-for="r in emailRecipients" :key="r.email" :value="r.email">
@@ -144,6 +147,9 @@
                         {{ sendingEmail ? 'Sending…' : '✉️ Send via Email' }}
                       </button>
                     </template>
+                    <RouterLink v-else-if="!recipientsLoading" to="/settings" class="configure-recipients-link">
+                      ✉️ Add an email recipient in Settings
+                    </RouterLink>
                   </div>
                 </div>
                 <h3 class="alert-headline">{{ selectedAlert.headline }}</h3>
@@ -166,6 +172,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { RouterLink } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
@@ -461,9 +468,12 @@ const fetchAlertsForSelectedCity = async () => {
   }
 }
 
+const recipientsLoading = ref(true)
+
 onMounted(async () => {
-  fetchWhatsAppRecipients()
-  fetchEmailRecipients()
+  Promise.allSettled([fetchWhatsAppRecipients(), fetchEmailRecipients()]).finally(() => {
+    recipientsLoading.value = false
+  })
 
   // If another PREPARE page already loaded fresh forecast data, this
   // resolves immediately and the watch(cities, ...) below picks the
@@ -843,6 +853,22 @@ watch(selectedKey, () => {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.configure-recipients-link {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px dashed var(--glass-border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.configure-recipients-link:hover {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
 }
 
 .send-whatsapp-btn {

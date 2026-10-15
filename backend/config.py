@@ -22,11 +22,26 @@ class Settings(BaseSettings):
     RESEND_FROM_EMAIL: str = 'onboarding@resend.dev'
     RESEND_FROM_NAME: str = 'TerraGrid Alerts'
     ALERT_RECIPIENTS: str = 'test@example.com'
-    # Comma-separated "Label:email" pairs for Agency Alerts' manual email
-    # send - deliberately separate from ALERT_RECIPIENTS above, which is
-    # RESPONSE phase's automatic live-incident email list. Keeping them
-    # apart means testing Agency Alerts' demo send can never accidentally
-    # email the real incident-response recipient list.
+
+    # Gmail SMTP - sends Agency Alerts' manual email (send_alert_email in
+    # notifications.py). Resend's onboarding@resend.dev sender can only
+    # deliver to the Resend account's own email (verified against Resend's
+    # docs - https://resend.com/docs/knowledge-base/403-error-resend-dev-domain),
+    # so it can't reach recipients added at runtime via Settings. Gmail SMTP
+    # has no such restriction: any address a GMAIL_SMTP_USER account in good
+    # standing sends to will go through, which is what a Settings-managed,
+    # add-your-own-recipient flow needs. GMAIL_SMTP_APP_PASSWORD is a Gmail
+    # "App Password" (requires 2-Step Verification on that Google account),
+    # NOT the account's real password - never put the real password here.
+    GMAIL_SMTP_USER: str = ''
+    GMAIL_SMTP_APP_PASSWORD: str = ''
+    GMAIL_SMTP_FROM_NAME: str = 'TerraGrid Alerts'
+
+    # DEPRECATED, no longer read anywhere - Agency Alerts recipients are now
+    # managed at runtime via the Settings screen (backend/models/recipient.py's
+    # AlertRecipient table) instead of this env var. Re-add any existing
+    # recipients through Settings after this change ships; this value is
+    # not migrated automatically.
     EMAIL_ALERT_RECIPIENTS: str = ''
 
     # WhatsApp (via WAHA - self-hosted WhatsApp HTTP API, see docker-compose.yml)
@@ -37,11 +52,8 @@ class Settings(BaseSettings):
     WAHA_SESSION: str = 'default'
     # Must match the WAHA_API_KEY set on the waha service in docker-compose.yml
     WAHA_API_KEY: str = ''
-    # Comma-separated "Label:phone_number" pairs, e.g.
-    # "Demo Phone 1:919812345678,Demo Phone 2:919812345679" - a fixed,
-    # pre-approved demo list (not arbitrary user input) so Agency Alerts can
-    # prove the WhatsApp integration works without a real per-audience/
-    # per-city contact directory, which doesn't exist yet.
+    # DEPRECATED, no longer read anywhere - see EMAIL_ALERT_RECIPIENTS above,
+    # same reason (Settings screen replaces this env var).
     WHATSAPP_RECIPIENTS: str = ''
     
     # External APIs

@@ -18,20 +18,14 @@ import logging
 from typing import Dict, Any, List, Optional
 
 import httpx
+from sqlalchemy.orm import Session
 
 from backend.config import settings
-from .recipients import parse_labeled_recipients
+from . import alert_recipients
 
 logger = logging.getLogger(__name__)
 
-
-class WhatsAppRecipient:
-    def __init__(self, label: str, phone_number: str):
-        self.label = label
-        self.phone_number = phone_number
-
-    def to_dict(self) -> Dict[str, str]:
-        return {"label": self.label, "phone_number": self.phone_number}
+CHANNEL = "whatsapp"
 
 
 class WhatsAppService:
@@ -39,69 +33,63 @@ class WhatsAppService:
     Thin wrapper around WAHA's POST /api/sendText endpoint.
 
     Deliberately does NOT accept an arbitrary phone number from the
-    frontend - only phone numbers pre-approved via the WHATSAPP_RECIPIENTS
-    env var (get_recipients()) can be sent to. This keeps a WhatsApp "Send"
-    button from becoming an open relay to any number a client happens to
-    pass in.
+    frontend - only phone numbers on the operator-managed recipient list
+    (Settings screen, backed by the alert_recipients table) can be sent to.
+    This keeps a WhatsApp "Send" button from becoming an open relay to any
+    number a client happens to pass in, while still letting the operator
+    add/remove numbers at runtime without a redeploy.
     """
 
     def __init__(self):
         self.api_url = (settings.WAHA_API_URL or "").rstrip("/")
         self.session = settings.WAHA_SESSION or "default"
         self.api_key = settings.WAHA_API_KEY
-        self.recipients = self._parse_recipients(settings.WHATSAPP_RECIPIENTS)
-        self.is_configured = bool(self.api_url) and len(self.recipients) > 0
+        # Recipients live in the DB now (see alert_recipients.py), not here -
+        # WAHA_API_URL being set is the only thing fixed at startup.
+        self.is_configured = bool(self.api_url)
 
         if not self.is_configured:
             logger.warning(
-                "WhatsAppService not fully configured (WAHA_API_URL or "
-                "WHATSAPP_RECIPIENTS missing) - WhatsApp sends will be rejected."
+                "WhatsAppService not configured (WAHA_API_URL missing) - "
+                "WhatsApp sends will be rejected."
             )
 
-    @staticmethod
-    def _parse_recipients(raw: str) -> List[WhatsAppRecipient]:
-        """
-        Parses "Label:phone_number,Label2:phone_number2" into a list of
-        WhatsAppRecipient, via the shared Label:value parser (recipients.py)
-        also used by email alert recipients.
-        """
-        return [WhatsAppRecipient(r.label, r.value) for r in parse_labeled_recipients(raw)]
+    def get_recipients(self, db: Session) -> List[Dict[str, str]]:
+        """Operator-managed recipients (Settings screen), for the frontend's recipient picker."""
+        return [
+            {"label": r.label, "phone_number": r.value}
+            for r in alert_recipients.list_recipients(db, CHANNEL)
+        ]
 
-    def get_recipients(self) -> List[Dict[str, str]]:
-        """Pre-approved demo recipients, for the frontend's recipient picker."""
-        return [r.to_dict() for r in self.recipients]
-
-    def _find_recipient(self, phone_number: str) -> Optional[WhatsAppRecipient]:
-        return next((r for r in self.recipients if r.phone_number == phone_number), None)
-
-    async def send_text(self, phone_number: str, text: str) -> Dict[str, Any]:
+    async def send_text(self, db: Session, phone_number: str, text: str) -> Dict[str, Any]:
         """
         Sends a WhatsApp text message via WAHA's POST /api/sendText.
 
         Args:
-            phone_number: Must match one of the pre-approved WHATSAPP_RECIPIENTS
-                entries - rejected otherwise (see class docstring).
+            phone_number: Must match one of the recipients currently in the
+                alert_recipients table (channel='whatsapp') - rejected
+                otherwise (see class docstring).
             text: The message body to send verbatim.
 
         Returns:
             {"success": bool, "detail": str, "waha_response": dict | None}
             Never raises - callers get a structured result either way, since
             this is a user-initiated action that needs to surface a clear
-            error in the UI (WAHA not running, session not linked, etc.)
-            rather than a raw 500.
+            error in the UI (WAHA not running, session not linked, no
+            recipients configured, etc.) rather than a raw 500.
         """
         if not self.is_configured:
             return {
                 "success": False,
-                "detail": "WhatsApp sending isn't configured on this backend (WAHA_API_URL / WHATSAPP_RECIPIENTS missing).",
+                "detail": "WhatsApp sending isn't configured on this backend (WAHA_API_URL missing).",
                 "waha_response": None,
             }
 
-        recipient = self._find_recipient(phone_number)
+        recipient = alert_recipients.find_recipient_by_value(db, CHANNEL, phone_number)
         if not recipient:
             return {
                 "success": False,
-                "detail": "That phone number isn't one of the pre-approved demo recipients.",
+                "detail": "That phone number isn't on the configured recipient list. Add it in Settings first.",
                 "waha_response": None,
             }
 
@@ -111,7 +99,7 @@ class WhatsAppService:
 
         payload = {
             "session": self.session,
-            "chatId": f"{recipient.phone_number}@c.us",
+            "chatId": f"{recipient.value}@c.us",
             "text": text,
         }
 

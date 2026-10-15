@@ -8,8 +8,9 @@ MONITORED_CITIES already used for current-weather ingestion) and collapses them
 into a per-city, per-day risk escalation timeline (GREEN/YELLOW/ORANGE/RED).
 No other external API is called for this feature.
 """
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 import asyncio
 import logging
 from datetime import datetime
@@ -19,6 +20,8 @@ from ..services.decision_support import get_decision_support_service
 from ..services.whatsapp import get_whatsapp_service
 from ..services.notifications import notification_service
 from ..services.evacuation_zones import EvacuationZoneService
+from ..services import alert_recipients
+from ..database import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -417,17 +420,18 @@ async def get_agency_alerts(
 # separate, larger feature).
 
 @router.get("/alerts/recipients")
-async def get_whatsapp_recipients():
+async def get_whatsapp_recipients(db: Session = Depends(get_db)):
     """
-    Pre-approved demo WhatsApp recipients (from WHATSAPP_RECIPIENTS env var),
-    for the frontend's recipient picker. Deliberately not arbitrary - see
-    WhatsAppService's docstring for why sends are restricted to this list.
+    Operator-managed WhatsApp recipients (Settings screen, alert_recipients
+    table), for the frontend's recipient picker. Deliberately not arbitrary
+    - see WhatsAppService's docstring for why sends are restricted to this
+    list - but editable at runtime now, not fixed at deploy time.
     """
     service = get_whatsapp_service()
     return {
         "status": "success",
         "configured": service.is_configured,
-        "recipients": service.get_recipients(),
+        "recipients": service.get_recipients(db),
     }
 
 
@@ -437,15 +441,15 @@ class SendWhatsAppAlertRequest(BaseModel):
 
 
 @router.post("/alerts/send")
-async def send_whatsapp_alert(payload: SendWhatsAppAlertRequest):
+async def send_whatsapp_alert(payload: SendWhatsAppAlertRequest, db: Session = Depends(get_db)):
     """
-    Sends an already-drafted Agency Alert message to one pre-approved demo
+    Sends an already-drafted Agency Alert message to one operator-managed
     WhatsApp recipient via WAHA. The frontend sends the exact message text
     the operator reviewed on screen - this route does not regenerate or
     alter it.
     """
     service = get_whatsapp_service()
-    result = await service.send_text(payload.phone_number, payload.message)
+    result = await service.send_text(db, payload.phone_number, payload.message)
 
     if not result["success"]:
         raise HTTPException(status_code=502, detail=result["detail"])
@@ -456,20 +460,20 @@ async def send_whatsapp_alert(payload: SendWhatsAppAlertRequest):
     }
 
 
-# PR4 extension: manual email send for Agency Alerts, via Resend. Same
-# scope and allowlist reasoning as the WhatsApp send above - a fixed,
-# pre-approved demo recipient list (EMAIL_ALERT_RECIPIENTS), manual only.
+# PR4 extension: manual email send for Agency Alerts, via Gmail SMTP. Same
+# scope and allowlist reasoning as the WhatsApp send above - an
+# operator-managed recipient list (Settings screen), manual only.
 
 @router.get("/alerts/email-recipients")
-async def get_email_alert_recipients():
+async def get_email_alert_recipients(db: Session = Depends(get_db)):
     """
-    Pre-approved demo email recipients (from EMAIL_ALERT_RECIPIENTS env
-    var), for the frontend's email recipient picker.
+    Operator-managed email recipients (Settings screen, alert_recipients
+    table), for the frontend's email recipient picker.
     """
     return {
         "status": "success",
-        "configured": notification_service.is_configured,
-        "recipients": notification_service.get_alert_email_recipients(),
+        "configured": notification_service.gmail_configured,
+        "recipients": notification_service.get_alert_email_recipients(db),
     }
 
 
@@ -480,13 +484,14 @@ class SendEmailAlertRequest(BaseModel):
 
 
 @router.post("/alerts/send-email")
-async def send_email_alert(payload: SendEmailAlertRequest):
+async def send_email_alert(payload: SendEmailAlertRequest, db: Session = Depends(get_db)):
     """
-    Sends an already-drafted Agency Alert message to one pre-approved demo
-    email recipient via Resend. The frontend sends the exact subject/body
-    the operator reviewed on screen - this route does not regenerate it.
+    Sends an already-drafted Agency Alert message to one operator-managed
+    email recipient via Gmail SMTP. The frontend sends the exact
+    subject/body the operator reviewed on screen - this route does not
+    regenerate it.
     """
-    result = notification_service.send_alert_email(payload.email, payload.subject, payload.message)
+    result = notification_service.send_alert_email(db, payload.email, payload.subject, payload.message)
 
     if not result["success"]:
         raise HTTPException(status_code=502, detail=result["detail"])
@@ -495,3 +500,57 @@ async def send_email_alert(payload: SendEmailAlertRequest):
         "status": "success",
         "detail": result["detail"],
     }
+
+
+# --- Settings screen: manage Agency Alerts recipients (replaces the old
+# WHATSAPP_RECIPIENTS / EMAIL_ALERT_RECIPIENTS env vars - add/remove here
+# takes effect immediately, no Cloud Run redeploy). Shared shape for both
+# channels; the frontend picks the channel via the path. ---
+
+class AddRecipientRequest(BaseModel):
+    label: str
+    value: str
+
+
+def _validate_channel(channel: str) -> str:
+    if channel not in ("email", "whatsapp"):
+        raise HTTPException(status_code=400, detail="channel must be 'email' or 'whatsapp'.")
+    return channel
+
+
+@router.get("/settings/recipients/{channel}")
+async def list_alert_recipients(channel: str, db: Session = Depends(get_db)):
+    """All operator-managed recipients for one channel, for the Settings screen."""
+    channel = _validate_channel(channel)
+    recipients = alert_recipients.list_recipients(db, channel)
+    return {
+        "status": "success",
+        "recipients": [{"id": r.id, "label": r.label, "value": r.value} for r in recipients],
+    }
+
+
+@router.post("/settings/recipients/{channel}")
+async def add_alert_recipient(channel: str, payload: AddRecipientRequest, db: Session = Depends(get_db)):
+    """Adds one recipient to a channel's list. No format validation beyond non-empty - this is a small, operator-reviewed demo list."""
+    channel = _validate_channel(channel)
+    label = payload.label.strip()
+    value = payload.value.strip()
+    if not label or not value:
+        raise HTTPException(status_code=400, detail="Both label and value are required.")
+
+    recipient = alert_recipients.add_recipient(db, channel, label, value)
+    return {
+        "status": "success",
+        "recipient": {"id": recipient.id, "label": recipient.label, "value": recipient.value},
+    }
+
+
+@router.delete("/settings/recipients/{channel}/{recipient_id}")
+async def delete_alert_recipient(channel: str, recipient_id: int, db: Session = Depends(get_db)):
+    """Removes one recipient from a channel's list."""
+    channel = _validate_channel(channel)
+    deleted = alert_recipients.delete_recipient(db, channel, recipient_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Recipient not found.")
+
+    return {"status": "success", "detail": "Recipient removed."}
