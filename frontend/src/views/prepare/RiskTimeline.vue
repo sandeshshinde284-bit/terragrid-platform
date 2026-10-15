@@ -3,7 +3,9 @@
     <Header />
 
     <div class="timeline-container">
-      <div v-if="loading" class="empty-state glass-panel tactical-loading-container">
+      <!-- Only block the whole page on the true first load (no cities yet) -
+           see the matching comment in AgencyAlerts.vue for why. -->
+      <div v-if="loading && cities.length === 0" class="empty-state glass-panel tactical-loading-container">
         <div class="radar-ping-ring">
           <span class="radar-dot"></span>
         </div>
@@ -15,7 +17,7 @@
         </div>
       </div>
 
-      <div v-else-if="error" class="empty-state glass-panel">
+      <div v-else-if="error && cities.length === 0" class="empty-state glass-panel">
         <div class="empty-icon">⚠️</div>
         <h3>{{ $t('prepare.timeline.loadError') }}</h3>
         <p>{{ error }}</p>

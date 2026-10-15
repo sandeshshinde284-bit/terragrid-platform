@@ -3,7 +3,14 @@
     <Header />
 
     <div class="alerts-container">
-      <div v-if="loading" class="empty-state glass-panel tactical-loading-container">
+      <!-- Only block the whole page on the true first load (no cities yet).
+           A background refresh (ensureLoaded() re-fetching stale cache -
+           see PREPARE_FORECAST_FRESHNESS_MS in stores/index.ts) must not
+           nuke an already-good city list just because `loading` flipped
+           true again - that was replacing live data with the full tactical
+           loader every time someone returned to this tab after 5+ minutes
+           elsewhere (e.g. adding a recipient in Settings). -->
+      <div v-if="loading && cities.length === 0" class="empty-state glass-panel tactical-loading-container">
         <div class="radar-ping-ring">
           <span class="radar-dot"></span>
         </div>
@@ -15,7 +22,7 @@
         </div>
       </div>
 
-      <div v-else-if="error" class="empty-state glass-panel">
+      <div v-else-if="error && cities.length === 0" class="empty-state glass-panel">
         <div class="empty-icon">⚠️</div>
         <h3>{{ $t('prepare.agencyAlerts.loadError') }}</h3>
         <p>{{ error }}</p>
@@ -301,6 +308,20 @@ const selectedAlert = computed<AgencyAlert | null>(() => {
   return alertsPlan.value?.alerts.find(a => a.audience === selectedAudience.value) || alertsPlan.value?.alerts[0] || null
 })
 
+// Deterministic location/date header prepended to every outgoing send
+// (WhatsApp and email, below) - independent of whatever the AI-drafted
+// message text says, so a recipient always gets the place and date even
+// if the model's prose happens to omit it. Built from the same city/day
+// data already on screen, not a second guess.
+const locationLine = computed(() => {
+  const city = selectedCity.value
+  const day = worstDayConfidence.value
+  if (!city) return ''
+  const place = `📍 ${city.city}, ${countryName(city.country)}`
+  const when = day?.date ? ` — ${day.date}` : ''
+  return `${place}${when}\n\n`
+})
+
 const copyMessage = async (alert: AgencyAlert) => {
   try {
     await navigator.clipboard.writeText(alert.message)
@@ -358,8 +379,12 @@ const sendViaWhatsApp = async (alert: AgencyAlert) => {
       body: JSON.stringify({
         phone_number: selectedRecipientPhone.value,
         // Headline + body, exactly as shown on screen - this route sends
-        // verbatim what the operator reviewed, never regenerates it.
-        message: `${alert.headline}\n\n${alert.message}`,
+        // verbatim what the operator reviewed, never regenerates it. The
+        // location line is prepended deterministically here rather than
+        // trusting the AI-drafted text to always restate the city - the
+        // prompt now directs it to, but a recipient must never get an
+        // alert with no place name just because the model's prose skipped it.
+        message: `${locationLine.value}${alert.headline}\n\n${alert.message}`,
       }),
     })
 
@@ -422,8 +447,9 @@ const sendViaEmail = async (alert: AgencyAlert) => {
         email: selectedRecipientEmail.value,
         subject: alert.headline,
         // Exactly as shown on screen - this route sends verbatim what the
-        // operator reviewed, never regenerates it.
-        message: alert.message,
+        // operator reviewed, never regenerates it. Same deterministic
+        // location header as the WhatsApp send above.
+        message: `${locationLine.value}${alert.message}`,
       }),
     })
 

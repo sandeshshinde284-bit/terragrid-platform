@@ -52,6 +52,7 @@ websocket-client==1.7.0
 # Background Tasks
 apscheduler==3.10.4
 
-# Email
-resend==2.48.0
+# Email - Gmail SMTP only (stdlib smtplib), no external email SDK needed -
+# the Resend dependency was removed along with notifications.py's Resend
+# send path.
 pydantic-settings==2.2.1
