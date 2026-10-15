@@ -249,8 +249,29 @@
           @click="closeMobileMenu"
         >
           <span>⚙️</span>
-          <span>Settings</span>
+          <span>{{ $t('header.settings') }}</span>
         </RouterLink>
+
+        <!-- Mobile Language Selector -->
+        <label class="settings-item language-selector-mobile" for="mobile-header-language">
+          <span>🌐</span>
+          <span>{{ $t('header.language') }}:</span>
+          <select
+            id="mobile-header-language"
+            v-model="selectedLanguage"
+            @change="handleLanguageChange"
+            aria-label="Select language"
+            style="margin-left: auto; background: #0f172a; color: var(--accent-cyan); border: 1px solid rgba(56,189,248,0.4); border-radius: 4px; padding: 4px;"
+          >
+            <option value="EN">English</option>
+            <option value="DE">Deutsch</option>
+            <option value="ES">Español</option>
+            <option value="FR">Français</option>
+            <option value="IT">Italiano</option>
+            <option value="PL">Polski</option>
+            <option value="SV">Svenska</option>
+          </select>
+        </label>
 
         <!-- Dark/Light Mode Toggle -->
         <button
@@ -282,6 +303,10 @@ const route = useRoute()
 const appStore = useAppStore()
 const { locale } = useI18n()
 const selectedLanguage = ref(locale.value.toUpperCase())
+
+watch(locale, (newVal) => {
+  selectedLanguage.value = newVal.toUpperCase()
+})
 const is3D = computed(() => appStore.viewMode === '3d')
 const mobileMenuOpen = ref(false)
 

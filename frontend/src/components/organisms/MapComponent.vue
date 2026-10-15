@@ -7,34 +7,34 @@
       <button 
         :class="['mode-btn', { active: currentMode === 'tactical' }]"
         @click="setMode('tactical')"
-        title="Tactical Navigation Night Radar (Vivid midnight blue & glowing borders)"
+        :title="$t('mapFull.tacticalTooltip')"
       >
         <span class="mode-icon">🌙</span>
-        <span class="mode-label">TACTICAL</span>
+        <span class="mode-label">{{ $t('mapFull.tactical') }}</span>
       </button>
       <button 
         :class="['mode-btn', { active: currentMode === 'satellite' }]"
         @click="setMode('satellite')"
-        title="Real-World Photorealistic Satellite Recon"
+        :title="$t('mapFull.satelliteTooltip')"
       >
         <span class="mode-icon">🛰️</span>
-        <span class="mode-label">SATELLITE</span>
+        <span class="mode-label">{{ $t('mapFull.satellite') }}</span>
       </button>
       <button 
         :class="['mode-btn', { active: currentMode === 'globe' }]"
         @click="setMode('globe')"
-        title="3D Orbital Globe with Atmospheric Lighting"
+        :title="$t('mapFull.globeTooltip')"
       >
         <span class="mode-icon">🌐</span>
-        <span class="mode-label">3D GLOBE</span>
+        <span class="mode-label">{{ $t('mapFull.globe') }}</span>
       </button>
     </div>
 
     <!-- Custom Map Controls HUD (Top Right) -->
     <div class="map-controls glass-panel">
-      <button class="control-btn" @click="zoomIn" title="Zoom In">➕</button>
-      <button class="control-btn" @click="zoomOut" title="Zoom Out">➖</button>
-      <button class="control-btn" @click="resetView" title="Reset Global View">🎯</button>
+      <button class="control-btn" @click="zoomIn" :title="$t('mapFull.zoomIn')">➕</button>
+      <button class="control-btn" @click="zoomOut" :title="$t('mapFull.zoomOut')">➖</button>
+      <button class="control-btn" @click="resetView" :title="$t('mapFull.resetView')">🎯</button>
     </div>
   </div>
 </template>

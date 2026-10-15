@@ -24,9 +24,9 @@ class Settings(BaseSettings):
     # deliver to the Resend account's own email (verified against Resend's
     # docs - https://resend.com/docs/knowledge-base/403-error-resend-dev-domain),
     # so it could never reach recipients added at runtime via Settings.
-    RESEND_API_KEY: str = ''
-    RESEND_FROM_EMAIL: str = 'onboarding@resend.dev'
-    RESEND_FROM_NAME: str = 'TerraGrid Alerts'
+    # RESEND_API_KEY: str = ''
+    # RESEND_FROM_EMAIL: str = 'onboarding@resend.dev'
+    # RESEND_FROM_NAME: str = 'TerraGrid Alerts'
     # DEPRECATED, no longer read anywhere - RESPONSE phase's critical-alert
     # recipients are now managed at runtime via the Settings screen
     # (CRITICAL_EMAIL_CHANNEL in backend/models/recipient.py's AlertRecipient

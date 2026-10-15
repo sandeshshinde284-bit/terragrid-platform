@@ -9,10 +9,10 @@
           <div class="header-title-row">
             <h3>
               🌍 {{ $t('dashboard.activeIncidents') }}
-              <span v-if="isLoading" class="loading-indicator">⟳ Updating…</span>
+              <span v-if="isLoading" class="loading-indicator">⟳ {{ $t('dashboardFilters.updating') }}</span>
             </h3>
             <span class="live-badge" :class="{ connected: isConnected }">
-              {{ isConnected ? '🟢 Live Updates' : '🔴 Offline' }}
+              {{ isConnected ? $t('dashboardFilters.liveUpdates') : $t('dashboardFilters.offline') }}
             </span>
           </div>
 
@@ -23,7 +23,7 @@
               <input
                 v-model="dashboardSearchQuery"
                 type="text"
-                placeholder="Search city, hazard, or country..."
+                :placeholder="$t('dashboardFilters.searchPlaceholder')"
                 class="sidebar-search-input"
               />
               <button
@@ -37,10 +37,10 @@
           
           <!-- Country Filter Buttons -->
           <div class="country-filter-section">
-            <div class="filter-label">Filter by Country:</div>
+            <div class="filter-label">{{ $t('dashboardFilters.filterByCountry') }}</div>
             <select id="country-select" aria-label="Filter by Country" v-model="selectedCountry" class="country-dropdown" :disabled="isLoading">
-              <option v-if="isLoading" value="" disabled>⏳ Scanning regions...</option>
-              <option v-else :value="null">All Countries</option>
+              <option v-if="isLoading" value="" disabled>⏳ {{ $t('dashboardFilters.scanningRegions') }}</option>
+              <option v-else :value="null">{{ $t('dashboardFilters.allCountries') }}</option>
               <option v-for="country in availableCountries" :key="country" :value="country">
                 {{ getCountryName(country) }}
               </option>
@@ -50,13 +50,13 @@
           <!-- Event Type & Sort Controls -->
           <div class="filter-controls">
             <select v-model="selectedEventType" class="event-type-dropdown">
-              <option value="">All Event Types</option>
-              <option value="earthquake">🔴 Earthquake</option>
-              <option value="flood">🌊 Flood</option>
-              <option value="storm">⚡ Storm</option>
-              <option value="fire">🔥 Fire</option>
-              <option value="volcano">🌋 Volcano</option>
-              <option value="weather">🌤️ Weather</option>
+              <option value="">{{ $t('dashboardFilters.allEventTypes') }}</option>
+              <option value="earthquake">{{ $t('dashboardFilters.earthquake') }}</option>
+              <option value="flood">{{ $t('dashboardFilters.flood') }}</option>
+              <option value="storm">{{ $t('dashboardFilters.storm') }}</option>
+              <option value="fire">{{ $t('dashboardFilters.fire') }}</option>
+              <option value="volcano">{{ $t('dashboardFilters.volcano') }}</option>
+              <option value="weather">{{ $t('dashboardFilters.weather') }}</option>
             </select>
             <select v-model="sortBy" class="sort-dropdown">
               <option value="threat">↓ Threat Score</option>
@@ -189,7 +189,7 @@
 
             <!-- 4. SITUATION BRIEFING (Boxed & Padded) -->
             <div class="summary-card glass-subpanel">
-              <span class="card-section-label">SITUATION SUMMARY</span>
+              <span class="card-section-label">Situation Summary</span>
               <p class="summary-text">
                 {{ aiPlan?.severity_assessment || `${formatIncidentType(selectedIncidentData.type, selectedIncidentData.location)} activity near ${selectedIncidentData.location} is currently ${selectedIncidentData.status} and remains under active monitoring.` }}
               </p>
@@ -304,7 +304,7 @@
 
         <!-- Global Situation Assessment Summary -->
         <div class="ai-overview-card glass-subpanel">
-          <div class="overview-title">GLOBAL SITUATION ASSESSMENT</div>
+          <div class="overview-title">Global Situation Assessment</div>
           <p class="overview-text">
             Autonomous threat detection is actively monitoring 
             <strong style="color: #38bdf8;">{{ filteredIncidents.length }} active hazards</strong>. 
@@ -312,7 +312,7 @@
           </p>
         </div>
 
-        <div class="insights-subheading">CRITICAL PRIORITY ACTIONS:</div>
+        <div class="insights-subheading">Critical Priority Actions:</div>
 
         <div v-if="liveCriticalInsights.length" class="insights-list">
           <div 
@@ -1779,16 +1779,16 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 }
 
 .label {
-  font-size: 11px;
-  color: #94a3b8;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.3px;
 }
 
 .value {
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   color: #ffffff;
 }
 

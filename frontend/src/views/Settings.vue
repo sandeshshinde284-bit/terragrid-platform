@@ -5,8 +5,8 @@
     <div class="settings-container">
       <div class="settings-hero glass-panel">
         <div class="hero-left">
-          <h2>Settings</h2>
-          <span class="hero-meta">Manage Agency Alerts recipients - takes effect immediately, no redeploy needed</span>
+          <h2>{{ $t('settings.title') }}</h2>
+          <span class="hero-meta">{{ $t('settings.subtitle') }}</span>
         </div>
       </div>
 
@@ -15,22 +15,18 @@
         <section class="glass-panel recipient-card">
           <div class="card-heading">
             <span class="card-icon">💬</span>
-            <h3>WhatsApp Recipients</h3>
+            <h3>{{ $t('settings.whatsappTitle') }}</h3>
           </div>
           <p class="card-desc">
-            Numbers Agency Alerts can send to from the PREPARE phase. Delivered via a real,
-            QR-linked WhatsApp session - any number can receive a message, so only add numbers
-            you intend to actually message.
+            {{ $t('settings.whatsappDesc') }}
           </p>
           <p class="card-note">
-            ℹ️ Sent from the TerraGrid operator's personal WhatsApp (via a linked WhatsApp Web
-            session), not a business account - it'll arrive from a real phone number, not
-            "TerraGrid."
+            ℹ️ {{ $t('settings.whatsappNote') }}
           </p>
 
-          <div v-if="whatsappLoading" class="recipient-status">Loading…</div>
+          <div v-if="whatsappLoading" class="recipient-status">{{ $t('settings.loading') }}</div>
           <div v-else-if="whatsappRecipients.length === 0" class="recipient-status empty">
-            No WhatsApp recipients configured yet.
+            {{ $t('settings.noWhatsapp') }}
           </div>
           <ul v-else class="recipient-list">
             <li v-for="r in whatsappRecipients" :key="r.id" class="recipient-row">
@@ -54,17 +50,17 @@
             <input
               v-model="whatsappForm.label"
               type="text"
-              placeholder="Label (e.g. Demo Phone 1)"
+              :placeholder="$t('settings.labelPlaceholder')"
               class="form-input"
             />
             <input
               v-model="whatsappForm.value"
               type="text"
-              placeholder="Phone number, e.g. 919812345678"
+              :placeholder="$t('settings.phonePlaceholder')"
               class="form-input"
             />
             <button type="submit" class="add-btn" :disabled="addingWhatsapp">
-              {{ addingWhatsapp ? 'Adding…' : '+ Add' }}
+              {{ addingWhatsapp ? $t('settings.adding') : $t('settings.addBtn') }}
             </button>
           </form>
           <p v-if="whatsappFormError" class="form-error">{{ whatsappFormError }}</p>
@@ -74,15 +70,15 @@
         <section class="glass-panel recipient-card">
           <div class="card-heading">
             <span class="card-icon">✉️</span>
-            <h3>Email Recipients</h3>
+            <h3>{{ $t('settings.emailTitle') }}</h3>
           </div>
           <p class="card-desc">
-            Addresses Agency Alerts can send to from the PREPARE phase, via Gmail SMTP.
+            {{ $t('settings.emailDesc') }}
           </p>
 
-          <div v-if="emailLoading" class="recipient-status">Loading…</div>
+          <div v-if="emailLoading" class="recipient-status">{{ $t('settings.loading') }}</div>
           <div v-else-if="emailRecipients.length === 0" class="recipient-status empty">
-            No email recipients configured yet.
+            {{ $t('settings.noEmail') }}
           </div>
           <ul v-else class="recipient-list">
             <li v-for="r in emailRecipients" :key="r.id" class="recipient-row">
@@ -106,17 +102,17 @@
             <input
               v-model="emailForm.label"
               type="text"
-              placeholder="Label (e.g. Judge Contact)"
+              :placeholder="$t('settings.labelPlaceholder')"
               class="form-input"
             />
             <input
               v-model="emailForm.value"
               type="email"
-              placeholder="name@example.com"
+              :placeholder="$t('settings.emailPlaceholder')"
               class="form-input"
             />
             <button type="submit" class="add-btn" :disabled="addingEmail">
-              {{ addingEmail ? 'Adding…' : '+ Add' }}
+              {{ addingEmail ? $t('settings.adding') : $t('settings.addBtn') }}
             </button>
           </form>
           <p v-if="emailFormError" class="form-error">{{ emailFormError }}</p>
@@ -126,18 +122,15 @@
         <section class="glass-panel recipient-card">
           <div class="card-heading">
             <span class="card-icon">🚨</span>
-            <h3>Critical Alert Recipients</h3>
+            <h3>{{ $t('settings.criticalTitle') }}</h3>
           </div>
           <p class="card-desc">
-            Who gets the automatic email when the RESPONSE phase detects a high-threat incident
-            (sent via Gmail SMTP) - a separate list from the Agency Alerts recipients above, so
-            testing one never changes who receives real incident alerts.
+            {{ $t('settings.criticalDesc') }}
           </p>
 
-          <div v-if="criticalLoading" class="recipient-status">Loading…</div>
+          <div v-if="criticalLoading" class="recipient-status">{{ $t('settings.loading') }}</div>
           <div v-else-if="criticalRecipients.length === 0" class="recipient-status empty">
-            No critical alert recipients configured yet - the RESPONSE phase won't send any
-            automatic alerts until at least one is added.
+            {{ $t('settings.noCritical') }}
           </div>
           <ul v-else class="recipient-list">
             <li v-for="r in criticalRecipients" :key="r.id" class="recipient-row">
@@ -161,17 +154,17 @@
             <input
               v-model="criticalForm.label"
               type="text"
-              placeholder="Label (e.g. Duty Officer)"
+              :placeholder="$t('settings.labelPlaceholder')"
               class="form-input"
             />
             <input
               v-model="criticalForm.value"
               type="email"
-              placeholder="name@example.com"
+              :placeholder="$t('settings.emailPlaceholder')"
               class="form-input"
             />
             <button type="submit" class="add-btn" :disabled="addingCritical">
-              {{ addingCritical ? 'Adding…' : '+ Add' }}
+              {{ addingCritical ? $t('settings.adding') : $t('settings.addBtn') }}
             </button>
           </form>
           <p v-if="criticalFormError" class="form-error">{{ criticalFormError }}</p>

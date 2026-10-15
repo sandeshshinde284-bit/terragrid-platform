@@ -11,10 +11,10 @@
     <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
       <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div>
-          <span class="section-kicker" style="color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: none; display: block;">Automated Dispatch</span>
-          <h3 style="margin: 0; font-size: 18px; color: #f8fafc;">Commander Alert Engine</h3>
+          <span class="section-kicker" style="color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: none; display: block;">{{ $t('alertsTab.live') }}</span>
+          <h3 style="margin: 0; font-size: 18px; color: #f8fafc;">{{ $t('alertsTab.commanderAlertEngine') }}</h3>
         </div>
-        <span class="ai-chip live" style="font-size: 16px; font-weight: 800; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 4px 8px; border-radius: 4px;">LIVE</span>
+        <span class="ai-chip live" style="font-size: 16px; font-weight: 800; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 4px 8px; border-radius: 4px;">{{ $t('alertsTab.live') }}</span>
       </div>
 
       <div class="dispatch-log">
@@ -22,15 +22,14 @@
           <div class="log-icon" style="font-size: 24px;">📧</div>
           <div class="log-content" style="flex: 1;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-              <strong style="color: #f8fafc; font-size: 16px;">Tactical HTML Brief Dispatched</strong>
-              <span style="color: #4ade80; font-weight: 700; font-size: 16px;">DELIVERED</span>
+              <strong style="color: #f8fafc; font-size: 16px;">{{ $t('alertsTab.tacticalHtmlDispatched') }}</strong>
+              <span style="color: #4ade80; font-weight: 700; font-size: 16px;">{{ $t('alertsTab.delivered') }}</span>
             </div>
-            <p style="margin: 0 0 8px 0; color: #cbd5e1; font-size: 15px;">Recipient: <strong style="color: #38bdf8; font-family: ui-monospace, monospace; font-weight: normal;">sandeshshinde284@gmail.com</strong></p>
+            <p style="margin: 0 0 8px 0; color: #cbd5e1; font-size: 15px;">{{ $t('alertsTab.recipient') }} <strong style="color: #38bdf8; font-family: ui-monospace, monospace; font-weight: normal;">sandeshshinde284@gmail.com</strong></p>
           </div>
         </div>
       </div>
     </article>
-
     <!-- Multi-Channel Expansion (Phase 2) -->
     <div class="content-grid two-columns" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px;">
       

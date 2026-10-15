@@ -13,16 +13,16 @@
         <div v-for="(cascade, idx) in deepDossier.cascade_predictions" :key="idx" class="cascade-card glass-panel" :class="'cascade-border-' + cascade.color_code" style="padding: 20px; border-left-width: 4px;">
           <div class="cascade-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span class="time-tag" style="font-weight: 800; font-size: 16px;" :class="'text-' + cascade.color_code">
-              ⏱️ +{{ cascade.timeframe_hours }} hours
+              ⏱️ +{{ cascade.timeframe_hours }} {{ $t('historyTab.hours') }}
             </span>
             <span class="delta-badge" style="font-family: ui-monospace, monospace; font-size: 18px; font-weight: 700; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 4px;">
-              +{{ cascade.perimeter_delta_km2.toFixed(1) }} km² EXPANSION
+              +{{ cascade.perimeter_delta_km2.toFixed(1) }} km² {{ $t('historyTab.expansion') }}
             </span>
           </div>
           
           <div class="cascade-vector" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--glass-border);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: var(--text-secondary); font-size: 16px; text-transform: uppercase; font-weight: 700;">Wind Expansion Factor:</span>
+              <span style="color: var(--text-secondary); font-size: 16px; text-transform: uppercase; font-weight: 700;">{{ $t('historyTab.windExpansion') }}</span>
               <span style="color: var(--accent-cyan); font-family: ui-monospace, monospace; font-weight: 700;">{{ cascade.wind_influence_percent }}%</span>
             </div>
             <div class="progress-track" style="margin-top: 6px; background: var(--bg-panel); border: 1px solid var(--glass-border); height: 6px; border-radius: 99px; overflow: hidden;">
@@ -31,9 +31,9 @@
           </div>
           
           <div class="cascade-risks" style="display: flex; flex-direction: column; gap: 12px;">
-            <span style="color: var(--text-secondary); font-size: 16px; text-transform: uppercase; font-weight: 700;">Facilities Entering Danger Zone:</span>
+            <span style="color: var(--text-secondary); font-size: 16px; text-transform: uppercase; font-weight: 700;">{{ $t('historyTab.dangerZone') }}</span>
             <div v-if="!cascade.primary_risks || cascade.primary_risks.length === 0" style="color: var(--text-muted); font-size: 16px; font-style: italic;">
-              No major infrastructure predicted to fall within perimeter.
+              {{ $t('historyTab.noInfrastructure') }}
             </div>
             <div v-for="(risk, rIdx) in cascade.primary_risks" :key="rIdx" class="risk-group">
               <div style="display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 4px;">
@@ -52,12 +52,12 @@
     <div v-else-if="!isBackendMockModeEnabled" class="phase2-center-container">
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🔮</div>
-        <div class="phase2-tag">AI RECONNAISSANCE PENDING</div>
-        <h2 style="font-size:20px; font-weight:700; color: var(--text-primary); margin-bottom:12px;">Predictive Cascade Simulation</h2>
-        <p style="color: var(--text-secondary); font-size: 16px; margin-bottom:18px;">Launch the cognitive AI reconnaissance to model 6-hour, 12-hour, and 24-hour crisis expansion trajectories using atmospheric wind vectors.</p>
+        <div class="phase2-tag">{{ $t('historyTab.aiPending') }}</div>
+        <h2 style="font-size:20px; font-weight:700; color: var(--text-primary); margin-bottom:12px;">{{ $t('historyTab.predictiveSimulation') }}</h2>
+        <p style="color: var(--text-secondary); font-size: 16px; margin-bottom:18px;">{{ $t('historyTab.simulationDesc') }}</p>
         <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
           <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
-          {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Launch Tactical AI Reconnaissance' }}
+          {{ isAnalyzingDossier ? $t('historyTab.synthesizing') : $t('historyTab.launchRecon') }}
         </button>
       </div>
     </div>

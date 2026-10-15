@@ -83,7 +83,7 @@
               </div>
 
               <div class="progress-bar-row glass-panel" v-if="completionStats.total > 0">
-                <span class="progress-label">{{ completionStats.done }} / {{ completionStats.total }} complete</span>
+                <span class="progress-label">{{ completionStats.done }} / {{ completionStats.total }} {{ $t('prepare.checklist.complete') }}</span>
                 <div class="progress-track">
                   <div class="progress-fill" :style="{ width: completionStats.pct + '%' }"></div>
                 </div>
@@ -98,7 +98,7 @@
                   :class="{ active: selectedAgency === 'ALL' }"
                   @click="selectedAgency = 'ALL'"
                 >
-                  All agencies <span class="agency-count">{{ actionsPlan.actions.length }}</span>
+                  {{ $t('prepare.checklist.allAgencies') }} <span class="agency-count">{{ actionsPlan.actions.length }}</span>
                 </button>
                 <button
                   v-for="opt in agencyOptions"
@@ -158,9 +158,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
+
+const { t } = useI18n()
 
 type CityForecast = PrepareCityForecast
 
@@ -368,9 +371,9 @@ const priorityTiers = computed(() => {
   const all = actionsPlan.value?.actions || []
   const actions = selectedAgency.value === 'ALL' ? all : all.filter(a => a.agency === selectedAgency.value)
   return [
-    { priority: 1, label: 'Immediate', className: 'immediate', actions: actions.filter(a => a.priority === 1) },
-    { priority: 2, label: 'High Priority', className: 'high', actions: actions.filter(a => a.priority === 2) },
-    { priority: 3, label: 'Staged', className: 'staged', actions: actions.filter(a => a.priority === 3) },
+    { priority: 1, label: t('prepare.checklist.tierImmediate'), className: 'immediate', actions: actions.filter(a => a.priority === 1) },
+    { priority: 2, label: t('prepare.checklist.tierHigh'), className: 'high', actions: actions.filter(a => a.priority === 2) },
+    { priority: 3, label: t('prepare.checklist.tierStaged'), className: 'staged', actions: actions.filter(a => a.priority === 3) },
   ]
 })
 

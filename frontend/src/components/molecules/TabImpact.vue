@@ -12,7 +12,7 @@
       <!-- Critical Infrastructure Table -->
       <article class="glass-panel infrastructure-panel" style="padding: 20px; margin-bottom: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">Vulnerability Matrix</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Exposed Critical Infrastructure</h3></div>
+          <div><span class="section-kicker">{{ $t('impactTab.vulnerabilityMatrix') }}</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">{{ $t('impactTab.exposedInfrastructure') }}</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">AI-IA-01</span>
         </div>
         <div class="ai-facility-grid">
@@ -23,10 +23,10 @@
             </div>
             <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.3;">{{ fac.facility_name }}</h4>
             <div class="facility-meta">
-              <span>📍 Distance: {{ fac.distance_km }} km from epicenter</span>
+              <span>📍 {{ $t('impactTab.distance') }} {{ fac.distance_km }} km {{ $t('impactTab.fromEpicenter') }}</span>
             </div>
             <div class="facility-action">
-              <strong>Directive:</strong> {{ fac.action_required }}
+              <strong>{{ $t('impactTab.directive') }}</strong> {{ fac.action_required }}
             </div>
             <div class="facility-confidence" v-if="fac.confidence !== undefined" style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 18px; color: var(--text-secondary);">
              <div style="flex: 1; background: rgba(255, 255, 255, 0.08); border-radius: 3px; height: 5px; overflow: hidden;">
@@ -41,22 +41,22 @@
       <!-- Vulnerable Demographics -->
       <article class="glass-panel demographics-panel" style="padding: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">Human Impact</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Vulnerable Demographics & Facilities</h3></div>
+          <div><span class="section-kicker">{{ $t('impactTab.humanImpact') }}</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">{{ $t('impactTab.vulnerableDemographics') }}</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">AI-IA-02</span>
         </div>
         <div class="demographics-body">
           <div class="demo-stat-row" style="display: flex; gap: 24px; margin-bottom: 14px; flex-wrap: wrap;">
             <div class="demo-stat">
-              <span class="stat-label" style="display: block; font-size: 13px; color: rgba(255,255,255,0.65); text-transform: none; font-weight: 600;">Estimated Displaced Citizens: </span>
+              <span class="stat-label" style="display: block; font-size: 13px; color: rgba(255,255,255,0.65); text-transform: none; font-weight: 600;">{{ $t('impactTab.estDisplaced') }} </span>
               <strong class="stat-value" style="font-size: 20px; color: var(--accent-cyan); font-weight: 700; margin-top: 4px; display: block;">{{ deepDossier.vulnerable_demographics.estimated_displaced_citizens.toLocaleString() }}</strong>
             </div>
             <div class="demo-stat">
-              <span class="stat-label" style="display: block; font-size: 13px; color: rgba(255,255,255,0.65); text-transform: none; font-weight: 600;">Special Needs Transport: </span>
+              <span class="stat-label" style="display: block; font-size: 13px; color: rgba(255,255,255,0.65); text-transform: none; font-weight: 600;">{{ $t('impactTab.specialNeeds') }} </span>
               <span class="stat-desc" style="font-size: 16px; color: rgba(255,255,255,0.9); margin-top: 4px; display: block;">{{ deepDossier.vulnerable_demographics.special_needs_assistance_required }}</span>
             </div>
           </div>
           <div class="facilities-at-risk-list" style="margin-top: 14px;">
-            <strong style="color: var(--accent-cyan); font-size: 14px; text-transform: none; font-weight: 600;">High-Priority Facilities at Risk:</strong>
+            <strong style="color: var(--accent-cyan); font-size: 14px; text-transform: none; font-weight: 600;">{{ $t('impactTab.highPriorityAtRisk') }}</strong>
             <ul style="margin: 8px 0 0 16px; color: var(--text-secondary); font-size: 18px;">
               <li v-for="f in deepDossier.vulnerable_demographics.facilities_at_risk" :key="f">
                 {{ f }}
@@ -70,9 +70,9 @@
     <div v-else-if="!isBackendMockModeEnabled" class="phase2-center-container">
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🏢</div>
-        <div class="phase2-tag">AI RECONNAISSANCE PENDING</div>
-        <h2 style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px 0;">Predictive Impact Assessment</h2>
-        <p style="font-size: 16px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 18px 0;">Launch the cognitive AI reconnaissance to generate unscripted critical infrastructure exposure, hospital vulnerabilities, and demographic displacement models.</p>
+        <div class="phase2-tag">{{ $t('impactTab.aiPending') }}</div>
+        <h2 style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px 0;">{{ $t('impactTab.predictiveImpact') }}</h2>
+        <p style="font-size: 16px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 18px 0;">{{ $t('impactTab.impactDesc') }}</p>
         <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
           <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
           {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Launch Tactical AI Reconnaissance' }}

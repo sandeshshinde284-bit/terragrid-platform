@@ -48,10 +48,10 @@
         >
           <span class="no-recipients-icon">⚙️</span>
           <div class="no-recipients-text">
-            <strong>No WhatsApp or email recipients configured yet.</strong>
-            <span>Add at least one before you can send an alert from here.</span>
+            <strong>{{ $t('prepare.agencyAlerts.noRecipientsTitle') }}</strong>
+            <span>{{ $t('prepare.agencyAlerts.noRecipientsDesc') }}</span>
           </div>
-          <RouterLink to="/settings" class="no-recipients-cta">Go to Settings →</RouterLink>
+          <RouterLink to="/settings" class="no-recipients-cta">{{ $t('prepare.agencyAlerts.goToSettings') }}</RouterLink>
         </div>
 
         <div class="master-detail">
@@ -131,7 +131,7 @@
                   <span class="channel-chip">{{ selectedAlert.channel }}</span>
                   <div class="alert-top-actions">
                     <button type="button" class="copy-btn" @click="copyMessage(selectedAlert)">
-                      {{ justCopied ? '✅ Copied' : '📋 Copy message' }}
+                      {{ justCopied ? $t('prepare.agencyAlerts.copied') : $t('prepare.agencyAlerts.copyMessage') }}
                     </button>
                     <template v-if="whatsappRecipients.length > 0">
                       <select v-model="selectedRecipientPhone" class="recipient-select" aria-label="WhatsApp recipient">
@@ -145,11 +145,11 @@
                         :disabled="sendingWhatsApp"
                         @click="sendViaWhatsApp(selectedAlert)"
                       >
-                        {{ sendingWhatsApp ? 'Sending…' : '💬 Send via WhatsApp' }}
+                        {{ sendingWhatsApp ? $t('prepare.agencyAlerts.sending') : $t('prepare.agencyAlerts.sendWhatsApp') }}
                       </button>
                     </template>
                     <RouterLink v-else-if="!recipientsLoading" to="/settings" class="configure-recipients-link">
-                      💬 Add a WhatsApp recipient in Settings
+                      {{ $t('prepare.agencyAlerts.addWhatsAppSettings') }}
                     </RouterLink>
                     <template v-if="emailRecipients.length > 0">
                       <select v-model="selectedRecipientEmail" class="recipient-select" aria-label="Email recipient">
@@ -163,18 +163,18 @@
                         :disabled="sendingEmail"
                         @click="sendViaEmail(selectedAlert)"
                       >
-                        {{ sendingEmail ? 'Sending…' : '✉️ Send via Email' }}
+                        {{ sendingEmail ? $t('prepare.agencyAlerts.sending') : $t('prepare.agencyAlerts.sendEmail') }}
                       </button>
                     </template>
                     <RouterLink v-else-if="!recipientsLoading" to="/settings" class="configure-recipients-link">
-                      ✉️ Add an email recipient in Settings
+                      {{ $t('prepare.agencyAlerts.addEmailSettings') }}
                     </RouterLink>
                   </div>
                 </div>
                 <h3 class="alert-headline">{{ selectedAlert.headline }}</h3>
                 <p class="alert-message">{{ selectedAlert.message }}</p>
                 <p class="alert-tone-rationale">
-                  <span class="rationale-label">Why this tone:</span> {{ selectedAlert.tone_rationale }}
+                  <span class="rationale-label">{{ $t('prepare.agencyAlerts.whyThisTone') }}</span> {{ selectedAlert.tone_rationale }}
                 </p>
                 <p v-if="sendResult" class="send-result" :class="sendResult.success ? 'success' : 'error'">
                   {{ sendResult.success ? '✅' : '⚠️' }} {{ sendResult.detail }}

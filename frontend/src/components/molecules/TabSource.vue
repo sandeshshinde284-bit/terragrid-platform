@@ -13,11 +13,11 @@
       <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
           <div>
-            <span class="section-kicker">Primary Source</span>
+            <span class="section-kicker">{{ $t('sourceTab.primarySource') }}</span>
             <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">{{ incident.source || 'Unknown' }}</h3>
           </div>
           <div style="text-align: right;">
-            <span style="color: var(--text-secondary); font-size: 16px;">Detection Time:</span>
+            <span style="color: var(--text-secondary); font-size: 16px;">{{ $t('sourceTab.detectionTime') }}</span>
             <div style="color: #4ade80; font-weight: 600; font-family: ui-monospace, monospace; font-size: 16px;">
               {{ formatTime(incident.event_timestamp) }}
             </div>
@@ -27,7 +27,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
           <!-- Column 1: API Details -->
           <div style="background: var(--bg-subtle); padding: 12px; border-radius: 6px;">
-            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px; letter-spacing: 0.05em;">API Source</small>
+            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px; letter-spacing: 0.05em;">{{ $t('sourceTab.apiSource') }}</small>
             <div style="color: var(--text-primary); font-weight: 600; margin-top: 6px; font-size: 16px;">
               {{ getSourceDetails(incident.source).name }}
             </div>
@@ -36,7 +36,7 @@
 
           <!-- Column 2: Confidence Score -->
           <div style="background: var(--bg-subtle); padding: 12px; border-radius: 6px;">
-            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px; letter-spacing: 0.05em;">Confidence</small>
+            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px; letter-spacing: 0.05em;">{{ $t('sourceTab.confidence') }}</small>
             <div :style="{ color: getConfidenceColor(incident.confidence * 100), fontWeight: '600', marginTop: '6px', fontSize: '18px', fontFamily: 'ui-monospace, monospace' }">
               {{ Math.round(incident.confidence * 100) }}%
             </div>
@@ -47,7 +47,7 @@
 
           <!-- Column 3: Data Freshness -->
           <div style="background: var(--bg-subtle); padding: 12px; border-radius: 6px;">
-            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px; letter-spacing: 0.05em;">Data Age</small>
+            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px; letter-spacing: 0.05em;">{{ $t('sourceTab.dataAge') }}</small>
             <div style="color: var(--text-primary); font-weight: 600; margin-top: 6px; font-size: 16px; font-family: ui-monospace, monospace;">
               {{ getDataAge() }} ago
             </div>
@@ -62,7 +62,7 @@
       <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
           <span class="section-kicker">Incident Data from {{ incident.source }}</span>
-          <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Raw telemetry that was ingested</h3>
+          <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">{{ $t('sourceTab.rawTelemetry') }}</h3>
         </div>
 
         <div style="background: var(--bg-overlay); padding: 12px; border-radius: 6px; border-left: 2px solid var(--accent-cyan); font-family: ui-monospace, monospace; font-size: 16px; color: var(--text-secondary); line-height: 1.6; max-height: 300px; overflow-y: auto;">
@@ -75,13 +75,13 @@
       <!-- Location-Specific Accuracy -->
       <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
-          <span class="section-kicker">Location Accuracy</span>
+          <span class="section-kicker">{{ $t('sourceTab.locationAccuracy') }}</span>
           <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">{{ incident.location_name }} ({{ getCountry(incident) }})</h3>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           <div style="background: var(--bg-subtle); padding: 12px; border-radius: 6px;">
-            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px;">Historical Accuracy</small>
+            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px;">{{ $t('sourceTab.historicalAccuracy') }}</small>
             <div style="color: #4ade80; font-weight: 600; margin-top: 4px; font-size: 16px;">
               {{ getSourceDetails(incident.source).accuracy }}%
             </div>
@@ -91,7 +91,7 @@
           </div>
 
           <div style="background: var(--bg-subtle); padding: 12px; border-radius: 6px;">
-            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px;">Known Limitations</small>
+            <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px;">{{ $t('sourceTab.knownLimitations') }}</small>
             <small style="color: #fbbf24; margin-top: 4px; display: block; font-size: 16px;">
               {{ getSourceDetails(incident.source).limitations }}
             </small>
@@ -102,8 +102,8 @@
       <!-- Audit Trail: Who accessed this data -->
       <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
-          <span class="section-kicker">Audit Trail</span>
-          <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Data custody & access log</h3>
+          <span class="section-kicker">{{ $t('sourceTab.auditTrail') }}</span>
+          <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">{{ $t('sourceTab.custodyLog') }}</h3>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -111,15 +111,15 @@
             <div style="color: var(--text-primary); font-weight: 600;">{{ log.action }}</div>
             <small style="color: var(--text-secondary);">{{ log.timestamp }} by {{ log.actor }}</small>
           </div>
-          <small v-if="getAuditLog().length === 0" style="color: var(--text-muted); font-style: italic;">No access logs recorded yet</small>
+          <small v-if="getAuditLog().length === 0" style="color: var(--text-muted); font-style: italic;">{{ $t('sourceTab.noAccessLogs') }}</small>
         </div>
       </article>
 
       <!-- Data Completeness -->
       <article class="glass-panel" style="padding: 20px;">
         <div class="panel-heading" style="margin-bottom: 16px;">
-          <span class="section-kicker">Data Completeness</span>
-          <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Which fields are populated from this source</h3>
+          <span class="section-kicker">{{ $t('sourceTab.dataCompleteness') }}</span>
+          <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">{{ $t('sourceTab.fieldsPopulated') }}</h3>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
@@ -136,8 +136,8 @@
     <!-- Empty State -->
     <div v-else style="text-align: center; padding: 40px; color: var(--text-secondary);">
       <div style="font-size: 48px; margin-bottom: 12px;">⌁</div>
-      <h3 style="color: var(--text-secondary);">No incident data available</h3>
-      <p>Select an incident to view its source of truth information</p>
+      <h3 style="color: var(--text-secondary);">{{ $t('sourceTab.noIncidentData') }}</h3>
+      <p>{{ $t('sourceTab.selectIncidentPrompt') }}</p>
     </div>
   </div>
 </template>

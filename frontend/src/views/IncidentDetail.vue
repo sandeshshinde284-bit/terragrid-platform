@@ -15,7 +15,7 @@
             <div class="scanner-header">
               <span class="scanner-radar-icon">📡</span>
               <div class="scanner-titles">
-                <h4> ANALYZING INCIDENT DATA & GENERATING RESPONSE PLAN</h4>
+                <h4>Analyzing incident data and generating response plan</h4>
                 <small>Gathering data from multiple sources...</small>
               </div>
             </div>
@@ -54,6 +54,23 @@
         <div class="header-actions">
           <button class="ghost-button" type="button" @click="goTo('/')">{{ $t('detail.dashboardBtn') }}</button>
           <button class="ghost-button" type="button" @click="goTo('/map')">{{ $t('detail.liveMapBtn') }}</button>
+          <label class="language-selector" for="detail-header-language">
+            <span>🌐</span>
+            <select
+              id="detail-header-language"
+              v-model="selectedLanguage"
+              @change="handleLanguageChange"
+              aria-label="Select language"
+            >
+              <option value="EN">English</option>
+              <option value="DE">Deutsch</option>
+              <option value="ES">Español</option>
+              <option value="FR">Français</option>
+              <option value="IT">Italiano</option>
+              <option value="PL">Polski</option>
+              <option value="SV">Svenska</option>
+            </select>
+          </label>
         </div>
       </header>
 
@@ -92,15 +109,15 @@
             <div class="operational-command-bar glass-panel">
               <div class="toolbar-title">
                 <span class="command-dot"></span>
-                <span>OPERATIONAL COMMAND DISPATCH</span>
+                <span>{{ $t('overviewTab.operationalCommand') }}</span>
               </div>
               <div class="toolbar-actions">
                 <button class="cmd-btn primary" @click="exportSitRepZip" :disabled="isExportingZip">
                   <span v-if="isExportingZip" class="spinner">⟳</span>
-                  <span>{{ isExportingZip ? 'COMPILING ZIP...' : '📦 Export SitRep Package (.ZIP)' }}</span>
+                  <span>{{ isExportingZip ? $t('overviewTab.compilingZip') : $t('overviewTab.exportSitRep') }}</span>
                 </button>
                 <button class="cmd-btn secondary" @click="goTo(`/map?fromIncident=${incident.id}&location=${encodeURIComponent(incident.location)}`)">
-                  <span>🗺️ View Incident on Tactical Map</span>
+                  <span>{{ $t('overviewTab.viewIncidentMap') }}</span>
                 </button>
               </div>
             </div>
@@ -110,13 +127,13 @@
               <div class="recon-info">
                 <div class="recon-status-badge" :class="{ 'analyzed': !!deepDossier }">
                   <span class="status-pulse-dot"></span>
-                  {{ deepDossier ? '🟢 VERIFIED OPERATIONAL REPORT ACTIVE' : '⚡ FULL CRISIS REPORT READY TO SYNTHESIZE' }}
+                  {{ deepDossier ? $t('overviewTab.verifiedReportActive') : $t('overviewTab.fullCrisisReady') }}
                 </div>
-                <h2>Crisis Assessment & Impact Forecast</h2>
+                <h2>{{ $t('overviewTab.crisisAssessmentTitle') }}</h2>
                 <p>
                   {{ deepDossier 
                     ? deepDossier.situational_assessment 
-                    : 'Synthesize comprehensive 6h/12h/24h disaster spread predictions, critical hospital & infrastructure vulnerability assessments, evacuation routing, and emergency logistics matrices.' 
+                    : $t('overviewTab.crisisAssessmentDesc') 
                   }}
                 </p>
               </div>
@@ -126,7 +143,7 @@
                 @click="launchDeepAnalysis"
               >
                 <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
-                {{ isAnalyzingDossier ? 'SYNTHESIZING REPORT...' : (deepDossier ? '🔄 UPDATE CRISIS REPORT' : '⚡ GENERATE FULL REPORT') }}
+                {{ isAnalyzingDossier ? $t('overviewTab.synthesizingReport') : (deepDossier ? $t('overviewTab.updateReport') : $t('overviewTab.generateReport')) }}
               </button>
             </div>
 
@@ -135,53 +152,53 @@
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">☴</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">ATMOSPHERIC WIND</span>
+                  <span class="gauge-label">{{ $t('overviewTab.atmosphericWind') }}</span>
                   <strong class="gauge-value">{{ (Math.abs(incident.trend) * 2.1 + 4.2).toFixed(1) }} m/s</strong>
-                  <small class="gauge-desc">Surface Wind Velocity</small>
+                  <small class="gauge-desc">{{ $t('overviewTab.surfaceWind') }}</small>
                 </div>
               </div>
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">🌡</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">AMBIENT SENSORS</span>
+                  <span class="gauge-label">{{ $t('overviewTab.ambientSensors') }}</span>
                   <strong class="gauge-value">28.4°C</strong>
-                  <small class="gauge-desc">Atmospheric Humidity 78%</small>
+                  <small class="gauge-desc">{{ $t('overviewTab.humidity') }} 78%</small>
                 </div>
               </div>
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">⚑</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">EXPOSED POPULATION</span>
+                  <span class="gauge-label">{{ $t('overviewTab.exposedPopulation') }}</span>
                   <strong class="gauge-value">{{ formatNumber(incident.affectedPopulation) }}</strong>
-                  <small class="gauge-desc">Estimated residents in exposure zone</small>
+                  <small class="gauge-desc">{{ $t('overviewTab.estimatedResidents') }}</small>
                 </div>
               </div>
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">◱</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">PERIMETER GROWTH</span>
+                  <span class="gauge-label">{{ $t('overviewTab.perimeterGrowth') }}</span>
                   <strong class="gauge-value">+{{ (incident.trend ?? 0).toFixed(1) }} km²/h</strong>
-                  <small class="gauge-desc">6h Projected +{{ formatNumber(incident.forecast6h) }} km²</small>
+                  <small class="gauge-desc">6h {{ $t('overviewTab.projected') }} +{{ formatNumber(incident.forecast6h) }} km²</small>
                 </div>
               </div>
             </div>
 
             <div class="metric-grid">
               <article class="metric-card glass-panel threat-card">
-                <span class="metric-label">Threat score</span>
+                <span class="metric-label">{{ $t('overviewTab.threatScore') }}</span>
                 <strong class="metric-value threat-value">{{ threatScore }}<small>/100</small></strong>
                 <span class="metric-footnote">{{ threatLevel }} · {{ threatRationale }}</span>
                 <div class="progress-track"><span class="progress-fill threat-fill" :style="{ width: `${threatScore}%` }"></span></div>
               </article>
               <article class="metric-card glass-panel">
-                <span class="metric-label">Location</span>
+                <span class="metric-label">{{ $t('overviewTab.location') }}</span>
                 <strong class="metric-value compact-value">{{ incident.location }}</strong>
-                <span class="metric-footnote">Affected footprint {{ formatNumber(incident.affectedArea) }} km²</span>
+                <span class="metric-footnote">{{ $t('overviewTab.affectedFootprint') }} {{ formatNumber(incident.affectedArea) }} km²</span>
               </article>
               <article class="metric-card glass-panel">
-                <span class="metric-label">Population at risk</span>
+                <span class="metric-label">{{ $t('overviewTab.populationAtRisk') }}</span>
                 <strong class="metric-value">{{ formatNumber(incident.affectedPopulation) }}</strong>
-                <span class="metric-footnote">Estimated residents in exposure zone</span>
+                <span class="metric-footnote">{{ $t('overviewTab.estimatedResidents') }}</span>
               </article>
               
               
@@ -357,7 +374,11 @@ interface DetailData {
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
+const selectedLanguage = ref(locale.value.toUpperCase())
+const handleLanguageChange = () => {
+  locale.value = selectedLanguage.value.toLowerCase()
+}
 const eventsStore = useEventsStore()
 const appStore = useAppStore()
 const is3D = computed(() => appStore.viewMode === '3d')
@@ -816,6 +837,49 @@ function getCascadeColorHex(colorCode?: string): string {
 .header-navigation, .header-actions { gap: 11px; flex-wrap: wrap; }
 .back-button, .ghost-button, .primary-button { border: 1px solid rgba(148,163,184,.25); color: #e2e8f0; background: transparent; border-radius: 8px; padding: 9px 13px; cursor: pointer; font: inherit; transition: .2s ease; }
 .back-button:hover, .ghost-button:hover { border-color: #0ea5e9; color: #7dd3fc; }
+
+.language-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 6px;
+  background: rgba(14, 165, 233, 0.1);
+  color: var(--accent-cyan);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.language-selector:hover {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: #38bdf8;
+}
+
+.language-selector select {
+  border: none;
+  background: transparent;
+  color: #38bdf8;
+  font: inherit;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  min-width: 80px;
+  padding: 2px 4px;
+  font-size: 13px;
+}
+
+.language-selector select option {
+  background: #0f172a;
+  color: #38bdf8;
+  font-weight: 600;
+  padding: 4px;
+  font-size: 13px;
+}
+
 .breadcrumb-separator { color: #475569; }.breadcrumb-current { color: #94a3b8; font-size: 18px; }
 .primary-button { background: #0ea5e9; border-color: #38bdf8; color: #03111b; font-weight: 700; }.primary-button:hover { background: #38bdf8; }
 .phase-indicator-badge {

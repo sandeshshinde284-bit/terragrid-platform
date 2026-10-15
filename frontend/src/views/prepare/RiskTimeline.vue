@@ -69,7 +69,7 @@
               <div class="timeline-track">
                 <template v-for="(day, index) in selectedCity.daily" :key="day.date">
                   <div class="timeline-node">
-                    <span class="node-day-label">Day {{ index + 1 }}</span>
+                    <span class="node-day-label">{{ $t('prepare.timeline.day') }} {{ index + 1 }}</span>
                     <span class="node-date">{{ formatDay(day.date) }}</span>
                     <div class="node-dot-wrap">
                       <div class="node-dot" :class="day.risk_level.toLowerCase()">
@@ -81,7 +81,7 @@
                       class="node-confidence"
                       :class="confidenceClass(day.confidence_pct)"
                       :title="confidenceTooltip(day)"
-                    >{{ day.confidence_pct.toFixed(0) }}% agreement <span class="info-hint" aria-hidden="true">ⓘ</span></span>
+                    >{{ day.confidence_pct.toFixed(0) }}% {{ $t('prepare.timeline.agreement') }} <span class="info-hint" aria-hidden="true">ⓘ</span></span>
                     <span class="node-weather">{{ weatherIcon(day.dominant_weather) }} {{ day.dominant_weather }}</span>
                     <span class="node-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
                   </div>
@@ -101,10 +101,9 @@
             <div v-if="selectedCity && hasQualifyingDay" class="evac-panel glass-panel">
               <div class="evac-header">
                 <div class="evac-heading">
-                  <h3>Evacuation Route Pre-Calculation</h3>
+                  <h3>{{ $t('prepare.timeline.evacTitle') }}</h3>
                   <span class="evac-subtext">
-                    {{ selectedCity.city }}'s forecast crosses into a confident, elevated risk day -
-                    pre-calculate real road-network egress routes now, before an incident exists.
+                    {{ selectedCity.city }}'s {{ $t('prepare.timeline.evacDesc') }}
                   </span>
                 </div>
                 <button
@@ -113,7 +112,7 @@
                   :disabled="evacLoading"
                   @click="fetchEvacuationRoutes"
                 >
-                  {{ evacLoading ? 'Calculating...' : (evacRoutes.length ? 'Recalculate routes' : 'Pre-calculate routes') }}
+                  {{ evacLoading ? $t('prepare.timeline.calculating') : (evacRoutes.length ? $t('prepare.timeline.recalculate') : $t('prepare.timeline.precalculate')) }}
                 </button>
               </div>
 
@@ -123,8 +122,8 @@
                 <div v-for="route in evacRoutes" :key="route.route_id" class="evac-route-card">
                   <span class="evac-route-name">{{ route.name }}</span>
                   <span class="evac-route-metric">{{ route.distance_km.toFixed(1) }} km</span>
-                  <span class="evac-route-metric">{{ route.estimated_time_hours.toFixed(1) }} hrs</span>
-                  <span class="evac-route-safety">Safety {{ route.safety_score }}/100</span>
+                  <span class="evac-route-metric">{{ route.estimated_time_hours.toFixed(1) }} {{ $t('prepare.timeline.hrs') }}</span>
+                  <span class="evac-route-safety">{{ $t('prepare.timeline.safety') }} {{ route.safety_score }}/100</span>
                 </div>
               </div>
             </div>
