@@ -121,6 +121,61 @@
           </form>
           <p v-if="emailFormError" class="form-error">{{ emailFormError }}</p>
         </section>
+
+        <!-- Critical Alert recipients (RESPONSE phase) -->
+        <section class="glass-panel recipient-card">
+          <div class="card-heading">
+            <span class="card-icon">🚨</span>
+            <h3>Critical Alert Recipients</h3>
+          </div>
+          <p class="card-desc">
+            Who gets the automatic email when the RESPONSE phase detects a high-threat incident
+            (sent via Gmail SMTP) - a separate list from the Agency Alerts recipients above, so
+            testing one never changes who receives real incident alerts.
+          </p>
+
+          <div v-if="criticalLoading" class="recipient-status">Loading…</div>
+          <div v-else-if="criticalRecipients.length === 0" class="recipient-status empty">
+            No critical alert recipients configured yet - the RESPONSE phase won't send any
+            automatic alerts until at least one is added.
+          </div>
+          <ul v-else class="recipient-list">
+            <li v-for="r in criticalRecipients" :key="r.id" class="recipient-row">
+              <div class="recipient-info">
+                <strong>{{ r.label }}</strong>
+                <span class="recipient-value">{{ r.value }}</span>
+              </div>
+              <button
+                type="button"
+                class="remove-btn"
+                :disabled="removingId === r.id"
+                @click="removeRecipient('critical_email', r.id)"
+                aria-label="Remove recipient"
+              >
+                {{ removingId === r.id ? '…' : '✕' }}
+              </button>
+            </li>
+          </ul>
+
+          <form class="add-form" @submit.prevent="addRecipient('critical_email')">
+            <input
+              v-model="criticalForm.label"
+              type="text"
+              placeholder="Label (e.g. Duty Officer)"
+              class="form-input"
+            />
+            <input
+              v-model="criticalForm.value"
+              type="email"
+              placeholder="name@example.com"
+              class="form-input"
+            />
+            <button type="submit" class="add-btn" :disabled="addingCritical">
+              {{ addingCritical ? 'Adding…' : '+ Add' }}
+            </button>
+          </form>
+          <p v-if="criticalFormError" class="form-error">{{ criticalFormError }}</p>
+        </section>
       </div>
     </div>
   </div>
@@ -136,22 +191,43 @@ interface Recipient {
   value: string
 }
 
+type Channel = 'whatsapp' | 'email' | 'critical_email'
+
 const apiHost = () => import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
 
 const whatsappRecipients = ref<Recipient[]>([])
 const emailRecipients = ref<Recipient[]>([])
+const criticalRecipients = ref<Recipient[]>([])
 const whatsappLoading = ref(true)
 const emailLoading = ref(true)
+const criticalLoading = ref(true)
 const addingWhatsapp = ref(false)
 const addingEmail = ref(false)
+const addingCritical = ref(false)
 const removingId = ref<number | null>(null)
 const whatsappFormError = ref('')
 const emailFormError = ref('')
+const criticalFormError = ref('')
 
 const whatsappForm = reactive({ label: '', value: '' })
 const emailForm = reactive({ label: '', value: '' })
+const criticalForm = reactive({ label: '', value: '' })
 
-const fetchRecipients = async (channel: 'whatsapp' | 'email') => {
+// Per-channel wiring so add/remove/load below stay one small function each
+// instead of a three-way branch repeated in every one of them.
+const channelState: Record<Channel, {
+  list: typeof whatsappRecipients
+  loading: typeof whatsappLoading
+  adding: typeof addingWhatsapp
+  form: typeof whatsappForm
+  formError: typeof whatsappFormError
+}> = {
+  whatsapp: { list: whatsappRecipients, loading: whatsappLoading, adding: addingWhatsapp, form: whatsappForm, formError: whatsappFormError },
+  email: { list: emailRecipients, loading: emailLoading, adding: addingEmail, form: emailForm, formError: emailFormError },
+  critical_email: { list: criticalRecipients, loading: criticalLoading, adding: addingCritical, form: criticalForm, formError: criticalFormError },
+}
+
+const fetchRecipients = async (channel: Channel) => {
   const host = apiHost()
   const response = await fetch(`${host}/api/v1/prepare/settings/recipients/${channel}`)
   if (!response.ok) throw new Error(`Backend returned ${response.status}`)
@@ -159,32 +235,24 @@ const fetchRecipients = async (channel: 'whatsapp' | 'email') => {
   return (json.recipients || []) as Recipient[]
 }
 
-const loadWhatsapp = async () => {
-  whatsappLoading.value = true
+const loadChannel = async (channel: Channel) => {
+  const state = channelState[channel]
+  state.loading.value = true
   try {
-    whatsappRecipients.value = await fetchRecipients('whatsapp')
+    state.list.value = await fetchRecipients(channel)
   } catch {
     // Non-critical - list just stays empty if this fails.
   } finally {
-    whatsappLoading.value = false
+    state.loading.value = false
   }
 }
 
-const loadEmail = async () => {
-  emailLoading.value = true
-  try {
-    emailRecipients.value = await fetchRecipients('email')
-  } catch {
-    // Non-critical - list just stays empty if this fails.
-  } finally {
-    emailLoading.value = false
-  }
-}
+const loadWhatsapp = () => loadChannel('whatsapp')
+const loadEmail = () => loadChannel('email')
+const loadCritical = () => loadChannel('critical_email')
 
-const addRecipient = async (channel: 'whatsapp' | 'email') => {
-  const form = channel === 'whatsapp' ? whatsappForm : emailForm
-  const errorRef = channel === 'whatsapp' ? whatsappFormError : emailFormError
-  const addingRef = channel === 'whatsapp' ? addingWhatsapp : addingEmail
+const addRecipient = async (channel: Channel) => {
+  const { form, formError: errorRef, adding: addingRef } = channelState[channel]
 
   errorRef.value = ''
   if (!form.label.trim() || !form.value.trim()) {
@@ -206,11 +274,7 @@ const addRecipient = async (channel: 'whatsapp' | 'email') => {
     }
     form.label = ''
     form.value = ''
-    if (channel === 'whatsapp') {
-      await loadWhatsapp()
-    } else {
-      await loadEmail()
-    }
+    await loadChannel(channel)
   } catch (e) {
     errorRef.value = e instanceof Error ? e.message : 'Unknown error adding recipient'
   } finally {
@@ -218,7 +282,7 @@ const addRecipient = async (channel: 'whatsapp' | 'email') => {
   }
 }
 
-const removeRecipient = async (channel: 'whatsapp' | 'email', id: number) => {
+const removeRecipient = async (channel: Channel, id: number) => {
   removingId.value = id
   try {
     const host = apiHost()
@@ -226,11 +290,7 @@ const removeRecipient = async (channel: 'whatsapp' | 'email', id: number) => {
       method: 'DELETE',
     })
     if (!response.ok) throw new Error(`Backend returned ${response.status}`)
-    if (channel === 'whatsapp') {
-      whatsappRecipients.value = whatsappRecipients.value.filter(r => r.id !== id)
-    } else {
-      emailRecipients.value = emailRecipients.value.filter(r => r.id !== id)
-    }
+    channelState[channel].list.value = channelState[channel].list.value.filter(r => r.id !== id)
   } catch {
     // Leave the row in place - the operator can retry the remove.
   } finally {
@@ -240,6 +300,7 @@ const removeRecipient = async (channel: 'whatsapp' | 'email', id: number) => {
 
 onMounted(() => {
   loadWhatsapp()
+  loadCritical()
   loadEmail()
 })
 </script>

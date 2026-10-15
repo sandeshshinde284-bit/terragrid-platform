@@ -513,8 +513,13 @@ class AddRecipientRequest(BaseModel):
 
 
 def _validate_channel(channel: str) -> str:
-    if channel not in ("email", "whatsapp"):
-        raise HTTPException(status_code=400, detail="channel must be 'email' or 'whatsapp'.")
+    # 'critical_email' is RESPONSE phase's automatic critical-incident alert
+    # recipients (notification_service.send_critical_alert) - a separate
+    # list from 'email' (PREPARE phase's manual Agency Alerts send), kept on
+    # this same generic CRUD since both are just rows in the alert_recipients
+    # table (backend/models/recipient.py), differing only by channel value.
+    if channel not in ("email", "whatsapp", "critical_email"):
+        raise HTTPException(status_code=400, detail="channel must be 'email', 'whatsapp', or 'critical_email'.")
     return channel
 
 

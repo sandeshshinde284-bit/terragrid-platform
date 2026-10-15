@@ -386,7 +386,11 @@ class DecisionSupportService:
                translated into that audience's own vocabulary - not generic weather language.
             7. If every day is GREEN (no material risk), all four alerts should be low-key routine
                status updates, not an invented crisis.
-            8. Return a clean JSON object matching THIS EXACT schema:
+            8. Every message body MUST explicitly name the city "{city}" and the specific date(s)
+               the peak risk hits (e.g. "{peak_day.get('date')}") in plain language - never rely on
+               the headline alone to carry the location or timing. A recipient reading only the
+               message body must be able to tell where and when this applies.
+            9. Return a clean JSON object matching THIS EXACT schema:
             {AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT}
 
             Return ONLY the JSON object. Do not wrap in markdown code blocks.
