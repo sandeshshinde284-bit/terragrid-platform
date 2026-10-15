@@ -116,7 +116,7 @@ const navigateToInsights = () => {
   flex-direction: column;
   gap: 12px;
   padding: 14px;
-  background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(15, 23, 42, 0.8));
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), var(--bg-overlay));
   border: 1px solid rgba(59, 130, 246, 0.4);
   border-radius: 8px;
   animation: loadingGlow 2s ease-in-out infinite;
@@ -125,7 +125,7 @@ const navigateToInsights = () => {
 @keyframes loadingGlow {
   0%, 100% {
     border-color: rgba(59, 130, 246, 0.3);
-    background: linear-gradient(135deg, rgba(30, 58, 138, 0.3), rgba(15, 23, 42, 0.8));
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.3), var(--bg-overlay));
   }
   50% {
     border-color: rgba(59, 130, 246, 0.6);
@@ -180,13 +180,13 @@ const navigateToInsights = () => {
 .loading-text {
   font-size: 13px;
   font-weight: 600;
-  color: #38bdf8;
+  color: var(--accent-cyan);
   letter-spacing: 0.5px;
 }
 
 .loading-subtext {
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -278,7 +278,7 @@ const navigateToInsights = () => {
 .teaser-title {
   font-size: 13px;
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--text-primary);
 }
 
 /* Action Card */
@@ -304,7 +304,7 @@ const navigateToInsights = () => {
 .action-text {
   font-size: 13px;
   line-height: 1.4;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   word-break: break-word;
 }
 
@@ -312,7 +312,7 @@ const navigateToInsights = () => {
 .remaining-badge {
   display: inline-block;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   background: rgba(71, 85, 105, 0.2);
   padding: 4px 8px;
   border-radius: 4px;
@@ -348,7 +348,7 @@ const navigateToInsights = () => {
   align-items: center;
   gap: 6px;
   padding: 16px 12px;
-  color: #64748b;
+  color: var(--text-muted);
   text-align: center;
 }
 

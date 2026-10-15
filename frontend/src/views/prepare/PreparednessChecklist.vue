@@ -138,7 +138,7 @@
                       <p class="action-text">{{ action.action }}</p>
                     </label>
                     <div class="action-agency">
-                      <span class="agency-icon">🏛️</span>
+                      <span class="agency-icon">{{ agencyIcon(action.agency) }}</span>
                       <span>{{ action.agency }}</span>
                     </div>
                     <p class="action-rationale">{{ action.rationale }}</p>
@@ -207,6 +207,31 @@ const CATEGORY_ICONS: Record<string, string> = {
   COMMUNICATION: '📢', INFRASTRUCTURE: '🏗️',
 }
 const categoryIcon = (category: string) => CATEGORY_ICONS[(category || '').toUpperCase()] || '📋'
+
+// Agency names are free-text, AI-generated owning bodies (e.g. "NDRF / Fire
+// Department", "Municipal Corporation - Drainage Dept") - not a fixed enum,
+// so this can't be an exact-match lookup like CATEGORY_ICONS. Keyword match
+// instead, checked in a specific-to-general order so e.g. "Municipal
+// Corporation - Drainage Dept" hits drainage before falling to the generic
+// municipal icon. Every agency card was previously showing the same 🏛️
+// regardless of which agency it actually was.
+const AGENCY_ICON_KEYWORDS: Array<[string, string]> = [
+  ['drainage', '🌊'], ['water', '🌊'], ['flood', '🌊'],
+  ['health', '🏥'], ['medical', '🏥'], ['hospital', '🏥'],
+  ['fire', '🚒'], ['ndrf', '🚒'], ['rescue', '🚒'],
+  ['police', '🚓'], ['traffic', '🚓'],
+  ['relief', '🆘'], ['disaster management', '🆘'], ['emergency management', '🆘'],
+  ['supply', '📦'], ['supplies', '📦'],
+  ['communication', '📢'],
+  ['municipal', '🏛️'],
+]
+const agencyIcon = (agency: string): string => {
+  const lower = (agency || '').toLowerCase()
+  for (const [keyword, icon] of AGENCY_ICON_KEYWORDS) {
+    if (lower.includes(keyword)) return icon
+  }
+  return '🏛️'
+}
 
 const cityKey = (city: CityForecast) => `${city.city}-${city.country}`
 
@@ -445,10 +470,7 @@ watch(selectedKey, () => {
 
 .hero-left h2 {
   margin: 0 0 4px 0;
-  background: linear-gradient(90deg, #38bdf8, #22d3ee);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent-cyan);
 }
 
 .hero-meta {
@@ -533,10 +555,10 @@ watch(selectedKey, () => {
   flex-shrink: 0;
 }
 
-.rail-item.green .rail-dot { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
-.rail-item.yellow .rail-dot { background: #eab308; box-shadow: 0 0 6px rgba(234, 179, 8, 0.5); }
-.rail-item.orange .rail-dot { background: #f97316; box-shadow: 0 0 6px rgba(249, 115, 22, 0.5); }
-.rail-item.red .rail-dot { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
+.rail-item.green .rail-dot { background: #22c55e; }
+.rail-item.yellow .rail-dot { background: #eab308; box-shadow: 0 0 4px rgba(234, 179, 8, 0.35); }
+.rail-item.orange .rail-dot { background: #f97316; box-shadow: 0 0 6px rgba(249, 115, 22, 0.45); }
+.rail-item.red .rail-dot { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.55); }
 
 .rail-text {
   display: flex;
@@ -725,9 +747,9 @@ watch(selectedKey, () => {
   border-radius: 50%;
 }
 
-.tier-header.immediate .tier-dot { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
-.tier-header.high .tier-dot { background: #f97316; box-shadow: 0 0 8px rgba(249, 115, 22, 0.5); }
-.tier-header.staged .tier-dot { background: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.5); }
+.tier-header.immediate .tier-dot { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.55); }
+.tier-header.high .tier-dot { background: #f97316; box-shadow: 0 0 6px rgba(249, 115, 22, 0.4); }
+.tier-header.staged .tier-dot { background: #38bdf8; }
 
 .tier-label {
   font-size: 13px;

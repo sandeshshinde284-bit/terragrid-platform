@@ -11,7 +11,7 @@
       
       <!-- Tactical Briefing -->
       <article class="glass-panel" style="padding: 16px; margin-bottom: 20px; border-left: 4px solid var(--detail-accent);">
-        <p style="margin: 0; font-size: 18px; color: #f8fafc; line-height: 1.6;">
+        <p style="margin: 0; font-size: 18px; color: var(--text-primary); line-height: 1.6;">
           <strong style="color: var(--detail-accent); font-family: ui-monospace, monospace; margin-right: 8px;">TACTICAL BRIEFING:</strong> 
           {{ deepDossier.severity_assessment || 'Situational assessment pending...' }}
         </p>
@@ -20,7 +20,7 @@
       <!-- PHASED RESPONSE TIMELINE -->
       <article class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">OPERATIONAL PHASES</span><h3 style="margin:0; font-size: 16px; color:#f8fafc;">Response Timeline by Action Urgency</h3></div>
+          <div><span class="section-kicker">OPERATIONAL PHASES</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">Response Timeline by Action Urgency</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">PHASE-RESP-01</span>
         </div>
 
@@ -35,7 +35,7 @@
                 <span class="action-deadline">START NOW</span>
               </div>
             </div>
-            <div v-else style="color: #94a3b8; padding: 8px; font-size: 16px;">No immediate actions identified</div>
+            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 16px;">No immediate actions identified</div>
           </div>
         </div>
 
@@ -50,7 +50,7 @@
                 <span class="action-deadline">Complete by T+4h</span>
               </div>
             </div>
-            <div v-else style="color: #94a3b8; padding: 8px; font-size: 16px;">No urgent actions identified</div>
+            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 16px;">No urgent actions identified</div>
           </div>
         </div>
 
@@ -65,20 +65,20 @@
                 <span class="action-deadline">Ongoing</span>
               </div>
             </div>
-            <div v-else style="color: #94a3b8; padding: 8px; font-size: 16px;">No sustained actions identified</div>
+            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 16px;">No sustained actions identified</div>
           </div>
         </div>
       </article>
 
       <article class="glass-panel" style="padding: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">ASSET DEPLOYMENT</span><h3 style="margin:0; font-size: 16px; color:#f8fafc;">Operational Logistics Matrix</h3></div>
+          <div><span class="section-kicker">ASSET DEPLOYMENT</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">Operational Logistics Matrix</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">LOG-ASSET-01</span>
         </div>
         <div class="resource-matrix-table-wrapper" style="overflow-x: auto;">
           <table class="ai-resource-table" style="width: 100%; border-collapse: collapse;">
             <thead>
-              <tr style="border-bottom: 2px solid #334155; text-align: left; color: #94a3b8; font-size: 18px;">
+              <tr style="border-bottom: 2px solid #334155; text-align: left; color: var(--text-secondary); font-size: 18px;">
                 <th style="padding: 12px 10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Resource Asset</th>
                 <th style="padding: 12px 10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Required Quantity</th>
                 <th style="padding: 12px 10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">Assigned Agency</th>
@@ -88,11 +88,11 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(res, idx) in deepDossier.resource_matrix" :key="idx" style="border-bottom: 1px solid #1e293b; font-size: 18px;">
-                <td style="padding: 12px 10px; color: #ffffff; font-weight: 700;">{{ res.resource }}</td>
-                <td style="padding: 12px 10px; color: #38bdf8; font-family: ui-monospace, monospace;">{{ res.quantity }} {{ res.unit_measure }}</td>
-                <td style="padding: 12px 10px; color: #cbd5e1;">{{ res.assigned_agency }}</td>
-                <td style="padding: 12px 10px; color: #cbd5e1;">{{ res.deployment_location }}</td>
+              <tr v-for="(res, idx) in deepDossier.resource_matrix" :key="idx" style="border-bottom: 1px solid var(--glass-border); font-size: 18px;">
+                <td style="padding: 12px 10px; color: var(--text-primary); font-weight: 700;">{{ res.resource }}</td>
+                <td style="padding: 12px 10px; color: var(--accent-cyan); font-family: ui-monospace, monospace;">{{ res.quantity }} {{ res.unit_measure }}</td>
+                <td style="padding: 12px 10px; color: var(--text-secondary);">{{ res.assigned_agency }}</td>
+                <td style="padding: 12px 10px; color: var(--text-secondary);">{{ res.deployment_location }}</td>
                 <td style="padding: 12px 10px; color: #4ade80; font-family: ui-monospace, monospace;">{{ res.estimated_arrival_minutes }} min</td>
                 <td style="padding: 12px 10px;">
                   <span class="priority-tag" :class="getPriorityClass(res.priority)">
@@ -111,8 +111,8 @@
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🚑</div>
         <div class="phase2-tag">REPORT PENDING</div>
-        <h2 style="font-size:20px; font-weight:700; color:#fff; margin-bottom:12px;">Multi-Agency Resource Matrix</h2>
-        <p style="color:#cbd5e1; font-size: 16px; margin-bottom:18px;">Generate specialized equipment counts, first-responder squad deployment, and medical logistics matrices.</p>
+        <h2 style="font-size:20px; font-weight:700; color: var(--text-primary); margin-bottom:12px;">Multi-Agency Resource Matrix</h2>
+        <p style="color: var(--text-secondary); font-size: 16px; margin-bottom:18px;">Generate specialized equipment counts, first-responder squad deployment, and medical logistics matrices.</p>
         <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
           <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
           {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Generate Full Crisis Report' }}
@@ -150,8 +150,8 @@ function getPriorityLabel(priority: number | string): string {
 
 <style scoped>
 .glass-panel {
-  background: #0f172a;
-  border: 1px solid #1e293b;
+  background: var(--bg-panel);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
 }
@@ -162,7 +162,7 @@ function getPriorityLabel(priority: number | string): string {
   margin-bottom: 20px;
 }
 .section-kicker {
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -215,7 +215,7 @@ function getPriorityLabel(priority: number | string): string {
   padding: 5px 14px;
   border-radius: 999px;
   background: rgba(14, 165, 233, 0.2);
-  color: #38bdf8;
+  color: var(--accent-cyan);
   border: 1px solid rgba(14, 165, 233, 0.4);
   letter-spacing: 1px;
   margin-bottom: 16px;
@@ -223,7 +223,7 @@ function getPriorityLabel(priority: number | string): string {
 .primary-button {
   background: #0284c7;
   border: 1px solid #0284c7;
-  color: #ffffff;
+  color: var(--text-primary);
   border-radius: 6px;
   padding: 10px 20px;
   font-size: 18px;
@@ -296,10 +296,10 @@ function getPriorityLabel(priority: number | string): string {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: rgba(51, 65, 85, 0.4);
+  background: var(--bg-subtle);
   border-radius: 4px;
   font-size: 16px;
-  color: #cbd5e1;
+  color: var(--text-secondary);
 }
 
 .action-priority {
@@ -318,7 +318,7 @@ function getPriorityLabel(priority: number | string): string {
 
 .action-deadline {
   font-size: 16px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   white-space: nowrap;
 }
 

@@ -193,7 +193,7 @@ const selectIncident = () => {
   font-size: 14px;
   font-weight: 800;
   line-height: 1.2;
-  color: #ffffff;
+  color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -207,7 +207,7 @@ const selectIncident = () => {
 
 .location {
   font-size: 11px;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.3;
   flex: 1;
@@ -236,7 +236,7 @@ const selectIncident = () => {
 }
 
 .label {
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-weight: 700;
   text-transform: uppercase;
   font-size: 10px;
@@ -247,7 +247,7 @@ const selectIncident = () => {
 }
 
 .value {
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 800;
   font-size: 14px;
   text-align: right;

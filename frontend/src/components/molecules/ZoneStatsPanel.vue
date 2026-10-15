@@ -196,7 +196,7 @@ export default defineComponent({
 
 <style scoped>
 .zone-stats-panel {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  background: var(--bg-panel);
   border-radius: 8px;
   padding: 20px;
   color: #e2e8f0;
@@ -215,12 +215,12 @@ export default defineComponent({
   margin: 0 0 8px 0;
   font-size: 18px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .incident-name {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 
 .loading-state,
@@ -254,7 +254,7 @@ export default defineComponent({
 
 .stat-label {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -262,7 +262,7 @@ export default defineComponent({
 .stat-value {
   font-size: 16px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .severity-low {
@@ -298,7 +298,7 @@ export default defineComponent({
 }
 
 .zone-card:hover {
-  background: rgba(51, 65, 85, 0.8);
+  background: var(--bg-subtle);
   border-color: #475569;
 }
 
@@ -352,12 +352,12 @@ export default defineComponent({
 }
 
 .detail-label {
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .detail-value {
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-weight: 600;
 }
 

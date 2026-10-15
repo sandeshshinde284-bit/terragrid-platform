@@ -12,7 +12,7 @@
       <!-- Critical Infrastructure Table -->
       <article class="glass-panel infrastructure-panel" style="padding: 20px; margin-bottom: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">VULNERABILITY MATRIX</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Exposed Critical Infrastructure</h3></div>
+          <div><span class="section-kicker">VULNERABILITY MATRIX</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Exposed Critical Infrastructure</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">AI-IA-01</span>
         </div>
         <div class="ai-facility-grid">
@@ -21,14 +21,14 @@
               <span class="facility-type-tag">{{ fac.facility_type }}</span>
               <span class="facility-risk" :class="fac.risk_level.toLowerCase()">{{ fac.risk_level }} RISK</span>
             </div>
-            <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: #f8fafc; line-height: 1.3;">{{ fac.facility_name }}</h4>
+            <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.3;">{{ fac.facility_name }}</h4>
             <div class="facility-meta">
               <span>📍 Distance: {{ fac.distance_km }} km from epicenter</span>
             </div>
             <div class="facility-action">
               <strong>Directive:</strong> {{ fac.action_required }}
             </div>
-            <div class="facility-confidence" v-if="fac.confidence !== undefined" style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 18px; color: #94a3b8;">
+            <div class="facility-confidence" v-if="fac.confidence !== undefined" style="margin-top: 8px; display: flex; align-items: center; gap: 8px; font-size: 18px; color: var(--text-secondary);">
              <div style="flex: 1; background: rgba(255, 255, 255, 0.08); border-radius: 3px; height: 5px; overflow: hidden;">
                 <div style="background: linear-gradient(90deg, #fbbf24, #38bdf8); height: 100%; width: 100%; border-radius: 3px;" :style="{ width: `${fac.confidence}%` }"></div>
               </div>
@@ -41,23 +41,23 @@
       <!-- Vulnerable Demographics -->
       <article class="glass-panel demographics-panel" style="padding: 20px;">
         <div class="panel-heading">
-          <div><span class="section-kicker">HUMAN IMPACT</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Vulnerable Demographics & Facilities</h3></div>
+          <div><span class="section-kicker">HUMAN IMPACT</span><h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Vulnerable Demographics & Facilities</h3></div>
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">AI-IA-02</span>
         </div>
         <div class="demographics-body">
           <div class="demo-stat-row" style="display: flex; gap: 24px; margin-bottom: 14px; flex-wrap: wrap;">
             <div class="demo-stat">
-              <span class="stat-label" style="display: block; font-size: 18px; color: #94a3b8; text-transform: uppercase;">Estimated Displaced Citizens: </span>
-              <strong class="stat-value" style="font-size: 16px; color: #38bdf8;">{{ deepDossier.vulnerable_demographics.estimated_displaced_citizens.toLocaleString() }}</strong>
+              <span class="stat-label" style="display: block; font-size: 18px; color: var(--text-secondary); text-transform: uppercase;">Estimated Displaced Citizens: </span>
+              <strong class="stat-value" style="font-size: 16px; color: var(--accent-cyan);">{{ deepDossier.vulnerable_demographics.estimated_displaced_citizens.toLocaleString() }}</strong>
             </div>
             <div class="demo-stat">
-              <span class="stat-label" style="display: block; font-size: 18px; color: #94a3b8; text-transform: uppercase;">Special Needs Transport: </span>
-              <span class="stat-desc" style="font-size: 18px; color: #cbd5e1;">{{ deepDossier.vulnerable_demographics.special_needs_assistance_required }}</span>
+              <span class="stat-label" style="display: block; font-size: 18px; color: var(--text-secondary); text-transform: uppercase;">Special Needs Transport: </span>
+              <span class="stat-desc" style="font-size: 18px; color: var(--text-secondary);">{{ deepDossier.vulnerable_demographics.special_needs_assistance_required }}</span>
             </div>
           </div>
           <div class="facilities-at-risk-list" style="margin-top: 14px;">
-            <strong style="color: #38bdf8; font-size: 18px; text-transform: uppercase;">High-Priority Facilities at Risk:</strong>
-            <ul style="margin: 8px 0 0 16px; color: #cbd5e1; font-size: 18px;">
+            <strong style="color: var(--accent-cyan); font-size: 18px; text-transform: uppercase;">High-Priority Facilities at Risk:</strong>
+            <ul style="margin: 8px 0 0 16px; color: var(--text-secondary); font-size: 18px;">
               <li v-for="f in deepDossier.vulnerable_demographics.facilities_at_risk" :key="f">
                 {{ f }}
               </li>
@@ -71,8 +71,8 @@
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🏢</div>
         <div class="phase2-tag">AI RECONNAISSANCE PENDING</div>
-        <h2 style="font-size: 22px; font-weight: 700; color: #ffffff; margin: 0 0 12px 0;">Predictive Impact Assessment</h2>
-        <p style="font-size: 16px; line-height: 1.6; color: #cbd5e1; margin: 0 0 18px 0;">Launch the cognitive AI reconnaissance to generate unscripted critical infrastructure exposure, hospital vulnerabilities, and demographic displacement models.</p>
+        <h2 style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px 0;">Predictive Impact Assessment</h2>
+        <p style="font-size: 16px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 18px 0;">Launch the cognitive AI reconnaissance to generate unscripted critical infrastructure exposure, hospital vulnerabilities, and demographic displacement models.</p>
         <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
           <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
           {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Launch Tactical AI Reconnaissance' }}
@@ -111,19 +111,19 @@ defineEmits(['launch'])
 .tab-intro h2 {
   margin: 0;
   font-size: 28px;
-  color: #f8fafc;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
 .tab-intro p {
   margin: 8px 0 0 0;
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-size: 16px;
 }
 
 .glass-panel {
-  background: #0f172a;
-  border: 1px solid #1e293b;
+  background: var(--bg-panel);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
 }
@@ -134,7 +134,7 @@ defineEmits(['launch'])
   margin-bottom: 20px;
 }
 .section-kicker {
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -168,7 +168,7 @@ defineEmits(['launch'])
 }
 
 .ai-facility-card:hover {
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--bg-overlay);
   border-color: rgba(56, 189, 248, 0.3);
   box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);
   transform: translateY(-2px);
@@ -189,7 +189,7 @@ defineEmits(['launch'])
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #38bdf8;
+  color: var(--accent-cyan);
   background: rgba(14, 165, 233, 0.2);
   padding: 4px 10px;
   border-radius: 4px;
@@ -229,7 +229,7 @@ defineEmits(['launch'])
 }
 .facility-meta {
   font-size: 14px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: 8px;
   display: flex;
@@ -240,14 +240,14 @@ defineEmits(['launch'])
 .facility-action {
   font-size: 14px;
   line-height: 1.6;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 10px;
   margin-top: 10px;
 }
 
 .facility-action strong {
-  color: #f8fafc;
+  color: var(--text-primary);
   font-weight: 700;
 }
 
@@ -284,7 +284,7 @@ defineEmits(['launch'])
   padding: 5px 14px;
   border-radius: 999px;
   background: rgba(14, 165, 233, 0.2);
-  color: #38bdf8;
+  color: var(--accent-cyan);
   border: 1px solid rgba(14, 165, 233, 0.4);
   letter-spacing: 1px;
   margin-bottom: 16px;
@@ -292,7 +292,7 @@ defineEmits(['launch'])
 .primary-button {
   background: #0284c7;
   border: 1px solid #0284c7;
-  color: #ffffff;
+  color: var(--text-primary);
   border-radius: 6px;
   padding: 10px 20px;
   font-size: 18px;

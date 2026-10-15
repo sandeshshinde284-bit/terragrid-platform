@@ -52,6 +52,7 @@ onMounted(async () => {
   --header-bg-start: rgba(255, 255, 255, 0.94);
   --header-bg-end: rgba(241, 245, 249, 0.94);
   --header-border: rgba(30, 64, 175, 0.2);
+  --bg-subtle: rgba(15, 23, 42, 0.05);
   width: 100%;
   height: 100%;
   display: flex;
@@ -80,5 +81,6 @@ onMounted(async () => {
   --header-bg-start: rgba(26, 31, 46, 0.9);
   --header-bg-end: rgba(15, 20, 25, 0.9);
   --header-border: rgba(0, 188, 212, 0.2);
+  --bg-subtle: rgba(51, 65, 85, 0.4);
 }
 </style>

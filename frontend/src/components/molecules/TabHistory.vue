@@ -15,32 +15,32 @@
             <span class="time-tag" style="font-weight: 800; font-size: 16px;" :class="'text-' + cascade.color_code">
               ⏱️ +{{ cascade.timeframe_hours }} HOURS
             </span>
-            <span class="delta-badge" style="font-family: ui-monospace, monospace; font-size: 18px; font-weight: 700; color: #cbd5e1; background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 4px;">
+            <span class="delta-badge" style="font-family: ui-monospace, monospace; font-size: 18px; font-weight: 700; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 4px;">
               +{{ cascade.perimeter_delta_km2.toFixed(1) }} km² EXPANSION
             </span>
           </div>
           
-          <div class="cascade-vector" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #1e293b;">
+          <div class="cascade-vector" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--glass-border);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="color: #94a3b8; font-size: 16px; text-transform: uppercase; font-weight: 700;">Wind Expansion Factor:</span>
-              <span style="color: #38bdf8; font-family: ui-monospace, monospace; font-weight: 700;">{{ cascade.wind_influence_percent }}%</span>
+              <span style="color: var(--text-secondary); font-size: 16px; text-transform: uppercase; font-weight: 700;">Wind Expansion Factor:</span>
+              <span style="color: var(--accent-cyan); font-family: ui-monospace, monospace; font-weight: 700;">{{ cascade.wind_influence_percent }}%</span>
             </div>
-            <div class="progress-track" style="margin-top: 6px; background: #0f172a; border: 1px solid #1e293b; height: 6px; border-radius: 99px; overflow: hidden;">
+            <div class="progress-track" style="margin-top: 6px; background: var(--bg-panel); border: 1px solid var(--glass-border); height: 6px; border-radius: 99px; overflow: hidden;">
               <span class="progress-fill" :style="{ width: `${cascade.wind_influence_percent}%`, background: getCascadeColorHex(cascade.color_code), display: 'block', height: '100%' }"></span>
             </div>
           </div>
           
           <div class="cascade-risks" style="display: flex; flex-direction: column; gap: 12px;">
-            <span style="color: #94a3b8; font-size: 16px; text-transform: uppercase; font-weight: 700;">Facilities Entering Danger Zone:</span>
-            <div v-if="!cascade.primary_risks || cascade.primary_risks.length === 0" style="color: #64748b; font-size: 16px; font-style: italic;">
+            <span style="color: var(--text-secondary); font-size: 16px; text-transform: uppercase; font-weight: 700;">Facilities Entering Danger Zone:</span>
+            <div v-if="!cascade.primary_risks || cascade.primary_risks.length === 0" style="color: var(--text-muted); font-size: 16px; font-style: italic;">
               No major infrastructure predicted to fall within perimeter.
             </div>
             <div v-for="(risk, rIdx) in cascade.primary_risks" :key="rIdx" class="risk-group">
               <div style="display: flex; justify-content: space-between; font-size: 16px; margin-bottom: 4px;">
-                <strong style="color: #cbd5e1;">{{ risk.facility_type }}</strong>
+                <strong style="color: var(--text-secondary);">{{ risk.facility_type }}</strong>
                 <span style="color: #67e8f9; font-family: ui-monospace, monospace; font-weight: 700;">[{{ risk.count_affected }}]</span>
               </div>
-              <ul style="margin: 0; padding-left: 16px; color: #94a3b8; font-size: 18px; line-height: 1.5;">
+              <ul style="margin: 0; padding-left: 16px; color: var(--text-secondary); font-size: 18px; line-height: 1.5;">
                 <li v-for="name in risk.names" :key="name">{{ name }}</li>
               </ul>
             </div>
@@ -53,8 +53,8 @@
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🔮</div>
         <div class="phase2-tag">AI RECONNAISSANCE PENDING</div>
-        <h2 style="font-size:20px; font-weight:700; color:#fff; margin-bottom:12px;">Predictive Cascade Simulation</h2>
-        <p style="color:#cbd5e1; font-size: 16px; margin-bottom:18px;">Launch the cognitive AI reconnaissance to model 6-hour, 12-hour, and 24-hour crisis expansion trajectories using atmospheric wind vectors.</p>
+        <h2 style="font-size:20px; font-weight:700; color: var(--text-primary); margin-bottom:12px;">Predictive Cascade Simulation</h2>
+        <p style="color: var(--text-secondary); font-size: 16px; margin-bottom:18px;">Launch the cognitive AI reconnaissance to model 6-hour, 12-hour, and 24-hour crisis expansion trajectories using atmospheric wind vectors.</p>
         <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
           <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
           {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Launch Tactical AI Reconnaissance' }}
@@ -87,8 +87,8 @@ function getCascadeColorHex(colorCode?: string): string {
 
 <style scoped>
 .glass-panel {
-  background: #0f172a;
-  border: 1px solid #1e293b;
+  background: var(--bg-panel);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
 }
@@ -133,7 +133,7 @@ function getCascadeColorHex(colorCode?: string): string {
   padding: 5px 14px;
   border-radius: 999px;
   background: rgba(14, 165, 233, 0.2);
-  color: #38bdf8;
+  color: var(--accent-cyan);
   border: 1px solid rgba(14, 165, 233, 0.4);
   letter-spacing: 1px;
   margin-bottom: 16px;
@@ -141,7 +141,7 @@ function getCascadeColorHex(colorCode?: string): string {
 .primary-button {
   background: #0284c7;
   border: 1px solid #0284c7;
-  color: #ffffff;
+  color: var(--text-primary);
   border-radius: 6px;
   padding: 10px 20px;
   font-size: 18px;

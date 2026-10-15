@@ -69,6 +69,13 @@
         {{ is3D ? $t('header.3d') : $t('header.2d') }}
       </button>
 
+      <!-- Desktop theme-toggle entry point intentionally deferred: light mode
+           still has broken/invisible text on several screens (Dashboard,
+           IncidentsScreen, MapFullScreen, AlertsScreen, AnalysisScreen, and
+           IncidentDetail's main container) that haven't been swept to the
+           theme CSS variables yet. Re-add this button once that sweep is
+           done. The mobile-drawer toggle is left as-is (pre-existing). -->
+
       <label class="language-selector" for="header-language">
         <span>🌐</span>
         <select
@@ -877,7 +884,7 @@ const closeMobileMenu = () => {
 
   .mobile-nav-drawer :deep(a.active) {
     background: linear-gradient(90deg, rgba(30, 144, 255, 0.3), transparent);
-    color: #ffffff;
+    color: var(--text-primary);
     border-left-color: var(--accent-cyan);
     font-weight: 700;
   }
@@ -950,7 +957,7 @@ const closeMobileMenu = () => {
 
   .settings-item:active {
     background: linear-gradient(90deg, rgba(30, 144, 255, 0.3), transparent);
-    color: #ffffff;
+    color: var(--text-primary);
     border-left-color: var(--accent-cyan);
   }
 

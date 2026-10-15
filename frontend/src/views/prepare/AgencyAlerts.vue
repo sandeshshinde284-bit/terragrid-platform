@@ -82,7 +82,7 @@
                   class="confidence-badge"
                   :class="confidenceClass(worstDayConfidence.confidence_pct)"
                   :title="`${worstDayConfidence.confidence_pct.toFixed(0)}% of that day's own 3-hour forecast readings agreed with its risk level.`"
-                >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% agreement</span>
+                >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% agreement <span class="info-hint" aria-hidden="true">ⓘ</span></span>
                 <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
               </div>
 
@@ -524,16 +524,13 @@ watch(selectedKey, () => {
 
 .alerts-hero {
   padding: 18px 24px;
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08), rgba(59, 130, 246, 0.04));
+  background: var(--accent-cyan-soft);
 }
 
 .hero-left h2 {
   margin: 0 0 4px 0;
   font-size: 20px;
-  background: linear-gradient(90deg, #38bdf8, #22d3ee);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent-cyan);
 }
 
 .hero-meta {
@@ -618,10 +615,10 @@ watch(selectedKey, () => {
   flex-shrink: 0;
 }
 
-.rail-item.green .rail-dot { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
-.rail-item.yellow .rail-dot { background: #eab308; box-shadow: 0 0 6px rgba(234, 179, 8, 0.5); }
-.rail-item.orange .rail-dot { background: #f97316; box-shadow: 0 0 6px rgba(249, 115, 22, 0.5); }
-.rail-item.red .rail-dot { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.5); }
+.rail-item.green .rail-dot { background: #22c55e; }
+.rail-item.yellow .rail-dot { background: #eab308; box-shadow: 0 0 4px rgba(234, 179, 8, 0.35); }
+.rail-item.orange .rail-dot { background: #f97316; box-shadow: 0 0 6px rgba(249, 115, 22, 0.45); }
+.rail-item.red .rail-dot { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.55); }
 
 .rail-text {
   display: flex;
@@ -700,6 +697,11 @@ watch(selectedKey, () => {
   border-radius: 999px;
   white-space: nowrap;
   cursor: help;
+}
+
+.confidence-badge .info-hint {
+  font-size: 9px;
+  opacity: 0.75;
 }
 
 .confidence-badge.confidence-high {

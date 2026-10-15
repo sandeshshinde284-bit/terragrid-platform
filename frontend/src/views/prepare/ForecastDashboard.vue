@@ -493,7 +493,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08), rgba(59, 130, 246, 0.04));
+  background: var(--accent-cyan-soft);
 }
 
 .hero-left {
@@ -505,10 +505,7 @@ onUnmounted(() => {
 .hero-left h2 {
   margin: 0;
   font-size: 20px;
-  background: linear-gradient(90deg, var(--accent-cyan), #60a5fa);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent-cyan);
 }
 
 .hero-meta-row {
