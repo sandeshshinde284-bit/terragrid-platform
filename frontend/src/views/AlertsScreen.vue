@@ -26,11 +26,11 @@
             <div class="brief-metrics">
               <div class="metric">
                 <span class="label">{{ $t('alerts.confidence') }}</span>
-                <span class="value">94%</span>
+                <span class="value">{{ avgConfidenceLabel }}</span>
               </div>
               <div class="metric">
                 <span class="label">{{ $t('alerts.dataSources') }}</span>
-                <span class="value">5 Live</span>
+                <span class="value">{{ liveSourceCount }} Live</span>
               </div>
               <div class="metric">
                 <span class="label">{{ $t('alerts.activeThreats') }}</span>
@@ -113,9 +113,23 @@ import { ref, computed, onMounted } from 'vue'
 import Header from '@/components/organisms/Header.vue'
 import { useEventsStore } from '@/stores'
 import { logWarn } from '@/utils/logger'
+import { SOURCE_REGISTRY } from '@/config/sourceRegistry'
 
 const eventsStore = useEventsStore()
 const activeFilter = ref('all')
+
+// Both of these were hardcoded ("94%" / "5 Live") regardless of what the
+// store actually held - real numbers now: confidence averaged across
+// whatever incidents actually carry a confidence score, and the source
+// count read from the same registry the Source tab uses, not a literal.
+const liveSourceCount = computed(() => Object.keys(SOURCE_REGISTRY).length)
+
+const avgConfidenceLabel = computed(() => {
+  const withConfidence = eventsStore.allIncidents.filter(i => i.confidence != null)
+  if (withConfidence.length === 0) return 'N/A'
+  const avg = withConfidence.reduce((sum, i) => sum + (i.confidence ?? 0), 0) / withConfidence.length
+  return `${Math.round(avg * 100)}%`
+})
 
 interface Alert {
   id: string

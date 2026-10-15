@@ -147,7 +147,7 @@
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
                   <div class="threat-score-pill tooltip-container">
                     <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
-                    <span class="threat-score-max">/100</span>
+                    <span class="threat-score-max">/100</span><span class="info-hint" aria-hidden="true">ⓘ</span>
 
                     <!-- Floating Tactical Tooltip -->
                     <div class="tactical-tooltip">
@@ -157,7 +157,7 @@
                       </div>
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
-                        <div class="factor-row"><span>💨 Atmospheric Risk:</span> <strong>Active</strong></div>
+                        <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence != null ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
                         <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() : 'Estimating' }}</strong></div>
                         <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
                       </div>
@@ -242,7 +242,7 @@
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
                   <div class="threat-score-pill tooltip-container">
                     <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
-                    <span class="threat-score-max">/100</span>
+                    <span class="threat-score-max">/100</span><span class="info-hint" aria-hidden="true">ⓘ</span>
 
                     <!-- Floating Tactical Tooltip -->
                     <div class="tactical-tooltip">
@@ -252,7 +252,7 @@
                       </div>
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
-                        <div class="factor-row"><span>💨 Atmospheric Risk:</span> <strong>Active</strong></div>
+                        <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence != null ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
                         <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() : 'Estimating' }}</strong></div>
                         <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
                       </div>
@@ -1421,6 +1421,13 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   font-size: 11px;
   color: #94a3b8;
   font-weight: 600;
+}
+
+.threat-score-pill .info-hint {
+  font-size: 9px;
+  color: #94a3b8;
+  opacity: 0.75;
+  margin-left: 2px;
 }
 
 .summary-card {
