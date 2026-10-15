@@ -62,6 +62,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       title: 'Settings',
       requiresAuth: false,
+      phase: 'settings',
     },
   },
   // ---- PREPARE phase routes (added for Phase 2) ----

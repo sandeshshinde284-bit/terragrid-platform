@@ -69,6 +69,10 @@
         {{ is3D ? $t('header.3d') : $t('header.2d') }}
       </button>
 
+      <RouterLink to="/settings" class="header-btn settings-link" :class="{ active: isActive('/settings') }" title="Settings">
+        ⚙️
+      </RouterLink>
+
       <!-- Desktop theme-toggle entry point intentionally deferred: light mode
            still has broken/invisible text on several screens (Dashboard,
            IncidentsScreen, MapFullScreen, AlertsScreen, AnalysisScreen, and
@@ -100,7 +104,7 @@
        nested in the same glass-panel box. Mirrors the mobile drawer's
        existing section labels (see mobile-nav-section-title below) so a
        first-time viewer has an explicit word for what this row is. -->
-  <div class="tools-bar">
+  <div class="tools-bar" v-if="activePhase !== 'settings'">
     <span class="tools-label">{{ $t('header.activeTools') }}</span>
 
     <div class="nav-row" v-if="activePhase === 'prepare'">
@@ -237,9 +241,19 @@
       <!-- Settings -->
       <div class="settings-section">
         <div class="settings-title">⚙️ {{ $t('header.settings') }}</div>
-        
+
+        <RouterLink
+          to="/settings"
+          class="settings-item"
+          :class="{ active: isActive('/settings') }"
+          @click="closeMobileMenu"
+        >
+          <span>⚙️</span>
+          <span>Settings</span>
+        </RouterLink>
+
         <!-- Dark/Light Mode Toggle -->
-        <button 
+        <button
           class="settings-item"
           @click="toggleTheme"
           title="Toggle dark/light mode"
@@ -276,7 +290,7 @@ const mobileMenuOpen = ref(false)
 // the single source of truth - no local toggle state needed.
 const activePhase = computed(() => {
   const phaseMeta = route.meta.phase as string | undefined
-  if (phaseMeta === 'prepare' || phaseMeta === 'roadmap') {
+  if (phaseMeta === 'prepare' || phaseMeta === 'roadmap' || phaseMeta === 'settings') {
     return phaseMeta
   }
   // Default to 'response' for all other routes (/, /incidents, /map, etc.)
@@ -570,6 +584,13 @@ const closeMobileMenu = () => {
 .header-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.settings-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 /* Mock/Live Toggle Special Styling */

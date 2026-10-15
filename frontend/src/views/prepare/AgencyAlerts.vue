@@ -35,6 +35,18 @@
           </div>
         </div>
 
+        <div
+          v-if="!recipientsLoading && whatsappRecipients.length === 0 && emailRecipients.length === 0"
+          class="no-recipients-banner glass-panel"
+        >
+          <span class="no-recipients-icon">⚙️</span>
+          <div class="no-recipients-text">
+            <strong>No WhatsApp or email recipients configured yet.</strong>
+            <span>Add at least one before you can send an alert from here.</span>
+          </div>
+          <RouterLink to="/settings" class="no-recipients-cta">Go to Settings →</RouterLink>
+        </div>
+
         <div class="master-detail">
           <!-- Always-visible, worst-first city list: scan every city's status
                at a glance and jump straight to one with a single click - no
@@ -853,6 +865,54 @@ watch(selectedKey, () => {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.no-recipients-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  border: 1px solid var(--accent-cyan);
+  background: var(--accent-cyan-soft);
+}
+
+.no-recipients-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.no-recipients-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.no-recipients-text strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.no-recipients-text span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.no-recipients-cta {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.no-recipients-cta:hover {
+  background: var(--accent-cyan-soft);
 }
 
 .configure-recipients-link {
