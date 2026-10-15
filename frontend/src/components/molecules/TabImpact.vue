@@ -2,8 +2,8 @@
   <div class="impact-tab">
     <div class="tab-intro">
       <div>
-        <h2>Impact Assessment</h2>
-        <p>Analysis of critical infrastructure exposure and vulnerable populations within the disaster perimeter.</p>
+        <h2>{{ $t('detail.tabTitles.impact') }}</h2>
+        <p>{{ $t('detail.tabTitles.impactDesc') }}</p>
       </div>
     </div>
 

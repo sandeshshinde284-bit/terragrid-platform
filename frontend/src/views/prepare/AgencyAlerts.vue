@@ -8,7 +8,7 @@
           <span class="radar-dot"></span>
         </div>
         <div class="loading-telemetry-text">
-          <strong class="cycling-step-text">Fetching 7-day weather forecast...</strong>
+          <strong class="cycling-step-text">{{ $t('prepare.fetchingForecast') }}</strong>
         </div>
         <div class="tactical-progress-track">
           <div class="tactical-scan-laser"></div>
@@ -17,21 +17,21 @@
 
       <div v-else-if="error" class="empty-state glass-panel">
         <div class="empty-icon">⚠️</div>
-        <h3>Couldn't load the alert templates</h3>
+        <h3>{{ $t('prepare.agencyAlerts.loadError') }}</h3>
         <p>{{ error }}</p>
       </div>
 
       <div v-else-if="cities.length === 0" class="empty-state glass-panel">
         <div class="empty-icon">📨</div>
-        <h3>No forecast data yet</h3>
-        <p>This builds on the 7-Day Forecast Dashboard's data. If OPENWEATHERMAP_API_KEY isn't set on the backend, there's nothing to generate alert templates from yet.</p>
+        <h3>{{ $t('prepare.noForecastData') }}</h3>
+        <p>{{ $t('prepare.noForecastDesc') }}</p>
       </div>
 
       <template v-else>
         <div class="alerts-hero glass-panel">
           <div class="hero-left">
-            <h2>Agency Alert Templates</h2>
-            <span class="hero-meta">Per-audience pre-event messaging - distinct from RESPONSE's live incident alerts</span>
+            <h2>{{ $t('prepare.agencyAlerts.title') }}</h2>
+            <span class="hero-meta">{{ $t('prepare.agencyAlerts.subtitle') }}</span>
           </div>
         </div>
 

@@ -2,10 +2,22 @@
   <div class="operational-teaser">
     <!-- Loading State -->
     <div v-if="isLoading" class="teaser-loading">
-      <div class="radar-mini">
-        <span class="radar-dot"></span>
+      <div class="loading-header">
+        <span class="teaser-pulse-dot"></span>
+        <label class="teaser-title">⚡ AI Processing</label>
       </div>
-      <span class="loading-text">AI Analysis...</span>
+      <div class="loading-content">
+        <div class="radar-mini">
+          <span class="radar-dot"></span>
+        </div>
+        <div class="loading-messages">
+          <span class="loading-text">Analyzing incident data...</span>
+          <span class="loading-subtext">Generating response plan</span>
+        </div>
+      </div>
+      <div class="loading-bar">
+        <div class="loading-progress"></div>
+      </div>
     </div>
 
     <!-- Error State -->
@@ -101,31 +113,109 @@ const navigateToInsights = () => {
 /* Loading State */
 .teaser-loading {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(15, 23, 42, 0.8));
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 8px;
+  animation: loadingGlow 2s ease-in-out infinite;
+}
+
+@keyframes loadingGlow {
+  0%, 100% {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.3), rgba(15, 23, 42, 0.8));
+  }
+  50% {
+    border-color: rgba(59, 130, 246, 0.6);
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.5), rgba(15, 23, 42, 0.9));
+  }
+}
+
+.loading-header {
+  display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px;
-  color: #94a3b8;
-  font-size: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.loading-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
 }
 
 .radar-mini {
   position: relative;
-  width: 16px;
-  height: 16px;
-  border: 1px solid rgba(59, 130, 246, 0.5);
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(59, 130, 246, 0.7);
   border-radius: 50%;
+  flex-shrink: 0;
   animation: radarSpin 2s linear infinite;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 
 .radar-dot {
   position: absolute;
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
   background: #3b82f6;
   border-radius: 50%;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+}
+
+.loading-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loading-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #38bdf8;
+  letter-spacing: 0.5px;
+}
+
+.loading-subtext {
+  font-size: 11px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.loading-bar {
+  height: 3px;
+  background: rgba(59, 130, 246, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.loading-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #0ea5e9, #3b82f6);
+  background-size: 200% 100%;
+  border-radius: 2px;
+  animation: loadingBar 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingBar {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 
 @keyframes radarSpin {
@@ -135,11 +225,6 @@ const navigateToInsights = () => {
   to {
     transform: rotate(360deg);
   }
-}
-
-.loading-text {
-  font-size: 13px;
-  color: #cbd5e1;
 }
 
 /* Error State */

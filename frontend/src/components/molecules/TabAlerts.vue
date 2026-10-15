@@ -2,8 +2,8 @@
   <div class="alerts-tab">
     <div class="tab-intro">
       <div>
-        <h2>Alert Management</h2>
-        <p>Multi-channel emergency broadcast analytics and public notification dispatch tracking.</p>
+        <h2>{{ $t('detail.tabTitles.alerts') }}</h2>
+        <p>{{ $t('detail.tabTitles.alertsDesc') }}</p>
       </div>
     </div>
 

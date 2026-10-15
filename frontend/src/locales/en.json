@@ -11,7 +11,36 @@
     "light": "Light",
     "dark": "Dark",
     "settings": "Settings",
-    "language": "Language"
+    "language": "Language",
+    "simulationModeActive": "SIMULATION MODE ACTIVE",
+    "simulationModeDesc": "Showing demonstration data for evaluation. Real-time sensor streaming is paused.",
+    "activeTools": "ACTIVE TOOLS",
+    "soon": "SOON",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "phases": {
+      "prepare": "PREPARE",
+      "response": "RESPONSE",
+      "predictRecover": "PREDICT · RECOVER",
+      "predictRecoverTooltip": "Predict & Recover — coming soon"
+    },
+    "tools": {
+      "forecast": "Forecast",
+      "riskTimeline": "Risk Timeline",
+      "checklist": "Checklist",
+      "agencyAlerts": "Agency Alerts",
+      "dashboard": "Dashboard",
+      "incidents": "Incidents",
+      "map": "Live Map",
+      "mapShort": "Map",
+      "analysis": "Deep Analysis",
+      "analysisShort": "Analysis",
+      "alerts": "Alerts"
+    },
+    "roadmap": {
+      "predictSoon": "🔮 Predict — Coming soon",
+      "recoverSoon": "♻️ Recover — Coming soon"
+    }
   },
   "dashboard": {
     "activeIncidents": "ACTIVE INCIDENTS",
@@ -37,7 +66,76 @@
     "search": "Search incidents...",
     "filterByType": "Type",
     "filterByStatus": "Status",
-    "filterBySeverity": "Severity"
+    "filterBySeverity": "Severity",
+    "hazardType": "Hazard Type",
+    "country": "Country",
+    "recommendedAction": "Recommended Action",
+    "analysisCol": "Analysis",
+    "filterByCountry": "Filter by Country"
+  },
+  "detail": {
+    "activeIncidents": "Active Incidents",
+    "dashboardBtn": "⌂ Dashboard",
+    "liveMapBtn": "◎ Live Map",
+    "incident": "INCIDENT",
+    "severityLabel": "SEVERITY",
+    "detected": "Detected",
+    "innerTabs": {
+      "overview": "Overview",
+      "impact": "Impact",
+      "map": "Map",
+      "response": "Response",
+      "history": "History",
+      "source": "Source",
+      "insights": "Insights",
+      "alerts": "Alerts"
+    },
+    "tabTitles": {
+      "overview": "Crisis Assessment",
+      "impact": "Impact Assessment",
+      "impactDesc": "Analysis of critical infrastructure exposure and vulnerable populations within the disaster perimeter.",
+      "map": "Evacuation Routes",
+      "mapDesc": "Real-time calculated transit clearance times, primary corridors, and bottleneck choke-points.",
+      "response": "Resource Deployment",
+      "responseDesc": "Operational logistics and multi-agency resource allocations calculated for this sector.",
+      "history": "Spread Forecast",
+      "historyDesc": "Trajectory forecasting based on atmospheric wind vectors, historical context, and local terrain topography.",
+      "source": "Source of Truth",
+      "sourceDesc": "Complete data lineage: where this incident data came from, when, confidence level, and freshness.",
+      "insights": "AI Insights",
+      "insightsDesc": "Executive tactical summaries and high-level directives synthesized from live multi-source telemetry.",
+      "alerts": "Alert Management",
+      "alertsDesc": "Multi-channel emergency broadcast analytics and public notification dispatch tracking."
+    }
+  },
+  "prepare": {
+    "fetchingForecast": "Fetching 7-day weather forecast...",
+    "noForecastData": "No forecast data yet",
+    "noForecastDesc": "No cities returned a forecast. If OPENWEATHERMAP_API_KEY isn't set on the backend, this stays empty rather than showing invented numbers.",
+    "forecast": {
+      "title": "7-Day Risk Escalation",
+      "citiesMonitored": "cities monitored · updated from OpenWeatherMap",
+      "loadError": "Couldn't load the forecast",
+      "sourceOfTruth": "Source of Truth"
+    },
+    "timeline": {
+      "title": "Risk Escalation Timeline",
+      "subtitle": "How risk builds day by day for a single location, from the same 7-day forecast",
+      "loading": "Building risk escalation timeline...",
+      "loadError": "Couldn't load the timeline"
+    },
+    "checklist": {
+      "title": "Preparedness Checklist",
+      "subtitle": "AI-generated actions tied to each city's forecast, grouped by urgency",
+      "generating": "Generating preparedness checklist for",
+      "loadError": "Couldn't generate the checklist"
+    },
+    "agencyAlerts": {
+      "title": "Agency Alert Templates",
+      "subtitle": "Per-audience pre-event messaging - distinct from RESPONSE's live incident alerts",
+      "drafting": "Drafting agency alerts for",
+      "loadError": "Couldn't generate the alerts"
+    }
   },
   "map": {
     "title": "Strategic Map",
@@ -49,6 +147,39 @@
     "heatMap": "Heat Map",
     "tacticalView": "2D Tactical View"
   },
+  "mapFull": {
+    "returnToIncident": "Return to Incident:",
+    "tactical": "TACTICAL",
+    "satellite": "SATELLITE",
+    "globe": "3D GLOBE",
+    "tacticalTooltip": "Tactical Navigation Night Radar (Vivid midnight blue & glowing borders)",
+    "satelliteTooltip": "Real-World Photorealistic Satellite Recon",
+    "globeTooltip": "3D Orbital Globe with Atmospheric Lighting",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "resetView": "Reset Global View",
+    "toggleLayers": "Toggle GIS Layers",
+    "layersTitle": "GIS Tactical Layers",
+    "active": "Active",
+    "layerIncidents": "Live Disaster Markers",
+    "layerGlow": "Critical Threat Pulsing Rings",
+    "cursorLabel": "GIS CURSOR",
+    "zoomLabel": "ZOOM",
+    "feedLabel": "POSTGRES FEED",
+    "verified": "VERIFIED",
+    "legendTitle": "Multi-Hazard Telemetry",
+    "wildfires": "Wildfires",
+    "floods": "Floods",
+    "seismic": "Seismic",
+    "severeStorms": "Severe Storms",
+    "otherHazards": "Other Hazards"
+  },
+  "roadmap": {
+    "predictTitle": "Predict",
+    "predictDesc": "Early-warning forecasting ahead of the current 7-day window. Feature scope not yet finalized.",
+    "recoverTitle": "Recover",
+    "recoverDesc": "Post-event recovery and resource reallocation tracking. Feature scope not yet finalized."
+  },
   "analysis": {
     "title": "Analysis",
     "beforeAfter": "Before/After Timeline",
@@ -59,7 +190,12 @@
     "selectIncident": "Select an incident to view timeline",
     "hours": "Hours",
     "satellite": "Satellite Imagery",
-    "comparison": "Comparison"
+    "comparison": "Comparison",
+    "duration": "Duration Since Detection",
+    "density": "People Affected Per km²",
+    "accelerating": "Accelerating",
+    "projected": "Projected",
+    "densityLabel": "Density"
   },
   "alerts": {
     "title": "Alerts & Broadcasts",
@@ -70,7 +206,10 @@
     "disasterBrief": "AI Disaster Brief",
     "noAlerts": "No new alerts",
     "realTime": "Real-time Updates",
-    "lastUpdate": "Last update"
+    "lastUpdate": "Last update",
+    "confidence": "Confidence",
+    "dataSources": "Data Sources",
+    "activeThreats": "Active Threats"
   },
   "common": {
     "close": "Close",

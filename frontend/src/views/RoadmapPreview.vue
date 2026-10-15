@@ -4,13 +4,13 @@
     <div class="roadmap-grid">
       <PreparePlaceholder
         icon="🔮"
-        title="Predict"
-        description="Early-warning forecasting ahead of the current 7-day window. Feature scope not yet finalized."
+        :title="$t('roadmap.predictTitle')"
+        :description="$t('roadmap.predictDesc')"
       />
       <PreparePlaceholder
         icon="♻️"
-        title="Recover"
-        description="Post-event recovery and resource reallocation tracking. Feature scope not yet finalized."
+        :title="$t('roadmap.recoverTitle')"
+        :description="$t('roadmap.recoverDesc')"
       />
     </div>
   </div>

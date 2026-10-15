@@ -2,8 +2,8 @@
   <div class="source-tab">
     <div class="tab-intro">
       <div>
-        <h2>Source of Truth</h2>
-        <p>Complete data lineage: where this incident data came from, when, confidence level, and freshness.</p>
+        <h2>{{ $t('detail.tabTitles.source') }}</h2>
+        <p>{{ $t('detail.tabTitles.sourceDesc') }}</p>
       </div>
     </div>
 

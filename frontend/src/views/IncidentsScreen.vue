@@ -49,7 +49,7 @@
 
           <div class="filter-group">
             <select v-model="filterCountry" class="filter-select">
-              <option value="">🌎 Filter by Country - All</option>
+              <option value="">🌎 {{ $t('incidents.filterByCountry') }} - All</option>
               <option v-for="country in availableCountries" :key="country" :value="country">
                 {{ country }}
               </option>
@@ -64,7 +64,7 @@
           <thead>
             <tr>
               <th @click="handleSort('type')" class="sortable">
-                Hazard Type
+                {{ $t('incidents.hazardType') }}
                 <span v-if="sortBy === 'type'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
               </th>
               <th @click="handleSort('location')" class="sortable">
@@ -72,7 +72,7 @@
                 <span v-if="sortBy === 'location'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
               </th>
               <th @click="handleSort('country')" class="sortable">
-                Country
+                {{ $t('incidents.country') }}
                 <span v-if="sortBy === 'country'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
               </th>
               <th @click="handleSort('status')" class="sortable">
@@ -99,8 +99,8 @@
                 {{ $t('incidents.detectionTime') }}
                 <span v-if="sortBy === 'detectionTime'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
               </th>
-              <th>Recommended Action</th>
-              <th>Analysis</th>
+              <th>{{ $t('incidents.recommendedAction') }}</th>
+              <th>{{ $t('incidents.analysisCol') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -671,7 +671,7 @@ onMounted(async () => {
 .incidents-table-wrapper {
   flex: 1;
   overflow: auto;
-  padding: 16px;
+  padding: 0 16px 16px 16px;
   min-height: 0;
   display: block;
   position: relative; /* Helps context for sticky children */
@@ -693,7 +693,7 @@ onMounted(async () => {
   text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.5px;
-  background: rgba(15, 23, 42, 0.95);
+  background: #0f172a;
   position: sticky;
   top: 0;
   z-index: 11;
@@ -1650,4 +1650,28 @@ onMounted(async () => {
     right: 8px;
   }
 }
+
+/* Custom Scrollbars */
+.incidents-table-wrapper::-webkit-scrollbar,
+.incidents-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.incidents-table-wrapper::-webkit-scrollbar-track,
+.incidents-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.incidents-table-wrapper::-webkit-scrollbar-thumb,
+.incidents-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+.incidents-table-wrapper::-webkit-scrollbar-thumb:hover,
+.incidents-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 </style>

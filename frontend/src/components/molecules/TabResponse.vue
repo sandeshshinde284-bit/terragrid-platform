@@ -2,8 +2,8 @@
   <div class="response-tab">
     <div class="tab-intro">
       <div>
-        <h2>Resource Deployment</h2>
-        <p>Operational logistics and multi-agency resource allocations calculated for this sector.</p>
+        <h2>{{ $t('detail.tabTitles.response') }}</h2>
+        <p>{{ $t('detail.tabTitles.responseDesc') }}</p>
       </div>
     </div>
 

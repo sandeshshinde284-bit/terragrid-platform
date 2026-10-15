@@ -11,7 +11,36 @@
     "light": "Clair",
     "dark": "Sombre",
     "settings": "Paramètres",
-    "language": "Langue"
+    "language": "Langue",
+    "simulationModeActive": "MODE SIMULATION ACTIF",
+    "simulationModeDesc": "Affichage des données de démonstration. La diffusion des capteurs en temps réel est en pause.",
+    "activeTools": "OUTILS ACTIFS",
+    "soon": "BIENTÔT",
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "phases": {
+      "prepare": "PRÉPARATION",
+      "response": "RÉPONSE",
+      "predictRecover": "PRÉVISION · RÉCUPÉRATION",
+      "predictRecoverTooltip": "Prévision & Récupération — bientôt disponible"
+    },
+    "tools": {
+      "forecast": "Prévisions",
+      "riskTimeline": "Chronologie des Risques",
+      "checklist": "Liste de Contrôle",
+      "agencyAlerts": "Alertes d'Agence",
+      "dashboard": "Tableau de Bord",
+      "incidents": "Incidents",
+      "map": "Carte en Direct",
+      "mapShort": "Carte",
+      "analysis": "Analyse Approfondie",
+      "analysisShort": "Analyse",
+      "alerts": "Alertes"
+    },
+    "roadmap": {
+      "predictSoon": "🔮 Prévision — Bientôt",
+      "recoverSoon": "♻️ Récupération — Bientôt"
+    }
   },
   "dashboard": {
     "activeIncidents": "INCIDENTS ACTIFS",
@@ -37,7 +66,76 @@
     "search": "Rechercher les incidents...",
     "filterByType": "Type",
     "filterByStatus": "Statut",
-    "filterBySeverity": "Gravité"
+    "filterBySeverity": "Gravité",
+    "hazardType": "Type de Danger",
+    "country": "Pays",
+    "recommendedAction": "Action Recommandée",
+    "analysisCol": "Analyse",
+    "filterByCountry": "Filtrer par Pays"
+  },
+  "detail": {
+    "activeIncidents": "Incidents Actifs",
+    "dashboardBtn": "⌂ Tableau de Bord",
+    "liveMapBtn": "◎ Carte en Direct",
+    "incident": "INCIDENT",
+    "severityLabel": "GRAVITÉ",
+    "detected": "Détecté",
+    "innerTabs": {
+      "overview": "Aperçu",
+      "impact": "Impact",
+      "map": "Carte",
+      "response": "Réponse",
+      "history": "Historique",
+      "source": "Source",
+      "insights": "Analyses IA",
+      "alerts": "Alertes"
+    },
+    "tabTitles": {
+      "overview": "Évaluation de la Crise",
+      "impact": "Évaluation de l'Impact",
+      "impactDesc": "Analyse de l'exposition des infrastructures critiques et des populations vulnérables dans le périmètre du sinistre.",
+      "map": "Itinéraires d'Évacuation",
+      "mapDesc": "Délais de dégagement calculés en temps réel, couloirs principaux et goulets d'étranglement.",
+      "response": "Déploiement des Ressources",
+      "responseDesc": "Logistique opérationnelle et allocations de ressources multi-agences calculées pour ce secteur.",
+      "history": "Prévision de Propagation",
+      "historyDesc": "Prévision de trajectoire basée sur les vecteurs de vent, le contexte historique et la topographie locale.",
+      "source": "Source de Vérité",
+      "sourceDesc": "Traçabilité complète des données : provenance, horodatage, niveau de confiance et fraîcheur.",
+      "insights": "Analyses IA",
+      "insightsDesc": "Synthèses tactiques exécutives et directives opérationnelles issues de la télémétrie multi-sources en direct.",
+      "alerts": "Gestion des Alertes",
+      "alertsDesc": "Analyses de diffusion d'urgence multicanal et suivi des notifications publiques."
+    }
+  },
+  "prepare": {
+    "fetchingForecast": "Récupération des prévisions météo sur 7 jours...",
+    "noForecastData": "Pas encore de données de prévision",
+    "noForecastDesc": "Aucune ville n'a renvoyé de prévisions. Si OPENWEATHERMAP_API_KEY n'est pas configuré sur le backend, cette zone reste vide.",
+    "forecast": {
+      "title": "Escalade des Risques sur 7 Jours",
+      "citiesMonitored": "villes surveillées · mis à jour depuis OpenWeatherMap",
+      "loadError": "Impossible de charger les prévisions",
+      "sourceOfTruth": "Source de Vérité"
+    },
+    "timeline": {
+      "title": "Chronologie d'Escalade des Risques",
+      "subtitle": "Évolution du risque jour après jour pour un lieu donné",
+      "loading": "Construction de la chronologie des risques...",
+      "loadError": "Impossible de charger la chronologie"
+    },
+    "checklist": {
+      "title": "Liste de Préparation",
+      "subtitle": "Actions générées par l'IA liées aux prévisions de chaque ville, regroupées par urgence",
+      "generating": "Génération de la liste de préparation pour",
+      "loadError": "Impossible de générer la liste de contrôle"
+    },
+    "agencyAlerts": {
+      "title": "Modèles d'Alertes d'Agence",
+      "subtitle": "Messages préalables à l'événement par public cible",
+      "drafting": "Rédaction des alertes d'agence pour",
+      "loadError": "Impossible de générer les alertes"
+    }
   },
   "map": {
     "title": "Carte Stratégique",
@@ -49,6 +147,39 @@
     "heatMap": "Carte de Chaleur",
     "tacticalView": "Vue Tactique 2D"
   },
+  "mapFull": {
+    "returnToIncident": "Retour à l'incident :",
+    "tactical": "TACTIQUE",
+    "satellite": "SATELLITE",
+    "globe": "GLOBE 3D",
+    "tacticalTooltip": "Radar de navigation tactique de nuit",
+    "satelliteTooltip": "Reconnaissance satellite photoréaliste",
+    "globeTooltip": "Globe orbital 3D avec éclairage atmosphérique",
+    "zoomIn": "Zoomer",
+    "zoomOut": "Dézoomer",
+    "resetView": "Réinitialiser la vue globale",
+    "toggleLayers": "Basculer les calques SIG",
+    "layersTitle": "Calques tactiques SIG",
+    "active": "Actif",
+    "layerIncidents": "Marqueurs de catastrophe en direct",
+    "layerGlow": "Anneaux pulsants de menace critique",
+    "cursorLabel": "CURSEUR SIG",
+    "zoomLabel": "ZOOM",
+    "feedLabel": "FLUX POSTGRES",
+    "verified": "VÉRIFIÉ",
+    "legendTitle": "Télémétrie multi-risques",
+    "wildfires": "Feux de forêt",
+    "floods": "Inondations",
+    "seismic": "Sismique",
+    "severeStorms": "Tempêtes sévères",
+    "otherHazards": "Autres dangers"
+  },
+  "roadmap": {
+    "predictTitle": "Prévision",
+    "predictDesc": "Prévisions d'alerte précoce au-delà de la fenêtre actuelle de 7 jours. Portée des fonctionnalités non finalisée.",
+    "recoverTitle": "Récupération",
+    "recoverDesc": "Suivi de la récupération post-événement et de la réaffectation des ressources. Portée des fonctionnalités non finalisée."
+  },
   "analysis": {
     "title": "Analyse",
     "beforeAfter": "Chronologie Avant/Après",
@@ -59,7 +190,12 @@
     "selectIncident": "Sélectionnez un incident pour voir la chronologie",
     "hours": "Heures",
     "satellite": "Images Satellitaires",
-    "comparison": "Comparaison"
+    "comparison": "Comparaison",
+    "duration": "Durée depuis Détection",
+    "density": "Personnes Affectées par km²",
+    "accelerating": "Accélération",
+    "projected": "Projeté",
+    "densityLabel": "Densité"
   },
   "askTheMap": {
     "title": "Interrogez la Carte",
@@ -79,7 +215,10 @@
     "disasterBrief": "Résumé Catastrophe IA",
     "noAlerts": "Pas de nouvelles alertes",
     "realTime": "Mises à Jour en Temps Réel",
-    "lastUpdate": "Dernière mise à jour"
+    "lastUpdate": "Dernière mise à jour",
+    "confidence": "Confiance",
+    "dataSources": "Sources de Données",
+    "activeThreats": "Menaces Actives"
   },
   "common": {
     "close": "Fermer",

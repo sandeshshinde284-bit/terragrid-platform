@@ -2,8 +2,8 @@
   <div class="map-tab">
     <div class="tab-intro">
       <div>
-        <h2>Evacuation Routes</h2>
-        <p>Real-time calculated transit clearance times, primary corridors, and bottleneck choke-points.</p>
+        <h2>{{ $t('detail.tabTitles.map') }}</h2>
+        <p>{{ $t('detail.tabTitles.mapDesc') }}</p>
       </div>
     </div>
 

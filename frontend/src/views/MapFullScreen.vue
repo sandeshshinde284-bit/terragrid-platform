@@ -11,7 +11,7 @@
         <div v-if="fromIncidentId" class="floating-incident-back">
           <button class="incident-back-pill" type="button" @click="returnToIncident">
             <span class="back-chevron">←</span>
-            <span class="back-text">Return to Incident: <strong>{{ fromIncidentLocation }}</strong></span>
+            <span class="back-text">{{ $t('mapFull.returnToIncident') }} <strong>{{ fromIncidentLocation }}</strong></span>
           </button>
         </div>
       </transition>
@@ -21,53 +21,53 @@
         <button 
           :class="['mode-btn', { active: currentMode === 'tactical' }]"
           @click="setMode('tactical')"
-          title="Tactical Navigation Night Radar (Vivid midnight blue & glowing borders)"
+          :title="$t('mapFull.tacticalTooltip')"
         >
           <span class="mode-icon">🌙</span>
-          <span class="mode-label">TACTICAL</span>
+          <span class="mode-label">{{ $t('mapFull.tactical') }}</span>
         </button>
         <button 
           :class="['mode-btn', { active: currentMode === 'satellite' }]"
           @click="setMode('satellite')"
-          title="Real-World Photorealistic Satellite Recon"
+          :title="$t('mapFull.satelliteTooltip')"
         >
           <span class="mode-icon">🛰️</span>
-          <span class="mode-label">SATELLITE</span>
+          <span class="mode-label">{{ $t('mapFull.satellite') }}</span>
         </button>
         <button 
           :class="['mode-btn', { active: currentMode === 'globe' }]"
           @click="setMode('globe')"
-          title="3D Orbital Globe with Atmospheric Lighting"
+          :title="$t('mapFull.globeTooltip')"
         >
           <span class="mode-icon">🌐</span>
-          <span class="mode-label">3D GLOBE</span>
+          <span class="mode-label">{{ $t('mapFull.globe') }}</span>
         </button>
       </div>
 
       <!-- Zoom & Viewport Controls HUD (Top Right) -->
       <div class="map-controls glass-panel">
-        <button @click="zoomIn" title="Zoom In" class="control-btn" type="button">➕</button>
-        <button @click="zoomOut" title="Zoom Out" class="control-btn" type="button">➖</button>
-        <button @click="resetView" title="Reset Global View" class="control-btn" type="button">🎯</button>
-        <button @click="toggleLayersPanel" title="Toggle GIS Layers" :class="['control-btn', { active: showLayersPanel }]" type="button">🗺️</button>
+        <button @click="zoomIn" :title="$t('mapFull.zoomIn')" class="control-btn" type="button">➕</button>
+        <button @click="zoomOut" :title="$t('mapFull.zoomOut')" class="control-btn" type="button">➖</button>
+        <button @click="resetView" :title="$t('mapFull.resetView')" class="control-btn" type="button">🎯</button>
+        <button @click="toggleLayersPanel" :title="$t('mapFull.toggleLayers')" :class="['control-btn', { active: showLayersPanel }]" type="button">🗺️</button>
       </div>
 
       <!-- Advanced Multi-Layer GIS Control Panel -->
       <transition name="fade">
         <div v-if="showLayersPanel" class="layers-panel glass-panel">
           <div class="panel-header">
-            <h4>🛰️ GIS Tactical Layers</h4>
-            <span class="active-tag">{{ activeLayerCount }} Active</span>
+            <h4>🛰️ {{ $t('mapFull.layersTitle') }}</h4>
+            <span class="active-tag">{{ activeLayerCount }} {{ $t('mapFull.active') }}</span>
           </div>
 
           <div class="layer-item">
             <input v-model="layers.incidents" type="checkbox" id="layer-incidents" @change="renderMarkers" />
-            <label for="layer-incidents">📍 Live Disaster Markers</label>
+            <label for="layer-incidents">📍 {{ $t('mapFull.layerIncidents') }}</label>
           </div>
 
           <div class="layer-item">
             <input v-model="layers.threatGlow" type="checkbox" id="layer-glow" @change="renderMarkers" />
-            <label for="layer-glow">🔥 Critical Threat Pulsing Rings</label>
+            <label for="layer-glow">🔥 {{ $t('mapFull.layerGlow') }}</label>
           </div>
         </div>
       </transition>
@@ -75,48 +75,48 @@
       <!-- Live Cursor Coordinate Inspector HUD -->
       <div class="coord-inspector-hud glass-panel">
         <div class="hud-item">
-          <span class="hud-label">GIS CURSOR</span>
+          <span class="hud-label">{{ $t('mapFull.cursorLabel') }}</span>
           <span class="hud-value">{{ cursorCoordText }}</span>
         </div>
         <div class="hud-divider"></div>
         <div class="hud-item">
-          <span class="hud-label">ZOOM</span>
+          <span class="hud-label">{{ $t('mapFull.zoomLabel') }}</span>
           <span class="hud-value">{{ currentZoom.toFixed(2) }}x</span>
         </div>
         <div class="hud-divider"></div>
         <div class="hud-item">
-          <span class="hud-label">POSTGRES FEED</span>
-          <span class="hud-value live-pulse">{{ eventsStore.allIncidents.length }} VERIFIED 🟢</span>
+          <span class="hud-label">{{ $t('mapFull.feedLabel') }}</span>
+          <span class="hud-value live-pulse">{{ eventsStore.allIncidents.length }} {{ $t('mapFull.verified') }} 🟢</span>
         </div>
       </div>
 
       <!-- Tactical Legend with Real-Time Type Counts -->
       <div class="legend-panel glass-panel">
-        <div class="legend-title">Multi-Hazard Telemetry</div>
+        <div class="legend-title">{{ $t('mapFull.legendTitle') }}</div>
         <div class="legend-items">
           <div class="legend-row">
             <span class="icon">🔥</span>
-            <span class="name">Wildfires</span>
+            <span class="name">{{ $t('mapFull.wildfires') }}</span>
             <span class="count">{{ incidentCounts.fire }}</span>
           </div>
           <div class="legend-row">
             <span class="icon">💧</span>
-            <span class="name">Floods</span>
+            <span class="name">{{ $t('mapFull.floods') }}</span>
             <span class="count">{{ incidentCounts.flood }}</span>
           </div>
           <div class="legend-row">
             <span class="icon">🌍</span>
-            <span class="name">Seismic</span>
+            <span class="name">{{ $t('mapFull.seismic') }}</span>
             <span class="count">{{ incidentCounts.earthquake }}</span>
           </div>
           <div class="legend-row">
             <span class="icon">🌀</span>
-            <span class="name">Severe Storms</span>
+            <span class="name">{{ $t('mapFull.severeStorms') }}</span>
             <span class="count">{{ incidentCounts.storm }}</span>
           </div>
           <div class="legend-row">
             <span class="icon">📍</span>
-            <span class="name">Other Hazards</span>
+            <span class="name">{{ $t('mapFull.otherHazards') }}</span>
             <span class="count">{{ incidentCounts.other }}</span>
           </div>
         </div>

@@ -3,13 +3,40 @@
     <Header />
 
     <div class="analysis-container">
-      <div class="selector-panel glass-panel">
-        <select id="analysis-select" aria-label="Select Incident" v-model="selectedIncidentId" class="incident-select">
-          <option value="">{{ $t('analysis.selectIncident') }}</option>
-          <option v-for="incident in eventsStore.allIncidents" :key="incident.id" :value="incident.id">
-            {{ incident.type.toUpperCase() }} - {{ incident.location }}
-          </option>
-        </select>
+      <div class="selector-panel glass-panel" ref="dropdownRef">
+        <div class="custom-dropdown">
+          <div 
+            class="dropdown-trigger" 
+            :class="{ 'is-open': isDropdownOpen }"
+            @click="isDropdownOpen = !isDropdownOpen"
+          >
+            <span class="selected-text">
+              {{ selectedIncident ? `${selectedIncident.type.toUpperCase()} - ${selectedIncident.location}` : $t('analysis.selectIncident') }}
+            </span>
+            <span class="chevron" :class="{ 'is-open': isDropdownOpen }">▾</span>
+          </div>
+
+          <div v-if="isDropdownOpen" class="dropdown-options">
+            <div 
+              class="dropdown-option" 
+              :class="{ active: !selectedIncidentId }"
+              @click="selectIncident('')"
+            >
+              {{ $t('analysis.selectIncident') }}
+            </div>
+            <div 
+              v-for="incident in eventsStore.allIncidents" 
+              :key="incident.id" 
+              class="dropdown-option"
+              :class="{ active: selectedIncidentId === incident.id }"
+              @click="selectIncident(incident.id)"
+            >
+              <span class="option-type">{{ incident.type.toUpperCase() }}</span>
+              <span class="option-separator">-</span>
+              <span class="option-loc">{{ incident.location }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-if="selectedIncident" class="timeline-section">
@@ -21,7 +48,7 @@
               <div class="trend-info">
                 <span class="label">{{ $t('incidents.trend') }}</span>
                 <span class="value">+{{ selectedIncident.trend.toFixed(1) }} km²/h</span>
-                <span class="status positive">Accelerating</span>
+                <span class="status positive">{{ $t('analysis.accelerating') }}</span>
               </div>
             </div>
 
@@ -30,25 +57,25 @@
               <div class="trend-info">
                 <span class="label">{{ $t('incidents.forecast') }} (6h)</span>
                 <span class="value">+{{ selectedIncident.forecast6h.toFixed(0) }} km²</span>
-                <span class="status">Projected</span>
+                <span class="status">{{ $t('analysis.projected') }}</span>
               </div>
             </div>
 
             <div class="trend-card">
               <div class="trend-icon">⏱️</div>
               <div class="trend-info">
-                <span class="label">Duration Since Detection</span>
+                <span class="label">{{ $t('analysis.duration') }}</span>
                 <span class="value">{{ getDurationHours(selectedIncident.detectionTime) }}h</span>
-                <span class="status">Active</span>
+                <span class="status">{{ $t('common.active') }}</span>
               </div>
             </div>
 
             <div class="trend-card">
               <div class="trend-icon">👥</div>
               <div class="trend-info">
-                <span class="label">People Affected Per km²</span>
+                <span class="label">{{ $t('analysis.density') }}</span>
                 <span class="value">{{ (selectedIncident.affectedPopulation / selectedIncident.affectedArea).toFixed(0) }}</span>
-                <span class="status">Density</span>
+                <span class="status">{{ $t('analysis.densityLabel') }}</span>
               </div>
             </div>
           </div>
@@ -69,13 +96,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import Header from '@/components/organisms/Header.vue'
 import { useEventsStore } from '@/stores'
 import type { IncidentLevel1 } from '@/types'
 
 const eventsStore = useEventsStore()
 const selectedIncidentId = ref('')
+const isDropdownOpen = ref(false)
+const dropdownRef = ref<HTMLElement | null>(null)
+
+const selectIncident = (id: string) => {
+  selectedIncidentId.value = id
+  isDropdownOpen.value = false
+}
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target as Node)) {
+    isDropdownOpen.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 const selectedIncident = computed<IncidentLevel1 | null>(() => {
   if (!selectedIncidentId.value) return null
@@ -111,24 +159,138 @@ const getDurationHours = (detectionTime: Date) => {
   overflow-x: hidden;
 }
 
-.selector-panel {
-  padding: 16px;
+/* Custom Scrollbars */
+.analysis-container::-webkit-scrollbar,
+.dropdown-options::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.incident-select {
+.analysis-container::-webkit-scrollbar-track,
+.dropdown-options::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.analysis-container::-webkit-scrollbar-thumb,
+.dropdown-options::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+.analysis-container::-webkit-scrollbar-thumb:hover,
+.dropdown-options::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.selector-panel {
+  padding: 16px;
+  position: relative;
+  z-index: 50;
+}
+
+.custom-dropdown {
+  position: relative;
   width: 100%;
-  padding: 10px 12px;
+}
+
+.dropdown-trigger {
+  width: 100%;
+  padding: 10px 14px;
   border: 1px solid var(--glass-border);
   border-radius: 6px;
-  background: transparent;
+  background: rgba(15, 23, 42, 0.7);
   color: var(--text-primary);
   font-size: 14px;
   cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: all 0.2s ease;
 }
 
-.incident-select option {
-  background: var(--bg-panel);
+.dropdown-trigger:hover,
+.dropdown-trigger.is-open {
+  border-color: var(--accent-cyan);
+  background: rgba(30, 144, 255, 0.1);
+  box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
+}
+
+.selected-text {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  font-size: 14px;
+  color: var(--accent-cyan);
+  transition: transform 0.2s ease;
+  margin-left: 8px;
+}
+
+.chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.dropdown-options {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #0f172a;
+  border: 1px solid var(--accent-cyan);
+  border-radius: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 188, 212, 0.2);
+}
+
+.dropdown-option {
+  padding: 10px 14px;
+  font-size: 13px;
   color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s ease;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-option:hover {
+  background: rgba(0, 188, 212, 0.15);
+  color: #ffffff;
+}
+
+.dropdown-option.active {
+  background: rgba(0, 188, 212, 0.25);
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+.option-type {
+  font-weight: 700;
+  color: #38bdf8;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.option-separator {
+  color: var(--text-muted);
+}
+
+.option-loc {
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .timeline-section {

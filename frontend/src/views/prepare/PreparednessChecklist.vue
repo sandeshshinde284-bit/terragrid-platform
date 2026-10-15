@@ -8,7 +8,7 @@
           <span class="radar-dot"></span>
         </div>
         <div class="loading-telemetry-text">
-          <strong class="cycling-step-text">Fetching 7-day weather forecast...</strong>
+          <strong class="cycling-step-text">{{ $t('prepare.fetchingForecast') }}</strong>
         </div>
         <div class="tactical-progress-track">
           <div class="tactical-scan-laser"></div>
@@ -17,21 +17,21 @@
 
       <div v-else-if="error" class="empty-state glass-panel">
         <div class="empty-icon">⚠️</div>
-        <h3>Couldn't load the checklist</h3>
+        <h3>{{ $t('prepare.checklist.loadError') }}</h3>
         <p>{{ error }}</p>
       </div>
 
       <div v-else-if="cities.length === 0" class="empty-state glass-panel">
         <div class="empty-icon">✅</div>
-        <h3>No forecast data yet</h3>
-        <p>This builds on the 7-Day Forecast Dashboard's data. If OPENWEATHERMAP_API_KEY isn't set on the backend, there's nothing to generate a checklist from yet.</p>
+        <h3>{{ $t('prepare.noForecastData') }}</h3>
+        <p>{{ $t('prepare.noForecastDesc') }}</p>
       </div>
 
       <template v-else>
         <div class="checklist-hero glass-panel">
           <div class="hero-left">
-            <h2>Preparedness Checklist</h2>
-            <span class="hero-meta">AI-generated actions tied to each city's forecast, grouped by urgency</span>
+            <h2>{{ $t('prepare.checklist.title') }}</h2>
+            <span class="hero-meta">{{ $t('prepare.checklist.subtitle') }}</span>
           </div>
         </div>
 

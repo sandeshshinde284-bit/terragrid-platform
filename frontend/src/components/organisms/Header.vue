@@ -5,14 +5,14 @@
       style="background: rgba(56, 189, 248, 0.15); border-bottom: 1px solid rgba(56, 189, 248, 0.4); color: #bae6fd; padding: 6px 16px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-align: center;"
     >
       <span>ℹ️</span>
-      <span><strong>SIMULATION MODE ACTIVE</strong>: Showing demonstration data for evaluation. Real-time sensor streaming is paused.</span>
+      <span><strong>{{ $t('header.simulationModeActive') }}</strong>: {{ $t('header.simulationModeDesc') }}</span>
     </div>
 
     <header class="header glass-panel">
     <div class="header-left">
       <div class="logo" @click="goHome" style="cursor: pointer;">
         <span class="logo-icon">🌍</span>
-        <h1>TERRAGRID INTELLIGENCE</h1>
+        <h1>{{ $t('app.title') }}</h1>
       </div>
       <nav class="nav-menu">
         <!-- PHASE SELECTOR - the only thing left in the main header bar now.
@@ -25,23 +25,23 @@
             :class="{ active: activePhase === 'prepare' }"
             @click="router.push('/prepare/forecast')"
           >
-            PREPARE
+            {{ $t('header.phases.prepare') }}
           </button>
           <button
             class="phase-btn"
             :class="{ active: activePhase === 'response' }"
             @click="router.push('/')"
           >
-            RESPONSE
+            {{ $t('header.phases.response') }}
           </button>
           <button
             class="phase-btn roadmap"
             :class="{ active: activePhase === 'roadmap' }"
             @click="router.push('/roadmap')"
-            title="Predict & Recover — coming soon"
+            :title="$t('header.phases.predictRecoverTooltip')"
           >
-            PREDICT · RECOVER
-            <span class="soon-badge">SOON</span>
+            {{ $t('header.phases.predictRecover') }}
+            <span class="soon-badge">{{ $t('header.soon') }}</span>
           </button>
         </div>
       </nav>
@@ -66,7 +66,7 @@
         :class="{ active: is3D }"
         title="Toggle 2D/3D view"
       >
-        {{ is3D ? '3D' : '2D' }}
+        {{ is3D ? $t('header.3d') : $t('header.2d') }}
       </button>
 
       <label class="language-selector" for="header-language">
@@ -94,31 +94,31 @@
        existing section labels (see mobile-nav-section-title below) so a
        first-time viewer has an explicit word for what this row is. -->
   <div class="tools-bar">
-    <span class="tools-label">ACTIVE TOOLS</span>
+    <span class="tools-label">{{ $t('header.activeTools') }}</span>
 
     <div class="nav-row" v-if="activePhase === 'prepare'">
       <div class="nav-group">
-        <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ Forecast</RouterLink>
-        <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 Risk Timeline</RouterLink>
-        <RouterLink to="/prepare/checklist" :class="{ active: isActive('/prepare/checklist') }">✅ Checklist</RouterLink>
-        <RouterLink to="/prepare/agency-alerts" :class="{ active: isActive('/prepare/agency-alerts') }">📨 Agency Alerts</RouterLink>
+        <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ {{ $t('header.tools.forecast') }}</RouterLink>
+        <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 {{ $t('header.tools.riskTimeline') }}</RouterLink>
+        <RouterLink to="/prepare/checklist" :class="{ active: isActive('/prepare/checklist') }">✅ {{ $t('header.tools.checklist') }}</RouterLink>
+        <RouterLink to="/prepare/agency-alerts" :class="{ active: isActive('/prepare/agency-alerts') }">📨 {{ $t('header.tools.agencyAlerts') }}</RouterLink>
       </div>
     </div>
 
     <div class="nav-row" v-if="activePhase === 'response'">
       <div class="nav-group">
-        <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
-        <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
-        <RouterLink to="/map" :class="{ active: isActive('/map') }">🗺️ Live Map</RouterLink>
-        <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">📈 Deep Analysis</RouterLink>
-        <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
+        <RouterLink to="/" :class="{ active: isActive('/') }">📊 {{ $t('header.tools.dashboard') }}</RouterLink>
+        <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 {{ $t('header.tools.incidents') }}</RouterLink>
+        <RouterLink to="/map" :class="{ active: isActive('/map') }">🗺️ {{ $t('header.tools.map') }}</RouterLink>
+        <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">📈 {{ $t('header.tools.analysis') }}</RouterLink>
+        <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 {{ $t('header.tools.alerts') }}</RouterLink>
       </div>
     </div>
 
     <div class="nav-row nav-row-roadmap" v-if="activePhase === 'roadmap'">
       <div class="nav-group nav-group-disabled">
-        <span class="nav-roadmap-badge">🔮 Predict — Coming soon</span>
-        <span class="nav-roadmap-badge">♻️ Recover — Coming soon</span>
+        <span class="nav-roadmap-badge">{{ $t('header.roadmap.predictSoon') }}</span>
+        <span class="nav-roadmap-badge">{{ $t('header.roadmap.recoverSoon') }}</span>
       </div>
     </div>
   </div>
@@ -132,20 +132,20 @@
           :class="{ active: activePhase === 'prepare' }"
           @click="router.push('/prepare/forecast')"
         >
-          PREPARE
+          {{ $t('header.phases.prepare') }}
         </button>
         <button
           :class="{ active: activePhase === 'response' }"
           @click="router.push('/')"
         >
-          RESPONSE
+          {{ $t('header.phases.response') }}
         </button>
         <button
           :class="{ active: activePhase === 'roadmap' }"
           @click="router.push('/roadmap'); closeMobileMenu()"
         >
-          PREDICT · RECOVER
-          <span class="soon-badge">SOON</span>
+          {{ $t('header.phases.predictRecover') }}
+          <span class="soon-badge">{{ $t('header.soon') }}</span>
         </button>
       </div>
 
@@ -153,74 +153,74 @@
 
       <!-- Prepare Section -->
       <div class="mobile-nav-section" v-if="activePhase === 'prepare'">
-        <div class="mobile-nav-section-title">Prepare</div>
+        <div class="mobile-nav-section-title">{{ $t('header.phases.prepare') }}</div>
         <RouterLink
           to="/prepare/forecast"
           :class="{ active: isActive('/prepare/forecast') }"
           @click="closeMobileMenu"
         >
-          🌦️ Forecast
+          🌦️ {{ $t('header.tools.forecast') }}
         </RouterLink>
         <RouterLink
           to="/prepare/risk-timeline"
           :class="{ active: isActive('/prepare/risk-timeline') }"
           @click="closeMobileMenu"
         >
-          📈 Risk Timeline
+          📈 {{ $t('header.tools.riskTimeline') }}
         </RouterLink>
         <RouterLink
           to="/prepare/checklist"
           :class="{ active: isActive('/prepare/checklist') }"
           @click="closeMobileMenu"
         >
-          ✅ Checklist
+          ✅ {{ $t('header.tools.checklist') }}
         </RouterLink>
         <RouterLink
           to="/prepare/agency-alerts"
           :class="{ active: isActive('/prepare/agency-alerts') }"
           @click="closeMobileMenu"
         >
-          📨 Agency Alerts
+          📨 {{ $t('header.tools.agencyAlerts') }}
         </RouterLink>
       </div>
 
       <!-- Response Section -->
       <div class="mobile-nav-section" v-if="activePhase === 'response'">
-        <div class="mobile-nav-section-title">Response</div>
+        <div class="mobile-nav-section-title">{{ $t('header.phases.response') }}</div>
         <RouterLink
           to="/"
           :class="{ active: isActive('/') }"
           @click="closeMobileMenu"
         >
-          📊 Dashboard
+          📊 {{ $t('header.tools.dashboard') }}
         </RouterLink>
         <RouterLink
           to="/incidents"
           :class="{ active: isActive('/incidents') }"
           @click="closeMobileMenu"
         >
-          📋 Incidents
+          📋 {{ $t('header.tools.incidents') }}
         </RouterLink>
         <RouterLink
           to="/map"
           :class="{ active: isActive('/map') }"
           @click="closeMobileMenu"
         >
-          🗺️ Map
+          🗺️ {{ $t('header.tools.mapShort') }}
         </RouterLink>
         <RouterLink
           to="/analysis"
           :class="{ active: isActive('/analysis') }"
           @click="closeMobileMenu"
         >
-          📈 Analysis
+          📈 {{ $t('header.tools.analysisShort') }}
         </RouterLink>
         <RouterLink
           to="/alerts"
           :class="{ active: isActive('/alerts') }"
           @click="closeMobileMenu"
         >
-          🚨 Alerts
+          🚨 {{ $t('header.tools.alerts') }}
         </RouterLink>
       </div>
 
@@ -229,7 +229,7 @@
 
       <!-- Settings -->
       <div class="settings-section">
-        <div class="settings-title">⚙️ Settings</div>
+        <div class="settings-title">⚙️ {{ $t('header.settings') }}</div>
         
         <!-- Dark/Light Mode Toggle -->
         <button 
@@ -238,7 +238,7 @@
           title="Toggle dark/light mode"
         >
           <span>{{ appStore.isDarkMode ? '☀️' : '🌙' }}</span>
-          <span>{{ appStore.isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+          <span>{{ appStore.isDarkMode ? $t('header.lightMode') : $t('header.darkMode') }}</span>
         </button>
       </div>
     </nav>

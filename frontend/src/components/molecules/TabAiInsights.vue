@@ -2,8 +2,8 @@
   <div class="ai-tab">
     <div class="tab-intro">
       <div>
-        <h2>AI Insights</h2>
-        <p>Executive tactical summaries and high-level directives synthesized from live multi-source telemetry.</p>
+        <h2>{{ $t('detail.tabTitles.insights') }}</h2>
+        <p>{{ $t('detail.tabTitles.insightsDesc') }}</p>
       </div>
     </div>
 

@@ -8,10 +8,39 @@
     "syncing": "Synkroniserar...",
     "2d": "2D",
     "3d": "3D",
-    "light": "Ljus",
-    "dark": "Mörk",
+    "light": "Ljust",
+    "dark": "Mörkt",
     "settings": "Inställningar",
-    "language": "Språk"
+    "language": "Språk",
+    "simulationModeActive": "SIMULERINGSLÄGE AKTIVT",
+    "simulationModeDesc": "Visar demonstrationsdata för utvärdering. Sensordata i realtid är pausad.",
+    "activeTools": "AKTIVA VERKTYG",
+    "soon": "SNART",
+    "lightMode": "Ljust läge",
+    "darkMode": "Mörkt läge",
+    "phases": {
+      "prepare": "FÖRBEREDELSE",
+      "response": "RESPONS",
+      "predictRecover": "PROGNOS · ÅTERHÄMTNING",
+      "predictRecoverTooltip": "Prognos & Återhämtning — kommer snart"
+    },
+    "tools": {
+      "forecast": "Prognos",
+      "riskTimeline": "Risktidslinje",
+      "checklist": "Checklista",
+      "agencyAlerts": "Myndighetsvarningar",
+      "dashboard": "Översikt",
+      "incidents": "Incidenter",
+      "map": "Livekarta",
+      "mapShort": "Karta",
+      "analysis": "Djupanalys",
+      "analysisShort": "Analys",
+      "alerts": "Varningar"
+    },
+    "roadmap": {
+      "predictSoon": "🔮 Prognos — Kommer snart",
+      "recoverSoon": "♻️ Återhämtning — Kommer snart"
+    }
   },
   "dashboard": {
     "activeIncidents": "AKTIVA INCIDENTER",
@@ -37,7 +66,76 @@
     "search": "Sök incidenter...",
     "filterByType": "Typ",
     "filterByStatus": "Status",
-    "filterBySeverity": "Allvarlighetsgrad"
+    "filterBySeverity": "Allvarlighetsgrad",
+    "hazardType": "Farotyp",
+    "country": "Land",
+    "recommendedAction": "Rekommenderad Åtgärd",
+    "analysisCol": "Analys",
+    "filterByCountry": "Filtrera efter Land"
+  },
+  "detail": {
+    "activeIncidents": "Aktiva Incidenter",
+    "dashboardBtn": "⌂ Översikt",
+    "liveMapBtn": "◎ Livekarta",
+    "incident": "INCIDENT",
+    "severityLabel": "ALLVARLIGHETSGRAD",
+    "detected": "Upptäckt",
+    "innerTabs": {
+      "overview": "Översikt",
+      "impact": "Påverkan",
+      "map": "Karta",
+      "response": "Respons",
+      "history": "Historik",
+      "source": "Källa",
+      "insights": "Insikter",
+      "alerts": "Varningar"
+    },
+    "tabTitles": {
+      "overview": "Krisbedömning",
+      "impact": "Konsekvensbedömning",
+      "impactDesc": "Analys av kritisk infrastrukturexponering och sårbara befolkningar inom katastrofperimetern.",
+      "map": "Evakueringsrutter",
+      "mapDesc": "Realtidsberäknade evakueringstider, primära korridorer och flaskhalsar.",
+      "response": "Resursinsats",
+      "responseDesc": "Operativ logistik och samverkande resurstilldelning beräknad för denna sektor.",
+      "history": "Spridningsprognos",
+      "historyDesc": "Banprognoser baserade på atmosfäriska vindvektorer, historisk kontext och lokal terräng.",
+      "source": "Källans Sanning",
+      "sourceDesc": "Fullständig datahärkomst: varifrån data kommer, tidpunkt, tillförlitlighet och aktualitet.",
+      "insights": "AI-Insikter",
+      "insightsDesc": "Exekutiva taktiska sammanfattningar och övergripande direktiv från telemetri med flera källor.",
+      "alerts": "Larmhantering",
+      "alertsDesc": "Flerkanaliga nödsändningsanalyser och spårning av allmänna varningsmeddelanden."
+    }
+  },
+  "prepare": {
+    "fetchingForecast": "Hämtar 7-dagarsprognos...",
+    "noForecastData": "Inga prognosdata ännu",
+    "noForecastDesc": "Inga städer returnerade en prognos. Om OPENWEATHERMAP_API_KEY inte är inställd i backend förblir detta tomt.",
+    "forecast": {
+      "title": "7-Dagars Riskeskalering",
+      "citiesMonitored": "städer övervakade · uppdaterad från OpenWeatherMap",
+      "loadError": "Kunde inte läsa in prognosen",
+      "sourceOfTruth": "Källans Sanning"
+    },
+    "timeline": {
+      "title": "Tidslinje för Riskeskalering",
+      "subtitle": "Hur risken byggs upp dag för dag för en enskild plats från samma 7-dagarsprognos",
+      "loading": "Skapar tidslinje för riskeskalering...",
+      "loadError": "Kunde inte läsa in tidslinjen"
+    },
+    "checklist": {
+      "title": "Checklista för Beredskap",
+      "subtitle": "AI-genererade åtgärder kopplade till varje stads prognos, grupperade efter brådska",
+      "generating": "Genererar beredskapschecklista för",
+      "loadError": "Kunde inte generera checklistan"
+    },
+    "agencyAlerts": {
+      "title": "Mallar för Myndighetsvarningar",
+      "subtitle": "Meddelanden före händelsen per målgrupp",
+      "drafting": "Utformar myndighetsvarningar för",
+      "loadError": "Kunde inte generera varningarna"
+    }
   },
   "map": {
     "title": "Strategisk Karta",
@@ -49,6 +147,39 @@
     "heatMap": "Värmekarta",
     "tacticalView": "Taktisk Vy 2D"
   },
+  "mapFull": {
+    "returnToIncident": "Återgå till incident:",
+    "tactical": "TAKTISK",
+    "satellite": "SATELLIT",
+    "globe": "3D-GLOB",
+    "tacticalTooltip": "Taktisk nattnavigeringsradar",
+    "satelliteTooltip": "Fotorealistisk satellitspaning",
+    "globeTooltip": "3D-orbital jordglob med atmosfärisk belysning",
+    "zoomIn": "Zooma in",
+    "zoomOut": "Zooma ut",
+    "resetView": "Återställ global vy",
+    "toggleLayers": "Växla GIS-lager",
+    "layersTitle": "Taktiska GIS-lager",
+    "active": "Aktiv",
+    "layerIncidents": "Live katastrofmarkörer",
+    "layerGlow": "Pulserande ringar för kritiska hot",
+    "cursorLabel": "GIS-KURSOR",
+    "zoomLabel": "ZOOM",
+    "feedLabel": "POSTGRES-STRÖM",
+    "verified": "VERIFIERAD",
+    "legendTitle": "Flerhotstelemetri",
+    "wildfires": "Skogsbränder",
+    "floods": "Översvämningar",
+    "seismic": "Seismisk",
+    "severeStorms": "Svåra stormar",
+    "otherHazards": "Andra faror"
+  },
+  "roadmap": {
+    "predictTitle": "Prognos",
+    "predictDesc": "Tidig varning bortom det aktuella 7-dagarsfönstret. Funktionsomfånget är ännu inte fastställt.",
+    "recoverTitle": "Återhämtning",
+    "recoverDesc": "Spårning av återhämtning och resursallokering efter händelsen. Funktionsomfånget är ännu inte fastställt."
+  },
   "analysis": {
     "title": "Analys",
     "beforeAfter": "Före/Efter-tidslinje",
@@ -59,7 +190,12 @@
     "selectIncident": "Välj en incident för att se tidslinje",
     "hours": "Timmar",
     "satellite": "Satellitbilder",
-    "comparison": "Jämförelse"
+    "comparison": "Jämförelse",
+    "duration": "Varaktighet sedan Upptäckt",
+    "density": "Drabbade Personer per km²",
+    "accelerating": "Accelererar",
+    "projected": "Projekterad",
+    "densityLabel": "Täthet"
   },
   "askTheMap": {
     "title": "Fråga Kartan",
@@ -79,7 +215,10 @@
     "disasterBrief": "AI Katastrofsammanfattning",
     "noAlerts": "Inga nya varningar",
     "realTime": "Realtidsuppdateringar",
-    "lastUpdate": "Senaste uppdatering"
+    "lastUpdate": "Senaste uppdatering",
+    "confidence": "Tillförlitlighet",
+    "dataSources": "Datakällor",
+    "activeThreats": "Aktiva Hot"
   },
   "common": {
     "close": "Stäng",

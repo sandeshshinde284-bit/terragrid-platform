@@ -2,8 +2,8 @@
   <div class="history-tab">
     <div class="tab-intro">
       <div>
-        <h2>Spread Forecast</h2>
-        <p>Trajectory forecasting based on atmospheric wind vectors, historical context, and local terrain topography.</p>
+        <h2>{{ $t('detail.tabTitles.history') }}</h2>
+        <p>{{ $t('detail.tabTitles.historyDesc') }}</p>
       </div>
     </div>
 

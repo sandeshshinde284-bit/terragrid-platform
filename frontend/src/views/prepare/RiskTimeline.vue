@@ -8,7 +8,7 @@
           <span class="radar-dot"></span>
         </div>
         <div class="loading-telemetry-text">
-          <strong class="cycling-step-text">Building risk escalation timeline...</strong>
+          <strong class="cycling-step-text">{{ $t('prepare.timeline.loading') }}</strong>
         </div>
         <div class="tactical-progress-track">
           <div class="tactical-scan-laser"></div>
@@ -17,21 +17,21 @@
 
       <div v-else-if="error" class="empty-state glass-panel">
         <div class="empty-icon">⚠️</div>
-        <h3>Couldn't load the timeline</h3>
+        <h3>{{ $t('prepare.timeline.loadError') }}</h3>
         <p>{{ error }}</p>
       </div>
 
       <div v-else-if="cities.length === 0" class="empty-state glass-panel">
         <div class="empty-icon">📈</div>
-        <h3>No forecast data yet</h3>
-        <p>This builds directly on the 7-Day Forecast Dashboard's data. If OPENWEATHERMAP_API_KEY isn't set on the backend, there's nothing to show yet.</p>
+        <h3>{{ $t('prepare.noForecastData') }}</h3>
+        <p>{{ $t('prepare.noForecastDesc') }}</p>
       </div>
 
       <template v-else>
         <div class="timeline-hero glass-panel">
           <div class="hero-left">
-            <h2>Risk Escalation Timeline</h2>
-            <span class="hero-meta">How risk builds day by day for a single location, from the same 7-day forecast</span>
+            <h2>{{ $t('prepare.timeline.title') }}</h2>
+            <span class="hero-meta">{{ $t('prepare.timeline.subtitle') }}</span>
           </div>
         </div>
 

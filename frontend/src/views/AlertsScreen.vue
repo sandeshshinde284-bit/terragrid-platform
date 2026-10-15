@@ -25,15 +25,15 @@
             </p>
             <div class="brief-metrics">
               <div class="metric">
-                <span class="label">Confidence</span>
+                <span class="label">{{ $t('alerts.confidence') }}</span>
                 <span class="value">94%</span>
               </div>
               <div class="metric">
-                <span class="label">Data Sources</span>
+                <span class="label">{{ $t('alerts.dataSources') }}</span>
                 <span class="value">5 Live</span>
               </div>
               <div class="metric">
-                <span class="label">Active Threats</span>
+                <span class="label">{{ $t('alerts.activeThreats') }}</span>
                 <span class="value">{{ totalCount }}</span>
               </div>
             </div>
@@ -368,6 +368,29 @@ onMounted(async () => {
   overflow: auto;
   padding: 16px;
   min-height: 0;
+}
+
+/* Custom Scrollbars */
+.alerts-list-wrapper::-webkit-scrollbar,
+.alerts-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.alerts-list-wrapper::-webkit-scrollbar-track,
+.alerts-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.alerts-list-wrapper::-webkit-scrollbar-thumb,
+.alerts-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+.alerts-list-wrapper::-webkit-scrollbar-thumb:hover,
+.alerts-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .no-alerts {

@@ -8,7 +8,7 @@
           <span class="radar-dot"></span>
         </div>
         <div class="loading-telemetry-text">
-          <strong class="cycling-step-text">Fetching 7-day weather forecast...</strong>
+          <strong class="cycling-step-text">{{ $t('prepare.fetchingForecast') }}</strong>
         </div>
         <div class="tactical-progress-track">
           <div class="tactical-scan-laser"></div>
@@ -17,22 +17,22 @@
 
       <div v-else-if="error" class="empty-state glass-panel">
         <div class="empty-icon">⚠️</div>
-        <h3>Couldn't load the forecast</h3>
+        <h3>{{ $t('prepare.forecast.loadError') }}</h3>
         <p>{{ error }}</p>
       </div>
 
       <div v-else-if="cities.length === 0" class="empty-state glass-panel">
         <div class="empty-icon">🌦️</div>
-        <h3>No forecast data yet</h3>
-        <p>No cities returned a forecast. If OPENWEATHERMAP_API_KEY isn't set on the backend, this stays empty rather than showing invented numbers.</p>
+        <h3>{{ $t('prepare.noForecastData') }}</h3>
+        <p>{{ $t('prepare.noForecastDesc') }}</p>
       </div>
 
       <template v-else>
         <div class="forecast-hero glass-panel">
           <div class="hero-left">
-            <h2>7-Day Risk Escalation</h2>
+            <h2>{{ $t('prepare.forecast.title') }}</h2>
             <div class="hero-meta-row">
-              <span class="hero-meta">{{ cities.length }} cities monitored · updated from OpenWeatherMap</span>
+              <span class="hero-meta">{{ cities.length }} {{ $t('prepare.forecast.citiesMonitored') }}</span>
 
               <!-- PR10: Source of Truth. Audits the data behind every PREPARE
                    feature on this page (and PR9's alerts / PR5's routes, which
@@ -53,7 +53,7 @@
                 @click="sotExpanded = !sotExpanded"
               >
                 <span class="sot-icon">{{ sotStatusIcon }}</span>
-                <span class="sot-label">Source of Truth</span>
+                <span class="sot-label">{{ $t('prepare.forecast.sourceOfTruth') }}</span>
                 <span class="sot-divider">·</span>
                 <span class="sot-text">{{ sotStatusText }}</span>
                 <span class="sot-chevron">Details {{ sotExpanded ? '▲' : '▼' }}</span>

@@ -43,29 +43,29 @@
 
       <header class="detail-header sticky-header">
         <div class="header-navigation">
-          <span class="phase-indicator-badge">RESPONSE</span>
+          <span class="phase-indicator-badge">{{ $t('header.phases.response') }}</span>
           <button class="primary-back-btn" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">
             <span class="back-arrow">←</span>
-            <span class="back-text">Incidents Console</span>
+            <span class="back-text">{{ $t('detail.activeIncidents') }}</span>
           </button>
           <span class="breadcrumb-separator">/</span>
           <span class="breadcrumb-current">{{ incident.location }}</span>
         </div>
         <div class="header-actions">
-          <button class="ghost-button" type="button" @click="goTo('/')">⌂ Dashboard</button>
-          <button class="ghost-button" type="button" @click="goTo('/map')">◎ Live Map</button>
+          <button class="ghost-button" type="button" @click="goTo('/')">{{ $t('detail.dashboardBtn') }}</button>
+          <button class="ghost-button" type="button" @click="goTo('/map')">{{ $t('detail.liveMapBtn') }}</button>
         </div>
       </header>
 
       <section class="incident-hero">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="live-dot"></span> INCIDENT {{ incident.id.toUpperCase() }}</div>
+          <div class="eyebrow"><span class="live-dot"></span> {{ $t('detail.incident') }} {{ incident.id.toUpperCase() }}</div>
           <h1>{{ incidentLabel }}</h1>
-          <p class="hero-location"><span>⌖</span> {{ incident.location }} · Detected {{ formatDate(incident.detectionTime) }}</p>
+          <p class="hero-location"><span>⌖</span> {{ incident.location }} · {{ $t('detail.detected') }} {{ formatDate(incident.detectionTime) }}</p>
         </div>
         <div class="hero-status">
           <span class="type-badge" :class="`type-${incident.type}`">{{ formatIncidentType(incident.type) }}</span>
-          <span class="severity-badge" :class="`severity-${incident.severity}`">{{ incident.severity.toUpperCase() }} SEVERITY</span>
+          <span class="severity-badge" :class="`severity-${incident.severity}`">{{ incident.severity.toUpperCase() }} {{ $t('detail.severityLabel') }}</span>
           <span class="status-badge" :class="`status-${incident.status}`">{{ formatStatus(incident.status) }}</span>
         </div>
       </section>
@@ -295,6 +295,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1, Event } from '@/types'
 import { logWarn, logError } from '@/utils/logger'
@@ -356,6 +357,7 @@ interface DetailData {
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const eventsStore = useEventsStore()
 const appStore = useAppStore()
 const is3D = computed(() => appStore.viewMode === '3d')
@@ -471,16 +473,16 @@ async function checkExistingDossier() {
   }
 }
 
-const tabs: Tab[] = [
-  { id: 'overview', label: 'Overview', icon: '◈' }, 
-  { id: 'impact', label: 'Impact', icon: '▦' },
-  { id: 'map', label: 'Map', icon: '◎' }, 
-  { id: 'response', label: 'Response', icon: '⚑' },
-  { id: 'history', label: 'History', icon: '◷' }, 
-  { id: 'source', label: 'Source', icon: '✦' },
-  { id: 'ai', label: 'Insights', icon: '⌁' }, 
-  { id: 'alerts', label: 'Alerts', icon: '⌁' },
-];
+const tabs = computed<Tab[]>(() => [
+  { id: 'overview', label: t('detail.innerTabs.overview'), icon: '◈' }, 
+  { id: 'impact', label: t('detail.innerTabs.impact'), icon: '▦' },
+  { id: 'map', label: t('detail.innerTabs.map'), icon: '◎' }, 
+  { id: 'response', label: t('detail.innerTabs.response'), icon: '⚑' },
+  { id: 'history', label: t('detail.innerTabs.history'), icon: '◷' }, 
+  { id: 'source', label: t('detail.innerTabs.source'), icon: '✦' },
+  { id: 'ai', label: t('detail.innerTabs.insights'), icon: '⌁' }, 
+  { id: 'alerts', label: t('detail.innerTabs.alerts'), icon: '⌁' },
+])
 
 import mockDetails from '@/data/mock_incident_evidence.json'
 
