@@ -377,11 +377,13 @@ const closeMobileMenu = () => {
 }
 
 .phase-btn.active {
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  /* Flat accent fill instead of a blue gradient + colored shadow - matches
+     every other "active" control in the app (filter chips, sort toggles),
+     so the phase switch doesn't stand out as a one-off style. */
+  background: var(--accent-cyan);
   border-color: var(--accent-cyan);
-  color: #ffffff;
+  color: #04141a;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
 }
 
 .phase-btn.roadmap {
@@ -572,17 +574,15 @@ const closeMobileMenu = () => {
 }
 
 .mock-toggle.active {
-  background: rgba(255, 193, 7, 0.2);
+  background: rgba(255, 193, 7, 0.15);
   border-color: #ffc107;
   color: #ffc107;
-  box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
 }
 
 .mock-toggle:not(.active) {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.12);
   border-color: #10b981;
   color: #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
 }
 
 .settings-btn {
@@ -609,7 +609,6 @@ const closeMobileMenu = () => {
 
 .language-selector:hover {
   background: rgba(30, 144, 255, 0.2);
-  box-shadow: 0 0 12px rgba(30, 144, 255, 0.3);
 }
 
 .language-selector select {
@@ -843,10 +842,10 @@ const closeMobileMenu = () => {
   }
 
   .mobile-phase-selector button.active {
-    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    background: var(--accent-cyan);
     border-color: var(--accent-cyan);
-    color: #ffffff;
-    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+    color: #04141a;
+    font-weight: 700;
   }
 
   .mobile-phase-selector button:disabled {

@@ -1865,7 +1865,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   height: 8px;
   border-radius: 50%;
   background: #10b981;
-  box-shadow: 0 0 10px #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
   animation: beaconPulse 2s infinite;
 }
 
@@ -2215,7 +2215,6 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   outline: none;
   border-color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.15);
-  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
 }
 
 .country-dropdown option {
@@ -2254,7 +2253,6 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   outline: none;
   border-color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.15);
-  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
 }
 
 .event-type-dropdown option {
@@ -2286,7 +2284,6 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   outline: none;
   border-color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.15);
-  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
 }
 
 .sort-dropdown option {
@@ -2315,7 +2312,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 .pagination-btn {
   flex: 1;
   padding: 8px 12px;
-  background: linear-gradient(135deg, rgba(30, 144, 255, 0.15), rgba(14, 165, 233, 0.15));
+  background: rgba(30, 144, 255, 0.12);
   border: 1px solid rgba(30, 144, 255, 0.3);
   border-radius: 6px;
   color: var(--accent-cyan);
@@ -2328,9 +2325,8 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(30, 144, 255, 0.25), rgba(14, 165, 233, 0.25));
+  background: rgba(30, 144, 255, 0.2);
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 12px rgba(30, 144, 255, 0.25);
 }
 
 .pagination-btn:disabled {
@@ -2342,7 +2338,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   width: 100%;
   padding: 12px;
   margin-top: 8px;
-  background: linear-gradient(135deg, rgba(30, 144, 255, 0.2), rgba(14, 165, 233, 0.2));
+  background: rgba(30, 144, 255, 0.15);
   border: 1.5px solid var(--accent-cyan);
   border-radius: 8px;
   color: var(--accent-cyan);
@@ -2355,8 +2351,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 }
 
 .load-more-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(30, 144, 255, 0.3), rgba(14, 165, 233, 0.3));
-  box-shadow: 0 0 16px rgba(30, 144, 255, 0.3);
+  background: rgba(30, 144, 255, 0.25);
   transform: translateY(-2px);
 }
 
@@ -3823,7 +3818,6 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 .sidebar-search-box:focus-within {
   border-color: #38bdf8;
   background: rgba(15, 23, 42, 0.95);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
 }
 
 .sidebar-search-input {

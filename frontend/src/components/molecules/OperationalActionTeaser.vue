@@ -322,10 +322,10 @@ const navigateToInsights = () => {
 /* View Full Button */
 .view-full-btn {
   padding: 8px 12px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: var(--accent-cyan);
   border: none;
   border-radius: 6px;
-  color: #f8fafc;
+  color: #04141a;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -333,9 +333,8 @@ const navigateToInsights = () => {
 }
 
 .view-full-btn:hover {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: #26c6da;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .view-full-btn:active {

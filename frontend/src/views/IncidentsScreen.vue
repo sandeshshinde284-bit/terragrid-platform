@@ -604,7 +604,6 @@ onMounted(async () => {
 .search-input:focus {
   border-color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.1);
-  box-shadow: 0 0 12px rgba(30, 144, 255, 0.3);
   outline: none;
 }
 
@@ -956,21 +955,18 @@ onMounted(async () => {
 }
 
 .status-badge.active {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: #0d9668;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .status-badge.monitoring {
-  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  background: #2f5fc2;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .status-badge.resolved {
-  background: linear-gradient(135deg, #8b7355, #6b6b6b);
+  background: #6b6b6b;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
 }
 
 .threat-score {
@@ -990,9 +986,9 @@ onMounted(async () => {
 
 .view-btn {
   padding: 8px 14px;
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  background: var(--accent-cyan);
   border: 2px solid var(--accent-cyan);
-  color: #ffffff;
+  color: #04141a;
   border-radius: 4px;
   font-size: 12px;
   font-weight: 700;
@@ -1000,12 +996,10 @@ onMounted(async () => {
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  box-shadow: 0 2px 8px rgba(30, 144, 255, 0.4);
 }
 
 .view-btn:hover {
-  background: linear-gradient(135deg, #1e3a8a, #0284c7);
-  box-shadow: 0 4px 16px rgba(30, 144, 255, 0.6);
+  background: #26c6da;
   transform: translateY(-2px);
 }
 
@@ -1070,7 +1064,7 @@ onMounted(async () => {
 }
 
 .modal-box {
-  background: linear-gradient(135deg, rgba(30, 64, 175, 0.2), rgba(14, 165, 233, 0.1));
+  background: rgba(20, 30, 48, 0.95);
   border: 2px solid var(--accent-cyan);
   border-radius: 12px;
   padding: 24px;
@@ -1078,7 +1072,7 @@ onMounted(async () => {
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 24px rgba(30, 144, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
@@ -1248,9 +1242,9 @@ onMounted(async () => {
 .modal-btn-close {
   width: 100%;
   padding: 10px 14px;
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  background: transparent;
   border: 2px solid var(--accent-cyan);
-  color: #ffffff;
+  color: var(--accent-cyan);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
@@ -1258,21 +1252,19 @@ onMounted(async () => {
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(30, 144, 255, 0.4);
 }
 
 .modal-btn-close:hover {
-  background: linear-gradient(135deg, #1e3a8a, #0284c7);
-  box-shadow: 0 4px 16px rgba(30, 144, 255, 0.6);
+  background: rgba(0, 188, 212, 0.1);
   transform: translateY(-2px);
 }
 
 .modal-btn-details {
   flex: 1;
   padding: 10px 14px;
-  background: linear-gradient(135deg, #0ea5e9, #00d9ff);
-  border: 2px solid #00d9ff;
-  color: #000;
+  background: var(--accent-cyan);
+  border: 2px solid var(--accent-cyan);
+  color: #04141a;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
@@ -1280,13 +1272,10 @@ onMounted(async () => {
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.5);
 }
 
 .modal-btn-details:hover {
-  background: linear-gradient(135deg, #38bdf8, #06b6d4);
-  border-color: #06b6d4;
-  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.7);
+  background: #26c6da;
   transform: translateY(-2px);
 }
 
@@ -1628,16 +1617,14 @@ onMounted(async () => {
     text-transform: uppercase !important;
     text-align: center !important;
     border-radius: 8px !important;
-    background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
-    border: 1px solid #38bdf8 !important;
-    color: #ffffff !important;
+    background: var(--accent-cyan) !important;
+    border: 1px solid var(--accent-cyan) !important;
+    color: #04141a !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35) !important;
   }
 
   .incident-row.expanded .view-btn:hover {
-    background: linear-gradient(135deg, #38bdf8, #1d4ed8) !important;
-    box-shadow: 0 0 24px rgba(56, 189, 248, 0.5) !important;
+    background: #26c6da !important;
   }
 
   /* Hide redundant bottom stats footer on mobile to keep view uncluttered */

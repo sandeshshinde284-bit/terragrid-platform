@@ -213,7 +213,6 @@ const getDurationHours = (detectionTime: Date) => {
 .dropdown-trigger.is-open {
   border-color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.1);
-  box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
 }
 
 .selected-text {
@@ -245,7 +244,7 @@ const getDurationHours = (detectionTime: Date) => {
   max-height: 280px;
   overflow-y: auto;
   z-index: 100;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 188, 212, 0.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
 }
 
 .dropdown-option {

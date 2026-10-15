@@ -416,10 +416,9 @@ onUnmounted(() => {
 }
 
 .mode-btn.active {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(30, 64, 175, 0.4));
+  background: rgba(56, 189, 248, 0.15);
   color: #38bdf8;
   border-color: rgba(56, 189, 248, 0.5);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
 }
 
 .mode-icon {
@@ -454,24 +453,27 @@ onUnmounted(() => {
 
 .marker-dot:hover, .marker-dot.selected {
   transform: scale(1.35);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
   z-index: 30;
 }
 
-/* Severity Colors with bright contrast glow */
+/* Severity colors, with glow intensity actually scaled to severity instead
+   of every marker glowing at near-identical strength (0.7-0.8 alpha
+   regardless of severity, previously) - critical now visibly outshines
+   medium/low rather than all four fighting for the same attention. */
 .marker-dot.critical {
   border-color: #ef4444;
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.55);
 }
 
 .marker-dot.high {
   border-color: #f59e0b;
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.8);
+  box-shadow: 0 0 7px rgba(245, 158, 11, 0.4);
 }
 
 .marker-dot.medium, .marker-dot.low {
   border-color: #38bdf8;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+  box-shadow: none;
 }
 
 /* Pulsing effect for critical alerts */

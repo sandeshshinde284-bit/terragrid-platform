@@ -295,15 +295,13 @@ onMounted(async () => {
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.1);
-  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
 }
 
 .tab-btn.active {
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  background: var(--accent-cyan);
   border-color: var(--accent-cyan);
-  color: #ffffff;
+  color: #04141a;
   font-weight: 700;
-  box-shadow: 0 0 16px rgba(30, 144, 255, 0.5);
 }
 
 .disaster-brief {
