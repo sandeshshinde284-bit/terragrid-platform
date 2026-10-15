@@ -116,7 +116,12 @@
       "title": "Escalada de Riesgo de 7 Días",
       "citiesMonitored": "ciudades monitoreadas · actualizado desde OpenWeatherMap",
       "loadError": "No se pudo cargar el pronóstico",
-      "sourceOfTruth": "Fuente de la Verdad"
+      "sourceOfTruth": "Fuente de la Verdad",
+      "lastUpdated": "actualizado {time}",
+      "lastUpdatedJustNow": "actualizado justo ahora",
+      "sortRisk": "Riesgo",
+      "sortName": "Nombre",
+      "retry": "Reintentar"
     },
     "timeline": {
       "title": "Línea de Tiempo de Escalada de Riesgo",

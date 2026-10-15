@@ -116,7 +116,12 @@
       "title": "7-Dniowa Eskalacja Ryzyka",
       "citiesMonitored": "miast monitorowanych · zaktualizowano z OpenWeatherMap",
       "loadError": "Nie udało się załadować prognozy",
-      "sourceOfTruth": "Źródło Prawdy"
+      "sourceOfTruth": "Źródło Prawdy",
+      "lastUpdated": "zaktualizowano {time}",
+      "lastUpdatedJustNow": "zaktualizowano przed chwilą",
+      "sortRisk": "Ryzyko",
+      "sortName": "Nazwa",
+      "retry": "Ponów"
     },
     "timeline": {
       "title": "Oś Czasu Eskalacji Ryzyka",

@@ -116,7 +116,12 @@
       "title": "7-Dagars Riskeskalering",
       "citiesMonitored": "städer övervakade · uppdaterad från OpenWeatherMap",
       "loadError": "Kunde inte läsa in prognosen",
-      "sourceOfTruth": "Källans Sanning"
+      "sourceOfTruth": "Källans Sanning",
+      "lastUpdated": "uppdaterad {time}",
+      "lastUpdatedJustNow": "uppdaterad just nu",
+      "sortRisk": "Risk",
+      "sortName": "Namn",
+      "retry": "Försök igen"
     },
     "timeline": {
       "title": "Tidslinje för Riskeskalering",

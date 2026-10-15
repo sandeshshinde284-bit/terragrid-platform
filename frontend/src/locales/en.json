@@ -116,7 +116,12 @@
       "title": "7-Day Risk Escalation",
       "citiesMonitored": "cities monitored · updated from OpenWeatherMap",
       "loadError": "Couldn't load the forecast",
-      "sourceOfTruth": "Source of Truth"
+      "sourceOfTruth": "Source of Truth",
+      "lastUpdated": "updated {time}",
+      "lastUpdatedJustNow": "updated just now",
+      "sortRisk": "Risk",
+      "sortName": "Name",
+      "retry": "Retry"
     },
     "timeline": {
       "title": "Risk Escalation Timeline",

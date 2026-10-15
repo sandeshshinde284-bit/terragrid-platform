@@ -116,7 +116,12 @@
       "title": "7-Tage-Risikoeskalation",
       "citiesMonitored": "Städte überwacht · aktualisiert von OpenWeatherMap",
       "loadError": "Vorhersage konnte nicht geladen werden",
-      "sourceOfTruth": "Datenquelle der Wahrheit"
+      "sourceOfTruth": "Datenquelle der Wahrheit",
+      "lastUpdated": "aktualisiert {time}",
+      "lastUpdatedJustNow": "gerade aktualisiert",
+      "sortRisk": "Risiko",
+      "sortName": "Name",
+      "retry": "Wiederholen"
     },
     "timeline": {
       "title": "Risikoeskalations-Zeitachse",

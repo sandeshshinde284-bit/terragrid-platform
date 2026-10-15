@@ -116,7 +116,12 @@
       "title": "Escalade des Risques sur 7 Jours",
       "citiesMonitored": "villes surveillées · mis à jour depuis OpenWeatherMap",
       "loadError": "Impossible de charger les prévisions",
-      "sourceOfTruth": "Source de Vérité"
+      "sourceOfTruth": "Source de Vérité",
+      "lastUpdated": "mis à jour {time}",
+      "lastUpdatedJustNow": "mis à jour à l'instant",
+      "sortRisk": "Risque",
+      "sortName": "Nom",
+      "retry": "Réessayer"
     },
     "timeline": {
       "title": "Chronologie d'Escalade des Risques",

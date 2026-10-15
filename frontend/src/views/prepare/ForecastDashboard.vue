@@ -32,7 +32,7 @@
           <div class="hero-left">
             <h2>{{ $t('prepare.forecast.title') }}</h2>
             <div class="hero-meta-row">
-              <span class="hero-meta">{{ cities.length }} {{ $t('prepare.forecast.citiesMonitored') }}</span>
+              <span class="hero-meta">{{ cities.length }} {{ $t('prepare.forecast.citiesMonitored') }} &middot; {{ lastUpdatedText }}</span>
 
               <!-- PR10: Source of Truth. Audits the data behind every PREPARE
                    feature on this page (and PR9's alerts / PR5's routes, which
@@ -70,7 +70,10 @@
 
         <div v-if="sotExpanded" class="sot-details glass-panel">
           <div v-if="sotLoading" class="sot-detail-row">Checking...</div>
-          <div v-else-if="sotError" class="sot-detail-row sot-error">⚠️ {{ sotError }}</div>
+          <div v-else-if="sotError" class="sot-detail-row sot-error">
+            <span>⚠️ {{ sotError }}</span>
+            <button type="button" class="sot-retry-btn" @click="fetchSourceOfTruth">{{ $t('prepare.forecast.retry') }}</button>
+          </div>
           <template v-else-if="sourceOfTruth">
             <div class="sot-detail-row">
               <strong>Freshness:</strong>
@@ -114,7 +117,8 @@
             :class="{ active: selectedCountry === group.country, [group.worstRisk.toLowerCase()]: true }"
             @click="selectedCountry = group.country"
           >
-            <img :src="flagUrl(group.country)" :alt="countryMeta(group.country).name" class="filter-flag" @error="onFlagError" />
+            <img v-if="!failedFlags.has(group.country)" :src="flagUrl(group.country)" :alt="countryMeta(group.country).name" class="filter-flag" @error="onFlagError(group.country)" />
+            <span v-else class="flag-fallback">{{ group.country }}</span>
             {{ countryMeta(group.country).name }} <span class="filter-count">{{ group.cities.length }}</span>
           </button>
         </div>
@@ -122,14 +126,35 @@
         <div class="country-sections">
           <section v-for="group in filteredGroups" :key="group.country" class="country-section">
             <div class="country-header" :class="group.worstRisk.toLowerCase()">
-              <img :src="flagUrl(group.country)" :alt="countryMeta(group.country).name" class="country-flag" @error="onFlagError" />
+              <img v-if="!failedFlags.has(group.country)" :src="flagUrl(group.country)" :alt="countryMeta(group.country).name" class="country-flag" @error="onFlagError(group.country)" />
+              <span v-else class="flag-fallback flag-fallback-lg">{{ group.country }}</span>
               <span class="country-name">{{ countryMeta(group.country).name }}</span>
               <span class="country-count">{{ group.cities.length }} {{ group.cities.length === 1 ? 'city' : 'cities' }}</span>
+
+              <!-- Sort control only makes sense once there's more than a
+                   couple of cities to reorder - with 1-2 cities, "sorted by
+                   risk" and "sorted by name" look identical, so the toggle
+                   would just be a confusing no-op. -->
+              <div v-if="group.cities.length > 2" class="sort-toggle">
+                <button
+                  type="button"
+                  class="sort-btn"
+                  :class="{ active: citySortMode === 'risk' }"
+                  @click="citySortMode = 'risk'"
+                >{{ $t('prepare.forecast.sortRisk') }}</button>
+                <button
+                  type="button"
+                  class="sort-btn"
+                  :class="{ active: citySortMode === 'name' }"
+                  @click="citySortMode = 'name'"
+                >{{ $t('prepare.forecast.sortName') }}</button>
+              </div>
+
               <span class="country-worst" :class="group.worstRisk.toLowerCase()">{{ riskEmoji(group.worstRisk) }} {{ group.worstRisk }}</span>
             </div>
 
             <div class="city-grid">
-              <div v-for="city in group.cities" :key="`${city.city}-${city.country}`" class="city-card glass-panel" :class="worstRisk(city).toLowerCase()">
+              <div v-for="city in sortedCities(group)" :key="`${city.city}-${city.country}`" class="city-card glass-panel" :class="worstRisk(city).toLowerCase()">
                 <div class="city-header">
                   <span class="city-name">{{ city.city }}</span>
                   <span class="worst-badge" :class="worstRisk(city).toLowerCase()">{{ riskEmoji(worstRisk(city)) }} {{ worstRisk(city) }}</span>
@@ -153,8 +178,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
@@ -168,6 +194,7 @@ interface CountryGroup {
 }
 
 const { fetchWithMockMode } = useMockMode()
+const { locale, t } = useI18n()
 
 const apiHost = () =>
   import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
@@ -176,7 +203,36 @@ const apiHost = () =>
 // instead of each page re-fetching all ~40 cities independently (see
 // stores/index.ts for why this used to make every page load take minutes).
 const prepareForecastStore = usePrepareForecastStore()
-const { cities, loading, error } = storeToRefs(prepareForecastStore)
+const { cities, loading, error, lastFetchedAt } = storeToRefs(prepareForecastStore)
+
+// Real elapsed time since the store's own fetch, not a fabricated "just
+// synced" label - lastFetchedAt is set once by ensureLoaded() in
+// stores/index.ts right after a successful response, and is the same
+// timestamp AgencyAlerts/RiskTimeline/PreparednessChecklist share. Ticks
+// every 30s via nowTick so "2 min ago" doesn't go stale while the page
+// sits open; Intl.RelativeTimeFormat localizes the wording itself (so
+// German gets "vor 2 Minuten" etc.) without a separate translation key
+// per language for every possible minute count.
+const nowTick = ref(Date.now())
+let nowTickInterval: ReturnType<typeof setInterval> | undefined
+
+const lastUpdatedText = computed(() => {
+  if (!lastFetchedAt.value) return ''
+  const diffSeconds = Math.round((lastFetchedAt.value - nowTick.value) / 1000)
+  if (Math.abs(diffSeconds) < 10) {
+    return t('prepare.forecast.lastUpdatedJustNow')
+  }
+  try {
+    const rtf = new Intl.RelativeTimeFormat(locale.value, { numeric: 'auto' })
+    const diffMinutes = Math.round(diffSeconds / 60)
+    const relative = Math.abs(diffMinutes) < 60
+      ? rtf.format(diffMinutes, 'minute')
+      : rtf.format(Math.round(diffMinutes / 60), 'hour')
+    return t('prepare.forecast.lastUpdated', { time: relative })
+  } catch {
+    return ''
+  }
+})
 
 const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
 const RISK_EMOJI: Record<string, string> = { GREEN: '🟢', YELLOW: '🟡', ORANGE: '🟠', RED: '🔴' }
@@ -211,12 +267,13 @@ const countryMeta = (code: string) => COUNTRY_META[code] || { name: code }
 // across every OS/browser.
 const flagUrl = (code: string) => `https://flagcdn.com/w40/${code.toLowerCase()}.png`
 
-// If flagcdn.com is ever unreachable for a visitor, hide the broken-image icon
-// instead of leaving an ugly placeholder - the country name text still carries
-// the information on its own.
-const onFlagError = (event: Event) => {
-  const target = event.target as HTMLImageElement
-  target.style.display = 'none'
+// If flagcdn.com is ever unreachable for a visitor, swap the broken-image
+// icon for the ISO country code as text instead of just hiding it - an
+// empty gap where a flag should be reads as a layout bug, while "IN"/"NP"
+// at least still carries the information the flag was there to show.
+const failedFlags = ref<Set<string>>(new Set())
+const onFlagError = (countryCode: string) => {
+  failedFlags.value.add(countryCode)
 }
 
 const riskEmoji = (level: string) => RISK_EMOJI[level] || '🟢'
@@ -270,6 +327,19 @@ const countryGroups = computed<CountryGroup[]>(() => {
     return countryMeta(a.country).name.localeCompare(countryMeta(b.country).name)
   })
 })
+
+// Per-country sort toggle. countryGroups already sorts cities worst-risk-
+// first by default (unchanged) - this only lets the user flip a given
+// country's own city list to alphabetical when they want to scan for a
+// specific place instead of triaging by severity. Shared across all
+// country sections rather than per-section state, since a judge comparing
+// two countries side by side expects the same ordering convention in both.
+const citySortMode = ref<'risk' | 'name'>('risk')
+
+const sortedCities = (group: CountryGroup): CityForecast[] => {
+  if (citySortMode.value === 'risk') return group.cities
+  return [...group.cities].sort((a, b) => a.city.localeCompare(b.city))
+}
 
 const selectedCountry = ref<string>('ALL')
 
@@ -346,33 +416,43 @@ const fetchSourceOfTruth = async () => {
   }
 }
 
-onMounted(async () => {
-  await prepareForecastStore.ensureLoaded(fetchWithMockMode)
-  await fetchSourceOfTruth()
+// Keyboard navigation for country filter buttons. Defined at setup's top
+// level (not inside onMounted's async callback) specifically so the
+// matching onUnmounted() below is a valid, synchronous lifecycle-hook
+// registration - Vue requires onUnmounted to be called while the
+// component's setup is still active, which an async callback loses after
+// its first await.
+const handleKeyboardNavigation = (e: KeyboardEvent) => {
+  const filterButtons = document.querySelectorAll('.filter-chip')
+  if (filterButtons.length === 0) return
 
-  // Keyboard navigation for country filter buttons
-  const handleKeyboardNavigation = (e: KeyboardEvent) => {
-    const filterButtons = document.querySelectorAll('.filter-chip')
-    if (filterButtons.length === 0) return
+  const activeIndex = Array.from(filterButtons).findIndex((btn) => btn === document.activeElement)
+  let nextIndex = activeIndex
 
-    const activeIndex = Array.from(filterButtons).findIndex((btn) => btn === document.activeElement)
-    let nextIndex = activeIndex
-
-    if (e.key === 'ArrowRight' && activeIndex < filterButtons.length - 1) {
-      nextIndex = activeIndex + 1
-      e.preventDefault()
-    } else if (e.key === 'ArrowLeft' && activeIndex > 0) {
-      nextIndex = activeIndex - 1
-      e.preventDefault()
-    } else {
-      return
-    }
-
-    ;(filterButtons[nextIndex] as HTMLButtonElement).focus()
+  if (e.key === 'ArrowRight' && activeIndex < filterButtons.length - 1) {
+    nextIndex = activeIndex + 1
+    e.preventDefault()
+  } else if (e.key === 'ArrowLeft' && activeIndex > 0) {
+    nextIndex = activeIndex - 1
+    e.preventDefault()
+  } else {
+    return
   }
 
+  ;(filterButtons[nextIndex] as HTMLButtonElement).focus()
+}
+
+onMounted(async () => {
   window.addEventListener('keydown', handleKeyboardNavigation)
-  return () => window.removeEventListener('keydown', handleKeyboardNavigation)
+  nowTickInterval = setInterval(() => { nowTick.value = Date.now() }, 30_000)
+
+  await prepareForecastStore.ensureLoaded(fetchWithMockMode)
+  await fetchSourceOfTruth()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyboardNavigation)
+  if (nowTickInterval) clearInterval(nowTickInterval)
 })
 </script>
 
@@ -575,6 +655,27 @@ onMounted(async () => {
 
 .sot-detail-row.sot-error {
   color: #eab308;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sot-retry-btn {
+  padding: 3px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(234, 179, 8, 0.5);
+  background: rgba(234, 179, 8, 0.1);
+  color: #eab308;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sot-retry-btn:hover {
+  background: rgba(234, 179, 8, 0.2);
+  border-color: #eab308;
 }
 
 /* ---- Country filter ---- */
@@ -645,6 +746,31 @@ onMounted(async () => {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+/* Text fallback shown in place of the flag image if flagcdn.com is
+   unreachable - sized and weighted to sit inline without looking like an
+   error state, since a missing flag isn't actually a data problem. */
+.flag-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.flag-fallback-lg {
+  width: 28px;
+  height: 20px;
+  font-size: 9px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
 /* ---- Country sections ---- */
 .country-sections {
   display: flex;
@@ -691,6 +817,35 @@ onMounted(async () => {
 .country-count {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+.sort-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.sort-btn {
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sort-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent-cyan);
+}
+
+.sort-btn.active {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  color: #04141a;
 }
 
 .country-worst {
@@ -854,6 +1009,20 @@ onMounted(async () => {
   .forecast-hero {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .country-header {
+    flex-wrap: wrap;
+  }
+
+  .sort-toggle {
+    order: 1;
+    width: 100%;
+    margin-left: 38px;
+  }
+
+  .country-worst {
+    margin-left: auto;
   }
 
   .hero-summary {
