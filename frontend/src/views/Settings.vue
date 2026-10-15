@@ -392,7 +392,11 @@ onMounted(() => {
 }
 
 .recipient-status {
-  color: var(--text-muted);
+  /* Was var(--text-muted) (#666666 in dark mode) - ~2.8:1 contrast against
+     this panel's background, unreadable. Matched to the rgba(255,255,255,…)
+     scale the rest of this file already uses (card-desc 0.75, card-note
+     0.7, recipient-value 0.65) - this one got missed in that pass. */
+  color: rgba(255, 255, 255, 0.7);
   font-size: 13px;
   padding: 8px 0;
 }
