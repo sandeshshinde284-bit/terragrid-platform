@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 import os
+from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
 
@@ -366,6 +367,7 @@ class EvacuationZoneService:
             req = urllib.request.Request(url, headers={'User-Agent': 'TerraGrid-Disaster-App/1.0'})
             with urllib.request.urlopen(req, timeout=3.0) as response:
                 data = json.loads(response.read().decode())
+                log_raw_data("osrm", data, label=direction["name"], context={"lat": lat, "lon": lon, "dst_lat": dst_lat, "dst_lon": dst_lon})
                 if data.get('code') == 'Ok' and len(data.get('routes', [])) > 0:
                     route_obj = data['routes'][0]
                     route_coords = route_obj['geometry']['coordinates']
@@ -374,6 +376,7 @@ class EvacuationZoneService:
                     used_real_osrm = True
         except Exception as osrm_err:
             logger.warning(f"[FEATURE_HEALTH] feature=osrm_routing status=fallback direction={direction['name']} error={osrm_err} note=using straight-line geodesic vector instead of a real road route")
+            log_raw_data("osrm", {"error": str(osrm_err)}, label=direction["name"], context={"lat": lat, "lon": lon, "dst_lat": dst_lat, "dst_lon": dst_lon, "fallback": "geodesic"})
 
         # Fallback to geodesic line if OSRM fails (e.g. over oceans or rate limited)
         if not route_coords:

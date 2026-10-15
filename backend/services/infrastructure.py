@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from functools import lru_cache
 import os
 import socket
+from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,11 @@ class InfrastructureService:
                 with urllib.request.urlopen(req, timeout=cls.OVERPASS_TIMEOUT) as response:
                     result = json.loads(response.read().decode())
                     logger.debug(f"[OSM] Query succeeded: {len(result.get('elements', []))} elements found")
+                    # Note: this method is @lru_cache'd, so this only fires on
+                    # an actual fetch, not on a cache hit for the same
+                    # rounded lat/lon/radius - that's fine, it's the live
+                    # Overpass response that needs cross-checking.
+                    log_raw_data("osm", result, label="overpass_raw", context={"lat": rounded_lat, "lon": rounded_lon, "radius_m": radius_m})
                     return result
             except (socket.timeout, urllib.error.URLError, TimeoutError) as e:
                 last_error = e
@@ -90,6 +96,7 @@ class InfrastructureService:
         
         # All retries exhausted
         logger.warning(f"[FEATURE_HEALTH] feature=osm_overpass status=all_retries_failed attempts={cls.OVERPASS_RETRIES} error={last_error}")
+        log_raw_data("osm", {"elements": [], "error": str(last_error)}, label="overpass_failed", context={"lat": rounded_lat, "lon": rounded_lon, "radius_m": radius_m, "attempts": cls.OVERPASS_RETRIES})
         return {"elements": []}  # Return empty result, don't block response
 
     @classmethod
