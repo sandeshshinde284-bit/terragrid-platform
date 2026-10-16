@@ -7,6 +7,7 @@ API Routes for Features 1 & 2
 from fastapi import APIRouter, Query, HTTPException, Depends
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
+import asyncio
 import logging
 
 from ..services import (
@@ -125,7 +126,12 @@ async def analyze_impact(event: Dict[str, Any], db: Session = Depends(get_db)):
     returned), making this endpoint useless for manually testing that flow.
     """
     try:
-        impact = ImpactAnalysisService.calculate_impact(event, db_session=db)
+        # Run via asyncio.to_thread: calculate_impact() can synchronously
+        # perform blocking Gmail SMTP I/O (with retry sleeps) when
+        # risk_score >= 80 - without offloading it, that would block this
+        # worker's entire event loop (all other in-flight requests) for the
+        # duration, same issue fixed in the automatic polling pipeline.
+        impact = await asyncio.to_thread(ImpactAnalysisService.calculate_impact, event, db_session=db)
 
         return {
             "status": "success",
@@ -156,7 +162,7 @@ async def analyze_batch(events: List[Dict[str, Any]], db: Session = Depends(get_
         max_risk = 0
 
         for event in events:
-            impact = ImpactAnalysisService.calculate_impact(event, db_session=db)
+            impact = await asyncio.to_thread(ImpactAnalysisService.calculate_impact, event, db_session=db)
             impacts.append({
                 "location": event.get("location_name"),
                 "impact": impact
