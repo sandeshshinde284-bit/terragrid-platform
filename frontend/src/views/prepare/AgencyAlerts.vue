@@ -272,7 +272,6 @@ const selectedToneIcon = computed(() => {
   return tone === 'red' ? '🔴' : tone === 'orange' ? '🟠' : tone === 'yellow' ? '🟡' : '✅'
 })
 
-// PR9 (confidence-based alerting): these alert templates are drafted from
 // the city's worst forecast day. If multiple days tie for worst risk_level,
 // surface the one with the LOWEST agreement - the most conservative read,
 // since that's the one most likely to be a brief spike rather than a

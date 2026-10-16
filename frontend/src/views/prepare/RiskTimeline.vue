@@ -94,10 +94,7 @@
               </div>
             </div>
 
-            <!-- PR5: Evacuation Route Pre-Calculation. Only offered when at
-                 least one forecast day both carries elevated risk and clears
-                 PR9's confidence bar - a brief, low-agreement spike isn't
-                 worth spending a real OSRM routing call on. -->
+            
             <div v-if="selectedCity && hasQualifyingDay" class="evac-panel glass-panel">
               <div class="evac-header">
                 <div class="evac-heading">

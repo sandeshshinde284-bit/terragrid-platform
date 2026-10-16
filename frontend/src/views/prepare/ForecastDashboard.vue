@@ -36,16 +36,6 @@
             <div class="hero-meta-row">
               <span class="hero-meta">{{ cities.length }} {{ $t('prepare.forecast.citiesMonitored') }} &middot; {{ lastUpdatedText }}</span>
 
-              <!-- PR10: Source of Truth. Audits the data behind every PREPARE
-                   feature on this page (and PR9's alerts / PR5's routes, which
-                   both build on the same fetch) - not whether the weather
-                   prediction is right, but whether what's displayed is actually
-                   backed by fresh, complete, sufficiently-sampled data.
-                   Deliberately a small pill next to the meta line (not a
-                   full-width banner) so it reads as supporting detail, not a
-                   second headline - but it still needs to look clickable on
-                   its own, so it spells out "Details" next to the arrow
-                   instead of relying on a bare chevron or a hover-only cue. -->
               <button
                 type="button"
                 class="sot-chip"
@@ -363,7 +353,6 @@ const formatDay = (dateStr: string): string => {
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-// PR10: Source of Truth
 interface SourceOfTruth {
   overall: 'verified' | 'degraded'
   freshness: { cache_age_seconds: number | null; cache_ttl_seconds: number; stale: boolean; note: string | null }
@@ -486,86 +475,7 @@ onUnmounted(() => {
 .forecast-container::-webkit-scrollbar-track { background: transparent; }
 .forecast-container::-webkit-scrollbar-thumb { background: var(--accent-primary, #22d3ee); border-radius: 3px; }
 
-/* ---- Hero / summary strip ---- */
-
-.forecast-hero {
-  padding: 20px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-  background: var(--accent-cyan-soft);
-}
-
-.hero-left {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.hero-left h2 {
-  margin: 0;
-  font-size: 20px;
-  color: var(--accent-cyan);
-}
-
-.hero-meta-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  /* Consistent spacing with country sections */
-}
-
-.hero-meta {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.hero-summary {
-  display: flex;
-  gap: 10px;
-}
-
-.summary-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 56px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--glass-border);
-}
-
-.summary-count {
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1.1;
-}
-
-.summary-label {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  opacity: 0.85;
-}
-
-.summary-pill.red { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.4); color: #ef4444; }
-.summary-pill.orange { background: rgba(249, 115, 22, 0.12); border-color: rgba(249, 115, 22, 0.4); color: #f97316; }
-.summary-pill.yellow { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.4); color: #eab308; }
-.summary-pill.green { background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.4); color: #22c55e; }
-
-/* ---- PR10: Source of Truth ----
-   A compact pill next to the hero's meta line, not a full-width banner -
-   it's supporting detail about data trust, not a second headline competing
-   with the forecast itself. But a small chip can easily read as "just a
-   label" instead of a button, so this leans on several cues at once so it's
-   unambiguous: a visible border (pill/button shape, matching the
-   .filter-chip buttons used elsewhere on this page), an explicit "Details ▼"
-   segment (not just a bare arrow), a hover state that visibly reacts, and a
-   native title tooltip for anyone who pauses over it. */
+/* Source of Truth Status */
 .sot-chip {
   display: inline-flex;
   align-items: center;
