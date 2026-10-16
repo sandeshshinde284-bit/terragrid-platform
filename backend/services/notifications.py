@@ -188,40 +188,9 @@ class NotificationService:
 
                     logger.info(f"[FEATURE_HEALTH] feature=gmail_smtp status=success location={location} recipients={len(recipient_emails)}")
                     self.sent_alerts.add(alert_signature)
-                    
-                    # Record alert in database
-                    if db_session:
-                        try:
-                            from ..models.alert import Alert
-                            from ..models.event import Event
-                            from datetime import datetime
-                            
-                            # Find the event record
-                            event = db_session.query(Event).filter(
-                                Event.latitude == incident.get("latitude"),
-                                Event.longitude == incident.get("longitude"),
-                                Event.event_type == incident.get("event_type")
-                            ).first()
-                            
-                            if event:
-                                # Create alert record
-                                alert_record = Alert(
-                                    event_id=event.id,
-                                    alert_type="critical_threat",
-                                    status="sent",
-                                    title=subject,
-                                    message=html_content[:1000],  # Store first 1000 chars
-                                    channels="email",
-                                    is_critical=True,
-                                    retry_count=attempt
-                                )
-                                db_session.add(alert_record)
-                                db_session.commit()
-                                logger.info(f"Alert record persisted to database for event {event.id}")
-                        except Exception as db_e:
-                            logger.warning(f"Could not persist alert to database: {str(db_e)}")
-                            # Don't fail the email sending if database fails
-                    
+
+                    self._record_alert(db_session, incident, subject, html_content, status="sent", retry_count=attempt)
+
                     return True
                 except Exception as attempt_e:
                     if attempt < max_retries - 1:
@@ -232,7 +201,54 @@ class NotificationService:
 
         except Exception as e:
             logger.exception(f"[FEATURE_HEALTH] feature=gmail_smtp status=error attempts={max_retries} location={location}")
+            # Record the failure too - previously a fully-exhausted retry loop
+            # left no trace anywhere except server logs: not in the
+            # recipient's inbox (nothing sent) and not in the Alerts tab
+            # (no Alert row), so an operator watching the UI would see
+            # nothing at all for a critical incident that genuinely failed
+            # to notify anyone.
+            self._record_alert(db_session, incident, subject, html_content, status="failed", retry_count=max_retries)
             return False
+
+    def _record_alert(self, db_session, incident: Dict[str, Any], subject: str, html_content: str, status: str, retry_count: int) -> None:
+        """
+        Writes an Alert row for this incident, 'sent' or 'failed'. Requires
+        the matching Event row to already exist (looked up by latitude,
+        longitude, event_type) - as of the data_ingestion.py pipeline fix,
+        the Event is now stored before calculate_impact() runs, so this
+        lookup succeeds even for a brand-new incident's first alert.
+        """
+        if not db_session:
+            return
+        try:
+            from ..models.alert import Alert
+            from ..models.event import Event
+
+            event = db_session.query(Event).filter(
+                Event.latitude == incident.get("latitude"),
+                Event.longitude == incident.get("longitude"),
+                Event.event_type == incident.get("event_type")
+            ).first()
+
+            if event:
+                alert_record = Alert(
+                    event_id=event.id,
+                    alert_type="critical_threat",
+                    status=status,
+                    title=subject,
+                    message=html_content[:1000],  # Store first 1000 chars
+                    channels="email",
+                    is_critical=True,
+                    retry_count=retry_count
+                )
+                db_session.add(alert_record)
+                db_session.commit()
+                logger.info(f"Alert record ({status}) persisted to database for event {event.id}")
+            else:
+                logger.warning("Could not persist alert record: no matching Event found for this incident.")
+        except Exception as db_e:
+            logger.warning(f"Could not persist alert to database: {str(db_e)}")
+            # Don't fail the email send/failure path if database persistence fails
 
     def get_alert_email_recipients(self, db: Session) -> List[Dict[str, str]]:
         """Operator-managed email recipients (Settings screen), for Agency Alerts' picker."""

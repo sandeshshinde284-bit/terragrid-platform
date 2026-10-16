@@ -267,12 +267,44 @@ class DataIngestionService:
                     validation_errors or None,
                 )
 
-            # Calculate impact analysis (pass db_session for alert persistence)
-            impact = ImpactAnalysisService.calculate_impact(event, db_session=current_db)
+            # Store in database FIRST, before impact analysis - so that a
+            # brand-new event already has a real DB row (and id) by the time
+            # calculate_impact() below may synchronously call
+            # send_critical_alert(). That function looks up the matching
+            # Event by (latitude, longitude, event_type) to attach its Alert
+            # record; when storage happened AFTER impact calculation (the
+            # original order), that lookup always found nothing for a
+            # brand-new event, so the very first critical alert for any new
+            # incident sent a real email but silently never got an Alert row
+            # - invisible in the Alerts tab and unprotected by the DB-backed
+            # dedup check (risking a duplicate email after a cold start).
+            # Storing first fixes both: the lookup now finds the row, and the
+            # impact/ingested_at fields are merged into it with a cheap
+            # follow-up update right below.
+            final_event_id = None
+            if current_db:
+                final_event_id = await asyncio.to_thread(self._store_event_sync, event, current_db, existing_event_map)
+            elif self.db:
+                await self._store_event(event)
 
-            # Merge impact into event
+            # Calculate impact analysis (pass db_session for alert persistence).
+            # Run via asyncio.to_thread: this call can synchronously perform
+            # blocking Gmail SMTP I/O (with retry sleeps) inside
+            # send_critical_alert() when risk_score >= 80 - without
+            # offloading it, that would block this worker's entire event
+            # loop (all other in-flight requests) for the duration.
+            impact = await asyncio.to_thread(ImpactAnalysisService.calculate_impact, event, db_session=current_db)
+
+            # Merge impact into event (in-memory, for Pub/Sub publish below)
             event["impact"] = impact
             event["ingested_at"] = datetime.utcnow().isoformat()
+
+            # Persist the impact/ingested_at fields onto the row just stored
+            # above, now that we know its id.
+            if current_db and final_event_id is not None:
+                await asyncio.to_thread(
+                    self._merge_impact_into_event_sync, final_event_id, impact, event["ingested_at"], current_db
+                )
 
             # Layer 3: log the enrichment ImpactAnalysisService just performed -
             # the event as received vs. the risk/impact fields it added.
@@ -286,13 +318,6 @@ class DataIngestionService:
                     pre_enrichment_snapshot,
                     {k: v for k, v in impact.items() if not isinstance(v, datetime)} if isinstance(impact, dict) else impact,
                 )
-
-            # Store in database if session available (using asyncio.to_thread for non-blocking I/O)
-            final_event_id = None
-            if current_db:
-                final_event_id = await asyncio.to_thread(self._store_event_sync, event, current_db, existing_event_map)
-            elif self.db:
-                await self._store_event(event)
 
             # Layer 4: tie all 4 layers together now that we know the stored
             # event's real DB id. Only create the chain when every upstream
@@ -417,7 +442,31 @@ class DataIngestionService:
             # We do NOT call db.rollback() because that would discard events #1 through N-1!
             logger.error(f"Failed to store event in database (savepoint rolled back): {str(e)}")
             return None
-    
+
+    def _merge_impact_into_event_sync(self, event_id: int, impact: Dict[str, Any], ingested_at_iso: str, db) -> None:
+        """
+        Follow-up to _store_event_sync: merges the impact analysis (computed
+        after that initial store, see _process_event) into the same row's
+        `data` JSONB, now that we know its real id. Isolated in its own
+        savepoint, same reasoning as _store_event_sync - a failure here must
+        never roll back other events already flushed in this batch, and must
+        never block the critical alert email, which has already been sent
+        (or attempted) by the time this runs.
+        """
+        try:
+            from ..models.event import Event
+            with db.begin_nested():
+                db_event = db.query(Event).filter(Event.id == event_id).first()
+                if db_event:
+                    data = dict(db_event.data or {})
+                    data["impact"] = impact
+                    data["ingested_at"] = ingested_at_iso
+                    db_event.data = data
+                    db_event.updated_at = datetime.utcnow()
+                    db.flush()
+        except Exception as e:
+            logger.warning(f"Could not merge impact into stored event {event_id}: {str(e)}")
+
     async def _store_event(self, event: Dict[str, Any]) -> None:
         """Store event in database"""
         if not self.db:
