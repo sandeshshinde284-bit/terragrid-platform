@@ -337,7 +337,13 @@
     "live": "LIVE",
     "tacticalHtmlDispatched": "Tactical HTML Brief Dispatched",
     "delivered": "DELIVERED",
-    "recipient": "Recipient:"
+    "recipient": "Recipient:",
+    "loading": "Checking alert history...",
+    "loadError": "Could not load alert history.",
+    "empty": "No alerts have been sent for this incident yet.",
+    "channels": "Channels:",
+    "critical": "CRITICAL",
+    "retries": "retries"
   },
   "map": {
     "title": "Strategic Map",

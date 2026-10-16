@@ -7,7 +7,7 @@
       </div>
     </div>
 
-    <!-- Live Email Dispatch Engine (Phase 1) -->
+    <!-- Live Alert Dispatch Log (real data from the `alerts` table via GET /api/v1/incidents/{id}/alerts) -->
     <article class="glass-panel" style="margin-bottom: 20px; padding: 20px;">
       <div class="panel-heading" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div>
@@ -17,15 +17,34 @@
         <span class="ai-chip live" style="font-size: 16px; font-weight: 800; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 4px 8px; border-radius: 4px;">{{ $t('alertsTab.live') }}</span>
       </div>
 
-      <div class="dispatch-log">
-        <div class="log-entry" style="display: flex; align-items: flex-start; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid #1e293b;">
-          <div class="log-icon" style="font-size: 24px;">📧</div>
+      <div v-if="alertsLoading" class="dispatch-log">
+        <p style="color: #94a3b8; font-size: 15px; margin: 0;">{{ $t('alertsTab.loading') }}</p>
+      </div>
+      <div v-else-if="alertsError" class="dispatch-log">
+        <p style="color: #f87171; font-size: 15px; margin: 0;">{{ $t('alertsTab.loadError') }}</p>
+      </div>
+      <div v-else-if="alerts.length === 0" class="dispatch-log">
+        <p style="color: #94a3b8; font-size: 15px; margin: 0;">{{ $t('alertsTab.empty') }}</p>
+      </div>
+      <div v-else class="dispatch-log">
+        <div
+          v-for="alert in alerts"
+          :key="alert.id"
+          class="log-entry"
+          style="display: flex; align-items: flex-start; gap: 16px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #1e293b;"
+        >
+          <div class="log-icon" style="font-size: 24px;">{{ alert.is_critical ? '🚨' : '📧' }}</div>
           <div class="log-content" style="flex: 1;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-              <strong style="color: #f8fafc; font-size: 16px;">{{ $t('alertsTab.tacticalHtmlDispatched') }}</strong>
-              <span style="color: #4ade80; font-weight: 700; font-size: 16px;">{{ $t('alertsTab.delivered') }}</span>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; gap: 12px;">
+              <strong style="color: #f8fafc; font-size: 16px;">{{ alert.title }}</strong>
+              <span :style="{ color: statusColor(alert.status), fontWeight: 700, fontSize: '16px', whiteSpace: 'nowrap' }">{{ alert.status?.toUpperCase() }}</span>
             </div>
-            <p style="margin: 0 0 8px 0; color: #cbd5e1; font-size: 15px;">{{ $t('alertsTab.recipient') }} <strong style="color: #38bdf8; font-family: ui-monospace, monospace; font-weight: normal;">sandeshshinde284@gmail.com</strong></p>
+            <p style="margin: 0 0 6px 0; color: #cbd5e1; font-size: 15px;">
+              {{ $t('alertsTab.channels') }} <strong style="color: #38bdf8; font-family: ui-monospace, monospace; font-weight: normal;">{{ alert.channels || '—' }}</strong>
+              <span v-if="alert.is_critical" style="margin-left: 10px; color: #f87171; font-weight: 700;">{{ $t('alertsTab.critical') }}</span>
+              <span v-if="alert.retry_count" style="margin-left: 10px; color: #94a3b8;">({{ alert.retry_count }} {{ $t('alertsTab.retries') }})</span>
+            </p>
+            <p style="margin: 0; color: #64748b; font-size: 13px;">{{ formatTimestamp(alert.created_at) }}</p>
           </div>
         </div>
       </div>
@@ -60,12 +79,80 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { ref, watch } from 'vue'
+import { logError } from '@/utils/logger'
+
+const props = defineProps<{
   isBackendMockModeEnabled: boolean
   detail: any
 }>()
 
 defineEmits(['open-alerts'])
+
+interface AlertRecord {
+  id: number
+  event_id: number
+  alert_type: string
+  status: string
+  title: string
+  message: string
+  channels: string | null
+  is_critical: boolean
+  retry_count: number
+  created_at: string
+}
+
+const alerts = ref<AlertRecord[]>([])
+const alertsLoading = ref(false)
+const alertsError = ref(false)
+
+function statusColor(status: string | undefined): string {
+  switch (status) {
+    case 'sent':
+    case 'delivered':
+      return '#4ade80'
+    case 'failed':
+      return '#f87171'
+    case 'pending':
+      return '#fbbf24'
+    default:
+      return '#94a3b8'
+  }
+}
+
+function formatTimestamp(value: string): string {
+  if (!value) return ''
+  try {
+    return new Date(value).toLocaleString()
+  } catch {
+    return value
+  }
+}
+
+async function fetchAlerts(incidentId: string | undefined) {
+  if (!incidentId) {
+    alerts.value = []
+    return
+  }
+  alertsLoading.value = true
+  alertsError.value = false
+  try {
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const res = await fetch(`${host}/api/v1/incidents/${incidentId}/alerts`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    alerts.value = await res.json()
+  } catch (e) {
+    logError('Failed to fetch incident alerts', e)
+    alertsError.value = true
+    alerts.value = []
+  } finally {
+    alertsLoading.value = false
+  }
+}
+
+watch(() => props.detail?.id, (id) => {
+  fetchAlerts(id)
+}, { immediate: true })
 </script>
 
 <style scoped>
