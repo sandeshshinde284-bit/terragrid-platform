@@ -98,17 +98,17 @@ async def ingest_gdacs(use_mock: bool = Query(False)):
 
 # Feature 2: Impact Analysis
 @router.post("/impact/analyze")
-async def analyze_impact(event: Dict[str, Any]):
+async def analyze_impact(event: Dict[str, Any], db: Session = Depends(get_db)):
     """
     Feature 2: Analyze impact of a disaster event
-    
+
     Request body:
         - event_type: Type of disaster (fire, earthquake, flood, etc.)
         - severity: Severity level (low, medium, high, critical)
         - latitude: Event latitude
         - longitude: Event longitude
         - location_name: Location description
-    
+
     Returns:
         - Affected population
         - Affected area in km²
@@ -116,10 +116,17 @@ async def analyze_impact(event: Dict[str, Any]):
         - Vulnerability assessment
         - Humanitarian impact
         - Recommended actions
+
+    Note: db_session is passed through to ImpactAnalysisService.calculate_impact
+    so that, same as the automatic polling pipeline, a risk_score >= 80 here can
+    actually look up critical-alert recipients and send the email - previously
+    this endpoint called calculate_impact() with no db_session, so any critical
+    event analyzed here never triggered an alert (silently - no error was
+    returned), making this endpoint useless for manually testing that flow.
     """
     try:
-        impact = ImpactAnalysisService.calculate_impact(event)
-        
+        impact = ImpactAnalysisService.calculate_impact(event, db_session=db)
+
         return {
             "status": "success",
             "location": event.get("location_name", "Unknown"),
@@ -131,10 +138,13 @@ async def analyze_impact(event: Dict[str, Any]):
 
 
 @router.post("/impact/batch")
-async def analyze_batch(events: List[Dict[str, Any]]):
+async def analyze_batch(events: List[Dict[str, Any]], db: Session = Depends(get_db)):
     """
     Feature 2: Analyze impact for multiple events
-    
+
+    Same db_session fix as /impact/analyze above - without it, none of these
+    events could trigger a critical alert even at risk_score >= 80.
+
     Returns:
         - List of impact analyses
         - Summary statistics
@@ -144,9 +154,9 @@ async def analyze_batch(events: List[Dict[str, Any]]):
         total_population = 0
         total_area = 0
         max_risk = 0
-        
+
         for event in events:
-            impact = ImpactAnalysisService.calculate_impact(event)
+            impact = ImpactAnalysisService.calculate_impact(event, db_session=db)
             impacts.append({
                 "location": event.get("location_name"),
                 "impact": impact
