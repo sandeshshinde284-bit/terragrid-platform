@@ -43,6 +43,11 @@ def _init_db(max_retries: int = 5, base_delay: float = 2.0) -> bool:
 
 
 _db_ready = _init_db()
+_db_ready = False  # Lazy: get_db() attempts connection on first request,
+                     # so a slow/cold Cloud SQL connection never blocks the
+                     # app from binding its port and passing Cloud Run's
+                     # startup health probe.
+
 
 
 def get_db() -> Generator[Session, None, None]:
