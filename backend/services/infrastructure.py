@@ -25,6 +25,10 @@ class InfrastructureService:
     OVERPASS_URL = settings.OVERPASS_API_URL
     OVERPASS_TIMEOUT = settings.OVERPASS_API_TIMEOUT  # Increased from 8s (Overpass API is slow)
     OVERPASS_RETRIES = settings.OVERPASS_API_RETRIES   # Increased from 2 retries
+    # Parsed once at class-load time from the comma-separated OVERPASS_API_MIRRORS
+    # setting. Falls back to the single OVERPASS_URL if mirrors aren't configured
+    # (e.g. an older .env that predates this setting), so this never ends up empty.
+    OVERPASS_MIRRORS = [u.strip() for u in settings.OVERPASS_API_MIRRORS.split(',') if u.strip()] or [OVERPASS_URL]
 
     @staticmethod
     def _haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -61,29 +65,37 @@ class InfrastructureService:
         out center 25;
         """
         
-        url = cls.OVERPASS_URL
         data = urllib.parse.urlencode({'data': query}).encode('utf-8')
-        req = urllib.request.Request(url, data=data, headers={'User-Agent': 'TerraGrid-Disaster-App/1.0'})
-        
-        # Retry logic for transient failures with exponential backoff
+
+        # Retry logic for transient failures with exponential backoff.
+        # Each attempt rotates to the next mirror in OVERPASS_MIRRORS (wrapping
+        # around if there are more retries than mirrors) instead of retrying the
+        # same host - overpass-api.de getting a 502 under load says nothing about
+        # whether overpass.kumi.systems or overpass.openstreetmap.ru are up, since
+        # these are independently-run public servers.
         last_error = None
         for attempt in range(cls.OVERPASS_RETRIES):
+            url = cls.OVERPASS_MIRRORS[attempt % len(cls.OVERPASS_MIRRORS)]
+            req = urllib.request.Request(url, data=data, headers={'User-Agent': 'TerraGrid-Disaster-App/1.0'})
             try:
-                logger.debug(f"[OSM] Attempt {attempt + 1}/{cls.OVERPASS_RETRIES} to query Overpass API (timeout={cls.OVERPASS_TIMEOUT}s)")
+                logger.debug(f"[OSM] Attempt {attempt + 1}/{cls.OVERPASS_RETRIES} to query Overpass mirror {url} (timeout={cls.OVERPASS_TIMEOUT}s)")
                 with urllib.request.urlopen(req, timeout=cls.OVERPASS_TIMEOUT) as response:
                     result = json.loads(response.read().decode())
-                    logger.debug(f"[OSM] Query succeeded: {len(result.get('elements', []))} elements found")
+                    logger.debug(f"[OSM] Query succeeded via {url}: {len(result.get('elements', []))} elements found")
                     # Note: this method is @lru_cache'd, so this only fires on
                     # an actual fetch, not on a cache hit for the same
                     # rounded lat/lon/radius - that's fine, it's the live
                     # Overpass response that needs cross-checking.
-                    log_raw_data("osm", result, label="overpass_raw", context={"lat": rounded_lat, "lon": rounded_lon, "radius_m": radius_m})
+                    log_raw_data("osm", result, label="overpass_raw", context={"lat": rounded_lat, "lon": rounded_lon, "radius_m": radius_m, "mirror": url})
                     return result
             except (socket.timeout, urllib.error.URLError, TimeoutError) as e:
                 last_error = e
-                logger.debug(f"[OSM] Attempt {attempt + 1} failed: {type(e).__name__}: {e}")
+                logger.debug(f"[OSM] Attempt {attempt + 1} via {url} failed: {type(e).__name__}: {e}")
                 if attempt < cls.OVERPASS_RETRIES - 1:
-                    # Exponential backoff with jitter: 2s, 4s, 8s (plus random 0-1s)
+                    # Exponential backoff with jitter: 2s, 4s, 8s (plus random 0-1s).
+                    # Kept even though the next attempt hits a different mirror -
+                    # it also covers the case where OUR network/egress is the one
+                    # having a transient issue, not the remote server.
                     import time
                     import random
                     wait_time = (2 ** (attempt + 1)) + random.uniform(0, 1)
@@ -91,12 +103,12 @@ class InfrastructureService:
                     time.sleep(wait_time)
             except Exception as e:
                 # Other errors (JSON parse, connection reset, etc.) - don't retry
-                logger.warning(f"[OSM] Non-retriable error: {type(e).__name__}: {e}")
+                logger.warning(f"[OSM] Non-retriable error via {url}: {type(e).__name__}: {e}")
                 return {"elements": []}
         
-        # All retries exhausted
-        logger.warning(f"[FEATURE_HEALTH] feature=osm_overpass status=all_retries_failed attempts={cls.OVERPASS_RETRIES} error={last_error}")
-        log_raw_data("osm", {"elements": [], "error": str(last_error)}, label="overpass_failed", context={"lat": rounded_lat, "lon": rounded_lon, "radius_m": radius_m, "attempts": cls.OVERPASS_RETRIES})
+        # All retries exhausted (across all mirrors tried)
+        logger.warning(f"[FEATURE_HEALTH] feature=osm_overpass status=all_retries_failed attempts={cls.OVERPASS_RETRIES} mirrors_tried={cls.OVERPASS_MIRRORS[:cls.OVERPASS_RETRIES]} error={last_error}")
+        log_raw_data("osm", {"elements": [], "error": str(last_error)}, label="overpass_failed", context={"lat": rounded_lat, "lon": rounded_lon, "radius_m": radius_m, "attempts": cls.OVERPASS_RETRIES, "mirrors_tried": cls.OVERPASS_MIRRORS[:cls.OVERPASS_RETRIES]})
         return {"elements": []}  # Return empty result, don't block response
 
     @classmethod
