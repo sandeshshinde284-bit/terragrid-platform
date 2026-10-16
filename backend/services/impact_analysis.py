@@ -83,18 +83,7 @@ class ImpactAnalysisService:
             # Get impact zones
             impact_zones = cls._get_impact_zones(lat, lon, affected_area)
             
-            # FEATURE 4 (Phase 2): Trigger external email alerts for critical threats
-            if risk_score >= 80:
-                try:
-                    from backend.services.notifications import notification_service
-                    from backend.services.evacuation_zones import EvacuationZoneService
-                    # Get zone data for the email
-                    zone_data = EvacuationZoneService.calculate_zones(event)
-                    notification_service.send_critical_alert(incident=event, zone_data=zone_data, db_session=db_session)
-                except Exception as notify_e:
-                    logger.error(f"Failed to send email alert: {str(notify_e)}")
-            
-            return {
+            impact_result = {
                 "is_estimated": False,
                 "data_quality": "VERIFIED_COMPUTATION",
                 "affected_area_km2": round(affected_area, 2),
@@ -113,6 +102,27 @@ class ImpactAnalysisService:
                     event_type, affected_population, risk_score
                 )
             }
+
+            # FEATURE 4 (Phase 2): Trigger external email alerts for critical threats
+            if risk_score >= 80:
+                try:
+                    from backend.services.notifications import notification_service
+                    from backend.services.evacuation_zones import EvacuationZoneService
+                    # Get zone data for the email
+                    zone_data = EvacuationZoneService.calculate_zones(event)
+                    # BUGFIX: previously passed `event` as-is, before the caller
+                    # had merged `impact` onto it (that merge happens in the
+                    # caller, after this function returns). send_critical_alert()
+                    # reads incident["impact"]["risk_score"] for the subject line
+                    # and body, so every critical email ever sent showed
+                    # "Threat: 0/100" regardless of the real score. Attach the
+                    # real, just-computed impact_result before sending.
+                    incident_with_impact = {**event, "impact": impact_result}
+                    notification_service.send_critical_alert(incident=incident_with_impact, zone_data=zone_data, db_session=db_session)
+                except Exception as notify_e:
+                    logger.error(f"Failed to send email alert: {str(notify_e)}")
+
+            return impact_result
         except Exception as e:
             logger.error(f"Error calculating impact: {str(e)}")
             
