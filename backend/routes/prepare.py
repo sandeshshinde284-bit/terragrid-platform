@@ -148,14 +148,14 @@ async def get_source_of_truth(use_mock: bool = Query(False, description="Use moc
 
 @router.get("/actions")
 async def get_preparedness_actions(
-    city: str = Query(..., description="City name, 
-    country: str = Query("", description="ISO2 country code, 
+    city: str = Query(..., description="City name, matching the forecast output"),
+    country: str = Query("", description="ISO2 country code, matching the forecast output"),
     use_mock: bool = Query(False, description="Use mock data for testing"),
 ):
     """
-    
+    Generate an AI preparedness checklist (clear drains, stock supplies,
     alert hospitals, position boats, etc.) for one city, tied to that city's
-    5-day risk escalation forecast 
+    5-day risk escalation forecast.
 
     Returns:
         - risk_context: 1-2 sentence summary of what's driving the checklist
@@ -226,8 +226,8 @@ WEATHER_TO_EVENT_TYPE = {
 
 @router.get("/evacuation-routes")
 async def get_evacuation_routes(
-    city: str = Query(..., description="City name, 
-    country: str = Query("", description="ISO2 country code, 
+    city: str = Query(..., description="City name, matching the forecast output"),
+    country: str = Query("", description="ISO2 country code, matching the forecast output"),
     use_mock: bool = Query(False, description="Use mock data for testing"),
 ):
     """
@@ -327,8 +327,8 @@ async def get_evacuation_routes(
 
 @router.get("/alerts")
 async def get_agency_alerts(
-    city: str = Query(..., description="City name, 
-    country: str = Query("", description="ISO2 country code, 
+    city: str = Query(..., description="City name, matching the forecast output"),
+    country: str = Query("", description="ISO2 country code, matching the forecast output"),
     use_mock: bool = Query(False, description="Use mock data for testing"),
 ):
     """
