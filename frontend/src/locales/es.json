@@ -227,7 +227,7 @@
     "adding": "Agregando…",
     "labelPlaceholder": "Etiqueta (ej. Teléfono Demo 1)",
     "phonePlaceholder": "Número de teléfono, ej. 34612345678",
-    "emailPlaceholder": "nombre@ejemplo.com"
+    "emailPlaceholder": "nombre (at) ejemplo.com"
   },
   "overviewTab": {
     "operationalCommand": "DESPACHO DE COMANDO OPERATIVO",

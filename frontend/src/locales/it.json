@@ -227,7 +227,7 @@
     "adding": "Aggiunta in corso…",
     "labelPlaceholder": "Etichetta (es. Telefono Demo 1)",
     "phonePlaceholder": "Numero di telefono, es. 393123456789",
-    "emailPlaceholder": "nome@esempio.it"
+    "emailPlaceholder": "nome (at) esempio.it"
   },
   "overviewTab": {
     "operationalCommand": "COMANDO OPERATIVO DISPATCH",

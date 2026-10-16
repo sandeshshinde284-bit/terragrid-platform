@@ -227,7 +227,7 @@
     "adding": "Adding…",
     "labelPlaceholder": "Label (e.g. Demo Phone 1)",
     "phonePlaceholder": "Phone number, e.g. 919812345678",
-    "emailPlaceholder": "name@example.com"
+    "emailPlaceholder": "name (at) example.com"
   },
   "overviewTab": {
     "operationalCommand": "OPERATIONAL COMMAND DISPATCH",

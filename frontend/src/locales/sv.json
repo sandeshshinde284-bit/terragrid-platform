@@ -227,7 +227,7 @@
     "adding": "Lägger till…",
     "labelPlaceholder": "Etikett (t.ex. Demotelefon 1)",
     "phonePlaceholder": "Telefonnummer, t.ex. 46701234567",
-    "emailPlaceholder": "namn@exempel.se"
+    "emailPlaceholder": "namn (at) exempel.se"
   },
   "overviewTab": {
     "operationalCommand": "OPERATIVT LEDNINGSCENTER",

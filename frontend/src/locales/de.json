@@ -227,7 +227,7 @@
     "adding": "Wird hinzugefügt…",
     "labelPlaceholder": "Bezeichnung (z. B. Demo Telefon 1)",
     "phonePlaceholder": "Telefonnummer, z. B. 491512345678",
-    "emailPlaceholder": "name@beispiel.de"
+    "emailPlaceholder": "name (at) beispiel.de"
   },
   "overviewTab": {
     "operationalCommand": "OPERATIONELLE EINSATZLEITUNG",
