@@ -77,7 +77,15 @@ class Settings(BaseSettings):
     USGS_EARTHQUAKE_URL: str = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary'
     
     OSRM_API_URL: str = 'https://router.project-osrm.org/route/v1'
+    # overpass-api.de is the original/most heavily-used public Overpass
+    # instance and is known to return 502/504 under load, independent of
+    # anything this app does. OVERPASS_API_URL stays as the primary (kept
+    # for backward compat with any existing env config), but each retry in
+    # infrastructure.py now rotates to the next mirror in this list instead
+    # of hammering the same host 3x - these are independent public servers,
+    # so one being overloaded doesn't mean the others are.
     OVERPASS_API_URL: str = 'https://overpass-api.de/api/interpreter'
+    OVERPASS_API_MIRRORS: str = 'https://overpass-api.de/api/interpreter,https://overpass.kumi.systems/api/interpreter,https://overpass.openstreetmap.ru/api/interpreter'
     OVERPASS_API_TIMEOUT: int = 12
     OVERPASS_API_RETRIES: int = 3
     
