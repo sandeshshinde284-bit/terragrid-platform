@@ -426,7 +426,14 @@ async def get_whatsapp_recipients(db: Session = Depends(get_db)):
     table), for the frontend's recipient picker. Deliberately not arbitrary
     - see WhatsAppService's docstring for why sends are restricted to this
     list - but editable at runtime now, not fixed at deploy time.
+
+    Gated behind ENABLE_WHATSAPP (off by default - see config.py for why):
+    returns a disabled status instead of 404/500 so the frontend can show a
+    clean "not available" state rather than treating this as an error.
     """
+    if not settings.ENABLE_WHATSAPP:
+        return {"status": "disabled", "configured": False, "recipients": []}
+
     service = get_whatsapp_service()
     return {
         "status": "success",
@@ -447,7 +454,17 @@ async def send_whatsapp_alert(payload: SendWhatsAppAlertRequest, db: Session = D
     WhatsApp recipient via WAHA. The frontend sends the exact message text
     the operator reviewed on screen - this route does not regenerate or
     alter it.
+
+    Gated behind ENABLE_WHATSAPP (off by default - see config.py for why):
+    blocked at the route level, not just hidden in the UI, so this can't be
+    triggered by a direct API call while the flag is off.
     """
+    if not settings.ENABLE_WHATSAPP:
+        raise HTTPException(
+            status_code=403,
+            detail="WhatsApp alerting is currently disabled (ENABLE_WHATSAPP=false).",
+        )
+
     service = get_whatsapp_service()
     result = await service.send_text(db, payload.phone_number, payload.message)
 

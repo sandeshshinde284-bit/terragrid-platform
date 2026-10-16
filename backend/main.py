@@ -195,6 +195,7 @@ def get_app_config():
     """
     return {
         "mock_mode_enabled": settings.USE_MOCK_DATA,
+        "whatsapp_enabled": settings.ENABLE_WHATSAPP,
         "environment": settings.ENVIRONMENT,
         "mapbox_token": os.getenv("MAPBOX_TOKEN", "")
     }

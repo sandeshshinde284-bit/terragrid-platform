@@ -11,8 +11,10 @@
       </div>
 
       <div class="recipient-grid">
-        <!-- WhatsApp recipients -->
-        <section class="glass-panel recipient-card">
+        <!-- WhatsApp recipients - gated behind ENABLE_WHATSAPP (see
+             backend/config.py / useWhatsApp composable for why it's off
+             by default). Entire card hidden, not just disabled, when off. -->
+        <section v-if="isWhatsAppEnabled" class="glass-panel recipient-card">
           <div class="card-heading">
             <span class="card-icon">💬</span>
             <h3>{{ $t('settings.whatsappTitle') }}</h3>
@@ -177,6 +179,9 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import Header from '@/components/organisms/Header.vue'
+import { useWhatsApp } from '@/composables/useWhatsApp'
+
+const { isWhatsAppEnabled } = useWhatsApp()
 
 interface Recipient {
   id: number
@@ -240,7 +245,10 @@ const loadChannel = async (channel: Channel) => {
   }
 }
 
-const loadWhatsapp = () => loadChannel('whatsapp')
+const loadWhatsapp = () => {
+  if (!isWhatsAppEnabled.value) return
+  return loadChannel('whatsapp')
+}
 const loadEmail = () => loadChannel('email')
 const loadCritical = () => loadChannel('critical_email')
 
