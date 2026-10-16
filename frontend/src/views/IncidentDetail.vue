@@ -233,9 +233,6 @@
                   <p>{{ aiError }}</p>
                 </div>
                 <ol v-else class="action-list">
-                  <!-- COMMENTED OUT (Live Mode): Used to show fallback data from detail.recommendedActions when AI didn't load -->
-                  <!-- <li v-for="(action, index) in (aiInsights.length > 0 ? aiInsights : detail.recommendedActions)" :key="action.id || action.title"> -->
-                  <!-- Now only shows REAL AI data from aiPlan.immediate_actions -->
                   <li v-for="(action, index) in aiInsights" :key="action.id">
                     <span class="action-number">0{{ Number(index) + 1 }}</span><div><strong>{{ action.action }}</strong><p>{{ action.reason || action.details || '' }}</p></div><span class="priority" :class="`priority-${action.severity}`">{{ action.severity }}</span>
                   </li>

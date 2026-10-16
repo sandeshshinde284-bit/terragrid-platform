@@ -124,11 +124,8 @@ class GeocodingService:
 
     def batch_format_locations(self, items: List[Dict[str, Any]], db: Optional[Session] = None) -> Dict[str, str]:
         """
-        Batch geocodes up to 50 raw location strings in a SINGLE Gemini request.
-        Optimized with:
-        - Speed Win #6: Single bulk SQL query for cache hits using .in_(signatures)
-        - Speed Win #9: Pre-prompt deduplication by signature to maximize unique 50-slot capacity
-        - Speed Win #8: Single bulk db.add_all() commit
+        Batch geocodes up to 50 raw location strings in a single Gemini request.
+        Reduces latency by deduplicating requests and using bulk database queries.
         """
         results: Dict[str, str] = {}
         sig_to_items: Dict[str, List[Dict[str, Any]]] = {}
@@ -156,7 +153,7 @@ class GeocodingService:
             item_copy["signature"] = sig
             sig_to_items[sig].append(item_copy)
 
-        # Speed Win #6: 1 single SQL query for all cache lookups instead of N queries
+        # Batch retrieve cached geocoding results with single query
         if db and sig_to_items:
             try:
                 from backend.models.geocoding import GeocodingCache
@@ -172,7 +169,7 @@ class GeocodingService:
             except Exception as cache_e:
                 logger.warning(f"Batch geocoding cache lookup error: {cache_e}")
 
-        # Speed Win #9: Deduplicate by signature so duplicates don't waste 50-slot prompt budget
+        # Deduplicate by signature to reduce unique requests sent to Gemini API
         unique_uncached = [items_list[0] for items_list in sig_to_items.values()]
 
         if not unique_uncached:
@@ -239,7 +236,7 @@ class GeocodingService:
                                 for match_it in sig_to_items[it["signature"]]:
                                     results[match_it["raw_text"]] = clean_val
                             
-                            # Collect for bulk PostgreSQL cache insert (Speed Win #8)
+                            # Prepare geocoding cache entries for bulk insert
                             if db:
                                 from backend.models.geocoding import GeocodingCache
                                 new_cache_entries.append(
@@ -249,7 +246,7 @@ class GeocodingService:
                                     )
                                 )
                     
-                    # Single bulk insert and commit (Speed Win #8)
+                    # Bulk insert cached results
                     if db and new_cache_entries:
                         try:
                             db.add_all(new_cache_entries)

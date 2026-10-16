@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 class MockDataLoader:
     """
     Core service to load mock data and fallbacks from JSON files.
-    Satisfies Copilot architectural requirements for strict data separation.
+    Satisfies architectural requirements for strict data separation.
     """
     
     BASE_DIR = Path(__file__).parent.parent / "data"

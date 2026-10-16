@@ -144,7 +144,7 @@ class DataIngestionService:
             # 3. Process and store events
             logger.info(f"Processing {len(all_events)} events concurrently...")
 
-            # Speed Win #5 & Issue C: Pre-query existing events filtered by batch types via asyncio.to_thread
+            # Prefetch existing events to avoid duplicate inserts
             existing_event_map = None
             if current_db and all_events:
                 try:
@@ -212,17 +212,18 @@ class DataIngestionService:
     
     async def _process_event(self, event: Dict[str, Any], use_mock: bool = False, current_db = None, existing_event_map = None) -> None:
         """
-        Process a single event:
-        1. Record Layer 1 (raw) + Layer 2 (validation) lineage
-        2. Calculate impact (Layer 3 enrichment)
-        3. Store in database (Layer 4) and tie all 4 layers together
-        4. Publish to Pub/Sub
+        Process a single event through the 4-layer lineage pipeline:
+        1. Record raw event data before enrichment (Layer 1)
+        2. Validate required fields (Layer 2)
+        3. Calculate impact analysis (Layer 3)
+        4. Store in database and tie all layers together (Layer 4)
+        Publish to Pub/Sub when complete.
 
         Args:
             event: Event data to process
             use_mock: Whether using mock data
             current_db: Database session for persisting alerts
-            existing_event_map: In-memory cache of existing events (Speed Win #5)
+            existing_event_map: In-memory cache of existing events for duplicate detection
         """
         pipeline_started_at = datetime.utcnow()
         raw_event_id = None
@@ -417,7 +418,7 @@ class DataIngestionService:
                     )
 
                     db.add(db_event)
-                    # Speed Win #8: db.flush() instead of db.commit() to batch all disk I/O at the end
+                    # Batch flush to group database operations
                     db.flush()
                     if existing_event_map is not None and key:
                         existing_event_map[key] = db_event
@@ -425,7 +426,7 @@ class DataIngestionService:
                     return db_event.id
                 else:
                     # Update existing event
-                    # CRITICAL FIX: Preserve internally generated data (like deep_dossier) during polling updates!
+                    # Preserve internally generated data during polling updates
                     preserved_data = dict(existing_event.data or {})
                     preserved_data.update(safe_event_data)
                     existing_event.data = preserved_data
@@ -438,8 +439,8 @@ class DataIngestionService:
                     return existing_event.id
 
         except Exception as e:
-            # Issue B: begin_nested() automatically rolls back to the savepoint!
-            # We do NOT call db.rollback() because that would discard events #1 through N-1!
+            # Savepoint automatically rolls back on error; do not call rollback()
+            # to avoid discarding previously processed events
             logger.error(f"Failed to store event in database (savepoint rolled back): {str(e)}")
             return None
 

@@ -109,13 +109,12 @@ def _resolve_country_code(location_name: str) -> str:
 
 def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
     """
-    **FIXED:** Safely resolves an incident by numeric ID, prefixed format (event_457, event-457, inc-457),
+    Safely resolves an incident by numeric ID, prefixed format (event_457, event-457, inc-457),
     or external JSONB ID without throwing PostgreSQL integer cast errors.
     
-    **IMPORTANT:** Does NOT have a fallback to latest event. If ID is not found, returns None.
-    This is intentional — the caller (route handler) should return 404.
+    Returns None if ID is not found (caller should return 404).
     
-    **Resolution strategy (in order):**
+    Resolution strategy (in order):
     1. If numeric or prefixed format (event_123), extract and query by db.id
     2. Query by external ID in data JSONB (nasa_id, gdacs_id, id field)
     3. Fallback scan recent 200 events for any ID match
@@ -505,9 +504,9 @@ async def generate_deep_incident_analysis(
     admin_token: str = Query(None, description="Admin token for mock mode access")
 ):
     """
-    Tier 2 Deep Tactical AI Dossier: Exhaustive crisis intelligence (6h/12h/24h predictions,
-    critical infrastructure, evacuation corridors, resource mobilization).
-    Caches result in PostgreSQL Event.data['deep_dossier'].
+    Deep Analysis: Crisis intelligence including predictions, infrastructure impact,
+    evacuation corridors, and resource requirements.
+    Results cached in PostgreSQL Event.data['deep_dossier'].
     
     **Security:** use_mock=true requires admin token in production.
     """
@@ -571,7 +570,7 @@ async def generate_deep_incident_analysis(
 
 @router.get("/{incident_id}/deep-dossier")
 async def get_deep_incident_dossier(incident_id: str, db: Session = Depends(get_db)):
-    """Retrieve cached Tier 2 Deep Tactical AI Dossier"""
+    """Retrieve cached deep incident analysis results"""
     try:
         incident = find_incident_by_id(incident_id, db)
         if not incident:

@@ -151,7 +151,7 @@ const props = defineProps<{
   incident?: IncidentLevel1
 }>()
 
-// Helper: Get confidence color
+// Map confidence score to badge color
 function getConfidenceColor(confidence: number): string {
   if (confidence >= 90) return '#4ade80'
   if (confidence >= 70) return '#fbbf24'
@@ -159,7 +159,7 @@ function getConfidenceColor(confidence: number): string {
   return '#ef4444'
 }
 
-// Helper: Get confidence label
+// Convert confidence percentage to text label
 function getConfidenceLabel(confidence: number): string {
   if (confidence >= 90) return 'Excellent'
   if (confidence >= 70) return 'Good'
@@ -167,7 +167,7 @@ function getConfidenceLabel(confidence: number): string {
   return 'Low'
 }
 
-// Helper: Format timestamp
+// Format date/time for display with locale
 function formatTime(timestamp: string | Date): string {
   if (!timestamp) return 'Unknown'
   const date = new Date(timestamp)
@@ -181,7 +181,7 @@ function formatTime(timestamp: string | Date): string {
   })
 }
 
-// Helper: Get data age
+// Calculate time elapsed since event occurred
 function getDataAge(): string {
   if (!props.incident?.event_timestamp) return 'Unknown'
   const now = new Date()
@@ -196,7 +196,7 @@ function getDataAge(): string {
   return `${days}d`
 }
 
-// Helper: Get freshness color & status
+// Determine data freshness level based on timestamp
 function getFreznessColor(): string {
   if (!props.incident?.event_timestamp) return '#94a3b8'
   const now = new Date()
@@ -219,12 +219,12 @@ function getFreshnessStatus(): string {
   return '🔴 Stale (> 30 min)'
 }
 
-// Helper: Get country from incident
+// Extract country code from incident
 function getCountry(incident: IncidentLevel1): string {
   return incident.countryCode || 'UN'
 }
 
-// Helper: Get incident data for display (clean JSON)
+// Extract key fields for display with fallback to top-level properties
 function getIncidentDataDisplay(): Record<string, string> {
   if (!props.incident) return {}
 
@@ -257,7 +257,7 @@ function getIncidentDataDisplay(): Record<string, string> {
   return display
 }
 
-// Helper: Get audit log
+// Build audit log entries from incident history
 function getAuditLog(): Array<{action: string, timestamp: string, actor: string}> {
   return [
     {
@@ -268,7 +268,7 @@ function getAuditLog(): Array<{action: string, timestamp: string, actor: string}
   ]
 }
 
-// Helper: Get data fields - checks both incident.data and top-level incident fields
+// Check data completeness across incident.data and top-level fields
 function getDataFields(): Array<{name: string, present: boolean}> {
   if (!props.incident) return []
 

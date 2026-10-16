@@ -22,7 +22,7 @@ export interface PrepareDailyForecast {
   min_temp_c: number | null
   max_temp_c: number | null
   total_rain_mm: number
-  // PR9 (confidence-based alerting): what % of the day's own 3-hour forecast
+  // Confidence-based alerting: what % of the day's own 3-hour forecast
   // entries actually agreed with the chosen risk_level, computed from the
   // forecast data itself - not a fabricated score.
   confidence_pct: number
@@ -295,8 +295,6 @@ export const useEventsStore = defineStore('events', () => {
     setIncidents(mockIncidents)
   }
 
-  // [STRICT LIVE MODE] initMockData()
-
   return {
     // State
     incidents,
@@ -396,9 +394,6 @@ export const useAlertsStore = defineStore('alerts', () => {
 
     setAIInsights(mockInsights)
   }
-
-  // COMMENTED OUT (Live Mode): Never initialize mock insights on store load
-  // initMockInsights()
 
   return {
     // State

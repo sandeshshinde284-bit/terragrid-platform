@@ -7,7 +7,6 @@
       </div>
     </div>
 
-    <!-- NEW (Live Mode): Now displays REAL AI data from aiPlan and aiInsights -->
     <div v-if="aiLoading" class="loading-state">
       <span class="loading-spinner"></span>
       <p>Loading AI analysis...</p>

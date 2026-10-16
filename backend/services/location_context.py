@@ -1,6 +1,6 @@
 """
-Location-specific agency and infrastructure context for Gemini prompts.
-Enables region-specific, hyper-realistic response recommendations.
+Location-specific agency and infrastructure context for disaster response analysis.
+Provides regional response recommendations based on actual operational assets.
 """
 
 LOCATION_CONTEXT = {

@@ -66,10 +66,10 @@ class DecisionSupportService:
         threat_score = incident.get("threatScore") or incident.get("impact", {}).get("risk_score", 50)
         pop_at_risk = zone_data.get("total_population_affected") if zone_data else (incident.get("affectedPopulation") or 10000)
 
-        # Transparent AI Offline Fallback (Addresses Copilot's "Fallback-Heavy" critique)
+        # Graceful fallback when AI model is unavailable
         fallback_plan = MockDataLoader.load_fallback_ai_plan()
 
-        # Rich demonstration plan
+        # Use mock data for demonstration mode
         if use_mock:
             mock_plan = MockDataLoader.load_mock_plan()
             logger.info(f"Returning rich mock demonstration plan for {location}")
@@ -116,8 +116,8 @@ class DecisionSupportService:
             imd_context = ""
             
             prompt = f"""
-            You are a Senior Disaster Response Incident Commander (military-grade) operating the TerraGrid Emergency Intelligence System.
-            Analyze the following live incident and provide an operational, hyper-realistic, country-specific emergency response plan.
+            You are analyzing a live disaster incident for the TerraGrid Emergency Response System.
+            Generate a comprehensive, location-specific emergency response plan based on the following incident data.
 
             INCIDENT PARAMETERS:
             - Disaster Type: {event_type}
@@ -574,8 +574,7 @@ class DecisionSupportService:
             agencies_list = "\n            ".join([f"- {agency}" for agency in location_context["secondary_agencies"][:3]])
             
             prompt = f"""
-            You are the Chief Geospatial Intelligence Officer and Senior Military Incident Commander for the TerraGrid Crisis Command Center.
-            Analyze this live multi-source disaster event and generate an exhaustive, hyper-realistic, 2000% detailed Tactical Intelligence Dossier.
+            Generate a detailed intelligence dossier for this live disaster incident using integrated sensor telemetry and geospatial analysis.
 
             GROUND TRUTH SENSOR TELEMETRY:
             - Incident Type: {event_type}
@@ -624,12 +623,12 @@ class DecisionSupportService:
             {DEEP_DOSSIER_SCHEMA_TEXT}
             """
 
-            logger.info(f"[GEMINI PROMPT - Deep Tactical Dossier] Location: {location}, Event: {event_type}, Threat: {threat_score}/100")
+            logger.info(f"[GEMINI PROMPT - Dossier] Location: {location}, Event: {event_type}, Threat: {threat_score}/100")
             logger.debug(f"[GEMINI PROMPT FULL]\n{prompt}")
 
             response = self.model.generate_content(prompt)
             if response and response.text:
-                logger.info(f"[GEMINI RESPONSE - Deep Tactical Dossier] Received response from Vertex AI")
+                logger.info(f"[GEMINI RESPONSE - Dossier] Received response from Vertex AI")
                 log_raw_data("gemini", response.text, label="deep_dossier", context={"location": location, "event_type": event_type, "threat_score": threat_score})
                 logger.debug(f"[GEMINI RESPONSE RAW]\n{response.text}")
                 

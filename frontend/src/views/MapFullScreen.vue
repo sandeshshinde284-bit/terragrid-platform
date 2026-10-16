@@ -274,21 +274,21 @@ const applyModeSettings = () => {
   map.value.easeTo({ pitch: targetPitch, bearing: targetBearing, duration: 600 })
 
   if (currentMode.value === 'globe') {
-    // 1. Pristine Blue Marble 3D Orbital Globe (matching unnamed.jpg)
+    // 1. 3D Orbital Globe projection
     map.value.setProjection({ name: 'globe' })
     map.value.setFog({
       color: 'rgb(11, 19, 43)', // Lower atmosphere
-      'high-color': 'rgb(14, 165, 233)', // Glowing cyan halo
+      'high-color': 'rgb(14, 165, 233)', // Upper atmosphere
       'horizon-blend': 0.15,
       'space-color': 'rgb(8, 12, 22)', // Deep space
       'star-intensity': 0.8
     })
   } else if (currentMode.value === 'satellite') {
-    // 2. Crystal-Clear Standard Satellite (Clean Vertical Top-Down)
+    // 2. Standard Satellite view (vertical top-down)
     map.value.setFog(null as any)
     map.value.setProjection({ name: 'mercator' })
   } else {
-    // 3. Tactical Mapbox Standard (Dusk/Night preset with 3D buildings like The Shard)
+    // 3. Standard map view (dusk lighting with 3D buildings)
     map.value.setFog(null as any)
     map.value.setProjection({ name: 'mercator' })
     try {
@@ -365,7 +365,7 @@ const renderMarkers = () => {
     clearMarkers()
     return
   }
-  const mapInstance = map.value   // FIXED: Moved outside the early return block
+  const mapInstance = map.value  
 
   clearMarkers()
 
@@ -408,16 +408,18 @@ const renderMarkers = () => {
 
     el.addEventListener('click', (e) => {
       e.stopPropagation()
-      mapInstance.flyTo({              // FIXED: Use mapInstance
+      const mapInstance = map.value
+      if (!mapInstance) return
+      mapInstance.flyTo({
         center: [lon, lat],
-        zoom: Math.max(mapInstance.getZoom(), 5),   // FIXED: Use mapInstance
+        zoom: Math.max(mapInstance.getZoom(), 5),
         speed: 1.2
       })
     })
 
     const marker = new mapboxgl.Marker({ element: el })
       .setLngLat([lon, lat])
-      .addTo(mapInstance)             // FIXED: Use mapInstance
+      .addTo(mapInstance)
 
     markers.push(marker)
   })
