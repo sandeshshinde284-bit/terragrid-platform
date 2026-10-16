@@ -56,6 +56,13 @@ class Settings(BaseSettings):
     EMAIL_ALERT_RECIPIENTS: str = ''
 
     # WhatsApp (via WAHA - self-hosted WhatsApp HTTP API, see docker-compose.yml)
+    # Kept in the codebase (service, routes, UI) but off by default: WhatsApp's
+    # Business Solution Provider terms around unofficial/self-hosted clients
+    # like WAHA haven't been confirmed as compliant, so this stays disabled
+    # until that's resolved. Flip to True only once that's verified - this is
+    # the single switch that controls both the backend send endpoint and
+    # whether the frontend shows any WhatsApp UI at all.
+    ENABLE_WHATSAPP: bool = False
     # WAHA_API_URL points at the WAHA container: http://waha:3000 when the
     # backend itself runs inside docker-compose, http://localhost:3000 when
     # the backend runs on the host with `docker-compose up waha` alongside it.

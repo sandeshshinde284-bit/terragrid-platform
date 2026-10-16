@@ -19,10 +19,11 @@ onMounted(async () => {
     if (res.ok) {
       const config = await res.json()
       appStore.setBackendMockMode(config.mock_mode_enabled === true)
+      appStore.setWhatsAppEnabled(config.whatsapp_enabled === true)
       if (config.mapbox_token) {
         appStore.setMapboxToken(config.mapbox_token)
       }
-      logFeature('backend_config', 'success', { mock_mode: config.mock_mode_enabled })
+      logFeature('backend_config', 'success', { mock_mode: config.mock_mode_enabled, whatsapp_enabled: config.whatsapp_enabled })
     }
   } catch (err) {
     logWarn('Could not reach the backend for global config, defaulting to strict live mode', err)

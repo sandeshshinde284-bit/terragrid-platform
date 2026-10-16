@@ -133,24 +133,26 @@
                     <button type="button" class="copy-btn" @click="copyMessage(selectedAlert)">
                       {{ justCopied ? $t('prepare.agencyAlerts.copied') : $t('prepare.agencyAlerts.copyMessage') }}
                     </button>
-                    <template v-if="whatsappRecipients.length > 0">
-                      <select v-model="selectedRecipientPhone" class="recipient-select" aria-label="WhatsApp recipient">
-                        <option v-for="r in whatsappRecipients" :key="r.phone_number" :value="r.phone_number">
-                          {{ r.label }}
-                        </option>
-                      </select>
-                      <button
-                        type="button"
-                        class="send-whatsapp-btn"
-                        :disabled="sendingWhatsApp"
-                        @click="sendViaWhatsApp(selectedAlert)"
-                      >
-                        {{ sendingWhatsApp ? $t('prepare.agencyAlerts.sending') : $t('prepare.agencyAlerts.sendWhatsApp') }}
-                      </button>
+                    <template v-if="isWhatsAppEnabled">
+                      <template v-if="whatsappRecipients.length > 0">
+                        <select v-model="selectedRecipientPhone" class="recipient-select" aria-label="WhatsApp recipient">
+                          <option v-for="r in whatsappRecipients" :key="r.phone_number" :value="r.phone_number">
+                            {{ r.label }}
+                          </option>
+                        </select>
+                        <button
+                          type="button"
+                          class="send-whatsapp-btn"
+                          :disabled="sendingWhatsApp"
+                          @click="sendViaWhatsApp(selectedAlert)"
+                        >
+                          {{ sendingWhatsApp ? $t('prepare.agencyAlerts.sending') : $t('prepare.agencyAlerts.sendWhatsApp') }}
+                        </button>
+                      </template>
+                      <RouterLink v-else-if="!recipientsLoading" to="/settings" class="configure-recipients-link">
+                        {{ $t('prepare.agencyAlerts.addWhatsAppSettings') }}
+                      </RouterLink>
                     </template>
-                    <RouterLink v-else-if="!recipientsLoading" to="/settings" class="configure-recipients-link">
-                      {{ $t('prepare.agencyAlerts.addWhatsAppSettings') }}
-                    </RouterLink>
                     <template v-if="emailRecipients.length > 0">
                       <select v-model="selectedRecipientEmail" class="recipient-select" aria-label="Email recipient">
                         <option v-for="r in emailRecipients" :key="r.email" :value="r.email">
@@ -194,6 +196,7 @@ import { storeToRefs } from 'pinia'
 import { RouterLink } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
+import { useWhatsApp } from '@/composables/useWhatsApp'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
 
 type CityForecast = PrepareCityForecast
@@ -215,6 +218,7 @@ interface AlertsPlan {
 }
 
 const { fetchWithMockMode } = useMockMode()
+const { isWhatsAppEnabled } = useWhatsApp()
 
 // Shared across all 4 PREPARE pages - fetched once, reused on tab switches
 // instead of each page re-fetching all ~40 cities independently (see
@@ -350,6 +354,7 @@ const sendingWhatsApp = ref(false)
 const sendResult = ref<{ success: boolean; detail: string } | null>(null)
 
 const fetchWhatsAppRecipients = async () => {
+  if (!isWhatsAppEnabled.value) return
   try {
     const host = apiHost()
     const response = await fetchWithMockMode(`${host}/api/v1/prepare/alerts/recipients`)
@@ -365,7 +370,7 @@ const fetchWhatsAppRecipients = async () => {
 }
 
 const sendViaWhatsApp = async (alert: AgencyAlert) => {
-  if (!selectedRecipientPhone.value || sendingWhatsApp.value) return
+  if (!isWhatsAppEnabled.value || !selectedRecipientPhone.value || sendingWhatsApp.value) return
 
   sendingWhatsApp.value = true
   sendResult.value = null

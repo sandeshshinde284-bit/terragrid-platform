@@ -128,6 +128,11 @@ export const useAppStore = defineStore('app', () => {
   const expandedIncident = ref<string | null>(null)
   const selectedIncident = ref<string | null>(null)
   const isBackendMockModeEnabled = ref<boolean>(false)
+  // Mirrors the backend's ENABLE_WHATSAPP flag (see backend/config.py) - off
+  // by default since WhatsApp's unofficial/self-hosted-client compliance
+  // hasn't been confirmed. Set once from GET /api/v1/config, same as
+  // isBackendMockModeEnabled - there is no manual UI toggle for this either.
+  const isWhatsAppEnabled = ref<boolean>(false)
   const mapboxToken = ref<string>('')
 
   // Getters
@@ -170,6 +175,10 @@ export const useAppStore = defineStore('app', () => {
     isBackendMockModeEnabled.value = enabled
   }
 
+  const setWhatsAppEnabled = (enabled: boolean) => {
+    isWhatsAppEnabled.value = enabled
+  }
+
   const setMapboxToken = (token: string) => {
     mapboxToken.value = token
   }
@@ -183,6 +192,7 @@ export const useAppStore = defineStore('app', () => {
     expandedIncident,
     selectedIncident,
     isBackendMockModeEnabled,
+    isWhatsAppEnabled,
     mapboxToken,
 
     // Getters
@@ -196,6 +206,7 @@ export const useAppStore = defineStore('app', () => {
     setSelectedIncident,
     toggleDemoMode,
     setBackendMockMode,
+    setWhatsAppEnabled,
     setMapboxToken,
   }
   })
