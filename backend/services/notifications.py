@@ -117,14 +117,21 @@ class NotificationService:
                 return False
 
         incident_type = str(incident.get("event_type", "disaster")).upper()
-        
+        impact = incident.get("impact", {}) or {}
+        severity_level = impact.get("severity_level")
+        affected_population = impact.get("affected_population")
+        affected_area_km2 = impact.get("affected_area_km2")
+        recommended_actions = impact.get("recommended_actions") or []
+        detected_at = incident.get("event_timestamp") or incident.get("ingested_at")
+
         subject = f"CRITICAL ALERT: {incident_type} detected near {location} (Threat: {threat_score}/100)"
-        
+
         # Build HTML Body
         html_content = f"""
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
             <div style="background-color: #ef4444; color: white; padding: 20px; text-align: center;">
                 <h1 style="margin: 0; font-size: 24px;">TERRAGRID EMERGENCY ALERT </h1>
+                {f'<p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Severity: {severity_level}</p>' if severity_level else ''}
             </div>
             <div style="padding: 20px; background-color: #ffffff; color: #374151;">
                 <h2 style="color: #111827; border-bottom: 2px solid #ef4444; padding-bottom: 8px;">Incident Summary</h2>
@@ -132,16 +139,27 @@ class NotificationService:
                     <li style="margin-bottom: 10px;"><strong>Type:</strong> {incident_type}</li>
                     <li style="margin-bottom: 10px;"><strong>Location:</strong> {location}</li>
                     <li style="margin-bottom: 10px;"><strong>Threat Score:</strong> <span style="color: #ef4444; font-weight: bold;">{threat_score}/100</span></li>
+                    {f'<li style="margin-bottom: 10px;"><strong>Severity Level:</strong> {severity_level}</li>' if severity_level else ''}
+                    {f'<li style="margin-bottom: 10px;"><strong>Estimated Affected Population:</strong> {affected_population:,}</li>' if affected_population is not None else ''}
+                    {f'<li style="margin-bottom: 10px;"><strong>Affected Area:</strong> {affected_area_km2:,} km&sup2;</li>' if affected_area_km2 is not None else ''}
                     <li style="margin-bottom: 10px;"><strong>Coordinates:</strong> {incident.get("latitude")}, {incident.get("longitude")}</li>
+                    {f'<li style="margin-bottom: 10px;"><strong>Detected:</strong> {detected_at}</li>' if detected_at else ''}
                 </ul>
         """
-        
+
         if zone_data:
              html_content += f"""
                 <h2 style="color: #111827; border-bottom: 2px solid #ef4444; padding-bottom: 8px; margin-top: 20px;">Evacuation Zones</h2>
                 <p><strong>Immediate Action Required:</strong> Approximately {zone_data.get('total_population_affected', 0):,} people are in the calculated impact zones.</p>
              """
-             
+
+        if recommended_actions:
+            actions_html = "".join(f'<li style="margin-bottom: 6px;">{html.escape(str(a))}</li>' for a in recommended_actions)
+            html_content += f"""
+                <h2 style="color: #111827; border-bottom: 2px solid #ef4444; padding-bottom: 8px; margin-top: 20px;">Recommended Actions</h2>
+                <ul style="font-size: 15px; padding-left: 20px;">{actions_html}</ul>
+             """
+
         html_content += """
                 <div style="margin-top: 30px; padding: 15px; background-color: #f3f4f6; border-radius: 6px; font-size: 14px; text-align: center;">
                     <p style="margin: 0;">Access the TerraGrid Command Center immediately for real-time tracking and safe routing.</p>
