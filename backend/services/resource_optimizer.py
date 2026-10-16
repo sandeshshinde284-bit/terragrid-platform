@@ -14,7 +14,7 @@ currently active incidents, it computes how that pool should be split
 across incidents by actual need.
 
 Deliberately NOT built: live GPS/position-based dispatch (which asset
-goes to which exact location). That's PR3 ("Resource Pre-Positioning
+goes to which exact location). That's Phase ("Resource Pre-Positioning
 Map"), iceboxed in PREPARE_PHASE_NOTES.md because TerraGrid has no
 sovereign access to real emergency-fleet GPS coordinates - inventing
 them would violate the Zero-Mock-Data rule. This service only answers
@@ -44,7 +44,6 @@ NEED_LEVEL_WEIGHT = {
     "moderate": 40.0,
     "unknown": 20.0,
 }
-
 
 class ResourceOptimizerService:
     """

@@ -21,7 +21,6 @@ _COUNTRIES_DATA: Optional[Dict[str, Any]] = None
 
 ADMIN_TOKEN = settings.ADMIN_TOKEN
 
-
 def _load_countries_data() -> Dict[str, Any]:
     """Load countries.json for country name resolution"""
     global _COUNTRIES_DATA
@@ -48,7 +47,6 @@ def _load_countries_data() -> Dict[str, Any]:
         logger.error(f"Failed to load countries.json: {e}, using fallback")
         return {"countries": {}, "aliases": {}}
 
-
 def _get_country_name(country_code: str) -> str:
     """
     Convert country code to country name using countries.json.
@@ -66,7 +64,6 @@ def _get_country_name(country_code: str) -> str:
         logger.debug(f"Country code '{country_code}' not found in countries.json")
     
     return country_code or "Unknown"
-
 
 def _resolve_country_code(location_name: str) -> str:
     """
@@ -105,7 +102,6 @@ def _resolve_country_code(location_name: str) -> str:
     # Strategy 3: Return UN for unknown
     logger.debug(f"Could not resolve country code from location: '{location_name}'")
     return "UN"
-
 
 def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
     """
@@ -183,7 +179,6 @@ def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
     logger.debug(f"[FIND_INCIDENT] Not found: '{incident_id}'")
     return None
 
-
 def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None) -> bool:
     """
     Validate that mock mode is only enabled in development or by authorized users.
@@ -215,7 +210,6 @@ def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None
     # Production + no token = deny
     logger.warning("[MOCK-MODE] Unauthorized mock mode access attempted in production, request blocked")
     return False
-
 
 @router.get("")
 async def get_all_incidents(
@@ -306,7 +300,6 @@ async def get_all_incidents(
         logger.exception("Failed to query incidents from database")
         raise HTTPException(status_code=500, detail="Database query failed")
 
-
 @router.get("/{incident_id}")
 async def get_incident(incident_id: str, db: Session = Depends(get_db)):
     """Get specific incident details by ID (numeric, prefixed, or external ID)"""
@@ -332,7 +325,6 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         logger.exception(f"Failed to fetch incident {incident_id}")
         raise HTTPException(status_code=500, detail="Failed to fetch incident")
-
 
 @router.get("/{incident_id}/satellite-validation")
 async def get_satellite_validation(incident_id: str, db: Session = Depends(get_db)):
@@ -375,7 +367,6 @@ async def get_satellite_validation(incident_id: str, db: Session = Depends(get_d
     except Exception as e:
         logger.exception(f"Satellite cross-validation failed for incident {incident_id}")
         raise HTTPException(status_code=500, detail=f"Satellite cross-validation failed: {str(e)}")
-
 
 @router.get("/{incident_id}/flood-detection")
 async def get_flood_detection(incident_id: str, db: Session = Depends(get_db)):
@@ -421,7 +412,6 @@ async def get_flood_detection(incident_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         logger.exception(f"Flood detection failed for incident {incident_id}")
         raise HTTPException(status_code=500, detail=f"Flood detection failed: {str(e)}")
-
 
 @router.get("/{incident_id}/insights")
 async def get_incident_insights(
@@ -495,7 +485,6 @@ async def get_incident_insights(
         logger.exception(f"[INSIGHTS] Error for {incident_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate insights: {str(e)}")
 
-
 @router.post("/{incident_id}/deep-analysis")
 async def generate_deep_incident_analysis(
     incident_id: str, 
@@ -567,7 +556,6 @@ async def generate_deep_incident_analysis(
         logger.exception(f"[DEEP-DOSSIER] Error for {incident_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Deep analysis failed: {str(e)}")
 
-
 @router.get("/{incident_id}/deep-dossier")
 async def get_deep_incident_dossier(incident_id: str, db: Session = Depends(get_db)):
     """Retrieve cached deep incident analysis results"""
@@ -596,7 +584,6 @@ async def get_deep_incident_dossier(incident_id: str, db: Session = Depends(get_
         logger.exception(f"Failed to retrieve dossier for {incident_id}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/{incident_id}/analyses")
 async def get_analyses(incident_id: str, db: Session = Depends(get_db)):
     """Get AI analysis history for an incident"""
@@ -613,7 +600,6 @@ async def get_analyses(incident_id: str, db: Session = Depends(get_db)):
         logger.exception(f"Failed to fetch analyses for {incident_id}")
         raise HTTPException(status_code=500, detail="Failed to fetch analyses")
 
-
 @router.get("/{incident_id}/alerts")
 async def get_alerts(incident_id: str, db: Session = Depends(get_db)):
     """Get alerts sent for an incident"""
@@ -629,7 +615,6 @@ async def get_alerts(incident_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         logger.exception(f"Failed to fetch alerts for {incident_id}")
         raise HTTPException(status_code=500, detail="Failed to fetch alerts")
-
 
 @router.get("/stats/overview")
 async def get_incidents_stats(db: Session = Depends(get_db)):
@@ -698,7 +683,6 @@ async def get_incidents_stats(db: Session = Depends(get_db)):
         logger.exception("Failed to get incident statistics")
         raise HTTPException(status_code=500, detail="Statistics query failed")
 
-
 @router.post("/resources/optimize")
 async def optimize_resources(
     resource_pool: Dict[str, int],
@@ -720,7 +704,7 @@ async def optimize_resources(
 
     No resource pool is assumed or invented - the caller must declare
     real on-hand quantities (e.g. {"medical_teams": 12, "water_tankers": 8}).
-    This deliberately does not do GPS-based physical dispatch (see PR3,
+    This deliberately does not do GPS-based physical dispatch (see Phase,
     iceboxed in PREPARE_PHASE_NOTES.md for the same reason: no sovereign
     access to real asset-location data).
 
@@ -750,7 +734,6 @@ async def optimize_resources(
     except Exception as e:
         logger.exception("Resource optimization failed")
         raise HTTPException(status_code=500, detail=f"Resource optimization failed: {str(e)}")
-
 
 @router.get("/grouped/by-country")
 async def get_incidents_by_country(

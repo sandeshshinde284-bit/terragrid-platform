@@ -97,14 +97,14 @@ class DecisionSupportService:
             location_context = get_location_context(location)
             agencies_list = "\n            ".join([f"- {agency}" for agency in location_context["secondary_agencies"]])
             
-            # Build IMD-specific context if applicable (COMMENTED OUT - see note above)
+            
             # imd_context = ""
             # if has_imd_data:
             #     incident_data = incident.get("data", {})
             #     monsoon_status = incident_data.get("monsoon_status", "Not specified")
             #     precipitation = incident_data.get("precipitation", "Not measured")
             #     imd_alerts = incident_data.get("alert", "No specific alert")
-            #     
+
             #     imd_context = f"""
             # CRITICAL: IMD (INDIA METEOROLOGICAL DEPARTMENT) DATA AVAILABLE
             # This incident is within India. IMD data takes priority for weather analysis:
@@ -192,8 +192,8 @@ class DecisionSupportService:
 
     def generate_preparedness_actions(self, city_forecast: Dict[str, Any], use_mock: bool = False) -> Dict[str, Any]:
         """
-        PR2: Preparedness Action Generator (PREPARE phase).
-        Given a single city's 5-day forecast (from PR1's /api/v1/prepare/forecast),
+        
+        Given a single city's 5-day forecast (
         generates a concrete, agency-owned preparedness checklist (clear drains,
         stock supplies, alert hospitals, position boats, etc.) tied to the specific
         escalation pattern in that forecast - not generic advice.
@@ -307,7 +307,7 @@ class DecisionSupportService:
 
     def generate_agency_alerts(self, city_forecast: Dict[str, Any], use_mock: bool = False) -> Dict[str, Any]:
         """
-        PR4: Agency Alert Templates (PREPARE phase).
+        
         Given a single city's 5-day forecast, generates distinct, audience-
         appropriate alert messages for four agency types - FARMERS, HOSPITALS,
         NGOS, MUNICIPAL_CORPS - each with its own channel, length, vocabulary
@@ -652,7 +652,6 @@ class DecisionSupportService:
 
         logger.info(f"[FEATURE_HEALTH] feature=gemini_deep_dossier status=fallback location={location} model_initialized={self.model is not None}")
         return fallback_dossier
-
 
 # Lazy-load singleton to avoid blocking startup during Gemini SDK initialization
 _decision_support_service = None

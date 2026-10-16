@@ -20,7 +20,7 @@ class OpenWeatherService:
 
     BASE_URL = settings.OPENWEATHER_API_URL
 
-    # PERF FIX: fetch_forecast() used to await each of the ~40 MONITORED_CITIES
+    
     # one at a time, each opening its own httpx.AsyncClient (fresh TLS handshake
     # per city). That serialized ~40 round-trips end-to-end, which is what made
     # every PREPARE-phase page (Forecast, Risk Timeline, Checklist, Agency
@@ -33,7 +33,7 @@ class OpenWeatherService:
     _forecast_cache_at: float = 0.0
     FORECAST_CACHE_TTL_SECONDS = 600  # 10 minutes
 
-    # PR10 (source-of-truth validation): a full forecast day is 8 three-hour
+    
     # entries; below half of that, a day's risk_level/confidence_pct call is
     # real but thin evidence (see _summarize_forecast_by_day).
     MIN_SUFFICIENT_ENTRIES = 4
@@ -123,7 +123,7 @@ class OpenWeatherService:
                 logger.error(f"Failed to load OpenWeather mock: {e}")
                 return []
         
-        # Strict Live Mode: No mock fallback parameter
+        
         api_key = settings.OPENWEATHERMAP_API_KEY
         
         if not api_key:
@@ -256,7 +256,7 @@ class OpenWeatherService:
     @classmethod
     def get_forecast_cache_age_seconds(cls) -> float | None:
         """
-        PR10 (source-of-truth validation): how old is the forecast data
+        Phase (source-of-truth validation): how old is the forecast data
         fetch_forecast() is currently serving from cache, in seconds.
         None means no live fetch has ever populated the cache yet (e.g.
         only mock mode has run, or the server just started).
@@ -327,7 +327,7 @@ class OpenWeatherService:
             dominant_weather = None
             best_rain_for_tiebreak = -1.0
             severity_rank = {"low": 0, "medium": 1, "high": 2, "critical": 3}
-            # PR9 (confidence-based alerting): each day is built from ~8
+            
             # independent 3-hour forecasts. If only one of those 8 reaches
             # the day's worst severity and the rest are calm, that's a brief
             # spike, not a sustained risk - alerting on it as confidently as
@@ -391,7 +391,7 @@ class OpenWeatherService:
                 "critical": "RED",
             }.get(worst_severity, "GREEN")
 
-            # PR9 (confidence-based alerting): what fraction of the day's own
+            
             # 3-hour entries actually reached the severity we picked as the
             # day's worst? A day where 7 of 8 entries are "high" is a
             # sustained risk; a day where only 1 of 8 spikes to "high" and
@@ -413,7 +413,7 @@ class OpenWeatherService:
             # same alert recommendation as a sustained, well-supported one.
             alert_recommended = risk_level != "GREEN" and confidence_pct >= 70
 
-            # PR10 (source-of-truth validation): a full day of this forecast
+            
             # is 8 three-hour entries, but OpenWeatherMap's 5-day window
             # starts from "now" (not midnight) and ends mid-day 5 - so the
             # first and last calendar day in the window are naturally built

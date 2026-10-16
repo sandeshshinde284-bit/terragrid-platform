@@ -1,8 +1,6 @@
 from backend.config import settings
 """
-API Routes for PREPARE phase features (PR1, PR7, PR2, PR6, PR4)
-
-PR1: 7-Day Forecast Dashboard
+API Routes for PREPARE phase features
 Fetches live 5-day/3-hour-step forecasts from OpenWeatherMap (same API key and
 MONITORED_CITIES already used for current-weather ingestion) and collapses them
 into a per-city, per-day risk escalation timeline (GREEN/YELLOW/ORANGE/RED).
@@ -27,12 +25,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/prepare", tags=["prepare"])
 
-
-# PR1: 7-Day Forecast Dashboard
 @router.get("/forecast")
 async def get_forecast(use_mock: bool = Query(False, description="Use mock data for testing")):
     """
-    PR1: Fetch the 5-day/3-hour-step OpenWeatherMap forecast for all monitored
+    Fetch the 5-day/3-hour-step OpenWeatherMap forecast for all monitored
     cities, summarized into one risk-escalation entry per day.
 
     Returns:
@@ -54,27 +50,10 @@ async def get_forecast(use_mock: bool = Query(False, description="Use mock data 
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# PR10: Source of Truth / Preparedness Validation
-#
-# Doesn't validate that the weather prediction itself is correct - no one
-# can audit that. Validates that what PREPARE phase is about to show the
-# user, or act on (PR9's alerts, PR5's route pre-calculation), is actually
-# backed by real, current, complete data from fetch_forecast() - the same
-# standard this whole branch (PHASE-2-PREPARE-SOURCE-OF-TRUTH-FIXES) was
-# opened to enforce. Three checks, all computed from data already being
-# fetched - no new external source, no new DB table:
-#   1. Freshness  - is the forecast live, or served from a stale cache?
-#   2. Completeness - did every monitored city actually come back, or did
-#      some silently drop out of the ~40-city fetch (fetch_one() swallows
-#      per-city errors and returns None - those cities just vanish today)?
-#   3. Sufficiency - is each day's risk/confidence call built from a full
-#      day's 3-hour readings, or a thin, partial slice (PR9's
-#      entries_count/data_sufficient, added alongside this)?
-
 @router.get("/source-of-truth")
 async def get_source_of_truth(use_mock: bool = Query(False, description="Use mock data for testing")):
     """
-    PR10: Audit the forecast data backing every other PREPARE feature,
+    
     before it's shown to a user or acted on.
 
     Returns:
@@ -96,7 +75,7 @@ async def get_source_of_truth(use_mock: bool = Query(False, description="Use moc
         # a simulation of all ~40 MONITORED_CITIES - comparing it against
         # the full live roster would flag "missing" cities that were never
         # supposed to be there, which isn't what this check means to catch.
-        # Only meaningful in live mode, where a city vanishing really would
+        # Only meaningful in live environments, where a city vanishing really would
         # mean fetch_one() silently swallowed an error for it.
         missing_cities: list = []
         if not use_mock:
@@ -167,18 +146,16 @@ async def get_source_of_truth(use_mock: bool = Query(False, description="Use moc
         logger.error(f"Source-of-truth validation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# PR2: Preparedness Action Generator
 @router.get("/actions")
 async def get_preparedness_actions(
-    city: str = Query(..., description="City name, matching PR1's forecast output"),
-    country: str = Query("", description="ISO2 country code, matching PR1's forecast output"),
+    city: str = Query(..., description="City name, 
+    country: str = Query("", description="ISO2 country code, 
     use_mock: bool = Query(False, description="Use mock data for testing"),
 ):
     """
-    PR2: Generate an AI preparedness checklist (clear drains, stock supplies,
+    
     alert hospitals, position boats, etc.) for one city, tied to that city's
-    5-day risk escalation forecast from PR1.
+    5-day risk escalation forecast 
 
     Returns:
         - risk_context: 1-2 sentence summary of what's driving the checklist
@@ -225,19 +202,15 @@ async def get_preparedness_actions(
         logger.error(f"Preparedness action generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# PR5: Evacuation Route Pre-Calculation
-#
-# Why gate on PR9's alert_recommended rather than any non-GREEN day: the
 # existing get_safe_routes() call hits the real OSRM routing engine (4
 # directions x up to 3s each) - worth paying that cost once risk is both
 # elevated AND well-supported across the day's forecast entries, not for
 # every city on every poll, and not for a single isolated 3-hour spike
-# that PR9 already tells us not to alert on.
+
 RISK_RANK = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
 
 # OpenWeatherMap's own "weather.main" labels (already used as-is for
-# display in PR1/PR7) mapped to the event_type categories
+
 # EvacuationZoneService/get_safe_routes was built around. This only
 # affects display/labeling in the response - get_safe_routes' own routing
 # call doesn't branch on event_type - but an honest label matters so the
@@ -251,17 +224,16 @@ WEATHER_TO_EVENT_TYPE = {
     "snow": "storm",
 }
 
-
 @router.get("/evacuation-routes")
 async def get_evacuation_routes(
-    city: str = Query(..., description="City name, matching PR1's forecast output"),
-    country: str = Query("", description="ISO2 country code, matching PR1's forecast output"),
+    city: str = Query(..., description="City name, 
+    country: str = Query("", description="ISO2 country code, 
     use_mock: bool = Query(False, description="Use mock data for testing"),
 ):
     """
-    PR5: Proactively pre-calculate safe evacuation routes for a city once
+    
     its 5-day forecast crosses into an elevated AND well-supported risk
-    level (PR9's alert_recommended), instead of only computing routes
+    level (Phase's alert_recommended), instead of only computing routes
     reactively after an incident already exists.
 
     Reuses RESPONSE phase's real OSRM-routed egress corridors
@@ -304,7 +276,7 @@ async def get_evacuation_routes(
                 "country": city_forecast.get("country"),
                 "reason": (
                     "No forecast day for this city is both at elevated risk and "
-                    "confident enough (see PR9's confidence_pct/alert_recommended) "
+                    "confident enough  "
                     "to justify pre-calculating evacuation routes."
                 ),
                 "qualifying_day": None,
@@ -353,18 +325,16 @@ async def get_evacuation_routes(
         logger.error(f"Evacuation route pre-calculation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# PR4: Agency Alert Templates
 @router.get("/alerts")
 async def get_agency_alerts(
-    city: str = Query(..., description="City name, matching PR1's forecast output"),
-    country: str = Query("", description="ISO2 country code, matching PR1's forecast output"),
+    city: str = Query(..., description="City name, 
+    country: str = Query("", description="ISO2 country code, 
     use_mock: bool = Query(False, description="Use mock data for testing"),
 ):
     """
-    PR4: Generate distinct, audience-appropriate alert templates (farmers,
+    
     hospitals, NGOs, municipal corps) for one city, tied to that city's 5-day
-    risk escalation forecast from PR1 - not one generic broadcast reused for
+    risk escalation forecast 
     every audience.
 
     Returns:
@@ -412,8 +382,6 @@ async def get_agency_alerts(
         logger.error(f"Agency alert generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# PR4 extension: manual WhatsApp send for Agency Alerts, via WAHA.
 # Scope: manual only - an operator reviews the AI-drafted text, picks a
 # pre-approved demo recipient, and clicks Send. No automated/threshold-
 # triggered sending here (see PREPARE_PHASE_NOTES.md for that as a
@@ -434,11 +402,9 @@ async def get_whatsapp_recipients(db: Session = Depends(get_db)):
         "recipients": service.get_recipients(db),
     }
 
-
 class SendWhatsAppAlertRequest(BaseModel):
     phone_number: str
     message: str
-
 
 @router.post("/alerts/send")
 async def send_whatsapp_alert(payload: SendWhatsAppAlertRequest, db: Session = Depends(get_db)):
@@ -459,8 +425,6 @@ async def send_whatsapp_alert(payload: SendWhatsAppAlertRequest, db: Session = D
         "detail": result["detail"],
     }
 
-
-# PR4 extension: manual email send for Agency Alerts, via Gmail SMTP. Same
 # scope and allowlist reasoning as the WhatsApp send above - an
 # operator-managed recipient list (Settings screen), manual only.
 
@@ -476,12 +440,10 @@ async def get_email_alert_recipients(db: Session = Depends(get_db)):
         "recipients": notification_service.get_alert_email_recipients(db),
     }
 
-
 class SendEmailAlertRequest(BaseModel):
     email: str
     subject: str
     message: str
-
 
 @router.post("/alerts/send-email")
 async def send_email_alert(payload: SendEmailAlertRequest, db: Session = Depends(get_db)):
@@ -501,7 +463,6 @@ async def send_email_alert(payload: SendEmailAlertRequest, db: Session = Depends
         "detail": result["detail"],
     }
 
-
 # --- Settings screen: manage Agency Alerts recipients (replaces the old
 # WHATSAPP_RECIPIENTS / EMAIL_ALERT_RECIPIENTS env vars - add/remove here
 # takes effect immediately, no Cloud Run redeploy). Shared shape for both
@@ -510,7 +471,6 @@ async def send_email_alert(payload: SendEmailAlertRequest, db: Session = Depends
 class AddRecipientRequest(BaseModel):
     label: str
     value: str
-
 
 def _validate_channel(channel: str) -> str:
     # 'critical_email' is RESPONSE phase's automatic critical-incident alert
@@ -522,7 +482,6 @@ def _validate_channel(channel: str) -> str:
         raise HTTPException(status_code=400, detail="channel must be 'email', 'whatsapp', or 'critical_email'.")
     return channel
 
-
 @router.get("/settings/recipients/{channel}")
 async def list_alert_recipients(channel: str, db: Session = Depends(get_db)):
     """All operator-managed recipients for one channel, for the Settings screen."""
@@ -532,7 +491,6 @@ async def list_alert_recipients(channel: str, db: Session = Depends(get_db)):
         "status": "success",
         "recipients": [{"id": r.id, "label": r.label, "value": r.value} for r in recipients],
     }
-
 
 @router.post("/settings/recipients/{channel}")
 async def add_alert_recipient(channel: str, payload: AddRecipientRequest, db: Session = Depends(get_db)):
@@ -548,7 +506,6 @@ async def add_alert_recipient(channel: str, payload: AddRecipientRequest, db: Se
         "status": "success",
         "recipient": {"id": recipient.id, "label": recipient.label, "value": recipient.value},
     }
-
 
 @router.delete("/settings/recipients/{channel}/{recipient_id}")
 async def delete_alert_recipient(channel: str, recipient_id: int, db: Session = Depends(get_db)):

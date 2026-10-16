@@ -52,7 +52,6 @@ async def ingest_all_sources(
         logger.error(f"Ingestion error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/ingest/nasa-eonet")
 async def ingest_nasa_eonet(use_mock: bool = Query(False)):
     """
@@ -74,7 +73,6 @@ async def ingest_nasa_eonet(use_mock: bool = Query(False)):
         logger.error(f"NASA EONET error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/ingest/gdacs")
 async def ingest_gdacs(use_mock: bool = Query(False)):
     """
@@ -95,7 +93,6 @@ async def ingest_gdacs(use_mock: bool = Query(False)):
     except Exception as e:
         logger.error(f"GDACS error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # Feature 2: Impact Analysis
 @router.post("/impact/analyze")
@@ -142,7 +139,6 @@ async def analyze_impact(event: Dict[str, Any], db: Session = Depends(get_db)):
         logger.error(f"Impact analysis error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/impact/batch")
 async def analyze_batch(events: List[Dict[str, Any]], db: Session = Depends(get_db)):
     """
@@ -186,7 +182,6 @@ async def analyze_batch(events: List[Dict[str, Any]], db: Session = Depends(get_
     except Exception as e:
         logger.error(f"Batch impact analysis error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 # Diagnostics
 @router.get("/ingest/status")
@@ -242,7 +237,6 @@ async def ingestion_status():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-
 # Global mock mode for testing
 # [STRICT LIVE] _mock_mode_enabled = True
 _mock_mode_enabled = False
@@ -260,7 +254,6 @@ async def get_mock_mode():
         "description": "Mock data is being used for testing",
         "timestamp": datetime.utcnow().isoformat()
     }
-
 
 @router.post("/config/mock-mode")
 async def set_mock_mode(
@@ -295,7 +288,6 @@ async def set_mock_mode(
         "message": f"Switched to {'mock' if enabled else 'live'} data mode",
         "timestamp": datetime.utcnow().isoformat()
     }
-
 
 # Updated endpoints to use global mock mode
 @router.post("/ingest/all-v2")
