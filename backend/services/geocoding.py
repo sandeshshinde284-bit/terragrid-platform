@@ -5,6 +5,7 @@ import hashlib
 import logging
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
+from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
 
@@ -214,6 +215,7 @@ class GeocodingService:
                     response = self.model.generate_content(prompt)
                     
                 if response and response.text:
+                    log_raw_data("gemini", response.text, label="batch_geocoding", context={"batch_size": len(batch_items)})
                     # Clean response text if wrapped in markdown
                     cleaned_text = response.text.strip()
                     if cleaned_text.startswith("```json"):
@@ -222,7 +224,7 @@ class GeocodingService:
                         cleaned_text = cleaned_text[3:]
                     if cleaned_text.endswith("```"):
                         cleaned_text = cleaned_text[:-3]
-                        
+
                     parsed = json.loads(cleaned_text.strip())
                     new_cache_entries = []
                     

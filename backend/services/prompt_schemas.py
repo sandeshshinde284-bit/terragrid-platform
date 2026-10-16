@@ -165,3 +165,46 @@ RESPONSE_PLAN_SCHEMA_TEXT = """
   "evacuation_guidance": "string (Specific highway corridors, choke-point warnings, designated shelters)"
 }
 """
+
+PREPAREDNESS_ACTIONS_SCHEMA_TEXT = """
+{
+  "risk_context": "string (1-2 sentence summary of the escalation window driving these actions, e.g. 'Thunderstorm risk escalates to RED by Day 3 with 46mm rainfall and 20m/s winds.')",
+  "actions": [
+    {
+      "action": "string (specific, concrete task - e.g. 'Clear and desilt monsoon drains in low-lying wards')",
+      "agency": "string (specific real-world owning body - e.g. 'Municipal Corporation - Drainage Dept')",
+      "category": "string (enum: DRAINAGE, MEDICAL, EVACUATION, SUPPLIES, COMMUNICATION, INFRASTRUCTURE)",
+      "priority": "integer (1=IMMEDIATE, 2=HIGH, 3=STAGED)",
+      "deadline_day": "integer (1-5, which forecast day this must be completed before)",
+      "rationale": "string (1 sentence - why this action, tied to the specific weather/risk data given)"
+    }
+  ]
+}
+"""
+
+AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT = """
+{
+  "risk_context": "string (1-2 sentence summary of the escalation window these alerts are warning about)",
+  "alerts": [
+    {
+      "audience": "string (enum: FARMERS, HOSPITALS, NGOS, MUNICIPAL_CORPS)",
+      "channel": "string (the realistic delivery channel for this audience - e.g. 'SMS Broadcast', 'Radio Advisory', 'Hospital Ops Bulletin', 'NGO Coordination Brief', 'Public Safety Advisory')",
+      "headline": "string (under 10 words, audience-appropriate urgency)",
+      "message": "string (the actual message body - length, vocabulary, and tone MUST fit the audience: short plain-language SMS for farmers, clinical/operational for hospitals, coordination-focused for NGOs, directive/public-safety for municipal corps)",
+      "tone_rationale": "string (1 sentence - why this length/tone/channel fits this specific audience)"
+    }
+  ]
+}
+"""
+
+SATELLITE_CROSS_VALIDATION_SCHEMA_TEXT = """
+{
+  "visual_consistency": "string (CONSISTENT, PARTIALLY_CONSISTENT, INCONSISTENT, or INCONCLUSIVE only)",
+  "visible_evidence": [
+    "string (specific thing actually visible in the image, e.g. 'dense smoke plume over the northeast quadrant of the bounding box')"
+  ],
+  "confidence_percent": "integer (0-100, how confident is this visual read, given image resolution/cloud cover/time of day)",
+  "discrepancy_notes": "string (if PARTIALLY_CONSISTENT or INCONSISTENT, what doesn't match the reported event_type/severity; empty string if CONSISTENT)",
+  "reasoning": "string (2-3 sentences, what you actually see in the image and why it does or doesn't support the reported incident)"
+}
+"""

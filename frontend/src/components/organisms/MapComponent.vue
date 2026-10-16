@@ -7,39 +7,40 @@
       <button 
         :class="['mode-btn', { active: currentMode === 'tactical' }]"
         @click="setMode('tactical')"
-        title="Tactical Navigation Night Radar (Vivid midnight blue & glowing borders)"
+        :title="$t('mapFull.tacticalTooltip')"
       >
         <span class="mode-icon">🌙</span>
-        <span class="mode-label">TACTICAL</span>
+        <span class="mode-label">{{ $t('mapFull.tactical') }}</span>
       </button>
       <button 
         :class="['mode-btn', { active: currentMode === 'satellite' }]"
         @click="setMode('satellite')"
-        title="Real-World Photorealistic Satellite Recon"
+        :title="$t('mapFull.satelliteTooltip')"
       >
         <span class="mode-icon">🛰️</span>
-        <span class="mode-label">SATELLITE</span>
+        <span class="mode-label">{{ $t('mapFull.satellite') }}</span>
       </button>
       <button 
         :class="['mode-btn', { active: currentMode === 'globe' }]"
         @click="setMode('globe')"
-        title="3D Orbital Globe with Atmospheric Lighting"
+        :title="$t('mapFull.globeTooltip')"
       >
         <span class="mode-icon">🌐</span>
-        <span class="mode-label">3D GLOBE</span>
+        <span class="mode-label">{{ $t('mapFull.globe') }}</span>
       </button>
     </div>
 
     <!-- Custom Map Controls HUD (Top Right) -->
     <div class="map-controls glass-panel">
-      <button class="control-btn" @click="zoomIn" title="Zoom In">➕</button>
-      <button class="control-btn" @click="zoomOut" title="Zoom Out">➖</button>
-      <button class="control-btn" @click="resetView" title="Reset Global View">🎯</button>
+      <button class="control-btn" @click="zoomIn" :title="$t('mapFull.zoomIn')">➕</button>
+      <button class="control-btn" @click="zoomOut" :title="$t('mapFull.zoomOut')">➖</button>
+      <button class="control-btn" @click="resetView" :title="$t('mapFull.resetView')">🎯</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { logFeature, logError } from '@/utils/logger'
 import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1 } from '@/types'
@@ -174,12 +175,12 @@ const initMap = () => {
   })
 
   map.value.on('load', () => {
-    console.log('Mapbox initialized successfully')
+    logFeature('mapbox', 'success', { action: 'initialized' })
     renderMarkers()
   })
 
   map.value.on('error', (e) => {
-    console.error('Mapbox rendering error:', e)
+    logError('Mapbox reported a rendering error', e)
   })
 }
 
@@ -415,10 +416,9 @@ onUnmounted(() => {
 }
 
 .mode-btn.active {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.3), rgba(30, 64, 175, 0.4));
+  background: rgba(56, 189, 248, 0.15);
   color: #38bdf8;
   border-color: rgba(56, 189, 248, 0.5);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
 }
 
 .mode-icon {
@@ -453,24 +453,27 @@ onUnmounted(() => {
 
 .marker-dot:hover, .marker-dot.selected {
   transform: scale(1.35);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.8);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
   z-index: 30;
 }
 
-/* Severity Colors with bright contrast glow */
+/* Severity colors, with glow intensity actually scaled to severity instead
+   of every marker glowing at near-identical strength (0.7-0.8 alpha
+   regardless of severity, previously) - critical now visibly outshines
+   medium/low rather than all four fighting for the same attention. */
 .marker-dot.critical {
   border-color: #ef4444;
-  box-shadow: 0 0 16px rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.55);
 }
 
 .marker-dot.high {
   border-color: #f59e0b;
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.8);
+  box-shadow: 0 0 7px rgba(245, 158, 11, 0.4);
 }
 
 .marker-dot.medium, .marker-dot.low {
   border-color: #38bdf8;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.7);
+  box-shadow: none;
 }
 
 /* Pulsing effect for critical alerts */

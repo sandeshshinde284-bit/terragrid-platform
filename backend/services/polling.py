@@ -8,6 +8,7 @@ import asyncio
 import os
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
+from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import json
@@ -16,9 +17,21 @@ logger = logging.getLogger(__name__)
 
 class BackgroundPollingService:
     """Manages background polling of disaster data"""
-    
+
     def __init__(self):
-        self.scheduler = BackgroundScheduler()
+        # Explicit UTC timezone - APScheduler's BackgroundScheduler calls
+        # tzlocal.get_localzone() to infer a timezone from the container's
+        # TZ env var when none is given, and tzlocal raises (not falls
+        # back) on deprecated zoneinfo aliases like "Asia/Calcutta" (the
+        # correct modern name is "Asia/Kolkata"). That raise happened here,
+        # in __init__, was swallowed by main.py's startup handler into a
+        # console print, and left this entire feature permanently dead -
+        # every later call (even GET /polling/status) re-raised the same
+        # error trying to construct a new instance. The job's own trigger
+        # only needs consistent interval timing, not wall-clock time in any
+        # particular zone, so pinning UTC here removes the dependency on
+        # the host's TZ env var entirely, in any environment.
+        self.scheduler = BackgroundScheduler(timezone=ZoneInfo("UTC"))
         self.last_refresh: Optional[datetime] = None
         self.last_incident_count: int = 0
         self.current_incidents: List[Dict[str, Any]] = []
@@ -51,10 +64,15 @@ class BackgroundPollingService:
         try:
             self.data_ingestion_service = data_ingestion_service
             
-            # Schedule the polling job to run every N minutes
+            # Schedule the polling job to run every N minutes. IntervalTrigger
+            # independently calls tzlocal.get_localzone() when its own
+            # `timezone` arg is omitted - this is a *separate* call from the
+            # scheduler's own timezone (set explicitly in __init__ above),
+            # and hits the exact same "Asia/Calcutta isn't a valid zoneinfo
+            # name" failure on its own. Has to be pinned here too.
             self.scheduler.add_job(
                 func=self._polling_job,
-                trigger=IntervalTrigger(minutes=self.refresh_interval_minutes),
+                trigger=IntervalTrigger(minutes=self.refresh_interval_minutes, timezone=ZoneInfo("UTC")),
                 id="disaster_data_polling",
                 name="Fetch disaster data every 15 minutes",
                 replace_existing=True,
@@ -111,7 +129,7 @@ class BackgroundPollingService:
             return
 
         try:
-            logger.info("🔄 Background polling: Fetching latest incidents...")
+            logger.info("Background polling: fetching latest incidents from all sources")
 
             # Fetch latest incidents
             from backend.database import SessionLocal

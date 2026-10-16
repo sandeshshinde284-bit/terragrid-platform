@@ -18,21 +18,41 @@
   --glass-border: rgba(255, 255, 255, 0.15);
   --glass-blur: blur(10px);
   
-  /* Accents */
+  /* Accents - one dominant accent (cyan) used for interactive/active
+     state everywhere; green and purple kept only for the few spots that
+     already relied on them (success state, one legacy badge) rather than
+     for general decoration. */
   --accent-cyan: #00bcd4;
   --accent-green: #1dd1a1;
   --accent-purple: #9c27b0;
-  
+
+  /* Hazard-type colors (RESPONSE phase incident cards/badges) - centralized
+     here instead of scattered hex literals per component, and deliberately
+     desaturated/darkened from their original values so six different
+     hazard types don't read as six different neon colors competing on one
+     screen. Each keeps enough hue separation to still be distinguishable
+     at a glance, which is the only reason this per-type coding exists. */
+  --hazard-fire: #d9703f;
+  --hazard-flood: #3a6ea8;
+  --hazard-landslide: #8b6f47;
+  --hazard-earthquake: #8460a8;
+  --hazard-hurricane: #3a94a8;
+  --hazard-volcano: #c2484f;
+
   /* Text */
   --text-primary: #e0e0e0;
   --text-secondary: #9e9e9e;
   --text-muted: #666666;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 20px rgba(255, 107, 107, 0.5);
+  /* Was a 20px neon bloom at 0.5 alpha - the single biggest source of
+     "eyes hurt" across selected/active states. Kept as a named token
+     (components still reference --shadow-glow) but now a tight, low-alpha
+     highlight ring instead of a glow. */
+  --shadow-glow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.3);
   
   /* Transitions */
   --transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);

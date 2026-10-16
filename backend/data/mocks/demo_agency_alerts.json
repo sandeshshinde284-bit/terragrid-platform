@@ -1,0 +1,33 @@
+{
+  "risk_context": "MOCK DEMONSTRATION MODE: Thunderstorm risk escalates to RED by Day 3, with 46mm rainfall and 20m/s winds forecast - then eases back to GREEN by Day 5.",
+  "alerts": [
+    {
+      "audience": "FARMERS",
+      "channel": "SMS Broadcast",
+      "headline": "Heavy storm Fri - protect crops & livestock",
+      "message": "WEATHER ALERT: Heavy rain and strong winds expected Fri (46mm, 20km/h gusts). Harvest ready crops today/tomorrow if possible. Move livestock to higher, sheltered ground before Thu evening. Avoid open fields Fri. Risk clears by Sun.",
+      "tone_rationale": "Farmers need a short, plain-language SMS with concrete deadlines (today/tomorrow/Thu/Fri) they can act on immediately in the field, not technical weather jargon."
+    },
+    {
+      "audience": "HOSPITALS",
+      "channel": "Hospital Ops Bulletin",
+      "headline": "Flood-response protocol activation advisory",
+      "message": "OPS BULLETIN: Thunderstorm risk escalates to RED on Day 3 (46mm rainfall, 20m/s wind gusts). Recommend activating flood-response protocol by Day 2: confirm backup power, verify IV fluid and antibiotic stock levels, and prepare for potential admission surge from waterlogging-related injuries and waterborne illness. Risk de-escalates to GREEN by Day 5.",
+      "tone_rationale": "Hospital staff need operational precision - specific protocol names, stock categories, and the clinical risk pathway (injury + waterborne illness) - delivered as an internal ops bulletin, not a public message."
+    },
+    {
+      "audience": "NGOS",
+      "channel": "NGO Coordination Brief",
+      "headline": "Pre-position relief resources ahead of Day 3 peak",
+      "message": "COORDINATION BRIEF: Risk escalation forecast peaks RED on Day 3 (thunderstorm, 46mm rain, 20m/s wind) with short-duration displacement expected - risk returns to GREEN by Day 5. Recommend pre-positioning food, water, and dry bedding at community shelters by Day 2-3, and confirming volunteer availability for a 48-72hr response window. Coordinate staging locations with Municipal Corporation Relief Dept.",
+      "tone_rationale": "NGOs need coordination-level detail - resource categories, timing windows, and the partner agency to align with - rather than either plain-language SMS or clinical ops language."
+    },
+    {
+      "audience": "MUNICIPAL_CORPS",
+      "channel": "Public Safety Advisory",
+      "headline": "RED risk Day 3: drainage, infrastructure, public advisory required",
+      "message": "PUBLIC SAFETY ADVISORY: Risk escalates to RED by Day 3 (46mm rainfall, 20m/s wind gusts). Directives: (1) Clear and desilt drainage in low-lying wards by Day 2. (2) Pre-position mobile pumps at known waterlogging points. (3) Issue public advisory against underpass/low-road use during the Day 3 peak window. (4) Coordinate rescue boat positioning with Fire/NDRF near river embankments. Risk eases to GREEN by Day 5.",
+      "tone_rationale": "Municipal corps need a numbered, directive-style advisory covering both internal infrastructure actions and the public-facing warning they are responsible for issuing."
+    }
+  ]
+}

@@ -3,25 +3,6 @@
     <Header />
 
     <div class="alerts-container">
-      <div v-if="!appStore.isBackendMockModeEnabled" class="phase2-center-container">
-        <div class="phase2-card glass-panel">
-          <div class="phase2-icon">🚨</div>
-          <div class="phase2-tag">PHASE 2 ROADMAP</div>
-          <h2>Alert Management & Dispatch Engine</h2>
-          <p>
-            Automated SMS, WhatsApp, and multi-channel emergency broadcast dispatchers are scheduled for delivery in <strong>Phase 2</strong>.
-          </p>
-          <div class="phase2-note">
-            Real-time multi-hazard disaster monitoring and AI decision support are fully operational on the <strong>Dashboard</strong> and <strong>Incidents</strong> screens.
-          </div>
-          <router-link to="/" class="return-dashboard-btn">
-            ← Return to Live Dashboard
-          </router-link>
-        </div>
-      </div>
-
-      <!-- ORIGINAL MOCK UI (Dynamically rendered if Backend USE_MOCK_DATA=true) -->
-      <template v-else>
         <div class="filter-tabs glass-panel">
           <button 
             v-for="filter in filters"
@@ -44,15 +25,15 @@
             </p>
             <div class="brief-metrics">
               <div class="metric">
-                <span class="label">Confidence</span>
-                <span class="value">94%</span>
+                <span class="label">{{ $t('alerts.confidence') }}</span>
+                <span class="value">{{ avgConfidenceLabel }}</span>
               </div>
               <div class="metric">
-                <span class="label">Data Sources</span>
-                <span class="value">5 Live</span>
+                <span class="label">{{ $t('alerts.dataSources') }}</span>
+                <span class="value">{{ liveSourceCount }} Live</span>
               </div>
               <div class="metric">
-                <span class="label">Active Threats</span>
+                <span class="label">{{ $t('alerts.activeThreats') }}</span>
                 <span class="value">{{ totalCount }}</span>
               </div>
             </div>
@@ -123,7 +104,6 @@
             </div>
           </div>
         </div>
-      </template>
     </div>
   </div>
 </template>
@@ -131,11 +111,25 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import Header from '@/components/organisms/Header.vue'
-import { useEventsStore, useAppStore } from '@/stores'
+import { useEventsStore } from '@/stores'
+import { logWarn } from '@/utils/logger'
+import { SOURCE_REGISTRY } from '@/config/sourceRegistry'
 
 const eventsStore = useEventsStore()
-const appStore = useAppStore()
 const activeFilter = ref('all')
+
+// Both of these were hardcoded ("94%" / "5 Live") regardless of what the
+// store actually held - real numbers now: confidence averaged across
+// whatever incidents actually carry a confidence score, and the source
+// count read from the same registry the Source tab uses, not a literal.
+const liveSourceCount = computed(() => Object.keys(SOURCE_REGISTRY).length)
+
+const avgConfidenceLabel = computed(() => {
+  const withConfidence = eventsStore.allIncidents.filter(i => i.confidence != null)
+  if (withConfidence.length === 0) return 'N/A'
+  const avg = withConfidence.reduce((sum, i) => sum + (i.confidence ?? 0), 0) / withConfidence.length
+  return `${Math.round(avg * 100)}%`
+})
 
 interface Alert {
   id: string
@@ -263,7 +257,7 @@ onMounted(async () => {
         }
       }
     } catch (err) {
-      console.warn('AlertsScreen: Failed to hydrate live incidents:', err)
+      logWarn('Could not hydrate live incidents on the Alerts screen', err)
     }
   }
 })
@@ -315,15 +309,13 @@ onMounted(async () => {
   border-color: var(--accent-cyan);
   color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.1);
-  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
 }
 
 .tab-btn.active {
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  background: var(--accent-cyan);
   border-color: var(--accent-cyan);
-  color: #ffffff;
+  color: #04141a;
   font-weight: 700;
-  box-shadow: 0 0 16px rgba(30, 144, 255, 0.5);
 }
 
 .disaster-brief {
@@ -388,6 +380,29 @@ onMounted(async () => {
   overflow: auto;
   padding: 16px;
   min-height: 0;
+}
+
+/* Custom Scrollbars */
+.alerts-list-wrapper::-webkit-scrollbar,
+.alerts-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.alerts-list-wrapper::-webkit-scrollbar-track,
+.alerts-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.alerts-list-wrapper::-webkit-scrollbar-thumb,
+.alerts-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+.alerts-list-wrapper::-webkit-scrollbar-thumb:hover,
+.alerts-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .no-alerts {
@@ -665,91 +680,4 @@ onMounted(async () => {
   }
 }
 
-/* ===== PHASE 2 ROADMAP STYLES ===== */
-.phase2-center-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  min-height: 420px;
-  padding: 40px 20px;
-}
-
-.phase2-card {
-  max-width: 520px;
-  width: 100%;
-  padding: 40px 32px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(14, 165, 233, 0.3);
-  border-radius: 16px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-}
-
-.phase2-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-  filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.4));
-}
-
-.phase2-tag {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 800;
-  padding: 5px 14px;
-  border-radius: 999px;
-  background: rgba(14, 165, 233, 0.2);
-  color: var(--accent-cyan);
-  border: 1px solid rgba(14, 165, 233, 0.4);
-  letter-spacing: 1px;
-  margin-bottom: 16px;
-}
-
-.phase2-card h2 {
-  font-size: 22px;
-  font-weight: 700;
-  color: #ffffff;
-  margin: 0 0 12px 0;
-}
-
-.phase2-card p {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #cbd5e1;
-  margin: 0 0 18px 0;
-}
-
-.phase2-note {
-  font-size: 12px;
-  line-height: 1.5;
-  color: #94a3b8;
-  background: rgba(30, 41, 59, 0.6);
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 24px;
-}
-
-.return-dashboard-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  border: 1px solid var(--accent-cyan);
-}
-
-.return-dashboard-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.4);
-}
 </style>

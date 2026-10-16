@@ -4,19 +4,40 @@ OpenWeatherMap API Service
 Fetches global weather alerts, storms, and extreme weather conditions
 Replaces NOAA for global coverage (not just US)
 """
+import asyncio
 import httpx
 import logging
+import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 import os
+from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
 
 class OpenWeatherService:
     """Service to fetch global weather alerts from OpenWeatherMap API"""
-    
+
     BASE_URL = settings.OPENWEATHER_API_URL
-    
+
+    # PERF FIX: fetch_forecast() used to await each of the ~40 MONITORED_CITIES
+    # one at a time, each opening its own httpx.AsyncClient (fresh TLS handshake
+    # per city). That serialized ~40 round-trips end-to-end, which is what made
+    # every PREPARE-phase page (Forecast, Risk Timeline, Checklist, Agency
+    # Alerts - each of which independently calls this method on mount) take
+    # 3-5 minutes to load. Fixed by fetching all cities concurrently off one
+    # shared client, plus a short in-memory cache so the four pages don't each
+    # pay for a fresh 40-city fetch when navigated between in quick succession.
+    _FORECAST_FETCH_CONCURRENCY = 10
+    _forecast_cache: List[Dict[str, Any]] | None = None
+    _forecast_cache_at: float = 0.0
+    FORECAST_CACHE_TTL_SECONDS = 600  # 10 minutes
+
+    # PR10 (source-of-truth validation): a full forecast day is 8 three-hour
+    # entries; below half of that, a day's risk_level/confidence_pct call is
+    # real but thin evidence (see _summarize_forecast_by_day).
+    MIN_SUFFICIENT_ENTRIES = 4
+
     # Cities to monitor globally - covers key disaster-prone regions
     MONITORED_CITIES = [
         # India
@@ -91,7 +112,7 @@ class OpenWeatherService:
         """
         # 12-Factor App: Strict Environment-Driven Mock Guard
         if use_mock:
-            logger.info(" OpenWeather: 🧪 MOCK MODE ENABLED via .env")
+            logger.info("OpenWeather: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
             try:
                 import json
                 from pathlib import Path
@@ -106,13 +127,13 @@ class OpenWeatherService:
         api_key = settings.OPENWEATHERMAP_API_KEY
         
         if not api_key:
-            logger.warning("OPENWEATHERMAP_API_KEY not set in .env. Skipping OpenWeatherMap ingestion.")
+            logger.warning("[FEATURE_HEALTH] feature=openweather_current status=no_api_key reason=OPENWEATHERMAP_API_KEY not set in .env")
             return []
-        
+
         try:
             events = []
             api_key = settings.OPENWEATHERMAP_API_KEY
-            
+
             # Fetch weather for each city
             for lat, lon, city, country in cls.MONITORED_CITIES:
                 try:
@@ -122,12 +143,12 @@ class OpenWeatherService:
                 except Exception as e:
                     logger.debug(f"Error fetching weather for {city}, {country}: {str(e)}")
                     continue
-            
-            logger.info(f"OpenWeatherMap: Fetched weather data for {len(events)} cities")
+
+            logger.info(f"[FEATURE_HEALTH] feature=openweather_current status=success cities_queried={len(cls.MONITORED_CITIES)} severe_events_found={len(events)}")
             return events
-            
+
         except Exception as e:
-            logger.error(f"OpenWeatherMap API Error: {str(e)}")
+            logger.error(f"[FEATURE_HEALTH] feature=openweather_current status=error error={type(e).__name__}: {e}")
             return []
     
     @classmethod
@@ -155,6 +176,272 @@ class OpenWeatherService:
             logger.debug(f"Error fetching weather for {city}: {str(e)}")
             return None
     
+    @classmethod
+    async def fetch_forecast(cls, use_mock: bool = False) -> List[Dict[str, Any]]:
+        """
+        Fetch 5-day/3-hour-step forecasts for all monitored cities and collapse
+        each city's forecast into a day-by-day risk escalation timeline.
+
+        Uses the same free-tier OpenWeatherMap endpoint family as fetch_events()
+        (/data/2.5/forecast instead of /data/2.5/weather), the same API key, and
+        the same severity/type-mapping logic, so forecast risk and current-weather
+        risk can never drift out of sync with each other.
+
+        Args:
+            use_mock: If True, return mock data instead of calling API
+
+        Returns:
+            List of per-city forecast dicts, each with a "daily" list of
+            {date, risk_level, dominant_weather, max_wind_ms, min_temp_c, max_temp_c,
+             total_rain_mm, confidence_pct, alert_recommended, entries_count,
+             data_sufficient}
+        """
+        if use_mock:
+            logger.info("OpenWeather forecast: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
+            try:
+                import json
+                from pathlib import Path
+                mock_path = Path(__file__).parent.parent / "data" / "mocks" / "openweather_forecast.json"
+                with open(mock_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load OpenWeather forecast mock: {e}")
+                return []
+
+        api_key = settings.OPENWEATHERMAP_API_KEY
+
+        if not api_key:
+            logger.warning("[FEATURE_HEALTH] feature=openweather_forecast status=no_api_key reason=OPENWEATHERMAP_API_KEY not set in .env")
+            return []
+
+        # Serve from the short-lived in-memory cache when fresh. All four
+        # PREPARE-phase pages (Forecast, Risk Timeline, Checklist, Agency
+        # Alerts) call this independently on mount - without this, navigating
+        # between them re-pays the full 40-city fetch every single time.
+        now = time.monotonic()
+        if cls._forecast_cache is not None and (now - cls._forecast_cache_at) < cls.FORECAST_CACHE_TTL_SECONDS:
+            age = now - cls._forecast_cache_at
+            logger.info(f"OpenWeatherMap: Serving cached 5-day forecast ({len(cls._forecast_cache)} cities, age={age:.0f}s)")
+            return cls._forecast_cache
+
+        semaphore = asyncio.Semaphore(cls._FORECAST_FETCH_CONCURRENCY)
+
+        async def fetch_one(client: httpx.AsyncClient, lat: float, lon: float, city: str, country: str):
+            async with semaphore:
+                try:
+                    return await cls._fetch_city_forecast(client, lat, lon, city, country, api_key)
+                except Exception as e:
+                    logger.debug(f"Error fetching forecast for {city}, {country}: {str(e)}")
+                    return None
+
+        # One shared client (connection pooling) instead of a new client per
+        # city, fetched concurrently (bounded by the semaphore above) instead
+        # of one-at-a-time - this is what cuts ~40 sequential round-trips
+        # down to a handful of concurrent batches.
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            results = await asyncio.gather(*[
+                fetch_one(client, lat, lon, city, country)
+                for lat, lon, city, country in cls.MONITORED_CITIES
+            ])
+
+        forecasts = [f for f in results if f]
+
+        cls._forecast_cache = forecasts
+        cls._forecast_cache_at = now
+
+        log_raw_data("openweather_forecast", forecasts)
+        logger.info(f"[FEATURE_HEALTH] feature=openweather_forecast status=success cities_fetched={len(forecasts)} cities_queried={len(cls.MONITORED_CITIES)} concurrency={cls._FORECAST_FETCH_CONCURRENCY}")
+        return forecasts
+
+    @classmethod
+    def get_forecast_cache_age_seconds(cls) -> float | None:
+        """
+        PR10 (source-of-truth validation): how old is the forecast data
+        fetch_forecast() is currently serving from cache, in seconds.
+        None means no live fetch has ever populated the cache yet (e.g.
+        only mock mode has run, or the server just started).
+        """
+        if cls._forecast_cache is None:
+            return None
+        return round(time.monotonic() - cls._forecast_cache_at, 1)
+
+    @classmethod
+    async def _fetch_city_forecast(cls, client: httpx.AsyncClient, lat: float, lon: float, city: str, country: str, api_key: str) -> Dict[str, Any] | None:
+        """Fetch and summarize the 5-day/3-hour-step forecast for a single city, using a shared client."""
+        try:
+            response = await client.get(
+                f"{cls.BASE_URL}/forecast",
+                params={
+                    "lat": lat,
+                    "lon": lon,
+                    "appid": api_key,
+                    "units": "metric",
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            daily = cls._summarize_forecast_by_day(data.get("list", []))
+            if not daily:
+                return None
+
+            return {
+                "city": city,
+                "country": country,
+                "latitude": lat,
+                "longitude": lon,
+                "source": "OPENWEATHER",
+                "daily": daily,
+            }
+
+        except Exception as e:
+            logger.debug(f"Error fetching forecast for {city}: {str(e)}")
+            return None
+
+    @classmethod
+    def _summarize_forecast_by_day(cls, entries: List[Dict]) -> List[Dict[str, Any]]:
+        """
+        Collapse OpenWeatherMap's 3-hour-step forecast list (~40 entries over 5 days)
+        into one risk-escalation entry per calendar day, reusing the same severity
+        thresholds as the current-weather path.
+        """
+        from collections import defaultdict
+
+        by_day: Dict[str, List[Dict]] = defaultdict(list)
+        for entry in entries:
+            dt_txt = entry.get("dt_txt", "")
+            day_key = dt_txt.split(" ")[0] if dt_txt else None
+            if not day_key:
+                continue
+            by_day[day_key].append(entry)
+
+        daily_summaries = []
+        for day_key in sorted(by_day.keys()):
+            day_entries = by_day[day_key]
+
+            max_wind = 0.0
+            min_temp = float("inf")
+            max_temp = float("-inf")
+            total_rain = 0.0
+            worst_severity = None
+            dominant_weather = None
+            best_rain_for_tiebreak = -1.0
+            severity_rank = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+            # PR9 (confidence-based alerting): each day is built from ~8
+            # independent 3-hour forecasts. If only one of those 8 reaches
+            # the day's worst severity and the rest are calm, that's a brief
+            # spike, not a sustained risk - alerting on it as confidently as
+            # a day where all 8 agree would be a false alarm. entry_severities
+            # collects every entry's own severity so we can measure, after
+            # the loop, what fraction of the day actually agrees with
+            # worst_severity - a real, computed-from-data signal, not an
+            # invented probability (OpenWeatherMap's free forecast tier has
+            # no confidence field of its own to use instead).
+            entry_severities: List[str] = []
+
+            for entry in day_entries:
+                main = entry.get("main", {})
+                wind = entry.get("wind", {})
+                weather = entry.get("weather", [{}])[0]
+
+                temp = main.get("temp", 0)
+                humidity = main.get("humidity", 0)
+                wind_speed = wind.get("speed", 0)
+                rain_mm = entry.get("rain", {}).get("3h", 0)
+
+                min_temp = min(min_temp, temp)
+                max_temp = max(max_temp, temp)
+                max_wind = max(max_wind, wind_speed)
+                total_rain += rain_mm
+
+                event_type = weather.get("main", "").lower()
+                description = weather.get("description", "").lower()
+                # OpenWeatherMap's own "weather.main" field (Clear, Clouds, Rain,
+                # Drizzle, Thunderstorm, Snow, Mist...) is already a clean, accurate
+                # label on its own - use it directly for display instead of forcing
+                # it through _map_weather_type(), which is built for *incident*
+                # categorization and collapses any non-severe condition (including
+                # plain "Clear") down to "other".
+                weather_label = weather.get("main", "Unknown")
+
+                severity = cls._determine_severity(event_type, wind_speed, temp, humidity, description)
+                entry_severities.append(severity)
+
+                # Pick the entry that best represents the day: highest severity first,
+                # and among equally-severe entries (including the common all-"low" day),
+                # the one with the most rain - so a calm-but-rainy day doesn't get
+                # mislabeled "clear" just because nothing crossed a severity threshold.
+                # worst_severity starts as None (not "low") so the first entry always
+                # sets a real, observed weather type instead of a hardcoded default.
+                is_more_severe = worst_severity is None or severity_rank.get(severity, 0) > severity_rank.get(worst_severity, 0)
+                is_tie_but_rainier = severity_rank.get(severity, 0) == severity_rank.get(worst_severity, 0) and rain_mm > best_rain_for_tiebreak
+                if is_more_severe or is_tie_but_rainier:
+                    worst_severity = severity
+                    dominant_weather = weather_label
+                    best_rain_for_tiebreak = rain_mm
+
+            worst_severity = worst_severity or "low"
+            dominant_weather = dominant_weather or "Clear"  # only if day_entries was somehow empty
+
+            # Map internal severity scale to the UI's YELLOW/ORANGE/RED escalation bands
+            risk_level = {
+                "low": "GREEN",
+                "medium": "YELLOW",
+                "high": "ORANGE",
+                "critical": "RED",
+            }.get(worst_severity, "GREEN")
+
+            # PR9 (confidence-based alerting): what fraction of the day's own
+            # 3-hour entries actually reached the severity we picked as the
+            # day's worst? A day where 7 of 8 entries are "high" is a
+            # sustained risk; a day where only 1 of 8 spikes to "high" and
+            # the rest are "low" is a brief, isolated reading - both would
+            # otherwise render as the same ORANGE node. This is computed
+            # directly from the entries already fetched above, not an
+            # invented number.
+            worst_rank = severity_rank.get(worst_severity, 0)
+            supporting_count = sum(
+                1 for s in entry_severities if severity_rank.get(s, 0) >= worst_rank
+            )
+            total_count = len(entry_severities)
+            confidence_pct = (
+                round(100 * supporting_count / total_count, 1) if total_count else 0.0
+            )
+            # Only worth an operator's attention if the forecast both says
+            # something is wrong (non-GREEN) and most of the day's entries
+            # agree on it - a lone noisy 3-hour spike shouldn't trigger the
+            # same alert recommendation as a sustained, well-supported one.
+            alert_recommended = risk_level != "GREEN" and confidence_pct >= 70
+
+            # PR10 (source-of-truth validation): a full day of this forecast
+            # is 8 three-hour entries, but OpenWeatherMap's 5-day window
+            # starts from "now" (not midnight) and ends mid-day 5 - so the
+            # first and last calendar day in the window are naturally built
+            # from fewer entries than the middle days. confidence_pct above
+            # is still computed honestly either way, but "100% agreement"
+            # from 8 entries and "100% agreement" from 2 entries aren't the
+            # same strength of evidence, and nothing before this surfaced
+            # the difference. data_sufficient flags a day as backed by at
+            # least half a full day's readings (4 of 8) - below that, the
+            # call is real but thin, and callers should say so.
+            data_sufficient = total_count >= cls.MIN_SUFFICIENT_ENTRIES
+
+            daily_summaries.append({
+                "date": day_key,
+                "risk_level": risk_level,
+                "dominant_weather": dominant_weather,
+                "max_wind_ms": round(max_wind, 1),
+                "min_temp_c": round(min_temp, 1) if min_temp != float("inf") else None,
+                "max_temp_c": round(max_temp, 1) if max_temp != float("-inf") else None,
+                "total_rain_mm": round(total_rain, 1),
+                "confidence_pct": confidence_pct,
+                "alert_recommended": alert_recommended,
+                "entries_count": total_count,
+                "data_sufficient": data_sufficient,
+            })
+
+        return daily_summaries
+
     @classmethod
     def _parse_weather(cls, weather_data: Dict, city: str, country: str) -> Dict[str, Any] | None:
         """Parse OpenWeatherMap weather data to internal event format"""

@@ -39,10 +39,10 @@ def _load_countries_data() -> Dict[str, Any]:
             if os.path.exists(path):
                 with open(path, 'r') as f:
                     _COUNTRIES_DATA = json.load(f)
-                    logger.info(f"✓ Loaded countries.json from {path}")
+                    logger.info(f"Loaded countries.json from {path}")
                     return _COUNTRIES_DATA
         
-        logger.warning("⚠ countries.json not found, using minimal fallback")
+        logger.warning("countries.json not found in any expected location, falling back to the minimal built-in country list")
         return {"countries": {}, "aliases": {}}
     except Exception as e:
         logger.error(f"Failed to load countries.json: {e}, using fallback")
@@ -147,7 +147,7 @@ def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
     if db_id is not None:
         event = db.query(Event).filter(Event.id == db_id).first()
         if event:
-            logger.debug(f"[FIND_INCIDENT] Found by numeric ID: {incident_id} → {db_id}")
+            logger.debug(f"[FIND_INCIDENT] Resolved numeric ID {incident_id} to DB id {db_id}")
             return event
     
     # 2. Query by external ID in JSONB data
@@ -170,7 +170,7 @@ def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
             f"event-{evt.id}" == clean_id or
             f"inc_{evt.id}" == clean_id or
             f"inc-{evt.id}" == clean_id):
-            logger.debug(f"[FIND_INCIDENT] Found by scan: {incident_id} → {evt.id}")
+            logger.debug(f"[FIND_INCIDENT] Resolved {incident_id} to DB id {evt.id} by scanning events")
             return evt
         
         data = evt.data or {}
@@ -197,7 +197,7 @@ def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None
     
     # If admin token is provided and valid, allow mock mode
     if admin_token and admin_token == ADMIN_TOKEN:
-        logger.info("[MOCK-MODE] ✓ Authorized admin accessing mock mode")
+        logger.info("[MOCK-MODE] Admin authorization confirmed, mock mode access granted")
         return True
     
     # In development, mock mode is allowed (relies on environment)
@@ -214,7 +214,7 @@ def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None
         return True
     
     # Production + no token = deny
-    logger.warning("[MOCK-MODE] ✗ Unauthorized mock mode access attempted in production")
+    logger.warning("[MOCK-MODE] Unauthorized mock mode access attempted in production, request blocked")
     return False
 
 
@@ -335,6 +335,95 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Failed to fetch incident")
 
 
+@router.get("/{incident_id}/satellite-validation")
+async def get_satellite_validation(incident_id: str, db: Session = Depends(get_db)):
+    """
+    Feature 11: Image+Satellite Cross-Validation.
+
+    Fetches a REAL satellite image (NASA GIBS, no API key, free) centered
+    on this incident's own coordinates, and asks Gemini to visually check
+    whether what's actually in the image is consistent with the incident's
+    reported event_type and severity - an independent check against the
+    same NASA/GDACS/USGS/NOAA source feeds that reported the incident.
+
+    No fallback image is ever substituted if the real one can't be fetched;
+    no AI guess is returned if Gemini isn't configured. Both failure modes
+    report plainly instead.
+    """
+    from backend.services.satellite_cross_validation import satellite_cross_validation_service
+
+    try:
+        incident = find_incident_by_id(incident_id, db)
+        if not incident:
+            raise HTTPException(status_code=404, detail=f"Incident '{incident_id}' not found")
+
+        incident_data = {
+            "latitude": incident.latitude,
+            "longitude": incident.longitude,
+            "event_type": incident.event_type,
+            "severity": incident.severity,
+            "location_name": incident.location_name,
+            "event_timestamp": incident.event_timestamp,
+        }
+
+        result = await satellite_cross_validation_service.cross_validate(incident_data)
+        result["incident_id"] = f"event_{incident.id}"
+        result["location_name"] = incident.location_name
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Satellite cross-validation failed for incident {incident_id}")
+        raise HTTPException(status_code=500, detail=f"Satellite cross-validation failed: {str(e)}")
+
+
+@router.get("/{incident_id}/flood-detection")
+async def get_flood_detection(incident_id: str, db: Session = Depends(get_db)):
+    """
+    Feature 13: Sentinel-1 SAR Flood Detection via Google Earth Engine.
+
+    Runs a real backscatter change-detection analysis (Sentinel-1 VV,
+    pre/post incident composites, same orbit pass) over this incident's
+    own coordinates, masked against JRC Global Surface Water and SRTM
+    slope, connectivity-filtered - the published UN-SPIDER/DeVries et al.
+    methodology, ported to the Earth Engine Python API (see
+    backend/services/flood_detection_ee.py for the full citation and the
+    dB-vs-linear threshold note).
+
+    Best suited to flood/storm-type incidents - it will still run for
+    other event types, but a non-flood incident has no reason to show
+    meaningful backscatter change.
+
+    Blocking (synchronous Earth Engine calls) - run off the event loop.
+    """
+    import asyncio
+    from backend.services.flood_detection_ee import flood_detection_service
+
+    try:
+        incident = find_incident_by_id(incident_id, db)
+        if not incident:
+            raise HTTPException(status_code=404, detail=f"Incident '{incident_id}' not found")
+
+        incident_data = {
+            "latitude": incident.latitude,
+            "longitude": incident.longitude,
+            "location_name": incident.location_name,
+            "event_timestamp": incident.event_timestamp,
+        }
+
+        result = await asyncio.to_thread(flood_detection_service.detect_flood, incident_data)
+        result["incident_id"] = f"event_{incident.id}"
+        result.setdefault("location_name", incident.location_name)
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Flood detection failed for incident {incident_id}")
+        raise HTTPException(status_code=500, detail=f"Flood detection failed: {str(e)}")
+
+
 @router.get("/{incident_id}/insights")
 async def get_incident_insights(
     incident_id: str, 
@@ -351,7 +440,7 @@ async def get_incident_insights(
     try:
         # Validate mock mode access
         if use_mock and not _validate_mock_mode_access(use_mock, admin_token):
-            logger.warning(f"[INSIGHTS] ✗ Unauthorized mock mode access for {incident_id}")
+            logger.warning(f"[INSIGHTS] Unauthorized mock mode access for {incident_id}, request blocked")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Mock mode requires admin authorization in production"
@@ -359,7 +448,7 @@ async def get_incident_insights(
         
         incident = find_incident_by_id(incident_id, db)
         if not incident:
-            logger.warning(f"[INSIGHTS] ✗ Incident not found: {incident_id}")
+            logger.warning(f"[INSIGHTS] Incident not found: {incident_id}")
             raise HTTPException(status_code=404, detail=f"Incident not found: {incident_id}")
         
         incident_dict = incident.data.copy() if incident.data else {}
@@ -432,7 +521,7 @@ async def generate_deep_incident_analysis(
         
         incident = find_incident_by_id(incident_id, db)
         if not incident:
-            logger.warning(f"[DEEP-DOSSIER] ✗ Not found: {incident_id}")
+            logger.warning(f"[DEEP-DOSSIER] Incident not found: {incident_id}")
             raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
         
         raw_data = incident.data or {}
@@ -461,7 +550,7 @@ async def generate_deep_incident_analysis(
             curr_data["deep_dossier"] = dossier
             incident.data = curr_data
             db.commit()
-            logger.info(f"[DEEP-DOSSIER] ✓ Cached for {incident_id}")
+            logger.info(f"[DEEP-DOSSIER] Cached dossier for {incident_id}")
         except Exception as cache_err:
             logger.warning(f"[DEEP-DOSSIER] Cache failed: {cache_err}")
             db.rollback()
@@ -609,6 +698,59 @@ async def get_incidents_stats(db: Session = Depends(get_db)):
     except Exception as e:
         logger.exception("Failed to get incident statistics")
         raise HTTPException(status_code=500, detail="Statistics query failed")
+
+
+@router.post("/resources/optimize")
+async def optimize_resources(
+    resource_pool: Dict[str, int],
+    status: str = Query("active", description="Only allocate against incidents in this status"),
+    db: Session = Depends(get_db)
+):
+    """
+    Resource Optimization (RESPONSE feature #8).
+
+    Originally this existed only as an AI-guessed `resource_allocation`
+    field inside Gemini's dossier JSON - not a standalone, verifiable
+    computation. This endpoint replaces that with a deterministic
+    allocation: it pulls currently active incidents straight from the
+    database (their real, already-computed risk_score, affected_population
+    and humanitarian_impact.need_level - the same fields Feature 2's
+    impact analysis produces) and splits a resource pool the CALLER
+    declares across them by actual need, using largest-remainder
+    apportionment so the integers always sum exactly to the pool.
+
+    No resource pool is assumed or invented - the caller must declare
+    real on-hand quantities (e.g. {"medical_teams": 12, "water_tankers": 8}).
+    This deliberately does not do GPS-based physical dispatch (see PR3,
+    iceboxed in PREPARE_PHASE_NOTES.md for the same reason: no sovereign
+    access to real asset-location data).
+
+    Body:
+        resource_pool: {"<resource_type>": <quantity>, ...}
+
+    Query:
+        status: which incident status to allocate against (default "active")
+    """
+    from backend.services.resource_optimizer import ResourceOptimizerService
+
+    try:
+        incidents_query = db.query(Event).filter(Event.status == status).all()
+
+        incidents = []
+        for incident in incidents_query:
+            data = incident.data.copy() if incident.data else {}
+            data["id"] = f"event_{incident.id}"
+            data["location_name"] = incident.location_name or "Unknown"
+            incidents.append(data)
+
+        result = ResourceOptimizerService.optimize(incidents, resource_pool)
+        result["incidents_considered"] = len(incidents)
+        result["status_filter"] = status
+        return result
+
+    except Exception as e:
+        logger.exception("Resource optimization failed")
+        raise HTTPException(status_code=500, detail=f"Resource optimization failed: {str(e)}")
 
 
 @router.get("/grouped/by-country")

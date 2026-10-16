@@ -40,7 +40,7 @@ class USGSEarthquakeService:
         """
         # 12-Factor App: Strict Environment-Driven Mock Guard
         if use_mock:
-            logger.info(" USGS Earthquakes: 🧪 MOCK MODE ENABLED via .env")
+            logger.info("USGS earthquakes: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
             try:
                 import json
                 from pathlib import Path
@@ -73,11 +73,11 @@ class USGSEarthquakeService:
                     if parsed:
                         events.append(parsed)
                 
-                logger.info(f" USGS Earthquakes: Fetched {len(events)} events (M >= 4.5, past 24h)")
+                logger.info(f"[FEATURE_HEALTH] feature=usgs_earthquakes status=success events_found={len(events)} min_magnitude=4.5 window_hours=24")
                 return events
                 
         except Exception as e:
-            logger.error(f" USGS Earthquake API Error: {str(e)}")
+            logger.error(f"[FEATURE_HEALTH] feature=usgs_earthquakes status=error error={type(e).__name__}: {e}")
             # return cls._get_mock_data()
             return []
     

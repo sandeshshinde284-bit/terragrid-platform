@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from functools import lru_cache
 import os
 import socket
+from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,11 @@ class InfrastructureService:
                 with urllib.request.urlopen(req, timeout=cls.OVERPASS_TIMEOUT) as response:
                     result = json.loads(response.read().decode())
                     logger.debug(f"[OSM] Query succeeded: {len(result.get('elements', []))} elements found")
+                    # Note: this method is @lru_cache'd, so this only fires on
+                    # an actual fetch, not on a cache hit for the same
+                    # rounded lat/lon/radius - that's fine, it's the live
+                    # Overpass response that needs cross-checking.
+                    log_raw_data("osm", result, label="overpass_raw", context={"lat": rounded_lat, "lon": rounded_lon, "radius_m": radius_m})
                     return result
             except (socket.timeout, urllib.error.URLError, TimeoutError) as e:
                 last_error = e
@@ -89,7 +95,8 @@ class InfrastructureService:
                 return {"elements": []}
         
         # All retries exhausted
-        logger.warning(f"[OSM] All {cls.OVERPASS_RETRIES} attempts failed. Last error: {last_error}")
+        logger.warning(f"[FEATURE_HEALTH] feature=osm_overpass status=all_retries_failed attempts={cls.OVERPASS_RETRIES} error={last_error}")
+        log_raw_data("osm", {"elements": [], "error": str(last_error)}, label="overpass_failed", context={"lat": rounded_lat, "lon": rounded_lon, "radius_m": radius_m, "attempts": cls.OVERPASS_RETRIES})
         return {"elements": []}  # Return empty result, don't block response
 
     @classmethod
@@ -164,7 +171,7 @@ class InfrastructureService:
                 results[key] = sorted(results[key], key=lambda x: x['distance_km'])[:5]
                 
             if any([results['hospitals'], results['fire_stations'], results['critical_infrastructure'], results['shelters']]):
-                logger.info(f"[OSM] Found {len(results['hospitals'])} hospitals, {len(results['fire_stations'])} fire stations, {len(results['critical_infrastructure'])} critical infrastructure near {lat}, {lon}")
+                logger.info(f"[FEATURE_HEALTH] feature=osm_overpass status=success hospitals={len(results['hospitals'])} fire_stations={len(results['fire_stations'])} critical_infrastructure={len(results['critical_infrastructure'])} location=({lat}, {lon})")
             else:
                 logger.debug(f"[OSM] No infrastructure found near {lat}, {lon} (this is OK - OSM may not have data for remote areas)")
             
@@ -172,5 +179,5 @@ class InfrastructureService:
             
         except Exception as e:
             # Non-blocking failure: log and return empty results
-            logger.warning(f"[OSM] Exception during facility lookup: {type(e).__name__}: {e}")
+            logger.warning(f"[FEATURE_HEALTH] feature=osm_overpass status=error error={type(e).__name__}: {e}")
             return results  # Return empty dict, don't crash

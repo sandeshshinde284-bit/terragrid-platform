@@ -2,8 +2,8 @@
   <div class="ai-tab">
     <div class="tab-intro">
       <div>
-        <h2>AI Insights</h2>
-        <p>Executive tactical summaries and high-level directives synthesized from live multi-source telemetry.</p>
+        <h2>{{ $t('detail.tabTitles.insights') }}</h2>
+        <p>{{ $t('detail.tabTitles.insightsDesc') }}</p>
       </div>
     </div>
 
@@ -14,22 +14,22 @@
     </div>
     <div v-else-if="aiError" class="error-state">
       <span class="error-icon">⚠</span>
-      <p>AI analysis unavailable: {{ aiError }}</p>
+      <p>{{ $t('insightsTab.aiUnavailable') }} {{ aiError }}</p>
     </div>
     <div v-else-if="aiPlan" class="real-ai-content">
       <!-- AI STATUS WARNINGS -->
       <div v-if="aiPlan?.is_fallback" class="status-banner offline-banner">
         <span class="banner-icon">⚠️</span>
         <div>
-          <strong>AI COGNITIVE ENGINE OFFLINE</strong>
-          <span>Google Vertex AI cluster unreachable. Data shown is <strong>pre-computed reference only</strong> and NOT actively tracking this incident.</span>
+          <strong>{{ $t('insightsTab.aiOfflineTitle') }}</strong>
+          <span>{{ $t('insightsTab.aiOfflineDesc') }}</span>
         </div>
       </div>
       <div v-else-if="aiPlan?.is_mock_demo" class="status-banner demo-banner">
         <span class="banner-icon">📋</span>
         <div>
-          <strong>DEMONSTRATION MODE</strong>
-          <span>This is <strong>sample/demo data</strong> for testing purposes. Not real incident analysis.</span>
+          <strong>{{ $t('insightsTab.demoModeTitle') }}</strong>
+          <span>{{ $t('insightsTab.demoModeDesc') }}</span>
         </div>
       </div>
       
@@ -43,7 +43,7 @@
           <article class="glass-panel" style="margin-bottom: 18px;">
             <div class="panel-heading">
               <div>
-                <span class="section-kicker">EXECUTIVE SUMMARY</span>
+                <span class="section-kicker">{{ $t('insightsTab.executiveSummary') }}</span>
                 <h2 style="font-size: 18px; margin: 4px 0 0 0; color: #f8fafc; line-height: 1.4;">{{ aiPlan.country_context }}</h2>
               </div>
             </div>
@@ -55,8 +55,8 @@
           <article class="glass-panel">
             <div class="panel-heading">
               <div>
-                <span class="section-kicker">EVACUATION PROTOCOL</span>
-                <h3 style="margin:0; font-size: 16px; color:#f8fafc;">Critical Transit Instructions</h3>
+                <span class="section-kicker">{{ $t('insightsTab.evacuationProtocol') }}</span>
+                <h3 style="margin:0; font-size: 16px; color:#f8fafc;">{{ $t('insightsTab.criticalTransit') }}</h3>
               </div>
             </div>
             <div class="text-content-block alt-block">
@@ -70,8 +70,8 @@
           <article class="glass-panel action-panel" style="height: 100%;">
             <div class="panel-heading" style="margin-bottom: 24px;">
               <div>
-                <span class="section-kicker">TACTICAL DIRECTIVES</span>
-                <h3 style="margin:0; font-size: 16px; color:#f8fafc;">Immediate Action Plan</h3>
+                <span class="section-kicker">{{ $t('insightsTab.tacticalDirectives') }}</span>
+                <h3 style="margin:0; font-size: 16px; color:#f8fafc;">{{ $t('insightsTab.immediateActionPlan') }}</h3>
               </div>
               <span class="ai-chip" :class="getStatusClass()">{{ getStatusLabel() }}</span>
             </div>

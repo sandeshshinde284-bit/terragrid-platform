@@ -17,11 +17,55 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ''
     GEMINI_MODEL: str = 'gemini-2.5-flash'
     
-    # Notifications
-    RESEND_API_KEY: str = ''
-    RESEND_FROM_EMAIL: str = 'onboarding@resend.dev'
-    RESEND_FROM_NAME: str = 'TerraGrid Alerts'
+    # DEPRECATED, no longer read anywhere - notifications.py (both
+    # send_critical_alert for RESPONSE phase and send_alert_email for
+    # PREPARE phase's Agency Alerts) now sends exclusively via Gmail SMTP
+    # (GMAIL_SMTP_* below). Resend's onboarding@resend.dev sender could only
+    # deliver to the Resend account's own email (verified against Resend's
+    # docs - https://resend.com/docs/knowledge-base/403-error-resend-dev-domain),
+    # so it could never reach recipients added at runtime via Settings.
+    # RESEND_API_KEY: str = ''
+    # RESEND_FROM_EMAIL: str = 'onboarding@resend.dev'
+    # RESEND_FROM_NAME: str = 'TerraGrid Alerts'
+    # DEPRECATED, no longer read anywhere - RESPONSE phase's critical-alert
+    # recipients are now managed at runtime via the Settings screen
+    # (CRITICAL_EMAIL_CHANNEL in backend/models/recipient.py's AlertRecipient
+    # table) instead of this env var. Re-add any existing recipients through
+    # Settings after this change ships; this value is not migrated automatically.
     ALERT_RECIPIENTS: str = 'test@example.com'
+
+    # Gmail SMTP - sends BOTH RESPONSE phase's automatic critical-incident
+    # email (send_critical_alert) and PREPARE phase's manual Agency Alerts
+    # email (send_alert_email), in notifications.py. Resend's
+    # onboarding@resend.dev sender could only deliver to the Resend
+    # account's own email, so it could never reach recipients added at
+    # runtime via Settings. Gmail SMTP has no such restriction: any address
+    # a GMAIL_SMTP_USER account in good standing sends to will go through.
+    # GMAIL_SMTP_APP_PASSWORD is a Gmail "App Password" (requires 2-Step
+    # Verification on that Google account), NOT the account's real password -
+    # never put the real password here.
+    GMAIL_SMTP_USER: str = ''
+    GMAIL_SMTP_APP_PASSWORD: str = ''
+    GMAIL_SMTP_FROM_NAME: str = 'TerraGrid Alerts'
+
+    # DEPRECATED, no longer read anywhere - Agency Alerts recipients are now
+    # managed at runtime via the Settings screen (backend/models/recipient.py's
+    # AlertRecipient table) instead of this env var. Re-add any existing
+    # recipients through Settings after this change ships; this value is
+    # not migrated automatically.
+    EMAIL_ALERT_RECIPIENTS: str = ''
+
+    # WhatsApp (via WAHA - self-hosted WhatsApp HTTP API, see docker-compose.yml)
+    # WAHA_API_URL points at the WAHA container: http://waha:3000 when the
+    # backend itself runs inside docker-compose, http://localhost:3000 when
+    # the backend runs on the host with `docker-compose up waha` alongside it.
+    WAHA_API_URL: str = 'http://localhost:3000'
+    WAHA_SESSION: str = 'default'
+    # Must match the WAHA_API_KEY set on the waha service in docker-compose.yml
+    WAHA_API_KEY: str = ''
+    # DEPRECATED, no longer read anywhere - see EMAIL_ALERT_RECIPIENTS above,
+    # same reason (Settings screen replaces this env var).
+    WHATSAPP_RECIPIENTS: str = ''
     
     # External APIs
     OPENWEATHERMAP_API_KEY: str = ''

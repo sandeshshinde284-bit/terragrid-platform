@@ -5,21 +5,45 @@
       style="background: rgba(56, 189, 248, 0.15); border-bottom: 1px solid rgba(56, 189, 248, 0.4); color: #bae6fd; padding: 6px 16px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-align: center;"
     >
       <span>ℹ️</span>
-      <span><strong>SIMULATION MODE ACTIVE</strong>: Showing demonstration data for evaluation. Real-time sensor streaming is paused.</span>
+      <span><strong>{{ $t('header.simulationModeActive') }}</strong>: {{ $t('header.simulationModeDesc') }}</span>
     </div>
 
     <header class="header glass-panel">
     <div class="header-left">
       <div class="logo" @click="goHome" style="cursor: pointer;">
         <span class="logo-icon">🌍</span>
-        <h1>TERRAGRID INTELLIGENCE</h1>
+        <h1>{{ $t('app.title') }}</h1>
       </div>
       <nav class="nav-menu">
-        <RouterLink to="/" :class="{ active: isActive('/') }">📊 Dashboard</RouterLink>
-        <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 Incidents</RouterLink>
-        <RouterLink to="/map" :class="{ active: isActive('/map') }">◎ Live Map</RouterLink>
-        <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">⌁ Deep Analysis</RouterLink>
-        <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 Alerts</RouterLink>
+        <!-- PHASE SELECTOR - the only thing left in the main header bar now.
+             Feature tabs moved to their own strip below (.tools-bar) so the
+             header stays a single compact row instead of growing tall with
+             a second row stacked inside the same glass-panel box. -->
+        <div class="phase-selector">
+          <button
+            class="phase-btn"
+            :class="{ active: activePhase === 'prepare' }"
+            @click="router.push('/prepare/forecast')"
+          >
+            {{ $t('header.phases.prepare') }}
+          </button>
+          <button
+            class="phase-btn"
+            :class="{ active: activePhase === 'response' }"
+            @click="router.push('/')"
+          >
+            {{ $t('header.phases.response') }}
+          </button>
+          <button
+            class="phase-btn roadmap"
+            :class="{ active: activePhase === 'roadmap' }"
+            @click="router.push('/roadmap')"
+            :title="$t('header.phases.predictRecoverTooltip')"
+          >
+            {{ $t('header.phases.predictRecover') }}
+            <span class="soon-badge">{{ $t('header.soon') }}</span>
+          </button>
+        </div>
       </nav>
     </div>
 
@@ -36,20 +60,31 @@
 
     <div class="header-right">
 
-      <button 
+      <button
         class="header-btn"
         @click="toggle3D"
         :class="{ active: is3D }"
         title="Toggle 2D/3D view"
       >
-        {{ is3D ? '3D' : '2D' }}
+        {{ is3D ? $t('header.3d') : $t('header.2d') }}
       </button>
+
+      <RouterLink to="/settings" class="header-btn settings-link" :class="{ active: isActive('/settings') }" title="Settings">
+        ⚙️
+      </RouterLink>
+
+      <!-- Desktop theme-toggle entry point intentionally deferred: light mode
+           still has broken/invisible text on several screens (Dashboard,
+           IncidentsScreen, MapFullScreen, AlertsScreen, AnalysisScreen, and
+           IncidentDetail's main container) that haven't been swept to the
+           theme CSS variables yet. Re-add this button once that sweep is
+           done. The mobile-drawer toggle is left as-is (pre-existing). -->
 
       <label class="language-selector" for="header-language">
         <span>🌐</span>
-        <select 
-          id="header-language" 
-          v-model="selectedLanguage" 
+        <select
+          id="header-language"
+          v-model="selectedLanguage"
           @change="handleLanguageChange"
           aria-label="Select language"
         >
@@ -65,60 +100,187 @@
     </div>
   </header>
 
+  <!-- ACTIVE TOOLS - a totally separate strip from the header above, not
+       nested in the same glass-panel box. Mirrors the mobile drawer's
+       existing section labels (see mobile-nav-section-title below) so a
+       first-time viewer has an explicit word for what this row is. -->
+  <div class="tools-bar" v-if="activePhase !== 'settings'">
+    <span class="tools-label">{{ $t('header.activeTools') }}</span>
+
+    <div class="nav-row" v-if="activePhase === 'prepare'">
+      <div class="nav-group">
+        <RouterLink to="/prepare/forecast" :class="{ active: isActive('/prepare/forecast') }">🌦️ {{ $t('header.tools.forecast') }}</RouterLink>
+        <RouterLink to="/prepare/risk-timeline" :class="{ active: isActive('/prepare/risk-timeline') }">📈 {{ $t('header.tools.riskTimeline') }}</RouterLink>
+        <RouterLink to="/prepare/checklist" :class="{ active: isActive('/prepare/checklist') }">✅ {{ $t('header.tools.checklist') }}</RouterLink>
+        <RouterLink to="/prepare/agency-alerts" :class="{ active: isActive('/prepare/agency-alerts') }">📨 {{ $t('header.tools.agencyAlerts') }}</RouterLink>
+      </div>
+    </div>
+
+    <div class="nav-row" v-if="activePhase === 'response'">
+      <div class="nav-group">
+        <RouterLink to="/" :class="{ active: isActive('/') }">📊 {{ $t('header.tools.dashboard') }}</RouterLink>
+        <RouterLink to="/incidents" :class="{ active: isActive('/incidents') }">📋 {{ $t('header.tools.incidents') }}</RouterLink>
+        <RouterLink to="/map" :class="{ active: isActive('/map') }">🗺️ {{ $t('header.tools.map') }}</RouterLink>
+        <RouterLink to="/analysis" :class="{ active: isActive('/analysis') }">📈 {{ $t('header.tools.analysis') }}</RouterLink>
+        <RouterLink to="/alerts" :class="{ active: isActive('/alerts') }">📢 {{ $t('header.tools.alerts') }}</RouterLink>
+      </div>
+    </div>
+
+    <div class="nav-row nav-row-roadmap" v-if="activePhase === 'roadmap'">
+      <div class="nav-group nav-group-disabled">
+        <span class="nav-roadmap-badge">{{ $t('header.roadmap.predictSoon') }}</span>
+        <span class="nav-roadmap-badge">{{ $t('header.roadmap.recoverSoon') }}</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Mobile Navigation Drawer -->
   <Transition name="slide-left">
     <nav v-if="mobileMenuOpen" class="mobile-nav-drawer">
-      <RouterLink 
-        to="/" 
-        :class="{ active: isActive('/') }"
-        @click="closeMobileMenu"
-      >
-        📊 Dashboard
-      </RouterLink>
-      <RouterLink 
-        to="/incidents" 
-        :class="{ active: isActive('/incidents') }"
-        @click="closeMobileMenu"
-      >
-        📋 Incidents
-      </RouterLink>
-      <RouterLink 
-        to="/map" 
-        :class="{ active: isActive('/map') }"
-        @click="closeMobileMenu"
-      >
-        🗺️ Map
-      </RouterLink>
-      <RouterLink 
-        to="/analysis" 
-        :class="{ active: isActive('/analysis') }"
-        @click="closeMobileMenu"
-      >
-        📈 Analysis
-      </RouterLink>
-      <RouterLink 
-        to="/alerts" 
-        :class="{ active: isActive('/alerts') }"
-        @click="closeMobileMenu"
-      >
-        🚨 Alerts
-      </RouterLink>
+      <!-- Mobile Nav Section with Phase Switcher -->
+      <div class="mobile-phase-selector">
+        <button
+          :class="{ active: activePhase === 'prepare' }"
+          @click="router.push('/prepare/forecast')"
+        >
+          {{ $t('header.phases.prepare') }}
+        </button>
+        <button
+          :class="{ active: activePhase === 'response' }"
+          @click="router.push('/')"
+        >
+          {{ $t('header.phases.response') }}
+        </button>
+        <button
+          :class="{ active: activePhase === 'roadmap' }"
+          @click="router.push('/roadmap'); closeMobileMenu()"
+        >
+          {{ $t('header.phases.predictRecover') }}
+          <span class="soon-badge">{{ $t('header.soon') }}</span>
+        </button>
+      </div>
+
+      <div class="menu-divider"></div>
+
+      <!-- Prepare Section -->
+      <div class="mobile-nav-section" v-if="activePhase === 'prepare'">
+        <div class="mobile-nav-section-title">{{ $t('header.phases.prepare') }}</div>
+        <RouterLink
+          to="/prepare/forecast"
+          :class="{ active: isActive('/prepare/forecast') }"
+          @click="closeMobileMenu"
+        >
+          🌦️ {{ $t('header.tools.forecast') }}
+        </RouterLink>
+        <RouterLink
+          to="/prepare/risk-timeline"
+          :class="{ active: isActive('/prepare/risk-timeline') }"
+          @click="closeMobileMenu"
+        >
+          📈 {{ $t('header.tools.riskTimeline') }}
+        </RouterLink>
+        <RouterLink
+          to="/prepare/checklist"
+          :class="{ active: isActive('/prepare/checklist') }"
+          @click="closeMobileMenu"
+        >
+          ✅ {{ $t('header.tools.checklist') }}
+        </RouterLink>
+        <RouterLink
+          to="/prepare/agency-alerts"
+          :class="{ active: isActive('/prepare/agency-alerts') }"
+          @click="closeMobileMenu"
+        >
+          📨 {{ $t('header.tools.agencyAlerts') }}
+        </RouterLink>
+      </div>
+
+      <!-- Response Section -->
+      <div class="mobile-nav-section" v-if="activePhase === 'response'">
+        <div class="mobile-nav-section-title">{{ $t('header.phases.response') }}</div>
+        <RouterLink
+          to="/"
+          :class="{ active: isActive('/') }"
+          @click="closeMobileMenu"
+        >
+          📊 {{ $t('header.tools.dashboard') }}
+        </RouterLink>
+        <RouterLink
+          to="/incidents"
+          :class="{ active: isActive('/incidents') }"
+          @click="closeMobileMenu"
+        >
+          📋 {{ $t('header.tools.incidents') }}
+        </RouterLink>
+        <RouterLink
+          to="/map"
+          :class="{ active: isActive('/map') }"
+          @click="closeMobileMenu"
+        >
+          🗺️ {{ $t('header.tools.mapShort') }}
+        </RouterLink>
+        <RouterLink
+          to="/analysis"
+          :class="{ active: isActive('/analysis') }"
+          @click="closeMobileMenu"
+        >
+          📈 {{ $t('header.tools.analysisShort') }}
+        </RouterLink>
+        <RouterLink
+          to="/alerts"
+          :class="{ active: isActive('/alerts') }"
+          @click="closeMobileMenu"
+        >
+          🚨 {{ $t('header.tools.alerts') }}
+        </RouterLink>
+      </div>
 
       <!-- Settings Section Divider -->
       <div class="menu-divider"></div>
 
       <!-- Settings -->
       <div class="settings-section">
-        <div class="settings-title">⚙️ Settings</div>
-        
+        <div class="settings-title">⚙️ {{ $t('header.settings') }}</div>
+
+        <RouterLink
+          to="/settings"
+          class="settings-item"
+          :class="{ active: isActive('/settings') }"
+          @click="closeMobileMenu"
+        >
+          <span>⚙️</span>
+          <span>{{ $t('header.settings') }}</span>
+        </RouterLink>
+
+        <!-- Mobile Language Selector -->
+        <label class="settings-item language-selector-mobile" for="mobile-header-language">
+          <span>🌐</span>
+          <span>{{ $t('header.language') }}:</span>
+          <select
+            id="mobile-header-language"
+            v-model="selectedLanguage"
+            @change="handleLanguageChange"
+            aria-label="Select language"
+            style="margin-left: auto; background: #0f172a; color: var(--accent-cyan); border: 1px solid rgba(56,189,248,0.4); border-radius: 4px; padding: 4px;"
+          >
+            <option value="EN">English</option>
+            <option value="DE">Deutsch</option>
+            <option value="ES">Español</option>
+            <option value="FR">Français</option>
+            <option value="IT">Italiano</option>
+            <option value="PL">Polski</option>
+            <option value="SV">Svenska</option>
+          </select>
+        </label>
+
         <!-- Dark/Light Mode Toggle -->
-        <button 
+        <button
           class="settings-item"
           @click="toggleTheme"
           title="Toggle dark/light mode"
         >
           <span>{{ appStore.isDarkMode ? '☀️' : '🌙' }}</span>
-          <span>{{ appStore.isDarkMode ? 'Light Mode' : 'Dark Mode' }}</span>
+          <span>{{ appStore.isDarkMode ? $t('header.lightMode') : $t('header.darkMode') }}</span>
         </button>
       </div>
     </nav>
@@ -131,7 +293,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { useAppStore } from '@/stores'
 import { useI18n } from 'vue-i18n'
@@ -141,8 +303,24 @@ const route = useRoute()
 const appStore = useAppStore()
 const { locale } = useI18n()
 const selectedLanguage = ref(locale.value.toUpperCase())
+
+watch(locale, (newVal) => {
+  selectedLanguage.value = newVal.toUpperCase()
+})
 const is3D = computed(() => appStore.viewMode === '3d')
 const mobileMenuOpen = ref(false)
+
+// Detect active phase based on current route. All three phases (prepare,
+// response, roadmap) are now real routes with meta.phase set, so this is
+// the single source of truth - no local toggle state needed.
+const activePhase = computed(() => {
+  const phaseMeta = route.meta.phase as string | undefined
+  if (phaseMeta === 'prepare' || phaseMeta === 'roadmap' || phaseMeta === 'settings') {
+    return phaseMeta
+  }
+  // Default to 'response' for all other routes (/, /incidents, /map, etc.)
+  return 'response'
+})
 
 const goHome = () => {
   router.push('/')
@@ -213,40 +391,186 @@ const closeMobileMenu = () => {
 
 .nav-menu {
   display: flex;
-  gap: 8px;
   align-items: center;
 }
 
-.nav-menu :deep(a) {
+.phase-selector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 0;
+}
+
+.phase-btn {
+  padding: 8px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: 2px solid var(--glass-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.phase-btn:hover:not(:disabled) {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(30, 144, 255, 0.1);
+}
+
+.phase-btn.active {
+  /* Flat accent fill instead of a blue gradient + colored shadow - matches
+     every other "active" control in the app (filter chips, sort toggles),
+     so the phase switch doesn't stand out as a one-off style. */
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  color: #04141a;
+  font-weight: 700;
+}
+
+.phase-btn.roadmap {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.phase-btn.roadmap.active {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--glass-border);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+.soon-badge {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+  white-space: nowrap;
+}
+
+/* The feature tabs now live in .tools-bar, a separate strip entirely
+   outside the header's glass-panel box (see below) - that strip already
+   carries its own background/border, so .nav-row itself goes back to a
+   plain flex row instead of being its own nested boxed-within-a-box. */
+.nav-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 4px;
+  min-height: 32px;
+}
+
+.nav-row-roadmap {
+  height: auto;
+}
+
+/* ---- Active Tools strip - sibling of <header>, not nested inside it.
+   Keeping the phase selector and the feature tabs in two visually
+   separate elements (own background/border each) is what actually fixes
+   "the header is so big" - previously both lived inside the same
+   <header class="header glass-panel"> box, stacked as two rows, so the
+   whole thing grew tall and read as one dense block. This strip is its
+   own section, labelled, full width, so RESPONSE's 5 tabs never crowd a
+   box sized for the 3 phase buttons above it. */
+.tools-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  background: rgba(10, 14, 20, 0.55);
+  border-bottom: 1px solid var(--header-border, rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+}
+
+.tools-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+.tools-bar :deep(a) {
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 12px;
   font-weight: 600;
   padding: 6px 10px;
-  border-radius: 4px;
+  border-radius: 6px;
   transition: all 0.2s ease;
-  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
   white-space: nowrap;
   position: relative;
 }
 
-.nav-menu :deep(a:hover) {
+.tools-bar :deep(a:hover) {
   color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.15);
   border-color: var(--accent-cyan);
 }
 
-.nav-menu :deep(a.active) {
-  color: #ffffff;
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
-  border-color: var(--accent-cyan);
+/* Deliberately NOT the same vibrant gradient fill as .phase-btn.active -
+   now that the tools strip is a physically separate element from the
+   header (not just a visually-boxed row within it), a softer active
+   tint still reads clearly without needing the bold fill the phase
+   button uses one section up. */
+.tools-bar :deep(a.active) {
+  color: var(--accent-cyan, #22d3ee);
+  background: rgba(34, 211, 238, 0.14);
+  border-color: var(--accent-cyan, #22d3ee);
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+  box-shadow: none;
+}
+
+.nav-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-group-disabled {
+  opacity: 0.85;
+}
+
+.nav-roadmap-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px dashed var(--glass-border);
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .header-center {
   flex: 1;
   min-width: 0;
+}
+
+/* Hidden by default - only meant to appear below the 480px mobile
+   breakpoint (see @media (max-width: 480px) below, which sets
+   display: flex and gives .hamburger its actual icon styling). With no
+   default display rule here, this <button> had no explicit display at
+   all on desktop, so it rendered as a native, empty, un-styled browser
+   button - the .hamburger icon inside it only gets sized/styled inside
+   that same mobile media query, so outside of it this button collapsed
+   to a tiny default button nub sitting between the nav tabs and the
+   right-side controls. That's the stray dot that kept showing up there. */
+.mobile-menu-btn {
+  display: none;
 }
 
 .header-right {
@@ -258,8 +582,8 @@ const closeMobileMenu = () => {
 }
 
 .header-btn {
-  background: transparent;
-  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid var(--glass-border);
   color: var(--text-primary);
   padding: 6px 10px;
   border-radius: 4px;
@@ -287,6 +611,13 @@ const closeMobileMenu = () => {
   cursor: not-allowed;
 }
 
+.settings-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 /* Mock/Live Toggle Special Styling */
 .mock-toggle {
   font-weight: 700;
@@ -296,17 +627,15 @@ const closeMobileMenu = () => {
 }
 
 .mock-toggle.active {
-  background: rgba(255, 193, 7, 0.2);
+  background: rgba(255, 193, 7, 0.15);
   border-color: #ffc107;
   color: #ffc107;
-  box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
 }
 
 .mock-toggle:not(.active) {
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(16, 185, 129, 0.12);
   border-color: #10b981;
   color: #10b981;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
 }
 
 .settings-btn {
@@ -333,7 +662,6 @@ const closeMobileMenu = () => {
 
 .language-selector:hover {
   background: rgba(30, 144, 255, 0.2);
-  box-shadow: 0 0 12px rgba(30, 144, 255, 0.3);
 }
 
 .language-selector select {
@@ -377,6 +705,15 @@ const closeMobileMenu = () => {
     gap: 12px;
   }
 
+  .tools-bar {
+    padding: 6px 12px;
+    gap: 10px;
+  }
+
+  .tools-label {
+    font-size: 9px;
+  }
+
   .logo h1 {
     font-size: 14px;
   }
@@ -385,11 +722,12 @@ const closeMobileMenu = () => {
     font-size: 20px;
   }
 
-  .nav-menu {
-    gap: 4px;
+  .tools-bar :deep(a) {
+    font-size: 10px;
+    padding: 4px 8px;
   }
 
-  .nav-menu :deep(a) {
+  .nav-roadmap-badge {
     font-size: 10px;
     padding: 4px 8px;
   }
@@ -434,6 +772,10 @@ const closeMobileMenu = () => {
   }
 
   .nav-menu {
+    display: none;
+  }
+
+  .tools-bar {
     display: none;
   }
 
@@ -525,6 +867,46 @@ const closeMobileMenu = () => {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
+  .mobile-phase-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .mobile-phase-selector button {
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border: 2px solid var(--glass-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+  }
+
+  .mobile-phase-selector button:hover:not(:disabled) {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    background: rgba(30, 144, 255, 0.1);
+  }
+
+  .mobile-phase-selector button.active {
+    background: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+    color: #04141a;
+    font-weight: 700;
+  }
+
+  .mobile-phase-selector button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    border-style: dashed;
+  }
+
   .mobile-nav-drawer :deep(a) {
     color: var(--text-secondary);
     text-decoration: none;
@@ -548,7 +930,7 @@ const closeMobileMenu = () => {
 
   .mobile-nav-drawer :deep(a.active) {
     background: linear-gradient(90deg, rgba(30, 144, 255, 0.3), transparent);
-    color: #ffffff;
+    color: var(--text-primary);
     border-left-color: var(--accent-cyan);
     font-weight: 700;
   }
@@ -559,6 +941,24 @@ const closeMobileMenu = () => {
     background: rgba(255, 255, 255, 0.1);
     margin: 8px 0;
   }
+
+  /* Mobile Nav Sections (Prepare / Response / Roadmap groups) */
+  .mobile-nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .mobile-nav-section-title {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 16px 4px 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    opacity: 0.8;
+  }
+
 
   /* Settings Section */
   .settings-section {
@@ -603,7 +1003,7 @@ const closeMobileMenu = () => {
 
   .settings-item:active {
     background: linear-gradient(90deg, rgba(30, 144, 255, 0.3), transparent);
-    color: #ffffff;
+    color: var(--text-primary);
     border-left-color: var(--accent-cyan);
   }
 

@@ -102,6 +102,7 @@
 
 <script>
 import { defineComponent } from 'vue'
+import { logError } from '@/utils/logger'
 
 export default defineComponent({
   name: 'SafeRoutesViewer',
@@ -141,7 +142,7 @@ export default defineComponent({
         }
       } catch (err) {
         this.error = `Failed to fetch routes: ${err.message}`
-        console.error('Routes fetch error:', err)
+        logError('Could not fetch safe evacuation routes', err)
       } finally {
         this.loading = false
       }
@@ -209,7 +210,7 @@ export default defineComponent({
 
 <style scoped>
 .safe-routes-viewer {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  background: var(--bg-panel);
   border-radius: 8px;
   padding: 20px;
   color: #e2e8f0;
@@ -229,14 +230,14 @@ export default defineComponent({
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .close-btn {
   background: none;
   border: none;
   font-size: 24px;
-  color: #94a3b8;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -250,7 +251,7 @@ export default defineComponent({
 
 .close-btn:hover {
   background: rgba(148, 163, 184, 0.1);
-  color: #f1f5f9;
+  color: var(--text-primary);
 }
 
 .loading-state,
@@ -289,7 +290,7 @@ export default defineComponent({
 }
 
 .route-card:hover {
-  background: rgba(51, 65, 85, 0.8);
+  background: var(--bg-subtle);
   border-color: #475569;
 }
 
@@ -333,17 +334,17 @@ export default defineComponent({
 }
 
 .info-label {
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .info-value {
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
 .route-details {
-  background: rgba(51, 65, 85, 0.5);
+  background: var(--bg-subtle);
   border: 1px solid #334155;
   border-radius: 6px;
   padding: 14px;
@@ -370,7 +371,7 @@ export default defineComponent({
 .section-label {
   font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -393,11 +394,11 @@ export default defineComponent({
 }
 
 .metric-label {
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 
 .metric-value {
-  color: #f1f5f9;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -412,7 +413,7 @@ export default defineComponent({
 }
 
 .recommendations li {
-  color: #f1f5f9;
+  color: var(--text-primary);
   padding-left: 0;
 }
 

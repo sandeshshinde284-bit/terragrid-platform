@@ -36,9 +36,46 @@ services:
     networks:
       - terragrid-network
 
+  # WAHA - WhatsApp HTTP API (self-hosted, free, open-source)
+  # Powers the "Send via WhatsApp" button on Agency Alerts. Not part of the
+  # Dockerfile/Cloud Run deploy - this keeps a real WhatsApp Web session
+  # alive (linked by scanning a QR code once), which needs persistent
+  # storage and an always-on process, not a scale-to-zero container.
+  #
+  # One-time setup (run from the project root):
+  #   1. Generate real credentials into waha/.env (NOT this project's own
+  #      root .env - keeping it in its own subfolder means the two never
+  #      collide or get mixed up):
+  #        mkdir -p waha
+  #        docker run --rm -v "$(pwd)/waha":/app/env devlikeapro/waha init-waha /app/env
+  #      This prints a Dashboard username/password and an API key, and
+  #      writes them into waha/.env. waha/.env is gitignored automatically
+  #      (the root .gitignore's bare ".env" pattern matches at any depth) -
+  #      never commit it.
+  #   2. Copy the API key it printed into this project's own root .env as
+  #      WAHA_API_KEY=<that key> - the backend (backend/services/whatsapp.py)
+  #      needs the same key to authenticate its requests to WAHA.
+  #   3. docker-compose up waha, then open http://localhost:3000/dashboard
+  #      (login with the generated Dashboard username/password) and scan the
+  #      QR code to link a real WhatsApp number to the "default" session.
+  waha:
+    image: devlikeapro/waha
+    container_name: terragrid-waha
+    env_file:
+      - path: ./waha/.env
+        required: false
+    ports:
+      - "3000:3000"
+    volumes:
+      - waha_sessions:/app/.sessions
+    restart: unless-stopped
+    networks:
+      - terragrid-network
+
 volumes:
   postgres_data:
   redis_data:
+  waha_sessions:
 
 networks:
   terragrid-network:

@@ -2,8 +2,8 @@
   <div class="map-tab">
     <div class="tab-intro">
       <div>
-        <h2>Evacuation Routes</h2>
-        <p>Real-time calculated transit clearance times, primary corridors, and bottleneck choke-points.</p>
+        <h2>{{ $t('detail.tabTitles.map') }}</h2>
+        <p>{{ $t('detail.tabTitles.mapDesc') }}</p>
       </div>
     </div>
 
@@ -16,7 +16,7 @@
       <div class="content-grid two-columns">
         <article class="glass-panel" style="padding: 20px;">
           <div class="panel-heading">
-            <div><span class="section-kicker">SAFE TRANSIT</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Primary Evacuation Corridor</h3></div>
+            <div><span class="section-kicker">{{ $t('mapTab.safeTransit') }}</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">{{ $t('mapTab.primaryCorridor') }}</h3></div>
             <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">EVAC-ROUTE-01</span>
           </div>
           <div class="evac-route-details">
@@ -24,17 +24,17 @@
             <div class="route-highlight" style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
               <span class="route-icon" style="font-size: 24px;">🛣️</span>
               <div style="flex: 1;">
-                <strong style="color: #38bdf8; font-size: 16px;">{{ deepDossier.evacuation_corridors.primary_corridor || 'Primary Route TBD' }}</strong>
-                <small style="display: block; color: #94a3b8; font-size: 14px;">Designated Primary Outbound Corridor</small>
+                <strong style="color: #38bdf8; font-size: 16px;">{{ deepDossier.evacuation_corridors.primary_corridor || $t('mapTab.primaryRouteTbd') }}</strong>
+                <small style="display: block; color: #94a3b8; font-size: 14px;">{{ $t('mapTab.designatedPrimary') }}</small>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
                   <div style="background: rgba(52, 211, 153, 0.1); padding: 6px 8px; border-radius: 4px;">
-                    <small style="color: #94a3b8; font-size: 12px;">CAPACITY</small>
+                    <small style="color: #94a3b8; font-size: 12px;">{{ $t('mapTab.capacity') }}</small>
                     <div style="color: #4ade80; font-weight: 600; font-size: 14px;">
                       {{ getCapacityDisplay(deepDossier.evacuation_corridors.capacity_vehicles_per_hour) }}/hr
                     </div>
                   </div>
                   <div style="background: rgba(59, 130, 246, 0.1); padding: 6px 8px; border-radius: 4px;">
-                    <small style="color: #94a3b8; font-size: 12px;">CLEARANCE</small>
+                    <small style="color: #94a3b8; font-size: 12px;">{{ $t('mapTab.clearance') }}</small>
                     <div style="color: #38bdf8; font-weight: 600; font-size: 14px;">
                       {{ getClearanceTime(deepDossier.evacuation_corridors) }}
                     </div>
@@ -47,17 +47,17 @@
             <div class="route-highlight alt" style="display: flex; gap: 12px; align-items: center; margin-bottom: 14px;">
               <span class="route-icon" style="font-size: 24px;">🔀</span>
               <div style="flex: 1;">
-                <strong style="color: #cbd5e1; font-size: 16px;">{{ deepDossier.evacuation_corridors.alternative_route || 'Secondary Route TBD' }}</strong>
-                <small style="display: block; color: #94a3b8; font-size: 14px;">Secondary Contingency Route</small>
+                <strong style="color: #cbd5e1; font-size: 16px;">{{ deepDossier.evacuation_corridors.alternative_route || $t('mapTab.secondaryRouteTbd') }}</strong>
+                <small style="display: block; color: #94a3b8; font-size: 14px;">{{ $t('mapTab.secondaryContingency') }}</small>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
                   <div style="background: rgba(168, 85, 247, 0.1); padding: 6px 8px; border-radius: 4px;">
-                    <small style="color: #94a3b8; font-size: 12px;">CAPACITY</small>
+                    <small style="color: #94a3b8; font-size: 12px;">{{ $t('mapTab.capacity') }}</small>
                     <div style="color: #d8b4fe; font-weight: 600; font-size: 14px;">
                       {{ getSecondaryCapacity(deepDossier.evacuation_corridors) }}/hr
                     </div>
                   </div>
                   <div style="background: rgba(168, 85, 247, 0.1); padding: 6px 8px; border-radius: 4px;">
-                    <small style="color: #94a3b8; font-size: 12px;">CLEARANCE</small>
+                    <small style="color: #94a3b8; font-size: 12px;">{{ $t('mapTab.clearance') }}</small>
                     <div style="color: #d8b4fe; font-weight: 600; font-size: 14px;">
                       {{ getSecondaryTime(deepDossier.evacuation_corridors) }}
                     </div>
@@ -70,13 +70,13 @@
             <div class="clearance-eta" style="margin-top: 16px; padding: 12px; background: rgba(14, 165, 233, 0.15); border-radius: 8px; border-left: 3px solid #0ea5e9;">
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div>
-                  <small style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">TOTAL CLEARANCE TIME</small>
+                  <small style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">{{ $t('mapTab.totalClearanceTime') }}</small>
                   <strong style="display: block; font-size: 18px; color: #38bdf8; margin-top: 2px;">
                     {{ getClearanceTime(deepDossier.evacuation_corridors) }}
                   </strong>
                 </div>
                 <div>
-                  <small style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">TOTAL CAPACITY</small>
+                  <small style="color: #94a3b8; font-size: 12px; text-transform: uppercase;">{{ $t('mapTab.totalCapacity') }}</small>
                   <strong style="display: block; font-size: 18px; color: #4ade80; margin-top: 2px;">
                     {{ getTotalCapacity(deepDossier.evacuation_corridors) }}/hr
                   </strong>
@@ -91,7 +91,7 @@
 
         <article class="glass-panel" style="padding: 20px;">
           <div class="panel-heading">
-            <div><span class="section-kicker">HAZARD WARNING</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Critical Choke-Points & Assembly Zones</h3></div>
+            <div><span class="section-kicker">Hazard Warning</span><h3 style="margin: 0; font-size: 16px; color: #f8fafc;">Critical Choke-Points & Assembly Zones</h3></div>
             <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">EVAC-CHOKE-02</span>
           </div>
           <div class="choke-rally-grid">

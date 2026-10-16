@@ -123,29 +123,34 @@ const selectIncident = () => {
   height: 100%;
 }
 
-/* Type-based border colors */
+/* Type-based border colors - pulled from the shared --hazard-* palette in
+   style.css instead of per-component hex literals, and deliberately muted
+   so six hazard types don't read as six clashing neon colors on one
+   screen. Six distinct types still need six distinguishable colors (it's
+   the fastest way to tell hazard type apart at a glance in a dense grid),
+   so the fix here is toning them down, not removing the coding. */
 .incident-card.incident-type-fire {
-  border-color: #ff6b35;
+  border-color: var(--hazard-fire);
 }
 
 .incident-card.incident-type-flood {
-  border-color: #0066cc;
+  border-color: var(--hazard-flood);
 }
 
 .incident-card.incident-type-landslide {
-  border-color: #8b6f47;
+  border-color: var(--hazard-landslide);
 }
 
 .incident-card.incident-type-earthquake {
-  border-color: #9d4edd;
+  border-color: var(--hazard-earthquake);
 }
 
 .incident-card.incident-type-hurricane {
-  border-color: #00b4d8;
+  border-color: var(--hazard-hurricane);
 }
 
 .incident-card.incident-type-volcano {
-  border-color: #e63946;
+  border-color: var(--hazard-volcano);
 }
 
 .incident-card:hover {
@@ -155,9 +160,12 @@ const selectIncident = () => {
 }
 
 .incident-card.selected {
+  /* Was a 20px neon bloom (rgba(30,64,175,0.3)) on top of an already
+     colored type border - a tight highlight ring reads as "selected"
+     just as clearly without the glow. */
   border-color: var(--accent-cyan);
   background: rgba(30, 64, 175, 0.15);
-  box-shadow: 0 0 20px rgba(30, 64, 175, 0.3);
+  box-shadow: 0 0 0 1px var(--accent-cyan);
 }
 
 .card-header {
@@ -185,7 +193,7 @@ const selectIncident = () => {
   font-size: 14px;
   font-weight: 800;
   line-height: 1.2;
-  color: #ffffff;
+  color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -199,7 +207,7 @@ const selectIncident = () => {
 
 .location {
   font-size: 11px;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.3;
   flex: 1;
@@ -228,7 +236,7 @@ const selectIncident = () => {
 }
 
 .label {
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-weight: 700;
   text-transform: uppercase;
   font-size: 10px;
@@ -239,7 +247,7 @@ const selectIncident = () => {
 }
 
 .value {
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 800;
   font-size: 14px;
   text-align: right;
@@ -254,9 +262,12 @@ const selectIncident = () => {
 }
 
 .action-btn {
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  /* Flat accent fill, no gradient or glow - the DETAILS button doesn't
+     need to out-shine the hazard-type border and risk badges already on
+     this card. */
+  background: var(--accent-cyan);
   border: 2px solid var(--accent-cyan);
-  color: #ffffff;
+  color: #04141a;
   padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
@@ -266,12 +277,10 @@ const selectIncident = () => {
   margin-top: auto;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 12px rgba(30, 144, 255, 0.4);
 }
 
 .action-btn:hover {
-  background: linear-gradient(135deg, #1e3a8a, #0284c7);
-  box-shadow: 0 4px 20px rgba(30, 144, 255, 0.6);
+  background: #26c6da;
   transform: translateY(-2px);
 }
 

@@ -54,7 +54,7 @@ class IMDWeatherService:
 
         # Check if credentials are configured
         if not cls.IMD_API_KEY or not cls.IMD_API_JWT_TOKEN:
-            logger.warning(f"[IMD] API credentials not configured (IMD_API_KEY, IMD_API_JWT_TOKEN missing in .env)")
+            logger.warning(f"[FEATURE_HEALTH] feature=imd_weather status=no_credentials reason=IMD_API_KEY/IMD_API_JWT_TOKEN missing in .env, falling back to global sources")
             logger.info(f"[IMD] To enable IMD integration: Register at https://api.imd.gov.in/public/register.php and add credentials to .env")
             return []
 
@@ -103,7 +103,7 @@ class IMDWeatherService:
             
             # Parse IMD response and convert to standard format
             events = cls._parse_imd_response(data, latitude, longitude)
-            logger.info(f"[IMD] Retrieved {len(events)} weather events")
+            logger.info(f"[FEATURE_HEALTH] feature=imd_weather status=success events_found={len(events)} location=({latitude}, {longitude})")
             
             return events
 
@@ -111,7 +111,7 @@ class IMDWeatherService:
             logger.warning("[IMD] requests library not installed, skipping IMD API call")
             return []
         except Exception as e:
-            logger.error(f"[IMD] API call failed: {e}")
+            logger.error(f"[FEATURE_HEALTH] feature=imd_weather status=error error={type(e).__name__}: {e}")
             return []
 
     @staticmethod

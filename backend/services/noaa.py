@@ -30,7 +30,7 @@ class NOAAService:
         """
         # 12-Factor App: Strict Environment-Driven Mock Guard
         if use_mock:
-            logger.info(" NOAA Weather: 🧪 MOCK MODE ENABLED via .env")
+            logger.info("NOAA weather: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
             try:
                 import json
                 from pathlib import Path
@@ -64,11 +64,11 @@ class NOAAService:
                     if parsed:
                         events.append(parsed)
                 
-                logger.info(f" NOAA Weather: Fetched {len(events)} events")
+                logger.info(f"[FEATURE_HEALTH] feature=noaa_weather status=success events_found={len(events)}")
                 return events
                 
         except Exception as e:
-            logger.error(f" NOAA API Error: {str(e)}")
+            logger.error(f"[FEATURE_HEALTH] feature=noaa_weather status=error error={type(e).__name__}: {e}")
             # return cls._get_mock_data()
             return []
     

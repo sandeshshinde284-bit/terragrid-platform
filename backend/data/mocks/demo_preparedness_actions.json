@@ -1,0 +1,53 @@
+{
+  "risk_context": "MOCK DEMONSTRATION MODE: Thunderstorm risk escalates to RED by Day 3, with 46mm rainfall and 20m/s winds forecast - then eases back to GREEN by Day 5.",
+  "actions": [
+    {
+      "action": "Clear and desilt monsoon drains and culverts in known low-lying wards",
+      "agency": "Municipal Corporation - Drainage Dept",
+      "category": "DRAINAGE",
+      "priority": 1,
+      "deadline_day": 2,
+      "rationale": "22.5mm of rain is already forecast for Day 2, ahead of the Day 3 peak - blocked drains will turn that into standing water fast."
+    },
+    {
+      "action": "Pre-position mobile pumps and generators at historical waterlogging points",
+      "agency": "Disaster Management Authority",
+      "category": "INFRASTRUCTURE",
+      "priority": 1,
+      "deadline_day": 2,
+      "rationale": "46mm rain plus 20m/s wind gusts on Day 3 is likely to exceed normal drainage capacity in multiple zones simultaneously."
+    },
+    {
+      "action": "Alert hospitals to activate flood-response protocol and confirm IV fluid, antibiotic, and backup power stock",
+      "agency": "Health Department",
+      "category": "MEDICAL",
+      "priority": 1,
+      "deadline_day": 2,
+      "rationale": "Thunderstorm-linked power outages and waterborne illness risk both rise sharply once rainfall crosses the RED threshold."
+    },
+    {
+      "action": "Position rescue boats and trained divers near river embankments and underpasses",
+      "agency": "NDRF / Fire Department",
+      "category": "EVACUATION",
+      "priority": 2,
+      "deadline_day": 3,
+      "rationale": "Wind speed peaks at 19.8 m/s the same day rainfall peaks at 46mm - the combination is the highest-risk window for flash flooding."
+    },
+    {
+      "action": "Issue a public advisory to avoid underpasses and low-lying roads during the Day 3 peak window",
+      "agency": "Traffic Police / Municipal Corporation",
+      "category": "COMMUNICATION",
+      "priority": 2,
+      "deadline_day": 3,
+      "rationale": "Vehicles trapped in flooded underpasses are a leading cause of thunderstorm-related casualties in this risk band."
+    },
+    {
+      "action": "Stock community shelters with food, drinking water, and dry bedding for short-term displacement",
+      "agency": "Municipal Corporation - Relief Dept",
+      "category": "SUPPLIES",
+      "priority": 3,
+      "deadline_day": 3,
+      "rationale": "Risk eases back to GREEN by Day 5, so displacement is expected to be short - shelters need to cover roughly 48-72 hours."
+    }
+  ]
+}

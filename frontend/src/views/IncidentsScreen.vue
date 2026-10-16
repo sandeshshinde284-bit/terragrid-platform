@@ -49,7 +49,7 @@
 
           <div class="filter-group">
             <select v-model="filterCountry" class="filter-select">
-              <option value="">🌎 Filter by Country - All</option>
+              <option value="">🌎 {{ $t('incidents.filterByCountry') }} - All</option>
               <option v-for="country in availableCountries" :key="country" :value="country">
                 {{ country }}
               </option>
@@ -63,17 +63,44 @@
         <table class="incidents-table">
           <thead>
             <tr>
-              <th>Hazard Type</th>
-              <th>{{ $t('incidents.location') }}</th>
-              <th>Country</th>
-              <th>{{ $t('incidents.status') }}</th>
-              <th>{{ $t('incidents.threatScore') }}</th>
-              <th>{{ $t('incidents.affectedArea') }}</th>
-              <th>{{ $t('incidents.population') }}</th>
-              <th>{{ $t('incidents.trend') }}</th>
-              <th>{{ $t('incidents.detectionTime') }}</th>
-              <th>Recommended Action</th>
-              <th>Analysis</th>
+              <th @click="handleSort('type')" class="sortable">
+                {{ $t('incidents.hazardType') }}
+                <span v-if="sortBy === 'type'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('location')" class="sortable">
+                {{ $t('incidents.location') }}
+                <span v-if="sortBy === 'location'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('country')" class="sortable">
+                {{ $t('incidents.country') }}
+                <span v-if="sortBy === 'country'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('status')" class="sortable">
+                {{ $t('incidents.status') }}
+                <span v-if="sortBy === 'status'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('threatScore')" class="sortable">
+                {{ $t('incidents.threatScore') }}
+                <span v-if="sortBy === 'threatScore'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('affectedArea')" class="sortable">
+                {{ $t('incidents.affectedArea') }}
+                <span v-if="sortBy === 'affectedArea'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('population')" class="sortable">
+                {{ $t('incidents.population') }}
+                <span v-if="sortBy === 'population'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('trend')" class="sortable">
+                {{ $t('incidents.trend') }}
+                <span v-if="sortBy === 'trend'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th @click="handleSort('detectionTime')" class="sortable">
+                {{ $t('incidents.detectionTime') }}
+                <span v-if="sortBy === 'detectionTime'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+              </th>
+              <th>{{ $t('incidents.recommendedAction') }}</th>
+              <th>{{ $t('incidents.analysisCol') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -121,6 +148,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useEventsStore } from '@/stores'
+import { logWarn } from '@/utils/logger'
 import type { IncidentLevel1 } from '@/types'
 
 const router = useRouter()
@@ -132,6 +160,8 @@ const filterSeverity = ref('')
 const filterCountry = ref('')
 const selectedIncidentData = ref<IncidentLevel1 | null>(null)
 const expandedIncidentId = ref<string | null>(null)
+const sortBy = ref<string>('threatScore')
+const sortOrder = ref<'asc' | 'desc'>('desc')
 
 const iconMap: Record<string, string> = {
   flood: '💧',
@@ -301,6 +331,57 @@ const filteredIncidents = computed(() => {
     }
 
     return matchSearch && matchType && matchStatus && matchSeverity && matchCountry
+  }).sort((a, b) => {
+    let aVal: any, bVal: any
+
+    switch (sortBy.value) {
+      case 'threatScore':
+        aVal = a.threatScore ?? 0
+        bVal = b.threatScore ?? 0
+        break
+      case 'location':
+        aVal = (a.location || '').toLowerCase()
+        bVal = (b.location || '').toLowerCase()
+        break
+      case 'country':
+        aVal = (a.countryCode || '').toUpperCase()
+        bVal = (b.countryCode || '').toUpperCase()
+        break
+      case 'status':
+        aVal = (a.status || '').toLowerCase()
+        bVal = (b.status || '').toLowerCase()
+        break
+      case 'affectedArea':
+        aVal = a.affectedArea ?? 0
+        bVal = b.affectedArea ?? 0
+        break
+      case 'population':
+        aVal = a.affectedPopulation ?? 0
+        bVal = b.affectedPopulation ?? 0
+        break
+      case 'trend':
+        aVal = a.trend ?? 0
+        bVal = b.trend ?? 0
+        break
+      case 'detectionTime':
+        aVal = new Date(a.detectionTime).getTime()
+        bVal = new Date(b.detectionTime).getTime()
+        break
+      case 'type':
+        aVal = (a.type || '').toLowerCase()
+        bVal = (b.type || '').toLowerCase()
+        break
+      default:
+        return 0
+    }
+
+    // Handle string comparison
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      return sortOrder.value === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
+    }
+
+    // Handle numeric comparison
+    return sortOrder.value === 'asc' ? aVal - bVal : bVal - aVal
   })
 })
 
@@ -361,6 +442,15 @@ const viewIncident = (id: string) => {
 
 const toggleExpanded = (id: string) => {
   expandedIncidentId.value = expandedIncidentId.value === id ? null : id
+}
+
+const handleSort = (column: string) => {
+  if (sortBy.value === column) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = column
+    sortOrder.value = 'desc'
+  }
 }
 
 // Native browser internationalization for country names
@@ -428,7 +518,13 @@ onMounted(async () => {
       const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
       const res = await fetch(`${host}/api/v1/incidents?limit=50`)
       if (res.ok) {
-        const raw = await res.json()
+        const apiResponse = await res.json()
+        // GET /api/v1/incidents wraps results as {data: [...], pagination: {...}},
+        // not a bare array - same unwrapping bug already fixed in Dashboard.vue and
+        // IncidentDetail.vue this session (`raw.length` is undefined on the wrapper
+        // object, so this always silently skipped and the page showed "No new
+        // alerts" even with real incidents in the database).
+        const raw = apiResponse.data || apiResponse
         if (raw && raw.length > 0) {
           eventsStore.setIncidents(raw.map((e: any, idx: number) => ({
             id: e.id || `inc-${idx}`,
@@ -448,7 +544,7 @@ onMounted(async () => {
         }
       }
     } catch (err) {
-      console.warn('Failed to hydrate incidents in IncidentsScreen:', err)
+      logWarn('Could not hydrate incidents on the Incidents screen', err)
     }
   }
 })
@@ -508,7 +604,6 @@ onMounted(async () => {
 .search-input:focus {
   border-color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.1);
-  box-shadow: 0 0 12px rgba(30, 144, 255, 0.3);
   outline: none;
 }
 
@@ -567,18 +662,24 @@ onMounted(async () => {
   backdrop-filter: blur(12px);
   z-index: 10; /* CRITICAL: Keeps header strictly above the scrolling table rows */
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3); /* Adds a subtle drop shadow to separate header from scrolling content */
+  display: table-header-group;
+  width: 100%;
 }
 
 /* Ensure the wrapper doesn't clip the sticky header shadow */
 .incidents-table-wrapper {
   flex: 1;
   overflow: auto;
-  padding: 16px;
+  padding: 0 16px 16px 16px;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: block;
   position: relative; /* Helps context for sticky children */
+}
+
+.incidents-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .incidents-table th {
@@ -591,11 +692,33 @@ onMounted(async () => {
   text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.5px;
+  background: #0f172a;
+  position: sticky;
+  top: 0;
+  z-index: 11;
+}
+
+.incidents-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.incidents-table th.sortable:hover {
+  background: rgba(30, 144, 255, 0.2);
+}
+
+.sort-indicator {
+  margin-left: 6px;
+  color: var(--accent-cyan);
+  font-weight: 900;
+  font-size: 14px;
 }
 
 /* Specific Column Widths */
 .incidents-table th:nth-child(1),
 .incidents-table td:nth-child(1) {
+  width: 12%;
   min-width: 130px;
   text-align: left;
 }
@@ -621,28 +744,71 @@ onMounted(async () => {
 
 .incidents-table th:nth-child(2),
 .incidents-table td:nth-child(2) {
-  width: 20%;
+  width: 15%;
   min-width: 140px;
 }
 
 /* Column 3: Country */
 .incidents-table th:nth-child(3),
 .incidents-table td:nth-child(3) {
-  min-width: 150px;
+  width: 12%;
+  min-width: 110px;
+}
+
+/* Column 4: Status */
+.incidents-table th:nth-child(4),
+.incidents-table td:nth-child(4) {
+  width: 10%;
+  min-width: 90px;
+}
+
+/* Column 5: Threat Score */
+.incidents-table th:nth-child(5),
+.incidents-table td:nth-child(5) {
+  width: 10%;
+  min-width: 95px;
+}
+
+/* Column 6: Affected Area */
+.incidents-table th:nth-child(6),
+.incidents-table td:nth-child(6) {
+  width: 10%;
+  min-width: 110px;
+}
+
+/* Column 7: Population */
+.incidents-table th:nth-child(7),
+.incidents-table td:nth-child(7) {
+  width: 10%;
+  min-width: 100px;
+}
+
+/* Column 8: Trend */
+.incidents-table th:nth-child(8),
+.incidents-table td:nth-child(8) {
+  width: 10%;
+  min-width: 110px;
+}
+
+/* Column 9: Detection Time */
+.incidents-table th:nth-child(9),
+.incidents-table td:nth-child(9) {
+  width: 11%;
+  min-width: 130px;
 }
 
 /* Column 10: Recommended Action */
 .incidents-table th:nth-child(10),
 .incidents-table td:nth-child(10) {
-  min-width: 240px;
-  width: 280px;
+  width: 12%;
+  min-width: 180px;
 }
 
 /* Column 11: Analysis (View Button) */
 .incidents-table th:nth-child(11),
 .incidents-table td:nth-child(11) {
-  min-width: 140px;
-  width: 140px;
+  width: 12%;
+  min-width: 120px;
   text-align: center;
   white-space: nowrap;
 }
@@ -789,21 +955,18 @@ onMounted(async () => {
 }
 
 .status-badge.active {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: #0d9668;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .status-badge.monitoring {
-  background: linear-gradient(135deg, #3b82f6, #1e40af);
+  background: #2f5fc2;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .status-badge.resolved {
-  background: linear-gradient(135deg, #8b7355, #6b6b6b);
+  background: #6b6b6b;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
 }
 
 .threat-score {
@@ -823,9 +986,9 @@ onMounted(async () => {
 
 .view-btn {
   padding: 8px 14px;
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  background: var(--accent-cyan);
   border: 2px solid var(--accent-cyan);
-  color: #ffffff;
+  color: #04141a;
   border-radius: 4px;
   font-size: 12px;
   font-weight: 700;
@@ -833,12 +996,10 @@ onMounted(async () => {
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  box-shadow: 0 2px 8px rgba(30, 144, 255, 0.4);
 }
 
 .view-btn:hover {
-  background: linear-gradient(135deg, #1e3a8a, #0284c7);
-  box-shadow: 0 4px 16px rgba(30, 144, 255, 0.6);
+  background: #26c6da;
   transform: translateY(-2px);
 }
 
@@ -903,7 +1064,7 @@ onMounted(async () => {
 }
 
 .modal-box {
-  background: linear-gradient(135deg, rgba(30, 64, 175, 0.2), rgba(14, 165, 233, 0.1));
+  background: rgba(20, 30, 48, 0.95);
   border: 2px solid var(--accent-cyan);
   border-radius: 12px;
   padding: 24px;
@@ -911,7 +1072,7 @@ onMounted(async () => {
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 24px rgba(30, 144, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
@@ -1081,9 +1242,9 @@ onMounted(async () => {
 .modal-btn-close {
   width: 100%;
   padding: 10px 14px;
-  background: linear-gradient(135deg, #1e40af, #0ea5e9);
+  background: transparent;
   border: 2px solid var(--accent-cyan);
-  color: #ffffff;
+  color: var(--accent-cyan);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
@@ -1091,21 +1252,19 @@ onMounted(async () => {
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(30, 144, 255, 0.4);
 }
 
 .modal-btn-close:hover {
-  background: linear-gradient(135deg, #1e3a8a, #0284c7);
-  box-shadow: 0 4px 16px rgba(30, 144, 255, 0.6);
+  background: rgba(0, 188, 212, 0.1);
   transform: translateY(-2px);
 }
 
 .modal-btn-details {
   flex: 1;
   padding: 10px 14px;
-  background: linear-gradient(135deg, #0ea5e9, #00d9ff);
-  border: 2px solid #00d9ff;
-  color: #000;
+  background: var(--accent-cyan);
+  border: 2px solid var(--accent-cyan);
+  color: #04141a;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
@@ -1113,13 +1272,10 @@ onMounted(async () => {
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.5);
 }
 
 .modal-btn-details:hover {
-  background: linear-gradient(135deg, #38bdf8, #06b6d4);
-  border-color: #06b6d4;
-  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.7);
+  background: #26c6da;
   transform: translateY(-2px);
 }
 
@@ -1461,16 +1617,14 @@ onMounted(async () => {
     text-transform: uppercase !important;
     text-align: center !important;
     border-radius: 8px !important;
-    background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
-    border: 1px solid #38bdf8 !important;
-    color: #ffffff !important;
+    background: var(--accent-cyan) !important;
+    border: 1px solid var(--accent-cyan) !important;
+    color: #04141a !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35) !important;
   }
 
   .incident-row.expanded .view-btn:hover {
-    background: linear-gradient(135deg, #38bdf8, #1d4ed8) !important;
-    box-shadow: 0 0 24px rgba(56, 189, 248, 0.5) !important;
+    background: #26c6da !important;
   }
 
   /* Hide redundant bottom stats footer on mobile to keep view uncluttered */
@@ -1483,4 +1637,28 @@ onMounted(async () => {
     right: 8px;
   }
 }
+
+/* Custom Scrollbars */
+.incidents-table-wrapper::-webkit-scrollbar,
+.incidents-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.incidents-table-wrapper::-webkit-scrollbar-track,
+.incidents-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.incidents-table-wrapper::-webkit-scrollbar-thumb,
+.incidents-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+}
+
+.incidents-table-wrapper::-webkit-scrollbar-thumb:hover,
+.incidents-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 </style>

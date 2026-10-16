@@ -1,0 +1,21 @@
+{
+  "risk_context": "MOCK DEMONSTRATION MODE: No material risk escalation forecast across the 5-day window - routine readiness only.",
+  "actions": [
+    {
+      "action": "Confirm storm drains and culverts are clear ahead of the next seasonal risk window",
+      "agency": "Municipal Corporation - Drainage Dept",
+      "category": "DRAINAGE",
+      "priority": 3,
+      "deadline_day": 5,
+      "rationale": "All 5 forecast days stay GREEN, so this is routine upkeep rather than an urgent response."
+    },
+    {
+      "action": "Verify emergency contact lists and standard operating procedures are current",
+      "agency": "Disaster Management Authority",
+      "category": "COMMUNICATION",
+      "priority": 3,
+      "deadline_day": 5,
+      "rationale": "No active escalation to respond to - this is baseline readiness maintenance."
+    }
+  ]
+}

@@ -9,10 +9,10 @@
           <div class="header-title-row">
             <h3>
               🌍 {{ $t('dashboard.activeIncidents') }}
-              <span v-if="isLoading" class="loading-indicator">⟳ Updating…</span>
+              <span v-if="isLoading" class="loading-indicator">⟳ {{ $t('dashboardFilters.updating') }}</span>
             </h3>
             <span class="live-badge" :class="{ connected: isConnected }">
-              {{ isConnected ? '🟢 Live Updates' : '🔴 Offline' }}
+              {{ isConnected ? $t('dashboardFilters.liveUpdates') : $t('dashboardFilters.offline') }}
             </span>
           </div>
 
@@ -23,7 +23,7 @@
               <input
                 v-model="dashboardSearchQuery"
                 type="text"
-                placeholder="Search city, hazard, or country..."
+                :placeholder="$t('dashboardFilters.searchPlaceholder')"
                 class="sidebar-search-input"
               />
               <button
@@ -37,10 +37,10 @@
           
           <!-- Country Filter Buttons -->
           <div class="country-filter-section">
-            <div class="filter-label">Filter by Country:</div>
+            <div class="filter-label">{{ $t('dashboardFilters.filterByCountry') }}</div>
             <select id="country-select" aria-label="Filter by Country" v-model="selectedCountry" class="country-dropdown" :disabled="isLoading">
-              <option v-if="isLoading" value="" disabled>⏳ Scanning regions...</option>
-              <option v-else :value="null">All Countries</option>
+              <option v-if="isLoading" value="" disabled>⏳ {{ $t('dashboardFilters.scanningRegions') }}</option>
+              <option v-else :value="null">{{ $t('dashboardFilters.allCountries') }}</option>
               <option v-for="country in availableCountries" :key="country" :value="country">
                 {{ getCountryName(country) }}
               </option>
@@ -50,13 +50,13 @@
           <!-- Event Type & Sort Controls -->
           <div class="filter-controls">
             <select v-model="selectedEventType" class="event-type-dropdown">
-              <option value="">All Event Types</option>
-              <option value="earthquake">🔴 Earthquake</option>
-              <option value="flood">🌊 Flood</option>
-              <option value="storm">⚡ Storm</option>
-              <option value="fire">🔥 Fire</option>
-              <option value="volcano">🌋 Volcano</option>
-              <option value="weather">🌤️ Weather</option>
+              <option value="">{{ $t('dashboardFilters.allEventTypes') }}</option>
+              <option value="earthquake">{{ $t('dashboardFilters.earthquake') }}</option>
+              <option value="flood">{{ $t('dashboardFilters.flood') }}</option>
+              <option value="storm">{{ $t('dashboardFilters.storm') }}</option>
+              <option value="fire">{{ $t('dashboardFilters.fire') }}</option>
+              <option value="volcano">{{ $t('dashboardFilters.volcano') }}</option>
+              <option value="weather">{{ $t('dashboardFilters.weather') }}</option>
             </select>
             <select v-model="sortBy" class="sort-dropdown">
               <option value="threat">↓ Threat Score</option>
@@ -120,76 +120,14 @@
 
           <div class="detail-content">
             
-            <!-- 1. OPERATIONAL ACTION PLAN -->
-            <div class="ai-decision-plan">
-              <div class="ai-plan-header">
-                <span class="ai-pulse-dot"></span>
-                <label class="ai-plan-title">⚡ Operational Action Plan</label>
-                <span class="ai-engine-chip">Live Triage</span>
-              </div>
-              
-              <!-- High-Tech Tactical Loading State with Dynamic Stepper & Shimmer Skeletons -->
-              <div v-if="isLoadingInsights" class="ai-tactical-loading">
-                <div class="loading-radar-header">
-                  <div class="radar-ping-ring">
-                    <span class="radar-dot"></span>
-                  </div>
-                  <div class="loading-telemetry-text">
-                    <span class="loading-phase-tag">AI COGNITIVE PROCESSING ACTIVE</span>
-                    <strong class="cycling-step-text">{{ currentLoadingPhaseText }}</strong>
-                  </div>
-                </div>
-
-                <div class="tactical-progress-track">
-                  <div class="tactical-scan-laser"></div>
-                </div>
-
-                <!-- Ghost Skeleton Micro-Cards -->
-                <div class="skeleton-action-cards">
-                  <div class="skeleton-tag shimmer"></div>
-                  <div class="skeleton-card shimmer" v-for="n in 3" :key="n">
-                    <div class="sk-num">0{{ n }}</div>
-                    <div class="sk-lines">
-                      <div class="sk-line full"></div>
-                      <div class="sk-line half"></div>
-                    </div>
-                  </div>
-                  <div class="skeleton-evac shimmer"></div>
-                </div>
-              </div>
-              
-              <div v-else-if="aiPlan" class="ai-plan-content">
-                <div class="country-context-tag">{{ formatTacticalText(aiPlan.country_context) }}</div>
-                
-                <div class="tactical-group">
-                  <span class="group-title">Immediate Action Items:</span>
-                  <div class="tactical-action-cards">
-                    <div v-for="(act, idx) in aiPlan.immediate_actions" :key="idx" class="tactical-action-card">
-                      <span class="action-num">0{{ Number(idx) + 1 }}</span>
-                      <span class="action-text">{{ formatTacticalText(act) }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="tactical-group" v-if="aiPlan.evacuation_guidance">
-                  <span class="group-title">🛣️ Evacuation Routing:</span>
-                  <div class="evacuation-card">
-                    <p class="evac-text">{{ formatTacticalText(aiPlan.evacuation_guidance) }}</p>
-                  </div>
-                </div>
-
-                <div class="tactical-group" v-if="aiPlan.resource_allocation && aiPlan.resource_allocation.length">
-                  <span class="group-title">🚒 Resource Deployment:</span>
-                  <div class="resource-chip-grid">
-                    <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-chip">
-                      <strong class="res-label">{{ res.resource }}:</strong>
-                      <span class="res-qty">{{ res.quantity }}</span>
-                      <span class="res-status" :class="res.status ? res.status.toLowerCase() : ''">{{ res.status }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- 1. OPERATIONAL ACTION PLAN (TEASER VERSION) -->
+            <OperationalActionTeaser 
+              :aiPlan="aiPlan"
+              :isLoading="isLoadingInsights"
+              :error="null"
+              :incidentId="selectedIncidentData.id"
+              @navigateToInsights="() => { /* Router link handles this */ }"
+            />
 
             <!-- 2. INCIDENT PROFILE (Boxed & Padded) -->
             <div class="profile-card glass-subpanel">
@@ -209,7 +147,7 @@
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
                   <div class="threat-score-pill tooltip-container">
                     <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
-                    <span class="threat-score-max">/100</span>
+                    <span class="threat-score-max">/100</span><span class="info-hint" aria-hidden="true">ⓘ</span>
 
                     <!-- Floating Tactical Tooltip -->
                     <div class="tactical-tooltip">
@@ -219,7 +157,7 @@
                       </div>
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
-                        <div class="factor-row"><span>💨 Atmospheric Risk:</span> <strong>Active</strong></div>
+                        <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence != null ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
                         <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() : 'Estimating' }}</strong></div>
                         <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
                       </div>
@@ -251,7 +189,7 @@
 
             <!-- 4. SITUATION BRIEFING (Boxed & Padded) -->
             <div class="summary-card glass-subpanel">
-              <span class="card-section-label">SITUATION SUMMARY</span>
+              <span class="card-section-label">Situation Summary</span>
               <p class="summary-text">
                 {{ aiPlan?.severity_assessment || `${formatIncidentType(selectedIncidentData.type, selectedIncidentData.location)} activity near ${selectedIncidentData.location} is currently ${selectedIncidentData.status} and remains under active monitoring.` }}
               </p>
@@ -277,77 +215,14 @@
           </div>
 
           <div class="detail-content">
-            <!-- 1. AI TACTICAL RESPONSE (Mobile) -->
-            <!-- 1. OPERATIONAL ACTION PLAN -->
-            <div class="ai-decision-plan">
-              <div class="ai-plan-header">
-                <span class="ai-pulse-dot"></span>
-                <label class="ai-plan-title">⚡ Operational Action Plan</label>
-                <span class="ai-engine-chip">Live Triage</span>
-              </div>
-              
-              <!-- High-Tech Tactical Loading State with Dynamic Stepper & Shimmer Skeletons -->
-              <div v-if="isLoadingInsights" class="ai-tactical-loading">
-                <div class="loading-radar-header">
-                  <div class="radar-ping-ring">
-                    <span class="radar-dot"></span>
-                  </div>
-                  <div class="loading-telemetry-text">
-                    <span class="loading-phase-tag">AI COGNITIVE PROCESSING ACTIVE</span>
-                    <strong class="cycling-step-text">{{ currentLoadingPhaseText }}</strong>
-                  </div>
-                </div>
-
-                <div class="tactical-progress-track">
-                  <div class="tactical-scan-laser"></div>
-                </div>
-
-                <!-- Ghost Skeleton Micro-Cards -->
-                <div class="skeleton-action-cards">
-                  <div class="skeleton-tag shimmer"></div>
-                  <div class="skeleton-card shimmer" v-for="n in 3" :key="n">
-                    <div class="sk-num">0{{ n }}</div>
-                    <div class="sk-lines">
-                      <div class="sk-line full"></div>
-                      <div class="sk-line half"></div>
-                    </div>
-                  </div>
-                  <div class="skeleton-evac shimmer"></div>
-                </div>
-              </div>
-              
-              <div v-else-if="aiPlan" class="ai-plan-content">
-                <div class="country-context-tag">{{ formatTacticalText(aiPlan.country_context) }}</div>
-                
-                <div class="tactical-group">
-                  <span class="group-title">Immediate Action Items:</span>
-                  <div class="tactical-action-cards">
-                    <div v-for="(act, idx) in aiPlan.immediate_actions" :key="idx" class="tactical-action-card">
-                      <span class="action-num">0{{ Number(idx) + 1 }}</span>
-                      <span class="action-text">{{ formatTacticalText(act) }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="tactical-group" v-if="aiPlan.evacuation_guidance">
-                  <span class="group-title">🛣️ Evacuation Routing:</span>
-                  <div class="evacuation-card">
-                    <p class="evac-text">{{ formatTacticalText(aiPlan.evacuation_guidance) }}</p>
-                  </div>
-                </div>
-
-                <div class="tactical-group" v-if="aiPlan.resource_allocation && aiPlan.resource_allocation.length">
-                  <span class="group-title">🚒 Resource Deployment:</span>
-                  <div class="resource-chip-grid">
-                    <div v-for="(res, rIdx) in aiPlan.resource_allocation" :key="rIdx" class="resource-chip">
-                      <strong class="res-label">{{ res.resource }}:</strong>
-                      <span class="res-qty">{{ res.quantity }}</span>
-                      <span class="res-status" :class="res.status ? res.status.toLowerCase() : ''">{{ res.status }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- 1. OPERATIONAL ACTION PLAN (TEASER VERSION - Mobile) -->
+            <OperationalActionTeaser 
+              :aiPlan="aiPlan"
+              :isLoading="isLoadingInsights"
+              :error="null"
+              :incidentId="selectedIncidentData.id"
+              @navigateToInsights="() => { /* Router link handles this */ }"
+            />
 
             <!-- 2. INCIDENT PROFILE (Mobile) -->
             <div class="profile-card glass-subpanel">
@@ -367,7 +242,7 @@
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
                   <div class="threat-score-pill tooltip-container">
                     <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
-                    <span class="threat-score-max">/100</span>
+                    <span class="threat-score-max">/100</span><span class="info-hint" aria-hidden="true">ⓘ</span>
 
                     <!-- Floating Tactical Tooltip -->
                     <div class="tactical-tooltip">
@@ -377,7 +252,7 @@
                       </div>
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
-                        <div class="factor-row"><span>💨 Atmospheric Risk:</span> <strong>Active</strong></div>
+                        <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence != null ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
                         <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() : 'Estimating' }}</strong></div>
                         <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
                       </div>
@@ -429,7 +304,7 @@
 
         <!-- Global Situation Assessment Summary -->
         <div class="ai-overview-card glass-subpanel">
-          <div class="overview-title">GLOBAL SITUATION ASSESSMENT</div>
+          <div class="overview-title">Global Situation Assessment</div>
           <p class="overview-text">
             Autonomous threat detection is actively monitoring 
             <strong style="color: #38bdf8;">{{ filteredIncidents.length }} active hazards</strong>. 
@@ -437,7 +312,7 @@
           </p>
         </div>
 
-        <div class="insights-subheading">CRITICAL PRIORITY ACTIONS:</div>
+        <div class="insights-subheading">Critical Priority Actions:</div>
 
         <div v-if="liveCriticalInsights.length" class="insights-list">
           <div 
@@ -528,8 +403,10 @@ import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
 import IncidentCard from '@/components/molecules/IncidentCard.vue'
 import MapComponent from '@/components/organisms/MapComponent.vue'
+import OperationalActionTeaser from '@/components/molecules/OperationalActionTeaser.vue'
 import COUNTRIES_DATA from '@/data/countries.json' with { type: 'json' }
 import { useAppStore } from '@/stores'
+import { logFeature, logWarn, logError } from '@/utils/logger'
 import { useEventsStore } from '@/stores'
 import { useAlertsStore } from '@/stores'
 import { useMockMode } from '@/composables/useMockMode'
@@ -601,7 +478,7 @@ watch(
         aiPlan.value = data.plan
       }
     } catch (err) {
-      console.warn('Failed to fetch AI insights plan:', err)
+      logWarn('Could not fetch the AI insights plan', err)
     } finally {
       if (loadingInterval) clearInterval(loadingInterval)
       isLoadingInsights.value = false
@@ -1099,7 +976,7 @@ const fetchIncidents = async () => {
     isLoading.value = true
     apiError.value = null
     
-    console.log(`📡 Fetching incidents (Mode: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'})`)
+    logFeature('incidents_fetch', 'info', { action: 'started', mode: isMockMode.value ? 'mock' : 'live' })
     
     const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
     const response = await fetchWithMockMode(`${host}/api/v1/ingest/all`)
@@ -1110,7 +987,7 @@ const fetchIncidents = async () => {
     
     const result = await response.json()
     const events = result.data?.events ?? []
-    console.log('Incidents loaded:', events.length, 'events (raw, global)')
+    logFeature('incidents_fetch', 'info', { action: 'raw_response_parsed', events: events.length })
     
     // Transform backend response to store format
     if (Array.isArray(events) && events.length > 0) {
@@ -1148,11 +1025,11 @@ const fetchIncidents = async () => {
       // Global Platform: Show all live disaster incidents worldwide sorted by threat score
       const incidents = mapped.sort((a, b) => (b.threatScore ?? 0) - (a.threatScore ?? 0))
 
-      console.log(`📍 Loaded ${incidents.length} global incident(s) worldwide across all sources`)
+      logFeature('incidents_fetch', 'success', { incidents: incidents.length })
       eventsStore.setIncidents(incidents)
     } else {
       // Live mode strictness: No mock fallbacks allowed
-      console.warn('No events from API. (Mock fallback disabled for strict live testing)')
+      logWarn('No events returned from the API (mock fallback is disabled in strict live mode)')
       
       // Look for failing sources to report in the banner
       const sources = result.data?.sources || {}
@@ -1167,15 +1044,15 @@ const fetchIncidents = async () => {
       eventsStore.setIncidents([])
     }
   } catch (error) {
-    console.error('Failed to fetch incidents:', error)
+    logFeature('incidents_fetch', 'error', { error: String(error) })
     apiError.value = error instanceof Error ? error.message : 'Failed to fetch data'
-    
+
     // Use feature flag to decide whether to fallback to mock data
     if (isMockMode.value) {
-      console.log('🧪 Mock mode enabled: Loading fallback mock data...')
+      logFeature('incidents_fetch', 'fallback', { action: 'loading_mock_data' })
       eventsStore.initMockData()
     } else {
-      console.log('🌐 Live mode: No fallback, showing empty state')
+      logFeature('incidents_fetch', 'info', { action: 'showing_empty_state', reason: 'live mode has no mock fallback' })
       eventsStore.setIncidents([])
     }
   } finally {
@@ -1188,7 +1065,7 @@ const fetchIncidents = async () => {
  */
 const loadAlerts = () => {
   if (alertsStore.criticalInsights.length === 0 && isMockMode.value) {
-    console.log('🧪 Mock mode enabled: Loading fallback mock insights...')
+    logFeature('alerts_insights', 'fallback', { action: 'loading_mock_insights' })
     alertsStore.initMockInsights()
   }
 }
@@ -1199,7 +1076,7 @@ onMounted(async () => {
   apiError.value = null
   
   try {
-    console.log('📥 Loading historical incidents from database (Feature 5)...')
+    logFeature('db_hydration', 'info', { action: 'started' })
     
     // Feature 5: Hydrate UI from database first so it survives restarts
     const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
@@ -1242,18 +1119,18 @@ onMounted(async () => {
               }
             })
             eventsStore.setIncidents(mapped)
-            console.log(`✅ Loaded ${mapped.length} historical incidents from DB`)
+            logFeature('db_hydration', 'success', { incidents: mapped.length })
         } else {
-            console.log('⚠️ Database is empty, waiting for polling/WebSockets to provide live data')
+            logFeature('db_hydration', 'info', { action: 'db_empty', note: 'waiting for polling/WebSockets to provide live data' })
             // Optionally run a manual fetch if DB is completely empty on first boot
             await fetchIncidents()
         }
     } else {
-        console.warn('Failed to load from database, falling back to REST ingestion')
+        logWarn('Could not load incidents from the database, falling back to REST ingestion')
         await fetchIncidents()
     }
   } catch (e: any) {
-    console.error('❌ Database hydration failed:', e)
+    logError('Database hydration failed', e)
     apiError.value = e.message
     await fetchIncidents()
   } finally {
@@ -1261,7 +1138,7 @@ onMounted(async () => {
     loadAlerts()
     
     // Connect to WebSocket for live updates AFTER database hydration
-    console.log('📡 Connecting to WebSocket for live updates...')
+    logFeature('dashboard_websocket', 'info', { action: 'connect_requested' })
       if (!isConnected.value) {
           connect()
         }
@@ -1272,7 +1149,7 @@ onMounted(async () => {
 
 // Watch for mock mode changes and refetch
 watch(isMockMode, () => {
-  console.log(`🔄 Mock mode changed to: ${isMockMode.value ? '🧪 MOCK' : '🌐 LIVE'}`)
+  logFeature('mock_mode', 'info', { action: 'changed', mode: isMockMode.value ? 'mock' : 'live' })
   currentPage.value = 1  // Reset pagination
   fetchIncidents()
   loadAlerts()
@@ -1544,6 +1421,13 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   font-size: 11px;
   color: #94a3b8;
   font-weight: 600;
+}
+
+.threat-score-pill .info-hint {
+  font-size: 9px;
+  color: #94a3b8;
+  opacity: 0.75;
+  margin-left: 2px;
 }
 
 .summary-card {
@@ -1895,16 +1779,16 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 }
 
 .label {
-  font-size: 11px;
-  color: #94a3b8;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.3px;
 }
 
 .value {
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   color: #ffffff;
 }
 
@@ -1988,7 +1872,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   height: 8px;
   border-radius: 50%;
   background: #10b981;
-  box-shadow: 0 0 10px #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
   animation: beaconPulse 2s infinite;
 }
 
@@ -2338,7 +2222,6 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   outline: none;
   border-color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.15);
-  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
 }
 
 .country-dropdown option {
@@ -2377,7 +2260,6 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   outline: none;
   border-color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.15);
-  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
 }
 
 .event-type-dropdown option {
@@ -2409,7 +2291,6 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   outline: none;
   border-color: var(--accent-cyan);
   background: rgba(30, 144, 255, 0.15);
-  box-shadow: 0 0 8px rgba(30, 144, 255, 0.3);
 }
 
 .sort-dropdown option {
@@ -2438,7 +2319,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 .pagination-btn {
   flex: 1;
   padding: 8px 12px;
-  background: linear-gradient(135deg, rgba(30, 144, 255, 0.15), rgba(14, 165, 233, 0.15));
+  background: rgba(30, 144, 255, 0.12);
   border: 1px solid rgba(30, 144, 255, 0.3);
   border-radius: 6px;
   color: var(--accent-cyan);
@@ -2451,9 +2332,8 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(30, 144, 255, 0.25), rgba(14, 165, 233, 0.25));
+  background: rgba(30, 144, 255, 0.2);
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 12px rgba(30, 144, 255, 0.25);
 }
 
 .pagination-btn:disabled {
@@ -2465,7 +2345,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   width: 100%;
   padding: 12px;
   margin-top: 8px;
-  background: linear-gradient(135deg, rgba(30, 144, 255, 0.2), rgba(14, 165, 233, 0.2));
+  background: rgba(30, 144, 255, 0.15);
   border: 1.5px solid var(--accent-cyan);
   border-radius: 8px;
   color: var(--accent-cyan);
@@ -2478,8 +2358,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 }
 
 .load-more-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(30, 144, 255, 0.3), rgba(14, 165, 233, 0.3));
-  box-shadow: 0 0 16px rgba(30, 144, 255, 0.3);
+  background: rgba(30, 144, 255, 0.25);
   transform: translateY(-2px);
 }
 
@@ -3946,7 +3825,6 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 .sidebar-search-box:focus-within {
   border-color: #38bdf8;
   background: rgba(15, 23, 42, 0.95);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
 }
 
 .sidebar-search-input {

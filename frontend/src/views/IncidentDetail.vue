@@ -15,7 +15,7 @@
             <div class="scanner-header">
               <span class="scanner-radar-icon">📡</span>
               <div class="scanner-titles">
-                <h4> ANALYZING INCIDENT DATA & GENERATING RESPONSE PLAN</h4>
+                <h4>Analyzing incident data and generating response plan</h4>
                 <small>Gathering data from multiple sources...</small>
               </div>
             </div>
@@ -43,28 +43,46 @@
 
       <header class="detail-header sticky-header">
         <div class="header-navigation">
+          <span class="phase-indicator-badge">{{ $t('header.phases.response') }}</span>
           <button class="primary-back-btn" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">
             <span class="back-arrow">←</span>
-            <span class="back-text">Incidents Console</span>
+            <span class="back-text">{{ $t('detail.activeIncidents') }}</span>
           </button>
           <span class="breadcrumb-separator">/</span>
           <span class="breadcrumb-current">{{ incident.location }}</span>
         </div>
         <div class="header-actions">
-          <button class="ghost-button" type="button" @click="goTo('/')">⌂ Dashboard</button>
-          <button class="ghost-button" type="button" @click="goTo('/map')">◎ Live Map</button>
+          <button class="ghost-button" type="button" @click="goTo('/')">{{ $t('detail.dashboardBtn') }}</button>
+          <button class="ghost-button" type="button" @click="goTo('/map')">{{ $t('detail.liveMapBtn') }}</button>
+          <label class="language-selector" for="detail-header-language">
+            <span>🌐</span>
+            <select
+              id="detail-header-language"
+              v-model="selectedLanguage"
+              @change="handleLanguageChange"
+              aria-label="Select language"
+            >
+              <option value="EN">English</option>
+              <option value="DE">Deutsch</option>
+              <option value="ES">Español</option>
+              <option value="FR">Français</option>
+              <option value="IT">Italiano</option>
+              <option value="PL">Polski</option>
+              <option value="SV">Svenska</option>
+            </select>
+          </label>
         </div>
       </header>
 
       <section class="incident-hero">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="live-dot"></span> INCIDENT {{ incident.id.toUpperCase() }}</div>
+          <div class="eyebrow"><span class="live-dot"></span> {{ $t('detail.incident') }} {{ incident.id.toUpperCase() }}</div>
           <h1>{{ incidentLabel }}</h1>
-          <p class="hero-location"><span>⌖</span> {{ incident.location }} · Detected {{ formatDate(incident.detectionTime) }}</p>
+          <p class="hero-location"><span>⌖</span> {{ incident.location }} · {{ $t('detail.detected') }} {{ formatDate(incident.detectionTime) }}</p>
         </div>
         <div class="hero-status">
           <span class="type-badge" :class="`type-${incident.type}`">{{ formatIncidentType(incident.type) }}</span>
-          <span class="severity-badge" :class="`severity-${incident.severity}`">{{ incident.severity.toUpperCase() }} SEVERITY</span>
+          <span class="severity-badge" :class="`severity-${incident.severity}`">{{ incident.severity.toUpperCase() }} {{ $t('detail.severityLabel') }}</span>
           <span class="status-badge" :class="`status-${incident.status}`">{{ formatStatus(incident.status) }}</span>
         </div>
       </section>
@@ -91,15 +109,15 @@
             <div class="operational-command-bar glass-panel">
               <div class="toolbar-title">
                 <span class="command-dot"></span>
-                <span>OPERATIONAL COMMAND DISPATCH</span>
+                <span>{{ $t('overviewTab.operationalCommand') }}</span>
               </div>
               <div class="toolbar-actions">
                 <button class="cmd-btn primary" @click="exportSitRepZip" :disabled="isExportingZip">
                   <span v-if="isExportingZip" class="spinner">⟳</span>
-                  <span>{{ isExportingZip ? 'COMPILING ZIP...' : '📦 Export SitRep Package (.ZIP)' }}</span>
+                  <span>{{ isExportingZip ? $t('overviewTab.compilingZip') : $t('overviewTab.exportSitRep') }}</span>
                 </button>
                 <button class="cmd-btn secondary" @click="goTo(`/map?fromIncident=${incident.id}&location=${encodeURIComponent(incident.location)}`)">
-                  <span>🗺️ View Incident on Tactical Map</span>
+                  <span>{{ $t('overviewTab.viewIncidentMap') }}</span>
                 </button>
               </div>
             </div>
@@ -109,13 +127,13 @@
               <div class="recon-info">
                 <div class="recon-status-badge" :class="{ 'analyzed': !!deepDossier }">
                   <span class="status-pulse-dot"></span>
-                  {{ deepDossier ? '🟢 VERIFIED OPERATIONAL REPORT ACTIVE' : '⚡ FULL CRISIS REPORT READY TO SYNTHESIZE' }}
+                  {{ deepDossier ? $t('overviewTab.verifiedReportActive') : $t('overviewTab.fullCrisisReady') }}
                 </div>
-                <h2>Crisis Assessment & Impact Forecast</h2>
+                <h2>{{ $t('overviewTab.crisisAssessmentTitle') }}</h2>
                 <p>
                   {{ deepDossier 
                     ? deepDossier.situational_assessment 
-                    : 'Synthesize comprehensive 6h/12h/24h disaster spread predictions, critical hospital & infrastructure vulnerability assessments, evacuation routing, and emergency logistics matrices.' 
+                    : $t('overviewTab.crisisAssessmentDesc') 
                   }}
                 </p>
               </div>
@@ -125,7 +143,7 @@
                 @click="launchDeepAnalysis"
               >
                 <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
-                {{ isAnalyzingDossier ? 'SYNTHESIZING REPORT...' : (deepDossier ? '🔄 UPDATE CRISIS REPORT' : '⚡ GENERATE FULL REPORT') }}
+                {{ isAnalyzingDossier ? $t('overviewTab.synthesizingReport') : (deepDossier ? $t('overviewTab.updateReport') : $t('overviewTab.generateReport')) }}
               </button>
             </div>
 
@@ -134,53 +152,53 @@
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">☴</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">ATMOSPHERIC WIND</span>
+                  <span class="gauge-label">{{ $t('overviewTab.atmosphericWind') }}</span>
                   <strong class="gauge-value">{{ (Math.abs(incident.trend) * 2.1 + 4.2).toFixed(1) }} m/s</strong>
-                  <small class="gauge-desc">Surface Wind Velocity</small>
+                  <small class="gauge-desc">{{ $t('overviewTab.surfaceWind') }}</small>
                 </div>
               </div>
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">🌡</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">AMBIENT SENSORS</span>
+                  <span class="gauge-label">{{ $t('overviewTab.ambientSensors') }}</span>
                   <strong class="gauge-value">28.4°C</strong>
-                  <small class="gauge-desc">Atmospheric Humidity 78%</small>
+                  <small class="gauge-desc">{{ $t('overviewTab.humidity') }} 78%</small>
                 </div>
               </div>
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">⚑</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">EXPOSED POPULATION</span>
+                  <span class="gauge-label">{{ $t('overviewTab.exposedPopulation') }}</span>
                   <strong class="gauge-value">{{ formatNumber(incident.affectedPopulation) }}</strong>
-                  <small class="gauge-desc">Estimated residents in exposure zone</small>
+                  <small class="gauge-desc">{{ $t('overviewTab.estimatedResidents') }}</small>
                 </div>
               </div>
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">◱</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">PERIMETER GROWTH</span>
+                  <span class="gauge-label">{{ $t('overviewTab.perimeterGrowth') }}</span>
                   <strong class="gauge-value">+{{ (incident.trend ?? 0).toFixed(1) }} km²/h</strong>
-                  <small class="gauge-desc">6h Projected +{{ formatNumber(incident.forecast6h) }} km²</small>
+                  <small class="gauge-desc">6h {{ $t('overviewTab.projected') }} +{{ formatNumber(incident.forecast6h) }} km²</small>
                 </div>
               </div>
             </div>
 
             <div class="metric-grid">
               <article class="metric-card glass-panel threat-card">
-                <span class="metric-label">Threat score</span>
+                <span class="metric-label">{{ $t('overviewTab.threatScore') }}</span>
                 <strong class="metric-value threat-value">{{ threatScore }}<small>/100</small></strong>
                 <span class="metric-footnote">{{ threatLevel }} · {{ threatRationale }}</span>
                 <div class="progress-track"><span class="progress-fill threat-fill" :style="{ width: `${threatScore}%` }"></span></div>
               </article>
               <article class="metric-card glass-panel">
-                <span class="metric-label">Location</span>
+                <span class="metric-label">{{ $t('overviewTab.location') }}</span>
                 <strong class="metric-value compact-value">{{ incident.location }}</strong>
-                <span class="metric-footnote">Affected footprint {{ formatNumber(incident.affectedArea) }} km²</span>
+                <span class="metric-footnote">{{ $t('overviewTab.affectedFootprint') }} {{ formatNumber(incident.affectedArea) }} km²</span>
               </article>
               <article class="metric-card glass-panel">
-                <span class="metric-label">Population at risk</span>
+                <span class="metric-label">{{ $t('overviewTab.populationAtRisk') }}</span>
                 <strong class="metric-value">{{ formatNumber(incident.affectedPopulation) }}</strong>
-                <span class="metric-footnote">Estimated residents in exposure zone</span>
+                <span class="metric-footnote">{{ $t('overviewTab.estimatedResidents') }}</span>
               </article>
               
               
@@ -292,10 +310,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useEventsStore, useAppStore } from '@/stores'
 import type { IncidentLevel1, Event } from '@/types'
+import { logWarn, logError } from '@/utils/logger'
 import JSZip from 'jszip'
 import TabSource from '@/components/molecules/TabSource.vue'
 import TabResponse from '@/components/molecules/TabResponse.vue'
@@ -354,6 +374,11 @@ interface DetailData {
 
 const route = useRoute()
 const router = useRouter()
+const { t, locale } = useI18n()
+const selectedLanguage = ref(locale.value.toUpperCase())
+const handleLanguageChange = () => {
+  locale.value = selectedLanguage.value.toLowerCase()
+}
 const eventsStore = useEventsStore()
 const appStore = useAppStore()
 const is3D = computed(() => appStore.viewMode === '3d')
@@ -442,7 +467,7 @@ async function launchDeepAnalysis() {
       deepDossier.value = data.dossier
     }
   } catch (err) {
-    console.error('Failed to generate deep AI dossier:', err)
+    logError('Could not generate the deep AI dossier for this incident', err)
   } finally {
     clearInterval(stepInterval)
     currentStepIndex.value = analysisSteps.length
@@ -469,16 +494,16 @@ async function checkExistingDossier() {
   }
 }
 
-const tabs: Tab[] = [
-  { id: 'overview', label: 'Overview', icon: '◈' }, 
-  { id: 'impact', label: 'Impact', icon: '▦' },
-  { id: 'map', label: 'Map', icon: '◎' }, 
-  { id: 'response', label: 'Response', icon: '⚑' },
-  { id: 'history', label: 'History', icon: '◷' }, 
-  { id: 'source', label: 'Source', icon: '✦' },
-  { id: 'ai', label: 'Insights', icon: '⌁' }, 
-  { id: 'alerts', label: 'Alerts', icon: '⌁' },
-];
+const tabs = computed<Tab[]>(() => [
+  { id: 'overview', label: t('detail.innerTabs.overview'), icon: '◈' }, 
+  { id: 'impact', label: t('detail.innerTabs.impact'), icon: '▦' },
+  { id: 'map', label: t('detail.innerTabs.map'), icon: '◎' }, 
+  { id: 'response', label: t('detail.innerTabs.response'), icon: '⚑' },
+  { id: 'history', label: t('detail.innerTabs.history'), icon: '◷' }, 
+  { id: 'source', label: t('detail.innerTabs.source'), icon: '✦' },
+  { id: 'ai', label: t('detail.innerTabs.insights'), icon: '⌁' }, 
+  { id: 'alerts', label: t('detail.innerTabs.alerts'), icon: '⌁' },
+])
 
 import mockDetails from '@/data/mock_incident_evidence.json'
 
@@ -644,7 +669,7 @@ async function exportSitRepZip() {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   } catch (err) {
-    console.error('Failed to generate SitRep zip package:', err)
+    logError('Could not generate the SitRep zip package', err)
   } finally {
     isExportingZip.value = false
   }
@@ -677,7 +702,7 @@ async function fetchAIInsights() {
     }
   } catch (err) {
     aiError.value = err instanceof Error ? err.message : 'Failed to load AI insights'
-    console.error('[AIInsights]', aiError.value)
+    logError(`AI Insights tab error for this incident: ${aiError.value}`)
   } finally {
     aiLoading.value = false
   }
@@ -686,30 +711,54 @@ async function fetchAIInsights() {
 onMounted(async () => {
   if (eventsStore.allIncidents.length === 0) {
     try {
+      // Mirrors Dashboard.vue's own db_hydration mapping exactly (same endpoint,
+      // same id-field priority, same response unwrapping) - this used to use a
+      // different, simplified mapping that (a) never unwrapped the endpoint's
+      // real { data: [...], pagination: ... } shape, so raw.length was always
+      // undefined and setIncidents() never ran, and (b) built a different id
+      // than Dashboard.vue does (e.id only, vs Dashboard's data?.id priority).
+      // Either bug alone was enough to make a direct page refresh show
+      // "Incident not found" even though the incident still exists - the store
+      // either never repopulated, or repopulated with an id that didn't match
+      // the one in the URL.
       const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
-      const res = await fetch(`${host}/api/v1/incidents?limit=100`)
+      const res = await fetch(`${host}/api/v1/incidents?limit=100&offset=0`)
       if (res.ok) {
-        const raw = await res.json()
-        if (raw && raw.length > 0) {
-          eventsStore.setIncidents(raw.map((e: any, idx: number) => ({
-            id: e.id || `event_${idx}`,
-            type: e.event_type || 'fire',
-            location: e.location_name || 'Unknown',
-            countryCode: e.countryCode || 'UN',
-            severity: e.severity || 'medium',
-            status: e.status || 'active',
-            threatScore: e.threatScore ?? e.impact?.risk_score ?? 50,
-            detectionTime: new Date(e.event_timestamp || e.detectionTime || Date.now()),
-            affectedArea: e.affectedArea ?? e.impact?.affected_area_km2 ?? 150,
-            affectedPopulation: e.affectedPopulation ?? e.impact?.affected_population ?? 50000,
-            trend: e.trend ?? e.impact?.trend_km2_per_hour ?? 5.2,
-            forecast6h: e.forecast6h ?? e.impact?.forecast_6h_km2 ?? 31.2,
-            coordinates: [e.latitude, e.longitude] as [number, number],
-          })))
+        const apiResponse = await res.json()
+        const rawIncidents = apiResponse.data || apiResponse
+        if (rawIncidents && Array.isArray(rawIncidents) && rawIncidents.length > 0) {
+          const mapped = rawIncidents.map((event: any, index: number) => {
+            const impact = event.impact || {}
+            const severity = (event.severity || 'medium').toLowerCase()
+            const locationName = event.location_name || 'Unknown'
+            const source = event.source || event.data?.source || 'unknown'
+
+            return {
+              id: event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id || `event-${index}-${Date.now()}`,
+              type: event.event_type || 'fire',
+              location: locationName,
+              location_name: locationName,
+              countryCode: event.countryCode || 'UN',
+              severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
+              status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
+              threatScore: impact.risk_score ?? event.threatScore ?? 50,
+              detectionTime: new Date(event.event_timestamp || Date.now()),
+              affectedArea: impact.affected_area_km2 ?? event.affectedArea ?? 150,
+              affectedPopulation: impact.affected_population ?? event.affectedPopulation ?? 50000,
+              trend: impact.trend_km2_per_hour ?? event.trend ?? 5.2,
+              forecast6h: impact.forecast_6h_km2 ?? event.forecast6h ?? 31.2,
+              coordinates: [event.latitude, event.longitude] as [number, number],
+              source: source,
+              confidence: event.confidence ?? event.data?.confidence ?? 0,
+              event_timestamp: event.event_timestamp || event.created_at || Date.now(),
+              data: event.data || {},
+            }
+          })
+          eventsStore.setIncidents(mapped)
         }
       }
     } catch (err) {
-      console.warn('Failed to hydrate incidents on detail page:', err)
+      logWarn('Could not hydrate incidents on the incident detail page', err)
     }
   }
 
@@ -717,7 +766,20 @@ onMounted(async () => {
     fetchAIInsights()
     checkExistingDossier()
   }
+
+  // Handle query parameter to switch to AI Insights tab
+  const tabQuery = route.query.tab as string | undefined
+  if (tabQuery === 'ai-insights') {
+    activeTab.value = 'ai'
+  }
 })
+
+// Watch for query parameter changes
+watch(() => route.query.tab, (newTab) => {
+  if (newTab === 'ai-insights') {
+    activeTab.value = 'ai'
+  }
+}, { immediate: true })
 
 // Priority helper functions for resource matrix display
 function getPriorityClass(priority: number | string): string {
@@ -769,14 +831,68 @@ function getCascadeColorHex(colorCode?: string): string {
 :global(body) { background: #0f0f0f; }
 .incident-detail { min-height: 100%; padding: 24px clamp(16px, 4vw, 56px) 64px; color: #f8fafc; background: radial-gradient(circle at 85% 0%, rgba(14,165,233,.09), transparent 28%), #0f0f0f; }
 .glass-panel { background: rgba(22, 29, 39, .72); border: 1px solid rgba(148,163,184,.17); border-radius: 14px; backdrop-filter: blur(14px); box-shadow: 0 14px 40px rgba(0,0,0,.2); }
-.glass-panel:hover { border-color: rgba(14,165,233,.48); box-shadow: 0 0 24px rgba(14,165,233,.12); transition: box-shadow .25s ease, border-color .25s ease; }
+.glass-panel:hover { border-color: rgba(14,165,233,.4); transition: border-color .25s ease; }
 .detail-header, .header-navigation, .header-actions, .hero-status, .panel-heading, .row-title, .tab-intro, .map-toolbar, .map-footer { display: flex; align-items: center; }
 .detail-header { justify-content: space-between; gap: 20px; margin-bottom: 28px; }
 .header-navigation, .header-actions { gap: 11px; flex-wrap: wrap; }
 .back-button, .ghost-button, .primary-button { border: 1px solid rgba(148,163,184,.25); color: #e2e8f0; background: transparent; border-radius: 8px; padding: 9px 13px; cursor: pointer; font: inherit; transition: .2s ease; }
-.back-button:hover, .ghost-button:hover { border-color: #0ea5e9; color: #7dd3fc; box-shadow: 0 0 16px rgba(14,165,233,.2); }
+.back-button:hover, .ghost-button:hover { border-color: #0ea5e9; color: #7dd3fc; }
+
+.language-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 6px;
+  background: rgba(14, 165, 233, 0.1);
+  color: var(--accent-cyan);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.language-selector:hover {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: #38bdf8;
+}
+
+.language-selector select {
+  border: none;
+  background: transparent;
+  color: #38bdf8;
+  font: inherit;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  min-width: 80px;
+  padding: 2px 4px;
+  font-size: 13px;
+}
+
+.language-selector select option {
+  background: #0f172a;
+  color: #38bdf8;
+  font-weight: 600;
+  padding: 4px;
+  font-size: 13px;
+}
+
 .breadcrumb-separator { color: #475569; }.breadcrumb-current { color: #94a3b8; font-size: 18px; }
-.primary-button { background: #0ea5e9; border-color: #38bdf8; color: #03111b; font-weight: 700; }.primary-button:hover { background: #38bdf8; box-shadow: 0 0 22px rgba(14,165,233,.45); }
+.primary-button { background: #0ea5e9; border-color: #38bdf8; color: #03111b; font-weight: 700; }.primary-button:hover { background: #38bdf8; }
+.phase-indicator-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  border-radius: 5px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
 .incident-hero {
   display: flex;
   justify-content: space-between;
@@ -789,12 +905,18 @@ function getCascadeColorHex(colorCode?: string): string {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}.eyebrow, .section-kicker { color: #38bdf8; font-size: 16px; font-weight: 800; letter-spacing: .16em; }.live-dot, .response-state i, .map-live i { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 10px #22c55e; }.hero-copy h1 { margin: 8px 0 4px; font-size: clamp(28px, 4vw, 42px); letter-spacing: -.04em; }.hero-location { margin: 0; color: #94a3b8; }.hero-location span { color: #38bdf8; }.hero-status { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }.type-badge, .severity-badge, .status-badge, .ai-chip, .verified-chip, .updated-pill, .response-state, .pattern-confidence { padding: 6px 9px; border-radius: 6px; font-size: 16px; font-weight: 800; letter-spacing: .06em; }.type-badge { background: rgba(168,85,247,.16); color: #d8b4fe; }.type-fire { color: #fb923c; background: rgba(249,115,22,.15); }.type-flood { color: #38bdf8; background: rgba(14,165,233,.15); }.type-landslide { color: #fbbf24; background: rgba(245,158,11,.15); }.severity-high { color: #fb7185; background: rgba(244,63,94,.15); }.severity-medium { color: #fbbf24; background: rgba(245,158,11,.15); }.severity-low { color: #4ade80; background: rgba(34,197,94,.15); }.status-active { color: #4ade80; }.status-monitoring { color: #fbbf24; }.status-resolved { color: #94a3b8; }.status-badge { border: 1px solid currentColor; }
-.tabs { display: flex; gap: 3px; overflow-x: auto; border-bottom: 1px solid rgba(148,163,184,.18); scrollbar-width: thin; scrollbar-color: rgba(14,165,233,.4) transparent; padding-bottom: 2px; }.tab-button { white-space: nowrap; display: flex; align-items: center; gap: 5px; border: 1px solid transparent; border-bottom: 2px solid transparent; padding: 11px 13px; background: transparent; color: #a0aec0; cursor: pointer; font: inherit; font-size: 16px; font-weight: 600; transition: .2s ease; border-radius: 6px 6px 0 0; flex-shrink: 0; min-width: fit-content; }.tab-button:hover { color: #67e8f9; border-color: rgba(14,165,233,.35); background: rgba(14,165,233,.08); border-bottom-color: #0ea5e9; }.tab-button.active { color: #0ea5e9; border: 1px solid rgba(14,165,233,.48); border-bottom: 2px solid #0ea5e9; background: linear-gradient(180deg, rgba(14,165,233,.15), rgba(14,165,233,.05)); box-shadow: inset 0 0 12px rgba(14,165,233,.1); }.tab-icon { font-size: 16px; color: inherit; flex-shrink: 0; }.tab-button:hover .tab-icon { color: #38bdf8; }.tab-button.active .tab-icon { color: #0ea5e9; }.critical-marker { color: #fbbf24; margin-left: 2px; }
+}.eyebrow, .section-kicker {
+  color: #38bdf8;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: none;
+}.live-dot, .response-state i, .map-live i { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,.6); }.hero-copy h1 { margin: 8px 0 4px; font-size: clamp(28px, 4vw, 42px); letter-spacing: -.04em; }.hero-location { margin: 0; color: #94a3b8; }.hero-location span { color: #38bdf8; }.hero-status { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }.type-badge, .severity-badge, .status-badge, .ai-chip, .verified-chip, .updated-pill, .response-state, .pattern-confidence { padding: 6px 9px; border-radius: 6px; font-size: 16px; font-weight: 800; letter-spacing: .06em; }.type-badge { background: rgba(168,85,247,.16); color: #d8b4fe; }.type-fire { color: #fb923c; background: rgba(249,115,22,.15); }.type-flood { color: #38bdf8; background: rgba(14,165,233,.15); }.type-landslide { color: #fbbf24; background: rgba(245,158,11,.15); }.severity-high { color: #fb7185; background: rgba(244,63,94,.15); }.severity-medium { color: #fbbf24; background: rgba(245,158,11,.15); }.severity-low { color: #4ade80; background: rgba(34,197,94,.15); }.status-active { color: #4ade80; }.status-monitoring { color: #fbbf24; }.status-resolved { color: #94a3b8; }.status-badge { border: 1px solid currentColor; }
+.tabs { display: flex; gap: 3px; overflow-x: auto; border-bottom: 1px solid rgba(148,163,184,.18); scrollbar-width: thin; scrollbar-color: rgba(14,165,233,.4) transparent; padding-bottom: 2px; }.tab-button { white-space: nowrap; display: flex; align-items: center; gap: 5px; border: 1px solid transparent; border-bottom: 2px solid transparent; padding: 11px 13px; background: transparent; color: #a0aec0; cursor: pointer; font: inherit; font-size: 16px; font-weight: 600; transition: .2s ease; border-radius: 6px 6px 0 0; flex-shrink: 0; min-width: fit-content; }.tab-button:hover { color: #67e8f9; border-color: rgba(14,165,233,.35); background: rgba(14,165,233,.08); border-bottom-color: #0ea5e9; }.tab-button.active { color: #0ea5e9; border: 1px solid rgba(14,165,233,.48); border-bottom: 2px solid #0ea5e9; background: rgba(14,165,233,.1); }.tab-icon { font-size: 16px; color: inherit; flex-shrink: 0; }.tab-button:hover .tab-icon { color: #38bdf8; }.tab-button.active .tab-icon { color: #0ea5e9; }.critical-marker { color: #fbbf24; margin-left: 2px; }
 .tab-content { padding-top: 26px; }.tab-fade-enter-active, .tab-fade-leave-active { transition: opacity .2s ease, transform .2s ease; }.tab-fade-enter-from, .tab-fade-leave-to { opacity: 0; transform: translateY(5px); }
-.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }.metric-card { min-height: 136px; padding: 18px; }.metric-label, .metric-footnote, .metric-card small { display: block; color: #94a3b8; font-size: 18px; }.metric-value { display: block; margin: 15px 0 6px; color: #67e8f9; font-size: 27px; line-height: 1.1; }.metric-value small { display: inline; font-size: 16px; color: #94a3b8; }.compact-value { font-size: 17px; color: #f8fafc; line-height: 1.25; }.threat-value { color: #fb7185; }.trend-value { color: #4ade80; }.status-text { color: #fbbf24; }.progress-track { height: 5px; margin-top: 12px; overflow: hidden; background: rgba(100,116,139,.2); border-radius: 99px; }.progress-fill { display: block; height: 100%; border-radius: inherit; background: #0ea5e9; box-shadow: 0 0 10px rgba(14,165,233,.55); }.threat-fill { background: #fb7185; }.content-grid { display: grid; gap: 18px; margin-top: 18px; }.two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }.content-grid > .glass-panel, .impact-layout > .glass-panel, .source-grid > .glass-panel, .ai-grid > .glass-panel { padding: 22px; }.panel-heading { justify-content: space-between; gap: 12px; margin-bottom: 20px; }.panel-heading h2, .panel-heading h3 { margin-top: 4px; color: #f8fafc; }.panel-code { color: #475569; font: 700 10px ui-monospace, monospace; }.long-copy { color: #cbd5e1; line-height: 1.75; }.summary-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }.summary-facts span, .summary-facts strong { display: block; }.summary-facts span { color: #64748b; font-size: 18px; }.summary-facts strong { margin-top: 3px; color: #e2e8f0; font-size: 18px; }.ai-chip, .verified-chip { color: #67e8f9; background: rgba(14,165,233,.12); }.action-list, .lessons-list { display: grid; gap: 15px; padding: 0; margin: 0; list-style: none; }.action-list li { display: flex; align-items: flex-start; gap: 12px; }.action-number { color: #0ea5e9; font: 700 12px ui-monospace, monospace; }.action-list strong { color: #f8fafc; font-size: 18px; }.action-list p { margin: 4px 0 0; color: #94a3b8; font-size: 16px; }.priority { margin-left: auto; color: #fbbf24; font-size: 18px; font-weight: 800; text-transform: uppercase; }.priority-urgent { color: #fb7185; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }.metric-card { min-height: 136px; padding: 18px; }.metric-label, .metric-footnote, .metric-card small { display: block; color: #94a3b8; font-size: 18px; }.metric-value { display: block; margin: 15px 0 6px; color: #67e8f9; font-size: 27px; line-height: 1.1; }.metric-value small { display: inline; font-size: 16px; color: #94a3b8; }.compact-value { font-size: 17px; color: #f8fafc; line-height: 1.25; }.threat-value { color: #fb7185; }.trend-value { color: #4ade80; }.status-text { color: #fbbf24; }.progress-track { height: 5px; margin-top: 12px; overflow: hidden; background: rgba(100,116,139,.2); border-radius: 99px; }.progress-fill { display: block; height: 100%; border-radius: inherit; background: #0ea5e9; }.threat-fill { background: #fb7185; }.content-grid { display: grid; gap: 18px; margin-top: 18px; }.two-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }.content-grid > .glass-panel, .impact-layout > .glass-panel, .source-grid > .glass-panel, .ai-grid > .glass-panel { padding: 22px; }.panel-heading { justify-content: space-between; gap: 12px; margin-bottom: 20px; }.panel-heading h2, .panel-heading h3 { margin-top: 4px; color: #f8fafc; }.panel-code { color: #475569; font: 700 10px ui-monospace, monospace; }.long-copy { color: #cbd5e1; line-height: 1.75; }.summary-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }.summary-facts span, .summary-facts strong { display: block; }.summary-facts span { color: #64748b; font-size: 18px; }.summary-facts strong { margin-top: 3px; color: #e2e8f0; font-size: 18px; }.ai-chip, .verified-chip { color: #67e8f9; background: rgba(14,165,233,.12); }.action-list, .lessons-list { display: grid; gap: 15px; padding: 0; margin: 0; list-style: none; }.action-list li { display: flex; align-items: flex-start; gap: 12px; }.action-number { color: #0ea5e9; font: 700 12px ui-monospace, monospace; }.action-list strong { color: #f8fafc; font-size: 18px; }.action-list p { margin: 4px 0 0; color: #94a3b8; font-size: 16px; }.priority { margin-left: auto; color: #fbbf24; font-size: 18px; font-weight: 800; text-transform: uppercase; }.priority-urgent { color: #fb7185; }
 .tab-intro { justify-content: space-between; gap: 20px; margin-bottom: 20px; }.tab-intro h2 { margin: 5px 0 4px; font-size: 25px; }.tab-intro p { margin: 0; color: #94a3b8; }.updated-pill, .pattern-confidence { color: #94a3b8; background: rgba(100,116,139,.13); }.impact-layout, .source-grid, .ai-grid, .map-evidence-layout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }.zone-list, .population-bars, .resource-list, .freshness-list, .lineage-list, .audit-list, .route-list, .deployment-list, .history-list, .comparison-list, .evidence-list, .region-list, .alert-history { display: grid; gap: 15px; }.zone-row, .route-row, .history-row, .alert-row, .deployment-row, .lineage-row, .audit-row, .region-row { display: flex; align-items: center; gap: 12px; }.zone-icon { display: grid; place-items: center; width: 33px; height: 33px; border-radius: 8px; font-weight: 800; }.zone-critical { color: #fb7185; background: rgba(244,63,94,.18); }.zone-high { color: #fb923c; background: rgba(249,115,22,.18); }.zone-watch { color: #fbbf24; background: rgba(245,158,11,.18); }.zone-main, .route-main, .history-main, .region-row > span:first-child { flex: 1; min-width: 0; }.row-title { justify-content: space-between; gap: 10px; }.row-title strong, .row-title span, .zone-main small { font-size: 16px; }.row-title span, .zone-main small, .route-main small, .history-main small, .deployment-row small, .audit-row small { color: #64748b; }.zone-percent { color: #67e8f9; font-size: 18px; }.fill-critical { background: #fb7185; }.fill-high { background: #fb923c; }.fill-watch { background: #fbbf24; }.population-row .row-title strong { color: #67e8f9; }.population-fill, .region-fill { background: #22d3ee; }.bar-with-label { display: flex; align-items: center; gap: 9px; }.bar-with-label .progress-track { flex: 1; }.bar-with-label small { color: #64748b; }.total-callout, .eta-callout { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 20px; padding: 13px; border: 1px solid rgba(14,165,233,.25); border-radius: 8px; background: rgba(14,165,233,.08); }.total-callout span, .eta-callout span { color: #94a3b8; font-size: 16px; }.total-callout strong, .eta-callout strong { color: #67e8f9; }.asset-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }.asset-card { padding: 13px 8px; text-align: center; border-radius: 9px; background: rgba(15,23,42,.65); }.asset-icon { display: block; color: #38bdf8; font-size: 22px; }.asset-card strong, .asset-card span, .asset-card small { display: block; }.asset-card strong { margin-top: 4px; font-size: 21px; }.asset-card span { color: #cbd5e1; font-size: 16px; }.asset-card small { margin-top: 8px; color: #4ade80; font-size: 18px; }.asset-card small.restricted, .asset-card small.inspect { color: #fbbf24; }.resource-row { display: grid; grid-template-columns: 1.2fr 1fr auto; align-items: center; gap: 10px; color: #cbd5e1; font-size: 16px; }.resource-progress { height: 6px; overflow: hidden; background: rgba(100,116,139,.18); border-radius: 99px; }.resource-progress span { display: block; height: 100%; background: #22d3ee; border-radius: inherit; }.resource-row strong { color: #f8fafc; font-size: 16px; }.resource-row small { grid-column: 2 / 4; color: #64748b; font-size: 16px; }
-.map-preview { overflow: hidden; padding: 0 !important; }.map-toolbar, .map-footer { justify-content: space-between; gap: 10px; padding: 14px 18px; }.map-title, .map-live { color: #94a3b8; font: 700 10px ui-monospace, monospace; }.map-live { color: #4ade80; }.map-canvas { position: relative; height: 400px; overflow: hidden; background: linear-gradient(135deg, #112c2e 0%, #173d41 35%, #263c32 68%, #172f2d 100%); }.map-grid { position: absolute; inset: 0; opacity: .28; background-image: linear-gradient(rgba(125,211,252,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(125,211,252,.2) 1px, transparent 1px); background-size: 45px 45px; transform: rotate(-12deg) scale(1.2); }.map-zone { position: absolute; width: 145px; height: 110px; display: grid; place-items: center; border: 2px solid; border-radius: 45% 55% 50% 40%; font: 800 18px ui-monospace, monospace; transform: rotate(-20deg); }.map-zone-1 { top: 25%; left: 27%; color: #fb7185; border-color: rgba(251,113,133,.8); background: rgba(244,63,94,.2); box-shadow: 0 0 30px rgba(244,63,94,.35); }.map-zone-2 { top: 42%; left: 48%; color: #fb923c; border-color: rgba(251,146,60,.7); background: rgba(249,115,22,.16); }.map-zone-3 { top: 51%; left: 16%; color: #fbbf24; border-color: rgba(251,191,36,.6); background: rgba(245,158,11,.12); }.map-crosshair { position: absolute; top: 48%; left: 51%; color: #fff; font-size: 30px; text-shadow: 0 0 12px #0ea5e9; }.map-scale { position: absolute; right: 17px; top: 18px; color: #e2e8f0; text-align: center; font-weight: 800; }.map-scale span { color: #38bdf8; }.map-legend { position: absolute; bottom: 14px; left: 15px; display: flex; gap: 12px; padding: 8px 10px; color: #cbd5e1; font-size: 16px; background: rgba(15,23,42,.8); border-radius: 6px; }.legend-dot { display: inline-block; width: 7px; height: 7px; margin-right: 3px; border-radius: 50%; }.legend-dot.critical { background: #fb7185; }.legend-dot.watch { background: #fbbf24; }.legend-dot.safe { background: #4ade80; }.map-footer { border-top: 1px solid rgba(148,163,184,.12); color: #64748b; font-size: 16px; }.evidence-row { display: flex; align-items: center; gap: 10px; }.evidence-thumb { display: grid; place-items: center; width: 42px; height: 38px; color: #67e8f9; border-radius: 6px; background: linear-gradient(135deg, rgba(14,165,233,.3), rgba(34,197,94,.2)); font-size: 21px; }.evidence-main { flex: 1; }.evidence-main strong, .evidence-main small { display: block; }.evidence-main strong { font-size: 16px; }.evidence-main small { margin-top: 3px; color: #64748b; font-size: 16px; }.evidence-status, .delivery-status { font-size: 18px; font-weight: 800; text-transform: uppercase; }.evidence-verified, .delivered { color: #4ade80; }.evidence-pending, .partial { color: #fbbf24; }.verification-score { display: flex; align-items: center; gap: 13px; margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(148,163,184,.14); }.verification-score p { margin: 3px 0 0; font-size: 18px; }.score-ring { display: grid; place-items: center; width: 67px; height: 67px; border: 4px solid #22d3ee; border-left-color: rgba(34,211,238,.2); border-radius: 50%; }.score-ring strong { color: #67e8f9; font-size: 16px; }.score-ring small { color: #64748b; font-size: 8px; }
+.map-preview { overflow: hidden; padding: 0 !important; }.map-toolbar, .map-footer { justify-content: space-between; gap: 10px; padding: 14px 18px; }.map-title, .map-live { color: #94a3b8; font: 700 10px ui-monospace, monospace; }.map-live { color: #4ade80; }.map-canvas { position: relative; height: 400px; overflow: hidden; background: linear-gradient(135deg, #112c2e 0%, #173d41 35%, #263c32 68%, #172f2d 100%); }.map-grid { position: absolute; inset: 0; opacity: .28; background-image: linear-gradient(rgba(125,211,252,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(125,211,252,.2) 1px, transparent 1px); background-size: 45px 45px; transform: rotate(-12deg) scale(1.2); }.map-zone { position: absolute; width: 145px; height: 110px; display: grid; place-items: center; border: 2px solid; border-radius: 45% 55% 50% 40%; font: 800 18px ui-monospace, monospace; transform: rotate(-20deg); }.map-zone-1 { top: 25%; left: 27%; color: #fb7185; border-color: rgba(251,113,133,.8); background: rgba(244,63,94,.2); }.map-zone-2 { top: 42%; left: 48%; color: #fb923c; border-color: rgba(251,146,60,.7); background: rgba(249,115,22,.16); }.map-zone-3 { top: 51%; left: 16%; color: #fbbf24; border-color: rgba(251,191,36,.6); background: rgba(245,158,11,.12); }.map-crosshair { position: absolute; top: 48%; left: 51%; color: #fff; font-size: 30px; text-shadow: 0 0 12px #0ea5e9; }.map-scale { position: absolute; right: 17px; top: 18px; color: #e2e8f0; text-align: center; font-weight: 800; }.map-scale span { color: #38bdf8; }.map-legend { position: absolute; bottom: 14px; left: 15px; display: flex; gap: 12px; padding: 8px 10px; color: #cbd5e1; font-size: 16px; background: rgba(15,23,42,.8); border-radius: 6px; }.legend-dot { display: inline-block; width: 7px; height: 7px; margin-right: 3px; border-radius: 50%; }.legend-dot.critical { background: #fb7185; }.legend-dot.watch { background: #fbbf24; }.legend-dot.safe { background: #4ade80; }.map-footer { border-top: 1px solid rgba(148,163,184,.12); color: #64748b; font-size: 16px; }.evidence-row { display: flex; align-items: center; gap: 10px; }.evidence-thumb { display: grid; place-items: center; width: 42px; height: 38px; color: #67e8f9; border-radius: 6px; background: linear-gradient(135deg, rgba(14,165,233,.3), rgba(34,197,94,.2)); font-size: 21px; }.evidence-main { flex: 1; }.evidence-main strong, .evidence-main small { display: block; }.evidence-main strong { font-size: 16px; }.evidence-main small { margin-top: 3px; color: #64748b; font-size: 16px; }.evidence-status, .delivery-status { font-size: 18px; font-weight: 800; text-transform: uppercase; }.evidence-verified, .delivered { color: #4ade80; }.evidence-pending, .partial { color: #fbbf24; }.verification-score { display: flex; align-items: center; gap: 13px; margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(148,163,184,.14); }.verification-score p { margin: 3px 0 0; font-size: 18px; }.score-ring { display: grid; place-items: center; width: 67px; height: 67px; border: 4px solid #22d3ee; border-left-color: rgba(34,211,238,.2); border-radius: 50%; }.score-ring strong { color: #67e8f9; font-size: 16px; }.score-ring small { color: #64748b; font-size: 8px; }
 .response-state { color: #4ade80; }.response-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }.response-metric { padding: 18px; }.response-metric span, .response-metric small { display: block; color: #94a3b8; font-size: 18px; }.response-metric strong { display: block; margin: 10px 0 4px; color: #67e8f9; font-size: 25px; }.route-status { width: 10px; align-self: stretch; position: relative; }.route-status span { position: absolute; top: 6px; width: 8px; height: 8px; border-radius: 50%; }.route-open span { background: #4ade80; box-shadow: 0 0 8px #4ade80; }.route-limited span { background: #fbbf24; }.route-clearing span { background: #fb923c; }.route-time { color: #67e8f9; font-size: 16px; }.route-track { height: 4px; margin-top: 8px; background: rgba(100,116,139,.2); border-radius: 99px; }.route-track span { display: block; height: 100%; background: #4ade80; border-radius: inherit; }.route-limited + .route-main .route-track span { background: #fbbf24; }.deployment-icon { display: grid; place-items: center; width: 30px; height: 30px; color: #38bdf8; border-radius: 7px; background: rgba(14,165,233,.13); }.deployment-row div { flex: 1; }.deployment-row strong, .deployment-row small { display: block; }.deployment-row strong { font-size: 16px; }.deployment-row small { margin-top: 2px; font-size: 16px; }.deployment-count { color: #cbd5e1; font-size: 18px; }.deployment-status { font-size: 18px; text-transform: uppercase; }.deployment-status.active { color: #4ade80; }.deployment-status.moving { color: #38bdf8; }.deployment-status.standby { color: #fbbf24; }.eta-callout { flex-wrap: wrap; }.eta-callout small { width: 100%; color: #64748b; font-size: 16px; }.history-year { color: #38bdf8; font: 700 12px ui-monospace, monospace; }.history-stat { text-align: right; }.history-stat strong, .history-stat small { display: block; }.history-stat strong { color: #67e8f9; font-size: 16px; }.history-stat small { color: #64748b; font-size: 18px; }.similarity { color: #a78bfa; font-size: 16px; }.comparison-row { display: flex; align-items: center; gap: 12px; }.comparison-row > span:first-child { flex: 1; color: #cbd5e1; font-size: 16px; }.comparison-values { text-align: right; }.comparison-values strong, .comparison-values span { display: block; }.comparison-values strong { color: #f8fafc; font-size: 16px; }.comparison-values span { color: #64748b; font-size: 16px; }.comparison-delta { min-width: 42px; text-align: right; font-size: 18px; }.comparison-delta.good { color: #4ade80; }.comparison-delta.bad { color: #fb7185; }.insight-list { display: grid; gap: 13px; padding: 0; margin: 0; list-style: none; }.insight-list li { color: #cbd5e1; font-size: 16px; }.insight-list span { margin-right: 10px; color: #38bdf8; }.lessons-list { list-style: decimal; padding-left: 22px; }.lessons-list li { padding-left: 5px; color: #94a3b8; }.lessons-list strong, .lessons-list span { display: block; }.lessons-list strong { color: #f8fafc; font-size: 16px; }.lessons-list span { margin-top: 3px; font-size: 18px; }
 .quality-score { text-align: right; }.quality-score span, .quality-score strong { display: block; }.quality-score span { color: #64748b; font-size: 18px; letter-spacing: .12em; }.quality-score strong { color: #4ade80; font-size: 28px; }.quality-score small { color: #64748b; font-size: 18px; }.source-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }.source-card { padding: 14px; border: 1px solid rgba(148,163,184,.14); border-radius: 9px; background: rgba(15,23,42,.55); }.source-card-head { display: flex; justify-content: space-between; }.source-icon { color: #38bdf8; font-size: 22px; }.source-status { font-size: 18px; text-transform: uppercase; }.source-status.verified { color: #4ade80; }.source-status.pending { color: #fbbf24; }.source-card strong { display: block; margin-top: 9px; font-size: 16px; }.source-card p { min-height: 33px; margin: 5px 0 12px; font-size: 16px; }.source-meta { display: flex; justify-content: space-between; color: #64748b; font-size: 18px; }.freshness-list div { display: flex; justify-content: space-between; gap: 12px; }.freshness-list span { color: #64748b; font-size: 18px; }.freshness-list strong { color: #cbd5e1; font-size: 18px; text-align: right; }.freshness-meter { margin-top: 24px; }.freshness-meter > span, .freshness-meter > strong { color: #94a3b8; font-size: 16px; }.freshness-meter > strong { float: right; color: #4ade80; }.freshness-fill { background: #4ade80; }.lineage-marker { width: 9px; height: 9px; border: 2px solid #0ea5e9; border-radius: 50%; box-shadow: 0 0 8px rgba(14,165,233,.6); }.lineage-row div { flex: 1; }.lineage-row strong, .lineage-row small, .audit-row strong, .audit-row small { display: block; }.lineage-row strong, .audit-row strong { font-size: 16px; }.lineage-row small, .audit-row small { margin-top: 3px; font-size: 16px; }.confidence-badge { color: #67e8f9; font: 700 10px ui-monospace, monospace; }.audit-time { min-width: 68px; color: #38bdf8; font: 10px ui-monospace, monospace; }.audit-row div { flex: 1; }
 .ai-grid { grid-template-columns: 1.2fr .8fr; }.prediction-head { display: flex; align-items: center; gap: 18px; }.forecast-number { color: #67e8f9; font-size: 55px; font-weight: 800; line-height: 1; }.forecast-number small { font-size: 21px; }.prediction-head strong { font-size: 16px; }.prediction-head p { margin: 4px 0 0; font-size: 18px; }.forecast-timeline { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 30px; }.forecast-point { position: relative; padding-top: 14px; border-top: 1px solid rgba(148,163,184,.2); }.forecast-point:not(:last-child):after { content: ''; position: absolute; top: -2px; right: 0; width: 5px; height: 5px; border-radius: 50%; background: #38bdf8; }.forecast-dot { position: absolute; top: -4px; left: 0; width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; }.forecast-dot.current { background: #4ade80; box-shadow: 0 0 8px #4ade80; }.forecast-point strong, .forecast-point small { display: block; }.forecast-point strong { font-size: 18px; }.forecast-point small { margin-top: 3px; color: #67e8f9; font-size: 16px; }.risk-total { color: #fb7185; font-size: 22px; }.risk-list { display: grid; gap: 17px; }.risk-fill { background: linear-gradient(90deg, #fbbf24, #fb7185); }.signal-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(148,163,184,.12); }.signal-row:last-child { border-bottom: 0; }.signal-icon { color: #38bdf8; font-size: 19px; }.signal-row div { flex: 1; }.signal-row strong { font-size: 16px; }.signal-row p { margin: 4px 0 0; font-size: 18px; }.signal-impact { color: #fbbf24; font-size: 18px; font-weight: 800; }.ai-actions li { padding-bottom: 14px; border-bottom: 1px solid rgba(148,163,184,.12); }
@@ -978,10 +1100,11 @@ body { background: var(--detail-bg) !important; }
 .outcome-grid span,
 .outcome-grid small {
   color: var(--detail-secondary);
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  letter-spacing: .05em;
+  text-transform: none;
+  line-height: 1.5;
 }
 
 .metric-value,
@@ -996,6 +1119,9 @@ body { background: var(--detail-bg) !important; }
 .risk-total {
   color: var(--detail-cyan);
   font-weight: 700;
+  font-size: 1.4em;
+  display: block;
+  margin-top: 8px;
 }
 
 .metric-grid {
@@ -1035,11 +1161,9 @@ body { background: var(--detail-bg) !important; }
 
 .action-panel {
   border: 2px solid var(--detail-accent) !important;
-  box-shadow: 0 0 18px rgba(14, 165, 233, .1);
 }
 .action-panel:hover {
   border-color: #38bdf8 !important;
-  box-shadow: 0 0 28px rgba(14, 165, 233, .28);
 }
 
 .loading-state, .error-state {
@@ -1220,7 +1344,7 @@ body { background: var(--detail-bg) !important; }
   gap: 24px;
   padding: 20px 24px;
   margin-bottom: 22px;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(30, 41, 59, 0.7));
+  background: rgba(22, 29, 39, 0.72);
   border: 1px solid rgba(14, 165, 233, 0.35);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
@@ -1262,8 +1386,8 @@ body { background: var(--detail-bg) !important; }
 }
 
 .recon-launch-button {
-  background: linear-gradient(135deg, #0ea5e9, #2563eb);
-  color: #ffffff;
+  background: var(--accent-cyan);
+  color: #04141a;
   border: 1px solid #38bdf8;
   padding: 12px 24px;
   border-radius: 8px;
@@ -1276,12 +1400,10 @@ body { background: var(--detail-bg) !important; }
   align-items: center;
   gap: 8px;
   transition: all 0.25s ease;
-  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.35);
 }
 
 .recon-launch-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #38bdf8, #1d4ed8);
-  box-shadow: 0 0 24px rgba(56, 189, 248, 0.6);
+  background: #38bdf8;
   transform: translateY(-2px);
 }
 
@@ -1316,7 +1438,7 @@ body { background: var(--detail-bg) !important; }
   background: rgba(15, 23, 42, 0.95);
   border: 1px solid #38bdf8;
   border-radius: 14px;
-  box-shadow: 0 0 50px rgba(14, 165, 233, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .scanner-header {
@@ -1542,7 +1664,6 @@ body { background: var(--detail-bg) !important; }
 .primary-back-btn:hover {
   background: #0ea5e9;
   color: #03111b;
-  box-shadow: 0 0 16px rgba(14, 165, 233, 0.5);
   transform: translateX(-2px);
 }
 
@@ -1557,7 +1678,7 @@ body { background: var(--detail-bg) !important; }
   justify-content: space-between;
   padding: 14px 20px;
   margin-bottom: 18px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.65));
+  background: rgba(20, 30, 48, 0.75);
   border: 1px solid rgba(56, 189, 248, 0.3);
   border-radius: 12px;
   gap: 16px;
@@ -1567,11 +1688,11 @@ body { background: var(--detail-bg) !important; }
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  color: #94a3b8;
-  text-transform: uppercase;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: none;
 }
 
 .command-dot {
@@ -1579,7 +1700,7 @@ body { background: var(--detail-bg) !important; }
   height: 8px;
   border-radius: 50%;
   background: #10b981;
-  box-shadow: 0 0 10px #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
 }
 
 .toolbar-actions {
@@ -1602,15 +1723,13 @@ body { background: var(--detail-bg) !important; }
 }
 
 .cmd-btn.primary {
-  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  background: var(--accent-cyan);
   border: 1px solid #38bdf8;
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+  color: #04141a;
 }
 
 .cmd-btn.primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #38bdf8, #1d4ed8);
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+  background: #38bdf8;
   transform: translateY(-1px);
 }
 
@@ -1653,7 +1772,7 @@ body { background: var(--detail-bg) !important; }
   height: 8px;
   border-radius: 50%;
   background: #38bdf8;
-  box-shadow: 0 0 8px #38bdf8;
+  box-shadow: 0 0 5px rgba(56, 189, 248, 0.6);
 }
 
 .recon-title-group h4 {
@@ -1806,7 +1925,6 @@ body { background: var(--detail-bg) !important; }
 .gis-console-btn:hover {
   background: #0ea5e9;
   color: #03111b;
-  box-shadow: 0 0 14px rgba(14, 165, 233, 0.5);
 }
 
 /* ===== ENVIRONMENTAL SENSOR GAUGES STRIP ===== */
