@@ -76,7 +76,7 @@
 
       <section class="incident-hero">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="live-dot"></span> {{ $t('detail.incident') }} {{ displayIncidentId(incident.id) }}</div>
+          <div class="eyebrow"><span class="live-dot"></span> {{ $t('detail.incident') }} {{ displayIncidentId(incident) }}</div>
           <h1>{{ incidentLabel }}</h1>
           <p class="hero-location"><span>⌖</span> {{ incident.location }} · {{ $t('detail.detected') }} {{ formatDate(incident.detectionTime) }}</p>
         </div>

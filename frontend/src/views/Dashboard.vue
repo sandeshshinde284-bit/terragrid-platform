@@ -100,7 +100,7 @@
           <div class="detail-header">
             <div class="header-top">
               <span class="incident-type-icon">{{ getIncidentIcon(selectedIncidentData.type) }}</span>
-              <h3>{{ formatIncidentType(selectedIncidentData.type) }} <span class="incident-id">{{ displayIncidentId(selectedIncidentData.id) }}</span></h3>
+              <h3>{{ formatIncidentType(selectedIncidentData.type) }} <span class="incident-id">{{ displayIncidentId(selectedIncidentData) }}</span></h3>
             </div>
             <button class="close-btn" @click="closeDetail">✕</button>
           </div>
@@ -196,7 +196,7 @@
           <div class="detail-header">
             <div class="header-top">
               <span class="incident-type-icon">{{ getIncidentIcon(selectedIncidentData.type) }}</span>
-              <h3>{{ formatIncidentType(selectedIncidentData.type) }} <span class="incident-id">{{ displayIncidentId(selectedIncidentData.id) }}</span></h3>
+              <h3>{{ formatIncidentType(selectedIncidentData.type) }} <span class="incident-id">{{ displayIncidentId(selectedIncidentData) }}</span></h3>
             </div>
             <button class="close-btn" @click="closeDetail">✕</button>
           </div>

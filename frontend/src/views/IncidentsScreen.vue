@@ -108,7 +108,7 @@
               <td class="type-cell">
                 <span class="type-icon">{{ getIcon(incident.type, incident.location) }}</span>
                 <span class="type-name">{{ formatType(incident.type, incident.location) }}</span>
-                <span class="incident-id">{{ displayIncidentId(incident.id) }}</span>
+                <span class="incident-id">{{ displayIncidentId(incident) }}</span>
               </td>
               <td class="location-cell">
                 <span class="location-text">{{ cleanLocation(incident.location) }}</span>

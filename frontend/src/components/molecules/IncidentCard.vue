@@ -9,7 +9,7 @@
       <div class="header-top">
         <span class="icon">{{ iconMap[incident.type] }}</span>
         <h3>{{ incident.type.toUpperCase() }}</h3>
-        <span class="incident-id">{{ displayIncidentId(incident.id) }}</span>
+        <span class="incident-id">{{ displayIncidentId(incident) }}</span>
       </div>
       <div class="header-bottom">
         <p class="location">{{ formatLocation(incident.location) }}</p>

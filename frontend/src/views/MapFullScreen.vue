@@ -20,7 +20,7 @@
       <transition name="fade">
         <div v-if="selectedIncident" class="selected-incident-card glass-panel">
           <div class="selected-head">
-            <strong>{{ selectedIncident.type }} <span class="incident-id">{{ displayIncidentId(selectedIncident.id) }}</span></strong>
+            <strong>{{ selectedIncident.type }} <span class="incident-id">{{ displayIncidentId(selectedIncident) }}</span></strong>
             <small>{{ selectedIncident.location }}</small>
           </div>
           <div class="selected-metrics">
