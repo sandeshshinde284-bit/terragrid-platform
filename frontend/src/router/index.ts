@@ -82,7 +82,7 @@ const routes: RouteRecordRaw[] = [
     name: 'PrepareForecast',
     component: () => import('@/views/prepare/ForecastDashboard.vue'),
     meta: {
-      title: 'Risk Escalation Forecast - TerraGrid',
+      title: 'Weather Risk Forecast - TerraGrid',
       requiresAuth: false,
       phase: 'prepare',
     },
@@ -92,7 +92,7 @@ const routes: RouteRecordRaw[] = [
     name: 'PrepareRiskTimeline',
     component: () => import('@/views/prepare/RiskTimeline.vue'),
     meta: {
-      title: 'Risk Escalation Timeline - TerraGrid',
+      title: 'Risk Over the Next Few Days - TerraGrid',
       requiresAuth: false,
       phase: 'prepare',
     },

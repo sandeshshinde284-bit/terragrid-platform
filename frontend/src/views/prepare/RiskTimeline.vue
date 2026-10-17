@@ -122,7 +122,61 @@
                       :aria-expanded="expandedConfidence.has(day.date)"
                       @click="toggleConfidenceDetail(day)"
                     >{{ day.confidence_pct.toFixed(0) }}% {{ $t('prepare.timeline.agreement') }} &middot; {{ confidenceLabel(day.confidence_pct) }} <span class="info-hint" aria-hidden="true">{{ expandedConfidence.has(day.date) ? '▲' : 'ⓘ' }}</span></button>
-                    <p v-if="expandedConfidence.has(day.date)" class="node-confidence-detail">{{ confidenceTooltip(day) }}</p>
+
+                    <!-- Evidence-to-Action chain: expanding a day walks from
+                         what was actually observed, to the rule that fired,
+                         to what to do about it, to the raw readings behind
+                         all of it - so "why is this RED" has a real answer
+                         instead of just the color and a percentage. -->
+                    <div v-if="expandedConfidence.has(day.date)" class="node-evidence-chain">
+                      <div class="evidence-step">
+                        <span class="evidence-step-label">{{ $t('prepare.timeline.evidenceLabel') }}</span>
+                        <p>{{ evidenceText(day) }}</p>
+                      </div>
+                      <div class="evidence-step">
+                        <span class="evidence-step-label">{{ $t('prepare.timeline.riskAssessmentLabel') }}</span>
+                        <p>{{ confidenceTooltip(day) }}</p>
+                      </div>
+                      <div class="evidence-step" v-if="selectedCity">
+                        <span class="evidence-step-label">{{ $t('prepare.timeline.recommendedActionLabel') }}</span>
+                        <p class="evidence-action-links">
+                          <RouterLink :to="{ name: 'PrepareChecklist', query: { city: selectedCity.city, country: selectedCity.country } }">✅ {{ $t('prepare.timeline.openChecklist') }}</RouterLink>
+                          <RouterLink :to="{ name: 'PrepareAgencyAlerts', query: { city: selectedCity.city, country: selectedCity.country } }">📨 {{ $t('prepare.timeline.draftAlert') }}</RouterLink>
+                        </p>
+                      </div>
+                      <div class="evidence-step">
+                        <span class="evidence-step-label">{{ $t('prepare.timeline.auditEvidenceLabel') }}</span>
+                        <button type="button" class="audit-toggle" @click="toggleAuditDetail(day)">
+                          {{ expandedAudit.has(day.date) ? $t('prepare.timeline.hideRawData') : $t('prepare.timeline.viewRawData') }}
+                        </button>
+                        <div v-if="expandedAudit.has(day.date) && day.raw_entries && day.raw_entries.length" class="audit-table-wrap">
+                          <table class="audit-table">
+                            <thead>
+                              <tr>
+                                <th>{{ $t('prepare.timeline.auditTime') }}</th>
+                                <th>{{ $t('prepare.timeline.auditTemp') }}</th>
+                                <th>{{ $t('prepare.timeline.auditWind') }}</th>
+                                <th>{{ $t('prepare.timeline.auditHumidity') }}</th>
+                                <th>{{ $t('prepare.timeline.auditRain') }}</th>
+                                <th>{{ $t('prepare.timeline.auditWeather') }}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr v-for="entry in day.raw_entries" :key="entry.time" :class="entry.severity">
+                                <td>{{ formatEntryTime(entry.time) }}</td>
+                                <td>{{ entry.temp_c }}°C</td>
+                                <td>{{ entry.wind_ms }}m/s</td>
+                                <td>{{ entry.humidity_pct }}%</td>
+                                <td>{{ entry.rain_mm }}mm</td>
+                                <td>{{ entry.weather }}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                          <p class="audit-source-note">{{ $t('prepare.timeline.auditSourceNote') }}</p>
+                        </div>
+                      </div>
+                    </div>
+
                     <span class="node-weather">{{ weatherIcon(day.dominant_weather) }} {{ day.dominant_weather }}</span>
                     <span class="node-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
                   </div>
@@ -225,6 +279,33 @@ const confidenceLabel = (pct: number): string => {
   return 'Low confidence'
 }
 
+// Plain-language "Evidence" step of the expand-a-day chain: what was
+// actually observed that day, in the UI's own units, plus the exact rule
+// that fired (severity_reason) - not an invented cause like "rainfall
+// exceeded a threshold" when the real trigger might be wind or temperature.
+const evidenceText = (day: PrepareDailyForecast): string => {
+  return `${day.dominant_weather}, up to ${day.max_wind_ms.toFixed(0)}m/s wind, ${day.total_rain_mm.toFixed(0)}mm rain - ${day.severity_reason}.`
+}
+
+// Which day-nodes have their raw 3-hour-entry audit table expanded -
+// separate from expandedConfidence so opening the evidence chain doesn't
+// also dump a full readings table by default.
+const expandedAudit = ref<Set<string>>(new Set())
+const toggleAuditDetail = (day: PrepareDailyForecast) => {
+  const next = new Set(expandedAudit.value)
+  if (next.has(day.date)) next.delete(day.date)
+  else next.add(day.date)
+  expandedAudit.value = next
+}
+
+// raw_entries' time field is OpenWeatherMap's own "YYYY-MM-DD HH:MM:SS"
+// dt_txt - show just the hour so the audit table reads as a timeline, not
+// a wall of repeated dates.
+const formatEntryTime = (dtTxt: string): string => {
+  const match = dtTxt.match(/(\d{2}):(\d{2})/)
+  return match ? `${match[1]}:${match[2]}` : dtTxt
+}
+
 // Which day-nodes currently have their confidence explanation expanded.
 // Keyed by date so it's independent per node. A hover-only `:title` doesn't
 // show on touch devices or in a recording, and the old "i" icon was marked
@@ -243,24 +324,24 @@ const toggleConfidenceDetail = (day: PrepareDailyForecast) => {
 // data came from, and whether the day's evidence is thin - instead of
 // leaving the viewer to trust a bare percentage.
 const confidenceTooltip = (day: PrepareDailyForecast): string => {
-  const calc = `${day.supporting_entries} of ${day.entries_count} three-hour OpenWeatherMap forecast checkpoints for this day agreed with the ${day.risk_level} call (${day.confidence_pct.toFixed(0)}%).`
+  const calc = `${day.supporting_entries} out of ${day.entries_count} weather readings taken that day pointed to ${day.risk_level} risk (${day.confidence_pct.toFixed(0)}%).`
 
   let verdict: string
   if (day.alert_recommended) {
-    verdict = 'Confidence clears the 70% bar used for an auto-recommended alert.'
+    verdict = "That's strong enough agreement to recommend sending an alert."
   } else if (day.risk_level === 'GREEN') {
     verdict = ''
   } else {
-    verdict = 'Below the 70% bar for an auto-recommended alert - likely a brief spike rather than a sustained risk.'
+    verdict = "That's not quite strong enough to recommend an alert yet - it may be a brief spike rather than a lasting risk."
   }
 
-  // A day on the edge of OpenWeatherMap's forecast window naturally has
-  // fewer 3-hour readings than a full day (8) - that's real, not missing,
-  // data, but it's thinner evidence and worth saying so explicitly rather
-  // than letting it look like an equally-strong call.
+  // A day on the edge of the forecast window naturally has fewer readings
+  // than a full day - that's real, not missing, data, but it's thinner
+  // evidence and worth saying so plainly rather than letting it look like
+  // an equally-strong call.
   const sufficiency = day.data_sufficient
     ? ''
-    : `Only ${day.entries_count} checkpoint${day.entries_count === 1 ? '' : 's'} ${day.entries_count === 1 ? 'was' : 'were'} available for this day - it sits at the edge of the forecast window, so this call rests on thinner evidence than the other days.`
+    : `Only ${day.entries_count} reading${day.entries_count === 1 ? '' : 's'} ${day.entries_count === 1 ? 'was' : 'were'} available for this day, so it's based on less evidence than the other days.`
 
   return [calc, verdict, sufficiency].filter(Boolean).join(' ')
 }
@@ -420,13 +501,26 @@ const selectFromQuery = (): boolean => {
   return true
 }
 
+// Falls back to whatever city/country the operator last looked at on any
+// PREPARE screen (see prepareForecastStore.selectedCity) - used when there's
+// no query string to go on, e.g. arriving via the Header's plain tab strip
+// rather than an in-page link that forwards ?city=&country=.
+const selectFromStore = (): boolean => {
+  const { selectedCity: storedCity, selectedCountry: storedCountry } = prepareForecastStore
+  if (!storedCity || !storedCountry) return false
+  const match = cities.value.find(c => c.city === storedCity && c.country === storedCountry)
+  if (!match) return false
+  selectedKey.value = cityKey(match)
+  return true
+}
+
 onMounted(async () => {
   // If another PREPARE page already loaded fresh forecast data, this
   // resolves immediately and the watch(cities, ...) below picks the
   // default selection from what's already there.
   await prepareForecastStore.ensureLoaded(fetchWithMockMode)
   if (cities.value.length > 0 && !selectedCity.value) {
-    if (!selectFromQuery()) {
+    if (!selectFromQuery() && !selectFromStore()) {
       selectedKey.value = cityKey(sortedCities.value[0])
     }
   }
@@ -436,10 +530,18 @@ onMounted(async () => {
 // Guard against the selected city disappearing from a future fetch (data refresh).
 watch(cities, (newCities) => {
   if (newCities.length > 0 && !selectedCity.value) {
-    if (!selectFromQuery()) {
+    if (!selectFromQuery() && !selectFromStore()) {
       selectedKey.value = cityKey(sortedCities.value[0])
     }
   }
+})
+
+// Keep the shared store in sync with whatever city ends up selected here -
+// whether that's from the query string, the store itself, the worst-risk
+// default, or the operator clicking a different row in the rail - so the
+// next PREPARE screen they open (via the Header tabs) can pick it up too.
+watch(selectedCity, (city) => {
+  if (city) prepareForecastStore.setSelectedCity(city.city, city.country)
 })
 
 // Keep the URL in sync with whatever city is selected (clicking the rail,
@@ -1155,12 +1257,103 @@ watch(selectedKey, () => {
   opacity: 0.75;
 }
 
-.node-confidence-detail {
-  margin: 4px 0 0;
+.node-evidence-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 10px;
+  max-width: 220px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  text-align: left;
+}
+
+.evidence-step {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.evidence-step-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #38bdf8;
+}
+
+.evidence-step p {
+  margin: 0;
   font-size: 11px;
   line-height: 1.4;
   color: var(--text-secondary);
-  max-width: 160px;
+}
+
+.evidence-action-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.evidence-action-links a {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.evidence-action-links a:hover {
+  text-decoration: underline;
+}
+
+.audit-toggle {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 600;
+  color: #38bdf8;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.audit-table-wrap {
+  margin-top: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.audit-table th,
+.audit-table td {
+  padding: 3px 4px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.audit-table th {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.audit-table tr.high td,
+.audit-table tr.critical td {
+  color: #fca5a5;
+}
+
+.audit-source-note {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: var(--text-secondary);
+  opacity: 0.8;
 }
 
 .node-confidence.confidence-high {

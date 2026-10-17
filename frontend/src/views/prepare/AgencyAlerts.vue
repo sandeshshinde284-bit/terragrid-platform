@@ -114,7 +114,7 @@
                   :aria-expanded="confidenceDetailExpanded"
                   @click="confidenceDetailExpanded = !confidenceDetailExpanded"
                 >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% agreement <span class="info-hint" aria-hidden="true">{{ confidenceDetailExpanded ? '▲' : 'ⓘ' }}</span></button>
-                <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
+                <span class="source-badge" :class="sourceBadgeClass" :title="sourceLabel">{{ sourceLabelSimple }}</span>
               </div>
 
               <p v-if="worstDayConfidence && confidenceDetailExpanded" class="confidence-detail glass-panel">{{ confidenceTooltip }}</p>
@@ -330,6 +330,18 @@ const sourceBadgeClass = computed(() => {
   if (alertsPlan.value?.is_mock_demo) return 'mock'
   if (alertsPlan.value?.is_fallback) return 'fallback'
   return 'live'
+})
+
+// The backend's own source string ("Gemini 2.5 Flash via Vertex AI") is
+// accurate but reads as engineering detail to someone who isn't - this
+// keeps that full string available on hover/title while the badge itself
+// says something anyone can read at a glance.
+const sourceLabelSimple = computed(() => {
+  switch (sourceBadgeClass.value) {
+    case 'mock': return 'Demo data'
+    case 'fallback': return 'Backup wording (AI unavailable)'
+    default: return 'AI-drafted'
+  }
 })
 
 const selectedAlert = computed<AgencyAlert | null>(() => {
@@ -555,6 +567,19 @@ const selectFromQuery = (): boolean => {
   return true
 }
 
+// Falls back to whatever city/country the operator last looked at on any
+// PREPARE screen - used when there's no query string to go on, e.g.
+// arriving via the Header's plain tab strip rather than an in-page link
+// that forwards ?city=&country=.
+const selectFromStore = (): boolean => {
+  const { selectedCity: storedCity, selectedCountry: storedCountry } = prepareForecastStore
+  if (!storedCity || !storedCountry) return false
+  const match = cities.value.find(c => c.city === storedCity && c.country === storedCountry)
+  if (!match) return false
+  selectedKey.value = cityKey(match)
+  return true
+}
+
 onMounted(async () => {
   Promise.allSettled([fetchWhatsAppRecipients(), fetchEmailRecipients()]).finally(() => {
     recipientsLoading.value = false
@@ -565,7 +590,7 @@ onMounted(async () => {
   // default selection from what's already there.
   await prepareForecastStore.ensureLoaded(fetchWithMockMode)
   if (cities.value.length > 0 && !selectedCity.value) {
-    if (!selectFromQuery()) {
+    if (!selectFromQuery() && !selectFromStore()) {
       selectedKey.value = cityKey(sortedCities.value[0])
     }
   }
@@ -574,7 +599,7 @@ onMounted(async () => {
 
 watch(cities, (newCities) => {
   if (newCities.length > 0 && !selectedCity.value) {
-    if (!selectFromQuery()) {
+    if (!selectFromQuery() && !selectFromStore()) {
       selectedKey.value = cityKey(sortedCities.value[0])
     }
   }
@@ -584,6 +609,12 @@ watch(selectedKey, () => {
   if (selectedCity.value) fetchAlertsForSelectedCity()
   confidenceDetailExpanded.value = false
   scrollActiveIntoView()
+})
+
+// Keep the shared store in sync so the next PREPARE screen the operator
+// opens (via the Header tabs) sees the same city, not its own default.
+watch(selectedCity, (city) => {
+  if (city) prepareForecastStore.setSelectedCity(city.city, city.country)
 })
 </script>
 

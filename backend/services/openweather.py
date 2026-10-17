@@ -194,7 +194,7 @@ class OpenWeatherService:
             List of per-city forecast dicts, each with a "daily" list of
             {date, risk_level, dominant_weather, max_wind_ms, min_temp_c, max_temp_c,
              total_rain_mm, confidence_pct, alert_recommended, entries_count,
-             supporting_entries, data_sufficient}
+             supporting_entries, data_sufficient, severity_reason, raw_entries}
         """
         if use_mock:
             logger.info("OpenWeather forecast: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
@@ -325,9 +325,10 @@ class OpenWeatherService:
             total_rain = 0.0
             worst_severity = None
             dominant_weather = None
+            worst_reason = None
             best_rain_for_tiebreak = -1.0
             severity_rank = {"low": 0, "medium": 1, "high": 2, "critical": 3}
-            
+
             # independent 3-hour forecasts. If only one of those 8 reaches
             # the day's worst severity and the rest are calm, that's a brief
             # spike, not a sustained risk - alerting on it as confidently as
@@ -338,6 +339,13 @@ class OpenWeatherService:
             # invented probability (OpenWeatherMap's free forecast tier has
             # no confidence field of its own to use instead).
             entry_severities: List[str] = []
+
+            # The actual 3-hour readings behind this day's call, kept so the
+            # UI can show real "audit evidence" (what OpenWeatherMap actually
+            # returned, with its own timestamp) instead of just the derived
+            # risk_level - without this there was no way to trace a day's
+            # call back to the raw forecast data it came from.
+            raw_entries: List[Dict[str, Any]] = []
 
             for entry in day_entries:
                 main = entry.get("main", {})
@@ -367,6 +375,16 @@ class OpenWeatherService:
                 severity = cls._determine_severity(event_type, wind_speed, temp, humidity, description)
                 entry_severities.append(severity)
 
+                raw_entries.append({
+                    "time": entry.get("dt_txt", ""),
+                    "temp_c": round(temp, 1),
+                    "wind_ms": round(wind_speed, 1),
+                    "humidity_pct": humidity,
+                    "rain_mm": round(rain_mm, 1),
+                    "weather": weather_label,
+                    "severity": severity,
+                })
+
                 # Pick the entry that best represents the day: highest severity first,
                 # and among equally-severe entries (including the common all-"low" day),
                 # the one with the most rain - so a calm-but-rainy day doesn't get
@@ -378,10 +396,12 @@ class OpenWeatherService:
                 if is_more_severe or is_tie_but_rainier:
                     worst_severity = severity
                     dominant_weather = weather_label
+                    worst_reason = cls._severity_reason(event_type, wind_speed, temp, humidity, description)
                     best_rain_for_tiebreak = rain_mm
 
             worst_severity = worst_severity or "low"
             dominant_weather = dominant_weather or "Clear"  # only if day_entries was somehow empty
+            worst_reason = worst_reason or "no threshold was crossed - calm conditions"
 
             # Map internal severity scale to the UI's YELLOW/ORANGE/RED escalation bands
             risk_level = {
@@ -443,6 +463,13 @@ class OpenWeatherService:
                 # "X of Y checkpoints agreed" is always exact, not an approximation.
                 "supporting_entries": supporting_count,
                 "data_sufficient": data_sufficient,
+                # Why risk_level is what it is, in the terms _determine_severity
+                # actually used (wind/temp/humidity/description thresholds) -
+                # not a generic restatement of the risk level itself.
+                "severity_reason": worst_reason,
+                # The raw 3-hour entries this day's call was computed from -
+                # real audit evidence, not a log file nobody can see from the UI.
+                "raw_entries": raw_entries,
             })
 
         return daily_summaries
@@ -554,7 +581,39 @@ class OpenWeatherService:
         if humidity > 85 and wind_speed > 8:
             return "medium"
         return "low"
-    
+
+    @classmethod
+    def _severity_reason(cls, event_type: str, wind_speed: float,
+                          temp: float, humidity: float, description: str) -> str:
+        """
+        Plain-language statement of *which* branch of _determine_severity
+        actually fired for one 3-hour entry - mirrors that method's checks
+        in the same order, so the text always matches the real rule that
+        set the severity, not a generic "weather looks bad" summary. Used
+        to answer "why is this risk level what it is" honestly, instead of
+        inventing a cause (e.g. "rainfall exceeded a threshold") that isn't
+        actually how risk_level gets computed.
+        """
+        if any(x in event_type for x in ["thunderstorm", "tornado", "extreme", "hurricane", "cyclone"]):
+            return f"OpenWeatherMap reported {event_type} conditions"
+        if wind_speed > 20:
+            return f"wind speed {wind_speed:.0f} m/s is above the 20 m/s critical threshold"
+        elif wind_speed > 15:
+            return f"wind speed {wind_speed:.0f} m/s is above the 15 m/s high-risk threshold"
+        elif wind_speed > 10:
+            return f"wind speed {wind_speed:.0f} m/s is above the 10 m/s elevated threshold"
+        if temp < -15 or temp > 45:
+            return f"temperature {temp:.0f}°C is past the -15/45°C critical range"
+        elif temp < -5 or temp > 40:
+            return f"temperature {temp:.0f}°C is past the -5/40°C high-risk range"
+        elif temp < 0 or temp > 35:
+            return f"temperature {temp:.0f}°C is past the 0/35°C elevated range"
+        if "heavy" in description or "extreme" in description:
+            return f"forecast describes \"{description}\" conditions"
+        if humidity > 85 and wind_speed > 8:
+            return f"humidity {humidity:.0f}% combined with wind speed {wind_speed:.0f} m/s"
+        return "no threshold was crossed - calm conditions"
+
     @classmethod
     def _map_weather_type(cls, event_type: str, description: str) -> str:
         """Map OpenWeatherMap weather type to our event types"""
