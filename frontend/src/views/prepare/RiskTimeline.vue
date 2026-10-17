@@ -243,24 +243,24 @@ const toggleConfidenceDetail = (day: PrepareDailyForecast) => {
 // data came from, and whether the day's evidence is thin - instead of
 // leaving the viewer to trust a bare percentage.
 const confidenceTooltip = (day: PrepareDailyForecast): string => {
-  const calc = `${day.supporting_entries} of ${day.entries_count} three-hour OpenWeatherMap forecast checkpoints for this day agreed with the ${day.risk_level} call (${day.confidence_pct.toFixed(0)}%).`
+  const calc = `${day.supporting_entries} out of ${day.entries_count} weather readings taken that day pointed to ${day.risk_level} risk (${day.confidence_pct.toFixed(0)}%).`
 
   let verdict: string
   if (day.alert_recommended) {
-    verdict = 'Confidence clears the 70% bar used for an auto-recommended alert.'
+    verdict = "That's strong enough agreement to recommend sending an alert."
   } else if (day.risk_level === 'GREEN') {
     verdict = ''
   } else {
-    verdict = 'Below the 70% bar for an auto-recommended alert - likely a brief spike rather than a sustained risk.'
+    verdict = "That's not quite strong enough to recommend an alert yet - it may be a brief spike rather than a lasting risk."
   }
 
-  // A day on the edge of OpenWeatherMap's forecast window naturally has
-  // fewer 3-hour readings than a full day (8) - that's real, not missing,
-  // data, but it's thinner evidence and worth saying so explicitly rather
-  // than letting it look like an equally-strong call.
+  // A day on the edge of the forecast window naturally has fewer readings
+  // than a full day - that's real, not missing, data, but it's thinner
+  // evidence and worth saying so plainly rather than letting it look like
+  // an equally-strong call.
   const sufficiency = day.data_sufficient
     ? ''
-    : `Only ${day.entries_count} checkpoint${day.entries_count === 1 ? '' : 's'} ${day.entries_count === 1 ? 'was' : 'were'} available for this day - it sits at the edge of the forecast window, so this call rests on thinner evidence than the other days.`
+    : `Only ${day.entries_count} reading${day.entries_count === 1 ? '' : 's'} ${day.entries_count === 1 ? 'was' : 'were'} available for this day, so it's based on less evidence than the other days.`
 
   return [calc, verdict, sufficiency].filter(Boolean).join(' ')
 }

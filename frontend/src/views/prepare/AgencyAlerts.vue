@@ -114,7 +114,7 @@
                   :aria-expanded="confidenceDetailExpanded"
                   @click="confidenceDetailExpanded = !confidenceDetailExpanded"
                 >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% agreement <span class="info-hint" aria-hidden="true">{{ confidenceDetailExpanded ? '▲' : 'ⓘ' }}</span></button>
-                <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
+                <span class="source-badge" :class="sourceBadgeClass" :title="sourceLabel">{{ sourceLabelSimple }}</span>
               </div>
 
               <p v-if="worstDayConfidence && confidenceDetailExpanded" class="confidence-detail glass-panel">{{ confidenceTooltip }}</p>
@@ -330,6 +330,18 @@ const sourceBadgeClass = computed(() => {
   if (alertsPlan.value?.is_mock_demo) return 'mock'
   if (alertsPlan.value?.is_fallback) return 'fallback'
   return 'live'
+})
+
+// The backend's own source string ("Gemini 2.5 Flash via Vertex AI") is
+// accurate but reads as engineering detail to someone who isn't - this
+// keeps that full string available on hover/title while the badge itself
+// says something anyone can read at a glance.
+const sourceLabelSimple = computed(() => {
+  switch (sourceBadgeClass.value) {
+    case 'mock': return 'Demo data'
+    case 'fallback': return 'Backup wording (AI unavailable)'
+    default: return 'AI-drafted'
+  }
 })
 
 const selectedAlert = computed<AgencyAlert | null>(() => {

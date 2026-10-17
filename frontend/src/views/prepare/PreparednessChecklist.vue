@@ -90,7 +90,7 @@
               <div class="risk-context glass-panel" :class="selectedToneClass">
                 <span class="context-icon">{{ selectedToneIcon }}</span>
                 <span class="context-text">{{ actionsPlan.risk_context }}</span>
-                <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
+                <span class="source-badge" :class="sourceBadgeClass" :title="sourceLabel">{{ sourceLabelSimple }}</span>
               </div>
 
               <div class="progress-bar-row glass-panel" v-if="completionStats.total > 0">
@@ -143,11 +143,6 @@
                     class="action-card glass-panel"
                     :class="{ completed: isCompleted(action) }"
                   >
-                    <div class="action-top">
-                      <span class="category-chip" :class="action.category.toLowerCase()">{{ categoryIcon(action.category) }} {{ action.category }}</span>
-                      <span class="deadline-chip" :class="deadlineInfo(action).urgency" :title="deadlineTooltip(action)">{{ deadlineInfo(action).label }}</span>
-                      <span class="priority-badge" :class="getPriorityBadgeClass(action.priority)" :title="getPriorityLabel(action.priority)">{{ getPriorityIcon(action.priority) }}</span>
-                    </div>
                     <label class="action-check-row">
                       <input
                         type="checkbox"
@@ -158,12 +153,16 @@
                       />
                       <p class="action-text">{{ action.action }}</p>
                     </label>
+                    <div class="action-meta-row">
+                      <span class="category-chip" :class="action.category.toLowerCase()">{{ categoryIcon(action.category) }} {{ action.category }}</span>
+                      <span class="deadline-chip" :class="deadlineInfo(action).urgency" :title="deadlineTooltip(action)">{{ deadlineInfo(action).label }}</span>
+                      <span class="priority-badge" :class="getPriorityBadgeClass(action.priority)" :title="getPriorityLabel(action.priority)">{{ getPriorityIcon(action.priority) }}</span>
+                    </div>
                     <div class="action-agency">
                       <span class="agency-icon">{{ agencyIcon(action.agency) }}</span>
                       <span><strong>{{ action.agency }}</strong> {{ $t('prepare.checklist.responsibleFor') }}</span>
                     </div>
                     <p class="action-rationale">{{ truncateDescription(action.rationale) }}</p>
-                    <p class="checkbox-helper">{{ $t('prepare.checklist.markComplete') }}</p>
                   </div>
                 </div>
               </div>
@@ -280,6 +279,18 @@ const sourceBadgeClass = computed(() => {
   if (actionsPlan.value?.is_mock_demo) return 'mock'
   if (actionsPlan.value?.is_fallback) return 'fallback'
   return 'live'
+})
+
+// The backend's own source string ("Gemini 2.5 Flash via Vertex AI") is
+// accurate but reads as engineering detail to someone who isn't - this
+// keeps that full string available on hover/title while the badge itself
+// says something anyone can read at a glance.
+const sourceLabelSimple = computed(() => {
+  switch (sourceBadgeClass.value) {
+    case 'mock': return 'Demo data'
+    case 'fallback': return 'Backup wording (AI unavailable)'
+    default: return 'AI-drafted'
+  }
 })
 
 // --- Completion tracking (PR6: interactive checklist) -----------------------
@@ -1026,18 +1037,19 @@ watch(selectedKey, () => {
   opacity: 0.6;
 }
 
-.action-top {
+.action-meta-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   flex-wrap: wrap;
   gap: 6px;
+  margin-left: 23px;
+  opacity: 0.85;
 }
 
 .priority-badge {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: 6px;
   white-space: nowrap;
   flex-shrink: 0;
@@ -1119,10 +1131,11 @@ watch(selectedKey, () => {
 }
 
 .action-text {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.35;
+  color: var(--text-primary);
 }
 
 .action-card.completed .action-text {
@@ -1134,19 +1147,26 @@ watch(selectedKey, () => {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 4px 8px;
+  margin-left: 23px;
+  background: rgba(56, 189, 248, 0.06);
+  border-radius: 4px;
+  border-left: 2px solid rgba(56, 189, 248, 0.15);
+}
+
+.action-agency strong {
   color: var(--text-primary);
   font-weight: 600;
-  padding: 6px 8px;
-  background: rgba(56, 189, 248, 0.08);
-  border-radius: 4px;
-  border-left: 2px solid rgba(56, 189, 248, 0.2);
 }
 
 .action-rationale {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
-  margin: 0;
+  opacity: 0.85;
+  margin: 0 0 0 23px;
   line-height: 1.4;
   padding-top: 6px;
   border-top: 1px dashed rgba(255, 255, 255, 0.08);
@@ -1155,17 +1175,6 @@ watch(selectedKey, () => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   max-height: 2.8em;
-}
-
-.checkbox-helper {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin: 4px 0 0 0;
-  padding: 4px 6px;
-  background: rgba(34, 197, 94, 0.08);
-  border-radius: 4px;
-  border-left: 2px solid rgba(34, 197, 94, 0.3);
-  font-weight: 500;
 }
 
 /* Tactical Loading Animation (matches ForecastDashboard.vue / RiskTimeline.vue) */
@@ -1350,7 +1359,7 @@ watch(selectedKey, () => {
     grid-template-columns: 1fr;
   }
 
-  .action-top {
+  .action-meta-row {
     gap: 4px;
   }
 
@@ -1363,12 +1372,12 @@ watch(selectedKey, () => {
   }
 
   .priority-badge {
-    font-size: 12px;
-    padding: 3px 6px;
+    font-size: 10px;
+    padding: 2px 5px;
   }
 
   .action-text {
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .progress-bar-row {
