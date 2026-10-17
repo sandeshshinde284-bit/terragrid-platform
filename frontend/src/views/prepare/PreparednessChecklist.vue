@@ -501,13 +501,26 @@ const selectFromQuery = (): boolean => {
   return true
 }
 
+// Falls back to whatever city/country the operator last looked at on any
+// PREPARE screen - used when there's no query string to go on, e.g.
+// arriving via the Header's plain tab strip rather than an in-page link
+// that forwards ?city=&country=.
+const selectFromStore = (): boolean => {
+  const { selectedCity: storedCity, selectedCountry: storedCountry } = prepareForecastStore
+  if (!storedCity || !storedCountry) return false
+  const match = cities.value.find(c => c.city === storedCity && c.country === storedCountry)
+  if (!match) return false
+  selectedKey.value = cityKey(match)
+  return true
+}
+
 onMounted(async () => {
   // If another PREPARE page already loaded fresh forecast data, this
   // resolves immediately and the watch(cities, ...) below picks the
   // default selection from what's already there.
   await prepareForecastStore.ensureLoaded(fetchWithMockMode)
   if (cities.value.length > 0 && !selectedCity.value) {
-    if (!selectFromQuery()) {
+    if (!selectFromQuery() && !selectFromStore()) {
       selectedKey.value = cityKey(sortedCities.value[0])
     }
   }
@@ -516,7 +529,7 @@ onMounted(async () => {
 
 watch(cities, (newCities) => {
   if (newCities.length > 0 && !selectedCity.value) {
-    if (!selectFromQuery()) {
+    if (!selectFromQuery() && !selectFromStore()) {
       selectedKey.value = cityKey(sortedCities.value[0])
     }
   }
@@ -526,6 +539,12 @@ watch(selectedKey, () => {
   selectedAgency.value = 'ALL'
   if (selectedCity.value) fetchActionsForSelectedCity()
   scrollActiveIntoView()
+})
+
+// Keep the shared store in sync so the next PREPARE screen the operator
+// opens (via the Header tabs) sees the same city, not its own default.
+watch(selectedCity, (city) => {
+  if (city) prepareForecastStore.setSelectedCity(city.city, city.country)
 })
 </script>
 

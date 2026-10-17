@@ -183,6 +183,7 @@
                 class="city-card glass-panel"
                 :class="worstRisk(city).toLowerCase()"
                 :title="`Open ${city.city}'s risk timeline`"
+                @click="prepareForecastStore.setSelectedCity(city.city, city.country)"
               >
                 <div class="city-header">
                   <span class="city-name">{{ city.city }}</span>
@@ -201,6 +202,14 @@
                     <span class="day-weather">{{ day.dominant_weather }}</span>
                     <span class="day-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
                   </div>
+                </div>
+
+                <!-- Always-visible navigation cue - the hover lift/shadow
+                     below alone doesn't tell a first-time (or touch-screen)
+                     viewer that this card goes anywhere else. -->
+                <div class="city-card-footer">
+                  <span>{{ $t('prepare.forecast.viewTimeline') }}</span>
+                  <span class="city-card-arrow" aria-hidden="true">→</span>
                 </div>
               </RouterLink>
             </div>
@@ -985,6 +994,27 @@ onUnmounted(() => {
 .city-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.city-card:hover .city-card-arrow {
+  transform: translateX(3px);
+}
+
+.city-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  font-weight: 600;
+  color: #38bdf8;
+}
+
+.city-card-arrow {
+  transition: transform 150ms ease;
 }
 
 .city-card.red { border-top-color: #ef4444; }

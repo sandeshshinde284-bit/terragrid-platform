@@ -134,6 +134,7 @@
       "daysForecast": "day forecast",
       "loadError": "Couldn't load the forecast",
       "sourceOfTruth": "Data Check",
+      "viewTimeline": "View risk timeline",
       "lastUpdated": "updated {time}",
       "lastUpdatedJustNow": "updated just now",
       "sortRisk": "Risk",

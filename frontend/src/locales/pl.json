@@ -130,6 +130,7 @@
       "daysForecast": "dniowa prognoza",
       "loadError": "Nie udało się załadować prognozy",
       "sourceOfTruth": "Sprawdzenie danych",
+      "viewTimeline": "Zobacz oś czasu ryzyka",
       "lastUpdated": "zaktualizowano {time}",
       "lastUpdatedJustNow": "zaktualizowano przed chwilą",
       "sortRisk": "Ryzyko",

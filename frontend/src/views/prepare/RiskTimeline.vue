@@ -420,13 +420,26 @@ const selectFromQuery = (): boolean => {
   return true
 }
 
+// Falls back to whatever city/country the operator last looked at on any
+// PREPARE screen (see prepareForecastStore.selectedCity) - used when there's
+// no query string to go on, e.g. arriving via the Header's plain tab strip
+// rather than an in-page link that forwards ?city=&country=.
+const selectFromStore = (): boolean => {
+  const { selectedCity: storedCity, selectedCountry: storedCountry } = prepareForecastStore
+  if (!storedCity || !storedCountry) return false
+  const match = cities.value.find(c => c.city === storedCity && c.country === storedCountry)
+  if (!match) return false
+  selectedKey.value = cityKey(match)
+  return true
+}
+
 onMounted(async () => {
   // If another PREPARE page already loaded fresh forecast data, this
   // resolves immediately and the watch(cities, ...) below picks the
   // default selection from what's already there.
   await prepareForecastStore.ensureLoaded(fetchWithMockMode)
   if (cities.value.length > 0 && !selectedCity.value) {
-    if (!selectFromQuery()) {
+    if (!selectFromQuery() && !selectFromStore()) {
       selectedKey.value = cityKey(sortedCities.value[0])
     }
   }
@@ -436,10 +449,18 @@ onMounted(async () => {
 // Guard against the selected city disappearing from a future fetch (data refresh).
 watch(cities, (newCities) => {
   if (newCities.length > 0 && !selectedCity.value) {
-    if (!selectFromQuery()) {
+    if (!selectFromQuery() && !selectFromStore()) {
       selectedKey.value = cityKey(sortedCities.value[0])
     }
   }
+})
+
+// Keep the shared store in sync with whatever city ends up selected here -
+// whether that's from the query string, the store itself, the worst-risk
+// default, or the operator clicking a different row in the rail - so the
+// next PREPARE screen they open (via the Header tabs) can pick it up too.
+watch(selectedCity, (city) => {
+  if (city) prepareForecastStore.setSelectedCity(city.city, city.country)
 })
 
 // Keep the URL in sync with whatever city is selected (clicking the rail,

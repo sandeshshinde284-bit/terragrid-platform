@@ -130,6 +130,7 @@
       "daysForecast": "Tage-Prognose",
       "loadError": "Vorhersage konnte nicht geladen werden",
       "sourceOfTruth": "Datenprüfung",
+      "viewTimeline": "Risikoverlauf ansehen",
       "lastUpdated": "aktualisiert {time}",
       "lastUpdatedJustNow": "gerade aktualisiert",
       "sortRisk": "Risiko",

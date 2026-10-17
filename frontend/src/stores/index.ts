@@ -61,6 +61,25 @@ export const usePrepareForecastStore = defineStore('prepareForecast', () => {
   const error = ref('')
   const lastFetchedAt = ref(0)
 
+  // Which city/country the operator is currently focused on, shared across
+  // all four PREPARE screens. Each screen already syncs its own selection
+  // into its URL query string (?city=...&country=...), which works when
+  // navigating via an in-page link that forwards those params (e.g. a
+  // Forecast city card, or Risk Timeline's "Open checklist" button) - but
+  // the Header's plain tab strip (Forecast/Risk Timeline/Checklist/Agency
+  // Alerts) links to each page's bare path with no query, so switching tabs
+  // that way always reset to that page's own default (worst-risk) city
+  // instead of staying on the one the operator was just looking at. Storing
+  // the selection here too means a screen can fall back to it when it has
+  // no query params of its own to go on.
+  const selectedCity = ref<string | null>(null)
+  const selectedCountry = ref<string | null>(null)
+
+  const setSelectedCity = (city: string, country: string) => {
+    selectedCity.value = city
+    selectedCountry.value = country
+  }
+
   // Getters
   const isFresh = computed(() => cities.value.length > 0 && (Date.now() - lastFetchedAt.value) < PREPARE_FORECAST_FRESHNESS_MS)
 
@@ -117,12 +136,15 @@ export const usePrepareForecastStore = defineStore('prepareForecast', () => {
     loading,
     error,
     lastFetchedAt,
+    selectedCity,
+    selectedCountry,
 
     // Getters
     isFresh,
 
     // Actions
     ensureLoaded,
+    setSelectedCity,
   }
 })
 

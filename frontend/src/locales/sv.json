@@ -130,6 +130,7 @@
       "daysForecast": "dagarsprognos",
       "loadError": "Kunde inte läsa in prognosen",
       "sourceOfTruth": "Datakontroll",
+      "viewTimeline": "Visa risktidslinje",
       "lastUpdated": "uppdaterad {time}",
       "lastUpdatedJustNow": "uppdaterad just nu",
       "sortRisk": "Risk",

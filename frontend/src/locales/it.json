@@ -130,6 +130,7 @@
       "daysForecast": "giorni di previsione",
       "loadError": "Impossibile caricare le previsioni",
       "sourceOfTruth": "Verifica dei dati",
+      "viewTimeline": "Vedi la cronologia del rischio",
       "lastUpdated": "aggiornato {time}",
       "lastUpdatedJustNow": "aggiornato proprio ora",
       "sortRisk": "Rischio",
