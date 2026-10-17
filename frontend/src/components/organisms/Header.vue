@@ -20,20 +20,14 @@
              header stays a single compact row instead of growing tall with
              a second row stacked inside the same glass-panel box. -->
         <div class="phase-selector">
-          <!-- Lifecycle order: Predict -> Prepare -> Respond -> Recover.
-               Predict and Recover share the same not-yet-built RoadmapPreview
-               route/page, but are shown as two separate tabs (each labelled
-               and badged on its own) so the nav reads in the real phase
-               order instead of grouping the two unbuilt phases together at
-               the end. -->
+          <!-- Lifecycle order: Predict -> Prepare -> Respond -> Recover -->
           <button
-            class="phase-btn roadmap"
-            :class="{ active: activePhase === 'roadmap' }"
-            @click="router.push('/roadmap')"
+            class="phase-btn"
+            :class="{ active: activePhase === 'predict' }"
+            @click="router.push('/predict')"
             :title="$t('header.phases.predictTooltip')"
           >
             {{ $t('header.phases.predict') }}
-            <span class="soon-badge">{{ $t('header.soon') }}</span>
           </button>
           <button
             class="phase-btn"
@@ -50,13 +44,12 @@
             {{ $t('header.phases.response') }}
           </button>
           <button
-            class="phase-btn roadmap"
-            :class="{ active: activePhase === 'roadmap' }"
-            @click="router.push('/roadmap')"
+            class="phase-btn"
+            :class="{ active: activePhase === 'recover' }"
+            @click="router.push('/recover')"
             :title="$t('header.phases.recoverTooltip')"
           >
             {{ $t('header.phases.recover') }}
-            <span class="soon-badge">{{ $t('header.soon') }}</span>
           </button>
         </div>
       </nav>
@@ -332,12 +325,12 @@ watch(locale, (newVal) => {
 const is3D = computed(() => appStore.viewMode === '3d')
 const mobileMenuOpen = ref(false)
 
-// Detect active phase based on current route. All three phases (prepare,
-// response, roadmap) are now real routes with meta.phase set, so this is
+// Detect active phase based on current route. All phases (predict, prepare,
+// response, recover) are now real routes with meta.phase set, so this is
 // the single source of truth - no local toggle state needed.
 const activePhase = computed(() => {
   const phaseMeta = route.meta.phase as string | undefined
-  if (phaseMeta === 'prepare' || phaseMeta === 'roadmap' || phaseMeta === 'settings') {
+  if (phaseMeta === 'predict' || phaseMeta === 'prepare' || phaseMeta === 'recover' || phaseMeta === 'settings') {
     return phaseMeta
   }
   // Default to 'response' for all other routes (/, /incidents, /map, etc.)

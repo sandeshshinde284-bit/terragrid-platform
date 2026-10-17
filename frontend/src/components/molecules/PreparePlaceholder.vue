@@ -1,7 +1,10 @@
 <template>
   <div class="prepare-placeholder glass-panel">
     <div class="placeholder-icon">{{ icon }}</div>
-    <h2>{{ title }}</h2>
+    <h2>
+      {{ title }}
+      <span class="coming-soon-badge" v-if="showComingSoon">COMING SOON</span>
+    </h2>
     <p class="placeholder-status">🛠️ Building — not yet live</p>
     <p class="placeholder-desc">{{ description }}</p>
   </div>
@@ -12,6 +15,7 @@ defineProps<{
   icon: string
   title: string
   description: string
+  showComingSoon?: boolean
 }>()
 </script>
 
@@ -36,6 +40,24 @@ defineProps<{
 .prepare-placeholder h2 {
   margin: 0;
   color: var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.coming-soon-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #3b82f6;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .placeholder-status {

@@ -65,6 +65,17 @@ const routes: RouteRecordRaw[] = [
       phase: 'settings',
     },
   },
+  // ---- PREDICT phase route ----
+  {
+    path: '/predict',
+    name: 'Predict',
+    component: () => import('@/views/Predict.vue'),
+    meta: {
+      title: 'Early Warning & Forecasting - TerraGrid',
+      requiresAuth: false,
+      phase: 'predict',
+    },
+  },
   // ---- PREPARE phase routes (added for Phase 2) ----
   {
     path: '/prepare/forecast',
@@ -104,6 +115,17 @@ const routes: RouteRecordRaw[] = [
       title: 'Agency Alert Templates - TerraGrid',
       requiresAuth: false,
       phase: 'prepare',
+    },
+  },
+  // ---- RECOVER phase route ----
+  {
+    path: '/recover',
+    name: 'Recover',
+    component: () => import('@/views/Recover.vue'),
+    meta: {
+      title: 'Post-Event Recovery - TerraGrid',
+      requiresAuth: false,
+      phase: 'recover',
     },
   },
   {
