@@ -104,7 +104,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="incident in filteredIncidents" :key="incident.id" class="incident-row" :class="{ expanded: expandedIncidentId === incident.id }" @click="toggleExpanded(incident.id)">
+            <tr v-for="incident in filteredIncidents" :key="incident.id" :data-incident-id="incident.id" class="incident-row" :class="{ expanded: expandedIncidentId === incident.id }" @click="toggleExpanded(incident.id)">
               <td class="type-cell">
                 <span class="type-icon">{{ getIcon(incident.type, incident.location) }}</span>
                 <span class="type-name">{{ formatType(incident.type, incident.location) }}</span>
@@ -144,10 +144,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
-import { useEventsStore } from '@/stores'
+import { useAppStore, useEventsStore } from '@/stores'
 import { logWarn } from '@/utils/logger'
 import type { IncidentLevel1 } from '@/types'
 
@@ -159,7 +159,12 @@ const filterStatus = ref('')
 const filterSeverity = ref('')
 const filterCountry = ref('')
 const selectedIncidentData = ref<IncidentLevel1 | null>(null)
-const expandedIncidentId = ref<string | null>(null)
+// Shared selection: the same store value the Dashboard, map markers and
+// cards write to, so picking an event on any screen highlights that same
+// event here (previously this screen kept its own local selection, so a
+// flood picked on the Dashboard showed up unmarked on this page).
+const appStore = useAppStore()
+const expandedIncidentId = computed(() => appStore.selectedIncident)
 const sortBy = ref<string>('threatScore')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
@@ -441,8 +446,28 @@ const viewIncident = (id: string) => {
 }
 
 const toggleExpanded = (id: string) => {
-  expandedIncidentId.value = expandedIncidentId.value === id ? null : id
+  appStore.setSelectedIncident(appStore.selectedIncident === id ? null : id)
 }
+
+// Bring the selected row into view (the list is long and can be scrolled
+// past it). Runs when the selection changes or when the page first loads
+// with a selection carried over from the Dashboard or the map.
+const scrollToSelected = async () => {
+  await nextTick()
+  const id = appStore.selectedIncident
+  if (!id) return
+  const row = document.querySelector<HTMLElement>(`[data-incident-id="${CSS.escape(id)}"]`)
+  row?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+// Also re-run once the list has loaded, since a direct visit may open this
+// page before the rows exist.
+watch(
+  () => [appStore.selectedIncident, eventsStore.allIncidents.length] as const,
+  ([id]) => {
+    if (id) scrollToSelected()
+  }
+)
 
 const handleSort = (column: string) => {
   if (sortBy.value === column) {

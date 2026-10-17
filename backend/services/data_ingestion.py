@@ -288,6 +288,14 @@ class DataIngestionService:
             elif self.db:
                 await self._store_event(event)
 
+            # Stamp the canonical DB id onto the event so the ingest response
+            # uses the same identifier as GET /incidents (event_<pk>). Without
+            # this the dashboard showed the source's own id (e.g. a GDACS
+            # eventid) while the incidents list showed event_<pk>, so the same
+            # flood had two different ids on two screens.
+            if final_event_id is not None:
+                event["id"] = f"event_{final_event_id}"
+
             # Calculate impact analysis (pass db_session for alert persistence).
             # Run via asyncio.to_thread: this call can synchronously perform
             # blocking Gmail SMTP I/O (with retry sleeps) inside

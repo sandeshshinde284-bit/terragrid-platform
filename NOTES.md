@@ -99,3 +99,28 @@ disconnected systems:
    deadline. **NOT DECIDED.**
 
 **Status:** Stage 1 done, Stage 2 next, Stage 3 blocked on Stage 2.
+
+---
+
+## 5. Two events at identical coordinates can merge into one row (found Oct 17)
+
+**Where:** `backend/services/data_ingestion.py`, `_store_event_sync`. It
+deduplicates by `(round(lat,4), round(lon,4), event_type)`. Two real events of
+the same type at the same rounded location become one database row.
+
+**Effect:** a second flood at the exact same spot won't appear as its own
+incident. Rare in practice, but it can happen (e.g. repeated alerts for one
+river station).
+
+**Status:** noted, not changed. Needs a product decision on what counts as
+"the same event" (source ID vs. location).
+
+## 6. Unified incident ID + shared selection (done on `feature/unified-incident-id`)
+
+- Ingest response now stamps `event_<db id>` onto each event
+  (`data_ingestion.py`, after `_store_event_sync`), matching `GET /incidents`.
+- Dashboard prefers `event.id` over source-specific IDs, and no longer uses
+  `Date.now()` in the fallback ID.
+- Incidents screen uses the shared `appStore.selectedIncident`, highlights the
+  same row the Dashboard/map picked, and scrolls it into view.
+- Not runtime-tested against a live database yet; only compiled and built.

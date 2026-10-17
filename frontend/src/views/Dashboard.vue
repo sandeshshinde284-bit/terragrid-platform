@@ -1001,7 +1001,7 @@ const fetchIncidents = async () => {
         const countryCode = resolveCountryCode(locationName, source, event.latitude, event.longitude)
 
         return {
-          id: event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id || `event-${index}-${Date.now()}`,
+          id: event.id || event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || `event-${index}`,
           type: event.event_type || 'fire',
           location: locationName,
           location_name: locationName,
@@ -1099,7 +1099,7 @@ onMounted(async () => {
               const countryCode = resolveCountryCode(locationName, source, event.latitude, event.longitude)
 
               return {
-                id: event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || event.id || `event-${index}-${Date.now()}`,
+                id: event.id || event.data?.id || event.data?.nasa_id || event.data?.gdacs_id || `event-${index}`,
                 type: event.event_type || 'fire',
                 location: locationName,
                 countryCode: countryCode,
