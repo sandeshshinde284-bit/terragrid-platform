@@ -144,7 +144,7 @@
                       </div>
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
-                        <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence != null ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
+                        <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
                         <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ fmtCount(selectedIncidentData.affectedPopulation) }}</strong></div>
                         <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>{{ fmtSigned(selectedIncidentData.trend, 1, ' km²/h') }}</strong></div>
                       </div>
@@ -178,7 +178,7 @@
             <div class="summary-card glass-subpanel">
               <span class="card-section-label">Situation Summary</span>
               <p class="summary-text">
-                {{ aiPlan?.severity_assessment || `${formatIncidentType(selectedIncidentData.type, selectedIncidentData.location)} activity near ${selectedIncidentData.location} is currently ${selectedIncidentData.status} and remains under active monitoring.` }}
+                {{ aiPlan?.is_fallback ? 'AI assessment unavailable for this incident.' : (aiPlan?.severity_assessment || `${formatIncidentType(selectedIncidentData.type, selectedIncidentData.location)} near ${selectedIncidentData.location}, status: ${selectedIncidentData.status}.`) }}
               </p>
             </div>
           </div>
@@ -239,7 +239,7 @@
                       </div>
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
-                        <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence != null ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
+                        <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
                         <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ fmtCount(selectedIncidentData.affectedPopulation) }}</strong></div>
                         <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>{{ fmtSigned(selectedIncidentData.trend, 1, ' km²/h') }}</strong></div>
                       </div>
@@ -273,9 +273,7 @@
             <div class="summary-card glass-subpanel">
               <span class="card-section-label">{{ $t('common.details') }}</span>
               <p class="summary-text">
-                {{ formatIncidentType(selectedIncidentData.type) }} activity near
-                {{ selectedIncidentData.location }} is currently
-                {{ selectedIncidentData.status }} and remains under active monitoring.
+                {{ aiPlan?.is_fallback ? 'AI assessment unavailable for this incident.' : (aiPlan?.severity_assessment || `${formatIncidentType(selectedIncidentData.type)} near ${selectedIncidentData.location}, status: ${selectedIncidentData.status}.`) }}
               </p>
             </div>
           </div>
@@ -299,7 +297,8 @@
           </p>
         </div>
 
-        <div class="insights-subheading">Critical Priority Actions:</div>
+        <!-- These lines are fixed templates chosen by incident type, not AI output. -->
+        <div class="insights-subheading">Suggested first actions (rule-based, not AI):</div>
 
         <div v-if="liveCriticalInsights.length" class="insights-list">
           <div 
@@ -317,7 +316,7 @@
             </div>
             <div class="insight-action">{{ insight.action }}</div>
             <div class="insight-meta">
-              <span>👥 {{ insight.estimatedAffected.toLocaleString() }} at risk</span>
+              <span>👥 {{ fmtCount(insight.estimatedAffected) }} at risk</span>
               <span class="insight-inspect">Inspect Plan →</span>
             </div>
           </div>
@@ -612,12 +611,10 @@ const liveCriticalInsights = computed(() => {
   })
 })
 
-// Dashboard list = the highest-risk incidents (unscored ones last), not every
-// incident. The full list is on the Incidents page.
+// Dashboard list = the first few of the filtered list, which is already sorted
+// by the sort dropdown (threat by default). The full list is on Incidents.
 const sortedAndPaginatedIncidents = computed(() => {
-  return [...filteredIncidents.value]
-    .sort((a, b) => (b.threatScore ?? -1) - (a.threatScore ?? -1))
-    .slice(0, cardsPerPage.value)
+  return filteredIncidents.value.slice(0, cardsPerPage.value)
 })
 
 // Get incidents grouped by country
