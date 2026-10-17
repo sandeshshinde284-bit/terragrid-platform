@@ -31,10 +31,14 @@
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode",
     "phases": {
+      "predict": "PREDICT",
       "prepare": "PREPARE",
       "response": "RESPONSE",
+      "recover": "RECOVER",
       "predictRecover": "PREDICT · RECOVER",
-      "predictRecoverTooltip": "Predict & Recover — coming soon"
+      "predictRecoverTooltip": "Predict & Recover — coming soon",
+      "predictTooltip": "Predict — coming soon",
+      "recoverTooltip": "Recover — coming soon"
     },
     "tools": {
       "forecast": "Forecast",

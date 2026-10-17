@@ -20,6 +20,21 @@
              header stays a single compact row instead of growing tall with
              a second row stacked inside the same glass-panel box. -->
         <div class="phase-selector">
+          <!-- Lifecycle order: Predict -> Prepare -> Respond -> Recover.
+               Predict and Recover share the same not-yet-built RoadmapPreview
+               route/page, but are shown as two separate tabs (each labelled
+               and badged on its own) so the nav reads in the real phase
+               order instead of grouping the two unbuilt phases together at
+               the end. -->
+          <button
+            class="phase-btn roadmap"
+            :class="{ active: activePhase === 'roadmap' }"
+            @click="router.push('/roadmap')"
+            :title="$t('header.phases.predictTooltip')"
+          >
+            {{ $t('header.phases.predict') }}
+            <span class="soon-badge">{{ $t('header.soon') }}</span>
+          </button>
           <button
             class="phase-btn"
             :class="{ active: activePhase === 'prepare' }"
@@ -38,9 +53,9 @@
             class="phase-btn roadmap"
             :class="{ active: activePhase === 'roadmap' }"
             @click="router.push('/roadmap')"
-            :title="$t('header.phases.predictRecoverTooltip')"
+            :title="$t('header.phases.recoverTooltip')"
           >
-            {{ $t('header.phases.predictRecover') }}
+            {{ $t('header.phases.recover') }}
             <span class="soon-badge">{{ $t('header.soon') }}</span>
           </button>
         </div>
@@ -140,6 +155,13 @@
       <!-- Mobile Nav Section with Phase Switcher -->
       <div class="mobile-phase-selector">
         <button
+          :class="{ active: activePhase === 'roadmap' }"
+          @click="router.push('/roadmap'); closeMobileMenu()"
+        >
+          {{ $t('header.phases.predict') }}
+          <span class="soon-badge">{{ $t('header.soon') }}</span>
+        </button>
+        <button
           :class="{ active: activePhase === 'prepare' }"
           @click="router.push('/prepare/forecast')"
         >
@@ -155,7 +177,7 @@
           :class="{ active: activePhase === 'roadmap' }"
           @click="router.push('/roadmap'); closeMobileMenu()"
         >
-          {{ $t('header.phases.predictRecover') }}
+          {{ $t('header.phases.recover') }}
           <span class="soon-badge">{{ $t('header.soon') }}</span>
         </button>
       </div>
