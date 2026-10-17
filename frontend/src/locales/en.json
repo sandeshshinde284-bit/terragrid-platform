@@ -290,7 +290,8 @@
     "compilingZip": "COMPILING ZIP...",
     "exportSitRep": "📦 Export SitRep Package (.ZIP)",
     "viewIncidentMap": "🗺️ View Incident on Tactical Map",
-    "verifiedReportActive": "🟢 VERIFIED OPERATIONAL REPORT ACTIVE",
+    "verifiedReportActive": "🟡 AI REPORT GENERATED · NOT VERIFIED",
+    "detectedAgo": "Detected {time}",
     "fullCrisisReady": "⚡ FULL CRISIS REPORT READY TO SYNTHESIZE",
     "crisisAssessmentTitle": "Crisis Assessment & Impact Forecast",
     "crisisAssessmentDesc": "Synthesize comprehensive 6h/12h/24h disaster spread predictions, critical hospital & infrastructure vulnerability assessments, evacuation routing, and emergency logistics matrices.",
@@ -371,6 +372,8 @@
     "colPriority": "Priority"
   },
   "impactTab": {
+    "sourceOsm": "OpenStreetMap",
+    "sourceAi": "AI-suggested, unverified",
     "vulnerabilityMatrix": "Vulnerability Matrix",
     "exposedInfrastructure": "Exposed Critical Infrastructure",
     "distance": "Distance:",

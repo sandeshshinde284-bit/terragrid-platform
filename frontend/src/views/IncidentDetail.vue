@@ -214,7 +214,7 @@
               <article class="metric-card glass-panel">
                 <span class="metric-label">Current status</span>
                 <strong class="metric-value compact-value status-text">{{ formatStatus(incident.status) }}</strong>
-                <span class="metric-footnote">Last operational update {{ relativeTime(incident.detectionTime) }}</span>
+                <span class="metric-footnote">{{ $t('overviewTab.detectedAgo', { time: relativeTime(incident.detectionTime) }) }}</span>
               </article>
             </div>
 

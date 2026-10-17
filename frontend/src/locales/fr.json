@@ -286,7 +286,8 @@
     "compilingZip": "COMPILATION DU ZIP...",
     "exportSitRep": "📦 Exporter le rapport SitRep (.ZIP)",
     "viewIncidentMap": "🗺️ Voir l'incident sur la carte tactique",
-    "verifiedReportActive": "🟢 RAPPORT OPÉRATIONNEL VÉRIFIÉ ACTIF",
+    "verifiedReportActive": "🟡 RAPPORT IA GÉNÉRÉ · NON VÉRIFIÉ",
+    "detectedAgo": "Détecté {time}",
     "fullCrisisReady": "⚡ RAPPORT DE CRISE COMPLET PRÊT À SYNTHÉTISER",
     "crisisAssessmentTitle": "Évaluation de la Crise et Prévision d'Impact",
     "crisisAssessmentDesc": "Synthétisez les prédictions d'extension à 6h/12h/24h, les évaluations de vulnérabilité des hôpitaux et infrastructures, et les plans logistiques d'urgence.",
@@ -367,6 +368,8 @@
     "colPriority": "Priorité"
   },
   "impactTab": {
+    "sourceOsm": "OpenStreetMap",
+    "sourceAi": "Suggestion IA, non vérifiée",
     "vulnerabilityMatrix": "Matrice de Vulnérabilité",
     "exposedInfrastructure": "Infrastructures Critiques Exposées",
     "distance": "Distance :",
