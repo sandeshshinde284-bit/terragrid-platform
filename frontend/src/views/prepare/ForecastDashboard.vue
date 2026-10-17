@@ -74,6 +74,31 @@
           </div>
         </div>
 
+        <!-- What needs attention first, named up front - the RED/ORANGE/
+             YELLOW/GREEN pills above are aggregate counts, not a reason or
+             a next step. Only rendered when something's actually non-GREEN,
+             and scoped to the whole board (not the country filter) since
+             this is meant to answer "what's most urgent right now", not
+             "what's urgent in the currently-open tab". -->
+        <div v-if="priorityIncidents.length" class="priority-strip">
+          <span class="priority-strip-label">{{ $t('prepare.forecast.priorityLabel') }}</span>
+          <RouterLink
+            v-for="entry in priorityIncidents"
+            :key="`${entry.city.city}-${entry.city.country}`"
+            :to="{ name: 'PrepareRiskTimeline', query: { city: entry.city.city, country: entry.city.country } }"
+            class="priority-card glass-panel"
+            :class="entry.day.risk_level.toLowerCase()"
+            @click="prepareForecastStore.setSelectedCity(entry.city.city, entry.city.country)"
+          >
+            <div class="priority-card-head">
+              <span class="priority-card-badge" :class="entry.day.risk_level.toLowerCase()">{{ riskEmoji(entry.day.risk_level) }} {{ entry.day.risk_level }}</span>
+              <span class="priority-card-city">{{ entry.city.city }}, {{ countryName(entry.city.country) }}</span>
+            </div>
+            <p class="priority-card-reason">{{ entry.day.severity_reason }}</p>
+            <span class="priority-card-action">{{ $t('prepare.forecast.viewTimeline') }} →</span>
+          </RouterLink>
+        </div>
+
         <div v-if="sotExpanded" class="sot-details glass-panel">
           <div v-if="sotLoading" class="sot-detail-row">Checking...</div>
           <div v-else-if="sotError" class="sot-detail-row sot-error">
@@ -382,6 +407,26 @@ const riskCounts = computed(() => {
     counts[worstRisk(city)]++
   }
   return counts
+})
+
+// Top 3 highest-risk cities across the whole board (not scoped to the
+// country filter - this is meant to be "what needs attention right now"
+// regardless of which country tab happens to be open), each paired with
+// its own worst day and the real rule that set that day's risk level.
+// Only shown once something actually crosses out of GREEN - an all-green
+// board has no incident to lead with.
+const priorityIncidents = computed(() => {
+  return cities.value
+    .map(city => {
+      let worstDay = city.daily[0]
+      for (const day of city.daily) {
+        if (RISK_RANK[day.risk_level] > RISK_RANK[worstDay.risk_level]) worstDay = day
+      }
+      return { city, day: worstDay }
+    })
+    .filter(entry => entry.day.risk_level !== 'GREEN')
+    .sort((a, b) => RISK_RANK[b.day.risk_level] - RISK_RANK[a.day.risk_level])
+    .slice(0, 3)
 })
 
 // A single always-visible line stating the combined effect of the country
@@ -967,6 +1012,87 @@ onUnmounted(() => {
 .country-worst.yellow { background: rgba(234, 179, 8, 0.15); color: #eab308; }
 .country-worst.orange { background: rgba(249, 115, 22, 0.15); color: #f97316; }
 .country-worst.red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+/* ---- Priority incident strip ---- */
+
+.priority-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.priority-strip-label {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  flex-basis: 100%;
+}
+
+.priority-card {
+  flex: 1 1 260px;
+  min-width: 220px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-left: 3px solid var(--glass-border);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.priority-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.priority-card.red { border-left-color: #ef4444; }
+.priority-card.orange { border-left-color: #f97316; }
+.priority-card.yellow { border-left-color: #eab308; }
+
+.priority-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priority-card-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.priority-card-badge.red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+.priority-card-badge.orange { background: rgba(249, 115, 22, 0.15); color: #f97316; }
+.priority-card-badge.yellow { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+
+.priority-card-city {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.priority-card-reason {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.priority-card-action {
+  font-size: 11px;
+  font-weight: 600;
+  color: #38bdf8;
+}
 
 /* ---- City cards ---- */
 

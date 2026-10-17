@@ -18,7 +18,55 @@
         "alert_recommended": true,
         "entries_count": 5,
         "data_sufficient": true,
-        "supporting_entries": 4
+        "supporting_entries": 4,
+        "severity_reason": "OpenWeatherMap reported thunderstorm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-14 00:00:00",
+            "temp_c": 24.0,
+            "wind_ms": 11.2,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Thunderstorm",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-14 03:00:00",
+            "temp_c": 25.9,
+            "wind_ms": 11.2,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Thunderstorm",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-14 06:00:00",
+            "temp_c": 27.8,
+            "wind_ms": 11.2,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Thunderstorm",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-14 09:00:00",
+            "temp_c": 29.6,
+            "wind_ms": 11.2,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Thunderstorm",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-14 12:00:00",
+            "temp_c": 31.5,
+            "wind_ms": 5.6,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-15",
@@ -32,7 +80,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 5
+        "supporting_entries": 5,
+        "severity_reason": "OpenWeatherMap reported thunderstorm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-15 00:00:00",
+            "temp_c": 25.0,
+            "wind_ms": 16.4,
+            "humidity_pct": 70,
+            "rain_mm": 2.8,
+            "weather": "Thunderstorm",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-15 03:00:00",
+            "temp_c": 26.1,
+            "wind_ms": 16.4,
+            "humidity_pct": 70,
+            "rain_mm": 2.8,
+            "weather": "Thunderstorm",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-15 06:00:00",
+            "temp_c": 27.3,
+            "wind_ms": 16.4,
+            "humidity_pct": 70,
+            "rain_mm": 2.8,
+            "weather": "Thunderstorm",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-15 09:00:00",
+            "temp_c": 28.4,
+            "wind_ms": 16.4,
+            "humidity_pct": 70,
+            "rain_mm": 2.8,
+            "weather": "Thunderstorm",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-15 12:00:00",
+            "temp_c": 29.6,
+            "wind_ms": 16.4,
+            "humidity_pct": 70,
+            "rain_mm": 2.8,
+            "weather": "Thunderstorm",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-15 15:00:00",
+            "temp_c": 30.7,
+            "wind_ms": 8.2,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 18:00:00",
+            "temp_c": 31.9,
+            "wind_ms": 8.2,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 21:00:00",
+            "temp_c": 33.0,
+            "wind_ms": 8.2,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "medium"
+          }
+        ]
       },
       {
         "date": "2026-10-16",
@@ -46,7 +169,82 @@
         "alert_recommended": true,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 7
+        "supporting_entries": 7,
+        "severity_reason": "OpenWeatherMap reported thunderstorm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-16 00:00:00",
+            "temp_c": 26.0,
+            "wind_ms": 19.8,
+            "humidity_pct": 70,
+            "rain_mm": 5.8,
+            "weather": "Thunderstorm",
+            "severity": "critical"
+          },
+          {
+            "time": "2026-10-16 03:00:00",
+            "temp_c": 27.1,
+            "wind_ms": 19.8,
+            "humidity_pct": 70,
+            "rain_mm": 5.8,
+            "weather": "Thunderstorm",
+            "severity": "critical"
+          },
+          {
+            "time": "2026-10-16 06:00:00",
+            "temp_c": 28.3,
+            "wind_ms": 19.8,
+            "humidity_pct": 70,
+            "rain_mm": 5.8,
+            "weather": "Thunderstorm",
+            "severity": "critical"
+          },
+          {
+            "time": "2026-10-16 09:00:00",
+            "temp_c": 29.4,
+            "wind_ms": 19.8,
+            "humidity_pct": 70,
+            "rain_mm": 5.8,
+            "weather": "Thunderstorm",
+            "severity": "critical"
+          },
+          {
+            "time": "2026-10-16 12:00:00",
+            "temp_c": 30.6,
+            "wind_ms": 19.8,
+            "humidity_pct": 70,
+            "rain_mm": 5.8,
+            "weather": "Thunderstorm",
+            "severity": "critical"
+          },
+          {
+            "time": "2026-10-16 15:00:00",
+            "temp_c": 31.7,
+            "wind_ms": 19.8,
+            "humidity_pct": 70,
+            "rain_mm": 5.8,
+            "weather": "Thunderstorm",
+            "severity": "critical"
+          },
+          {
+            "time": "2026-10-16 18:00:00",
+            "temp_c": 32.9,
+            "wind_ms": 19.8,
+            "humidity_pct": 70,
+            "rain_mm": 5.8,
+            "weather": "Thunderstorm",
+            "severity": "critical"
+          },
+          {
+            "time": "2026-10-16 21:00:00",
+            "temp_c": 34.0,
+            "wind_ms": 9.9,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Thunderstorm",
+            "severity": "high"
+          }
+        ]
       },
       {
         "date": "2026-10-17",
@@ -60,7 +258,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 5
+        "supporting_entries": 5,
+        "severity_reason": "wind speed 14 m/s is above the 10 m/s elevated threshold",
+        "raw_entries": [
+          {
+            "time": "2026-10-17 00:00:00",
+            "temp_c": 25.5,
+            "wind_ms": 14.1,
+            "humidity_pct": 70,
+            "rain_mm": 3.8,
+            "weather": "Rain",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-17 03:00:00",
+            "temp_c": 26.4,
+            "wind_ms": 14.1,
+            "humidity_pct": 70,
+            "rain_mm": 3.8,
+            "weather": "Rain",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-17 06:00:00",
+            "temp_c": 27.4,
+            "wind_ms": 14.1,
+            "humidity_pct": 70,
+            "rain_mm": 3.8,
+            "weather": "Rain",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-17 09:00:00",
+            "temp_c": 28.3,
+            "wind_ms": 14.1,
+            "humidity_pct": 70,
+            "rain_mm": 3.8,
+            "weather": "Rain",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-17 12:00:00",
+            "temp_c": 29.2,
+            "wind_ms": 14.1,
+            "humidity_pct": 70,
+            "rain_mm": 3.8,
+            "weather": "Rain",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-17 15:00:00",
+            "temp_c": 30.1,
+            "wind_ms": 7.0,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-17 18:00:00",
+            "temp_c": 31.1,
+            "wind_ms": 7.0,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-17 21:00:00",
+            "temp_c": 32.0,
+            "wind_ms": 7.0,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "medium"
+          }
+        ]
       },
       {
         "date": "2026-10-18",
@@ -74,7 +347,37 @@
         "alert_recommended": false,
         "entries_count": 3,
         "data_sufficient": false,
-        "supporting_entries": 3
+        "supporting_entries": 3,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-18 00:00:00",
+            "temp_c": 23.0,
+            "wind_ms": 5.2,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 03:00:00",
+            "temp_c": 26.5,
+            "wind_ms": 5.2,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 06:00:00",
+            "temp_c": 30.0,
+            "wind_ms": 5.2,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       }
     ]
   },
@@ -97,7 +400,55 @@
         "alert_recommended": false,
         "entries_count": 5,
         "data_sufficient": true,
-        "supporting_entries": 5
+        "supporting_entries": 5,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-14 00:00:00",
+            "temp_c": 26.0,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 03:00:00",
+            "temp_c": 27.2,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 06:00:00",
+            "temp_c": 28.5,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 09:00:00",
+            "temp_c": 29.8,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 12:00:00",
+            "temp_c": 31.0,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-15",
@@ -111,7 +462,82 @@
         "alert_recommended": true,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 6
+        "supporting_entries": 6,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-15 00:00:00",
+            "temp_c": 26.5,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.8,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 03:00:00",
+            "temp_c": 27.1,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.8,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 06:00:00",
+            "temp_c": 27.8,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.8,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 09:00:00",
+            "temp_c": 28.4,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.8,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 12:00:00",
+            "temp_c": 29.1,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.8,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 15:00:00",
+            "temp_c": 29.7,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.8,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 18:00:00",
+            "temp_c": 30.4,
+            "wind_ms": 4.5,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 21:00:00",
+            "temp_c": 31.0,
+            "wind_ms": 4.5,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-16",
@@ -125,7 +551,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-16 00:00:00",
+            "temp_c": 26.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 03:00:00",
+            "temp_c": 26.8,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 06:00:00",
+            "temp_c": 27.6,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 09:00:00",
+            "temp_c": 28.4,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 12:00:00",
+            "temp_c": 29.1,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 15:00:00",
+            "temp_c": 29.9,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 18:00:00",
+            "temp_c": 30.7,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 21:00:00",
+            "temp_c": 31.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-17",
@@ -139,7 +640,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-17 00:00:00",
+            "temp_c": 26.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 03:00:00",
+            "temp_c": 26.8,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 06:00:00",
+            "temp_c": 27.6,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 09:00:00",
+            "temp_c": 28.4,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 12:00:00",
+            "temp_c": 29.1,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 15:00:00",
+            "temp_c": 29.9,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 18:00:00",
+            "temp_c": 30.7,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 21:00:00",
+            "temp_c": 31.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-18",
@@ -153,7 +729,37 @@
         "alert_recommended": false,
         "entries_count": 3,
         "data_sufficient": false,
-        "supporting_entries": 3
+        "supporting_entries": 3,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-18 00:00:00",
+            "temp_c": 25.5,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 03:00:00",
+            "temp_c": 28.2,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 06:00:00",
+            "temp_c": 31.0,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          }
+        ]
       }
     ]
   },
@@ -176,7 +782,55 @@
         "alert_recommended": false,
         "entries_count": 5,
         "data_sufficient": true,
-        "supporting_entries": 5
+        "supporting_entries": 5,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-14 00:00:00",
+            "temp_c": 26.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 03:00:00",
+            "temp_c": 27.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 06:00:00",
+            "temp_c": 29.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 09:00:00",
+            "temp_c": 30.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 12:00:00",
+            "temp_c": 32.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-15",
@@ -190,7 +844,82 @@
         "alert_recommended": true,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 6
+        "supporting_entries": 6,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-15 00:00:00",
+            "temp_c": 26.5,
+            "wind_ms": 9.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.5,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 03:00:00",
+            "temp_c": 27.4,
+            "wind_ms": 9.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.5,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 06:00:00",
+            "temp_c": 28.2,
+            "wind_ms": 9.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.5,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 09:00:00",
+            "temp_c": 29.1,
+            "wind_ms": 9.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.5,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 12:00:00",
+            "temp_c": 29.9,
+            "wind_ms": 9.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.5,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 15:00:00",
+            "temp_c": 30.8,
+            "wind_ms": 9.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.5,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 18:00:00",
+            "temp_c": 31.6,
+            "wind_ms": 4.8,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 21:00:00",
+            "temp_c": 32.5,
+            "wind_ms": 4.8,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-16",
@@ -204,7 +933,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-16 00:00:00",
+            "temp_c": 26.0,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.4,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 03:00:00",
+            "temp_c": 26.8,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.4,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 06:00:00",
+            "temp_c": 27.6,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.4,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 09:00:00",
+            "temp_c": 28.4,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.4,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 12:00:00",
+            "temp_c": 29.1,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.4,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 15:00:00",
+            "temp_c": 29.9,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.4,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 18:00:00",
+            "temp_c": 30.7,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.4,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 21:00:00",
+            "temp_c": 31.5,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.4,
+            "weather": "Rain",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-17",
@@ -218,7 +1022,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-17 00:00:00",
+            "temp_c": 26.0,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 03:00:00",
+            "temp_c": 26.7,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 06:00:00",
+            "temp_c": 27.4,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 09:00:00",
+            "temp_c": 28.1,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 12:00:00",
+            "temp_c": 28.9,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 15:00:00",
+            "temp_c": 29.6,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 18:00:00",
+            "temp_c": 30.3,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 21:00:00",
+            "temp_c": 31.0,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-18",
@@ -232,7 +1111,37 @@
         "alert_recommended": false,
         "entries_count": 3,
         "data_sufficient": false,
-        "supporting_entries": 3
+        "supporting_entries": 3,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-18 00:00:00",
+            "temp_c": 25.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 03:00:00",
+            "temp_c": 28.2,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 06:00:00",
+            "temp_c": 31.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       }
     ]
   },
@@ -255,7 +1164,55 @@
         "alert_recommended": false,
         "entries_count": 5,
         "data_sufficient": true,
-        "supporting_entries": 3
+        "supporting_entries": 3,
+        "severity_reason": "OpenWeatherMap reported thunderstorm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-14 00:00:00",
+            "temp_c": 14.0,
+            "wind_ms": 15.0,
+            "humidity_pct": 70,
+            "rain_mm": 5.6,
+            "weather": "Thunderstorm",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-14 03:00:00",
+            "temp_c": 16.0,
+            "wind_ms": 15.0,
+            "humidity_pct": 70,
+            "rain_mm": 5.6,
+            "weather": "Thunderstorm",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-14 06:00:00",
+            "temp_c": 18.0,
+            "wind_ms": 15.0,
+            "humidity_pct": 70,
+            "rain_mm": 5.6,
+            "weather": "Thunderstorm",
+            "severity": "high"
+          },
+          {
+            "time": "2026-10-14 09:00:00",
+            "temp_c": 20.0,
+            "wind_ms": 7.5,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-14 12:00:00",
+            "temp_c": 22.0,
+            "wind_ms": 7.5,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "medium"
+          }
+        ]
       },
       {
         "date": "2026-10-15",
@@ -269,7 +1226,82 @@
         "alert_recommended": true,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 6
+        "supporting_entries": 6,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-15 00:00:00",
+            "temp_c": 14.5,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.4,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 03:00:00",
+            "temp_c": 15.5,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.4,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 06:00:00",
+            "temp_c": 16.5,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.4,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 09:00:00",
+            "temp_c": 17.5,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.4,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 12:00:00",
+            "temp_c": 18.5,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.4,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 15:00:00",
+            "temp_c": 19.5,
+            "wind_ms": 9.0,
+            "humidity_pct": 70,
+            "rain_mm": 1.4,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 18:00:00",
+            "temp_c": 20.5,
+            "wind_ms": 4.5,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 21:00:00",
+            "temp_c": 21.5,
+            "wind_ms": 4.5,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-16",
@@ -283,7 +1315,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-16 00:00:00",
+            "temp_c": 14.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 03:00:00",
+            "temp_c": 15.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 06:00:00",
+            "temp_c": 16.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 09:00:00",
+            "temp_c": 17.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 12:00:00",
+            "temp_c": 18.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 15:00:00",
+            "temp_c": 19.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 18:00:00",
+            "temp_c": 20.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 21:00:00",
+            "temp_c": 21.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-17",
@@ -297,7 +1404,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-17 00:00:00",
+            "temp_c": 13.5,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 03:00:00",
+            "temp_c": 14.6,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 06:00:00",
+            "temp_c": 15.6,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 09:00:00",
+            "temp_c": 16.7,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 12:00:00",
+            "temp_c": 17.8,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 15:00:00",
+            "temp_c": 18.9,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 18:00:00",
+            "temp_c": 19.9,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 21:00:00",
+            "temp_c": 21.0,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-18",
@@ -311,7 +1493,37 @@
         "alert_recommended": false,
         "entries_count": 3,
         "data_sufficient": false,
-        "supporting_entries": 3
+        "supporting_entries": 3,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-18 00:00:00",
+            "temp_c": 13.0,
+            "wind_ms": 3.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 03:00:00",
+            "temp_c": 16.8,
+            "wind_ms": 3.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 06:00:00",
+            "temp_c": 20.5,
+            "wind_ms": 3.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       }
     ]
   },
@@ -334,7 +1546,55 @@
         "alert_recommended": false,
         "entries_count": 5,
         "data_sufficient": true,
-        "supporting_entries": 5
+        "supporting_entries": 5,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-14 00:00:00",
+            "temp_c": 27.0,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 03:00:00",
+            "temp_c": 28.8,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 06:00:00",
+            "temp_c": 30.5,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 09:00:00",
+            "temp_c": 32.2,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 12:00:00",
+            "temp_c": 34.0,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-15",
@@ -348,7 +1608,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-15 00:00:00",
+            "temp_c": 27.0,
+            "wind_ms": 6.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 03:00:00",
+            "temp_c": 28.1,
+            "wind_ms": 6.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 06:00:00",
+            "temp_c": 29.1,
+            "wind_ms": 6.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 09:00:00",
+            "temp_c": 30.2,
+            "wind_ms": 6.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 12:00:00",
+            "temp_c": 31.3,
+            "wind_ms": 6.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 15:00:00",
+            "temp_c": 32.4,
+            "wind_ms": 6.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 18:00:00",
+            "temp_c": 33.4,
+            "wind_ms": 6.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 21:00:00",
+            "temp_c": 34.5,
+            "wind_ms": 6.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-16",
@@ -362,7 +1697,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-16 00:00:00",
+            "temp_c": 26.5,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 03:00:00",
+            "temp_c": 27.6,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 06:00:00",
+            "temp_c": 28.6,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 09:00:00",
+            "temp_c": 29.7,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 12:00:00",
+            "temp_c": 30.8,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 15:00:00",
+            "temp_c": 31.9,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 18:00:00",
+            "temp_c": 32.9,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 21:00:00",
+            "temp_c": 34.0,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-17",
@@ -376,7 +1786,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-17 00:00:00",
+            "temp_c": 27.0,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 03:00:00",
+            "temp_c": 27.9,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 06:00:00",
+            "temp_c": 28.9,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 09:00:00",
+            "temp_c": 29.8,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 12:00:00",
+            "temp_c": 30.7,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 15:00:00",
+            "temp_c": 31.6,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 18:00:00",
+            "temp_c": 32.6,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 21:00:00",
+            "temp_c": 33.5,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-18",
@@ -390,7 +1875,37 @@
         "alert_recommended": false,
         "entries_count": 3,
         "data_sufficient": false,
-        "supporting_entries": 3
+        "supporting_entries": 3,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-18 00:00:00",
+            "temp_c": 26.5,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 03:00:00",
+            "temp_c": 30.2,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 06:00:00",
+            "temp_c": 34.0,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       }
     ]
   },
@@ -413,7 +1928,55 @@
         "alert_recommended": true,
         "entries_count": 5,
         "data_sufficient": true,
-        "supporting_entries": 4
+        "supporting_entries": 4,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-14 00:00:00",
+            "temp_c": 25.0,
+            "wind_ms": 8.0,
+            "humidity_pct": 70,
+            "rain_mm": 2.0,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-14 03:00:00",
+            "temp_c": 26.8,
+            "wind_ms": 8.0,
+            "humidity_pct": 70,
+            "rain_mm": 2.0,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-14 06:00:00",
+            "temp_c": 28.5,
+            "wind_ms": 8.0,
+            "humidity_pct": 70,
+            "rain_mm": 2.0,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-14 09:00:00",
+            "temp_c": 30.2,
+            "wind_ms": 8.0,
+            "humidity_pct": 70,
+            "rain_mm": 2.0,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-14 12:00:00",
+            "temp_c": 32.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-15",
@@ -427,7 +1990,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-15 00:00:00",
+            "temp_c": 25.5,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.1,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 03:00:00",
+            "temp_c": 26.4,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.1,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 06:00:00",
+            "temp_c": 27.4,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.1,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 09:00:00",
+            "temp_c": 28.3,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.1,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 12:00:00",
+            "temp_c": 29.2,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.1,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 15:00:00",
+            "temp_c": 30.1,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.1,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 18:00:00",
+            "temp_c": 31.1,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.1,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 21:00:00",
+            "temp_c": 32.0,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.1,
+            "weather": "Clouds",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-16",
@@ -441,7 +2079,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-16 00:00:00",
+            "temp_c": 25.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 03:00:00",
+            "temp_c": 26.1,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 06:00:00",
+            "temp_c": 27.1,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 09:00:00",
+            "temp_c": 28.2,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 12:00:00",
+            "temp_c": 29.3,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 15:00:00",
+            "temp_c": 30.4,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 18:00:00",
+            "temp_c": 31.4,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 21:00:00",
+            "temp_c": 32.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-17",
@@ -455,7 +2168,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-17 00:00:00",
+            "temp_c": 25.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 03:00:00",
+            "temp_c": 26.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 06:00:00",
+            "temp_c": 27.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 09:00:00",
+            "temp_c": 28.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 12:00:00",
+            "temp_c": 29.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 15:00:00",
+            "temp_c": 30.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 18:00:00",
+            "temp_c": 31.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 21:00:00",
+            "temp_c": 32.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-18",
@@ -469,7 +2257,37 @@
         "alert_recommended": false,
         "entries_count": 3,
         "data_sufficient": false,
-        "supporting_entries": 3
+        "supporting_entries": 3,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-18 00:00:00",
+            "temp_c": 25.5,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 03:00:00",
+            "temp_c": 28.5,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 06:00:00",
+            "temp_c": 31.5,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          }
+        ]
       }
     ]
   },
@@ -492,7 +2310,55 @@
         "alert_recommended": false,
         "entries_count": 5,
         "data_sufficient": true,
-        "supporting_entries": 5
+        "supporting_entries": 5,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-14 00:00:00",
+            "temp_c": 10.0,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 03:00:00",
+            "temp_c": 12.0,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 06:00:00",
+            "temp_c": 14.0,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 09:00:00",
+            "temp_c": 16.0,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 12:00:00",
+            "temp_c": 18.0,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-15",
@@ -506,7 +2372,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-15 00:00:00",
+            "temp_c": 11.0,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 03:00:00",
+            "temp_c": 11.9,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 06:00:00",
+            "temp_c": 12.7,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 09:00:00",
+            "temp_c": 13.6,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 12:00:00",
+            "temp_c": 14.4,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 15:00:00",
+            "temp_c": 15.3,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 18:00:00",
+            "temp_c": 16.1,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 21:00:00",
+            "temp_c": 17.0,
+            "wind_ms": 6.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-16",
@@ -520,7 +2461,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-16 00:00:00",
+            "temp_c": 9.0,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 03:00:00",
+            "temp_c": 10.2,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 06:00:00",
+            "temp_c": 11.4,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 09:00:00",
+            "temp_c": 12.6,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 12:00:00",
+            "temp_c": 13.9,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 15:00:00",
+            "temp_c": 15.1,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 18:00:00",
+            "temp_c": 16.3,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 21:00:00",
+            "temp_c": 17.5,
+            "wind_ms": 5.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-17",
@@ -534,7 +2550,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-17 00:00:00",
+            "temp_c": 10.0,
+            "wind_ms": 7.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.2,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 03:00:00",
+            "temp_c": 10.9,
+            "wind_ms": 7.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.2,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 06:00:00",
+            "temp_c": 11.7,
+            "wind_ms": 7.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.2,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 09:00:00",
+            "temp_c": 12.6,
+            "wind_ms": 7.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.2,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 12:00:00",
+            "temp_c": 13.4,
+            "wind_ms": 7.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.2,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 15:00:00",
+            "temp_c": 14.3,
+            "wind_ms": 7.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.2,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 18:00:00",
+            "temp_c": 15.1,
+            "wind_ms": 7.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.2,
+            "weather": "Rain",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 21:00:00",
+            "temp_c": 16.0,
+            "wind_ms": 7.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.2,
+            "weather": "Rain",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-18",
@@ -548,7 +2639,37 @@
         "alert_recommended": false,
         "entries_count": 3,
         "data_sufficient": false,
-        "supporting_entries": 3
+        "supporting_entries": 3,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-18 00:00:00",
+            "temp_c": 9.5,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 03:00:00",
+            "temp_c": 13.2,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 06:00:00",
+            "temp_c": 17.0,
+            "wind_ms": 5.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       }
     ]
   },
@@ -571,7 +2692,55 @@
         "alert_recommended": false,
         "entries_count": 5,
         "data_sufficient": true,
-        "supporting_entries": 5
+        "supporting_entries": 5,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-14 00:00:00",
+            "temp_c": 14.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 03:00:00",
+            "temp_c": 16.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 06:00:00",
+            "temp_c": 19.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 09:00:00",
+            "temp_c": 21.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-14 12:00:00",
+            "temp_c": 24.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-15",
@@ -585,7 +2754,82 @@
         "alert_recommended": true,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 6
+        "supporting_entries": 6,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-15 00:00:00",
+            "temp_c": 14.5,
+            "wind_ms": 8.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 03:00:00",
+            "temp_c": 15.7,
+            "wind_ms": 8.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 06:00:00",
+            "temp_c": 16.9,
+            "wind_ms": 8.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 09:00:00",
+            "temp_c": 18.1,
+            "wind_ms": 8.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 12:00:00",
+            "temp_c": 19.4,
+            "wind_ms": 8.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 15:00:00",
+            "temp_c": 20.6,
+            "wind_ms": 8.5,
+            "humidity_pct": 70,
+            "rain_mm": 1.6,
+            "weather": "Rain",
+            "severity": "medium"
+          },
+          {
+            "time": "2026-10-15 18:00:00",
+            "temp_c": 21.8,
+            "wind_ms": 4.2,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-15 21:00:00",
+            "temp_c": 23.0,
+            "wind_ms": 4.2,
+            "humidity_pct": 55,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-16",
@@ -599,7 +2843,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-16 00:00:00",
+            "temp_c": 14.0,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 03:00:00",
+            "temp_c": 15.4,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 06:00:00",
+            "temp_c": 16.7,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 09:00:00",
+            "temp_c": 18.1,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 12:00:00",
+            "temp_c": 19.4,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 15:00:00",
+            "temp_c": 20.8,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 18:00:00",
+            "temp_c": 22.1,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-16 21:00:00",
+            "temp_c": 23.5,
+            "wind_ms": 4.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clouds",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-17",
@@ -613,7 +2932,82 @@
         "alert_recommended": false,
         "entries_count": 8,
         "data_sufficient": true,
-        "supporting_entries": 8
+        "supporting_entries": 8,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-17 00:00:00",
+            "temp_c": 13.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 03:00:00",
+            "temp_c": 15.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 06:00:00",
+            "temp_c": 16.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 09:00:00",
+            "temp_c": 18.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 12:00:00",
+            "temp_c": 19.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 15:00:00",
+            "temp_c": 21.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 18:00:00",
+            "temp_c": 22.5,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-17 21:00:00",
+            "temp_c": 24.0,
+            "wind_ms": 4.0,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       },
       {
         "date": "2026-10-18",
@@ -627,7 +3021,37 @@
         "alert_recommended": false,
         "entries_count": 3,
         "data_sufficient": false,
-        "supporting_entries": 3
+        "supporting_entries": 3,
+        "severity_reason": "no threshold was crossed - calm conditions",
+        "raw_entries": [
+          {
+            "time": "2026-10-18 00:00:00",
+            "temp_c": 13.0,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 03:00:00",
+            "temp_c": 18.8,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          },
+          {
+            "time": "2026-10-18 06:00:00",
+            "temp_c": 24.5,
+            "wind_ms": 3.5,
+            "humidity_pct": 70,
+            "rain_mm": 0.0,
+            "weather": "Clear",
+            "severity": "low"
+          }
+        ]
       }
     ]
   }

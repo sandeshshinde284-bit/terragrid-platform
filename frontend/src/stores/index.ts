@@ -35,6 +35,23 @@ export interface PrepareDailyForecast {
   entries_count: number
   supporting_entries: number
   data_sufficient: boolean
+  // Plain-language statement of which rule actually set risk_level (wind/
+  // temp/humidity threshold or a severe weather keyword) - not a generic
+  // restatement of the risk level itself.
+  severity_reason: string
+  // The actual 3-hour OpenWeatherMap entries this day's call was computed
+  // from - real audit evidence, traceable back to the raw forecast data.
+  raw_entries: PrepareRawEntry[]
+}
+
+export interface PrepareRawEntry {
+  time: string
+  temp_c: number
+  wind_ms: number
+  humidity_pct: number
+  rain_mm: number
+  weather: string
+  severity: string
 }
 
 export interface PrepareCityForecast {
