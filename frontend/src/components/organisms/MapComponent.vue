@@ -43,6 +43,7 @@
 import { logFeature, logError } from '@/utils/logger'
 import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
 import { useEventsStore, useAppStore } from '@/stores'
+import { useRouter } from 'vue-router'
 import type { IncidentLevel1 } from '@/types'
 import * as mapboxgl from 'mapbox-gl/esm'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -59,6 +60,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const eventsStore = useEventsStore()
 const appStore = useAppStore()
+const router = useRouter()
 
 const activeIncidents = computed(() => {
   return props.incidents || eventsStore.allIncidents
@@ -240,12 +242,8 @@ const renderMarkers = () => {
     el.addEventListener('click', (e) => {
       e.stopPropagation()
       appStore.setSelectedIncident(incident.id)
-
-      mapInstance.flyTo({             
-        center: [lon, lat],
-        zoom: Math.max(mapInstance.getZoom(), 5),  
-        speed: 1.2
-      })
+      // Open the actual incident page (same id the Dashboard and Incidents use).
+      router.push({ name: 'IncidentDetail', params: { id: incident.id } })
     })
 
     const marker = new mapboxgl.Marker({ element: el })
