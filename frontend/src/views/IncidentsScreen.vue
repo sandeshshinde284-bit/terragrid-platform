@@ -551,7 +551,7 @@ onMounted(async () => {
   if (eventsStore.allIncidents.length === 0) {
     try {
       const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
-      const res = await fetch(`${host}/api/v1/incidents?limit=50`)
+      const res = await fetch(`${host}/api/v1/incidents?limit=100&offset=0`)
       if (res.ok) {
         const apiResponse = await res.json()
         // GET /api/v1/incidents wraps results as {data: [...], pagination: {...}},
@@ -1704,5 +1704,6 @@ onMounted(async () => {
   color: #cbd5e1;
   background: rgba(148, 163, 184, 0.15);
   vertical-align: middle;
+  white-space: nowrap;
 }
 </style>

@@ -3931,5 +3931,6 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   color: #cbd5e1;
   background: rgba(148, 163, 184, 0.15);
   vertical-align: middle;
+  white-space: nowrap;
 }
 </style>
