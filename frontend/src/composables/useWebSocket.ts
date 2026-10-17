@@ -2,6 +2,7 @@ import { ref, onUnmounted, onMounted } from 'vue'
 import { useEventsStore } from '@/stores'
 import countriesData from '@/data/countries.json' with { type: 'json' }
 import { logFeature, logWarn, logError } from '@/utils/logger'
+import { impactMetricsFrom } from '@/utils/impactMetrics'
 
 export function useWebSocket() {
   const eventsStore = useEventsStore()
@@ -111,12 +112,8 @@ export function useWebSocket() {
                     countryCode: countryCode,
                     severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
                     status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
-                    threatScore: impact.risk_score ?? 50,
+                    ...impactMetricsFrom({ ...event, impact }),
                     detectionTime: new Date(event.event_timestamp || event.created_at || Date.now()),
-                    affectedArea: impact.affected_area_km2 ?? 0,
-                    affectedPopulation: impact.affected_population ?? 0,
-                    trend: impact.trend_km2_per_hour ?? 0,
-                    forecast6h: impact.forecast_6h_km2 ?? 0,
                     coordinates: [event.latitude || 0, event.longitude || 0] as [number, number],
                     source: source,
                     confidence: event.confidence || event.data?.confidence || 0,

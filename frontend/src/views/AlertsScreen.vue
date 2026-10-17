@@ -109,6 +109,7 @@
 </template>
 
 <script setup lang="ts">
+import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { ref, computed, onMounted } from 'vue'
 import Header from '@/components/organisms/Header.vue'
 import { useEventsStore } from '@/stores'
@@ -168,17 +169,24 @@ const formatTimeAgo = (date: Date) => {
 // Feature 7: Dynamically derive real-time emergency alerts from analyzed live incidents in store
 const alerts = computed<Alert[]>(() => {
   return eventsStore.allIncidents.map((incident, index) => {
-    const score = incident.threatScore ?? 50
+    // Severity uses the backend risk score when there is one; otherwise only
+    // the incident's own recorded severity. No invented score stands in.
+    const score = incident.threatScore ?? null
     let severity: 'critical' | 'high' | 'medium' | 'low' = 'low'
-    if (score >= 80) severity = 'critical'
-    else if (score >= 65 || incident.severity === 'high') severity = 'high'
-    else if (score >= 40 || incident.severity === 'medium') severity = 'medium'
+    if (score !== null && score >= 80) severity = 'critical'
+    else if ((score !== null && score >= 65) || incident.severity === 'high') severity = 'high'
+    else if ((score !== null && score >= 40) || incident.severity === 'medium') severity = 'medium'
 
     const icon = severity === 'critical' ? '🚨' : getIncidentIcon(incident.type)
     const title = `${(incident.type || 'Hazard').toUpperCase()} EMERGENCY ALERT`
-    const area = incident.affectedArea ? `${incident.affectedArea.toFixed(0)} km²` : 'Active perimeter'
-    const pop = incident.affectedPopulation ? `${(incident.affectedPopulation / 1000).toFixed(0)}K residents` : 'Monitored area'
-    const message = `Assessed threat level ${score}/100. Affected zone: ${area} with ~${pop} in proximity. Tactical response advisory in effect.`
+    // Only state measured facts: omit a clause entirely when its value is unknown.
+    const scoreClause = score !== null ? `Assessed threat level ${score}/100. ` : ''
+    const areaClause = incident.affectedArea != null ? `Affected zone: ${incident.affectedArea.toFixed(0)} km²` : ''
+    const popClause = incident.affectedPopulation != null
+      ? `${areaClause ? ' with' : 'Affected population:'} ~${(incident.affectedPopulation / 1000).toFixed(0)}K residents`
+      : ''
+    const locationClause = areaClause || popClause ? `${areaClause}${popClause}. ` : ''
+    const message = `${scoreClause}${locationClause}Tactical response advisory in effect.`
 
     return {
       id: incident.id || `alert-${index}`,
@@ -244,12 +252,8 @@ onMounted(async () => {
               location: event.location_name || 'Unknown',
               severity: (severity === 'critical' ? 'high' : severity === 'low' ? 'low' : severity === 'medium' ? 'medium' : 'high') as 'low' | 'medium' | 'high',
               status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
-              threatScore: impact.risk_score ?? 50,
+              ...impactMetricsFrom(event),
               detectionTime: new Date(event.event_timestamp || Date.now()),
-              affectedArea: impact.affected_area_km2 ?? 150,
-              affectedPopulation: impact.affected_population ?? 50000,
-              trend: impact.trend_km2_per_hour ?? 5.2,
-              forecast6h: impact.forecast_6h_km2 ?? 31.2,
               coordinates: [event.latitude, event.longitude] as [number, number],
             }
           })

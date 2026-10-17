@@ -16,6 +16,25 @@
         </div>
       </transition>
 
+      <!-- Selected incident (set by a marker click; same selection as Dashboard/Incidents) -->
+      <transition name="fade">
+        <div v-if="selectedIncident" class="selected-incident-card glass-panel">
+          <div class="selected-head">
+            <strong>{{ selectedIncident.type }}</strong>
+            <small>{{ selectedIncident.location }}</small>
+          </div>
+          <div class="selected-metrics">
+            <span>{{ $t('overviewTab.threatScore') }}: {{ selectedIncident.threatScore ?? DASH }}</span>
+            <span>{{ $t('mapFull.affectedArea') }}: {{ fmtFixed(selectedIncident.affectedArea, 0, ' km²') }}</span>
+          </div>
+          <div class="selected-actions">
+            <button type="button" class="selected-btn primary" @click="openSelectedIncident">{{ $t('mapFull.openIncident') }}</button>
+            <button type="button" class="selected-btn" @click="showSelectedInList">{{ $t('mapFull.showInList') }}</button>
+            <button type="button" class="selected-btn" @click="appStore.setSelectedIncident(null)" aria-label="Clear selection">✕</button>
+          </div>
+        </div>
+      </transition>
+
       <!-- 3-Way Tactical Mode Switcher HUD (Top Left) -->
       <div class="style-switcher-hud glass-panel">
         <button 
@@ -135,23 +154,23 @@
               <strong>{{ (hoveredIncident.type || 'Hazard').toUpperCase() }}</strong>
               <small>{{ hoveredIncident.location }}</small>
             </div>
-            <span class="threat-tag" :class="getSeverityClass(hoveredIncident.threatScore)">
-              {{ hoveredIncident.threatScore || 50 }}/100
+            <span class="threat-tag" :class="getSeverityClass(hoveredIncident.threatScore ?? 0)">
+              {{ hoveredIncident.threatScore !== null && hoveredIncident.threatScore !== undefined ? `${hoveredIncident.threatScore}/100` : $t('overviewTab.notScored') }}
             </span>
           </div>
 
           <div class="tooltip-body">
             <div class="metric">
               <span>AFFECTED AREA:</span>
-              <strong>{{ hoveredIncident.affectedArea ? `${hoveredIncident.affectedArea.toFixed(1)} km²` : 'Active' }}</strong>
+              <strong>{{ fmtFixed(hoveredIncident.affectedArea, 1, ' km²') }}</strong>
             </div>
             <div class="metric">
               <span>POPULATION AT RISK:</span>
-              <strong>{{ hoveredIncident.affectedPopulation ? hoveredIncident.affectedPopulation.toLocaleString() : 'Estimating' }}</strong>
+              <strong>{{ fmtCount(hoveredIncident.affectedPopulation) }}</strong>
             </div>
             <div class="metric">
               <span>GROWTH TREND:</span>
-              <strong style="color: #34d399">+{{ hoveredIncident.trend ? hoveredIncident.trend.toFixed(1) : '5.2' }} km²/h</strong>
+              <strong style="color: #34d399">{{ fmtSigned(hoveredIncident.trend, 1, ' km²/h') }}</strong>
             </div>
           </div>
         </div>
@@ -161,6 +180,7 @@
 </template>
 
 <script setup lang="ts">
+import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { ref, reactive, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
@@ -374,14 +394,15 @@ const renderMarkers = () => {
     const lon = incident.coordinates ? incident.coordinates[1] : (incident as any).longitude
     if (lat === undefined || lon === undefined) return
 
-    const score = incident.threatScore ?? 50
-    const color = getSeverityColor(score)
+    // Unscored incidents are drawn in the lowest colour bucket, with no number shown.
+    const score = incident.threatScore ?? null
+    const color = getSeverityColor(score ?? 0)
     const icon = getIncidentIcon(incident.type)
 
     const el = document.createElement('div')
     el.className = 'custom-marker'
 
-    if (layers.threatGlow && score >= 80) {
+    if (layers.threatGlow && score !== null && score >= 80) {
       const pulseRing = document.createElement('div')
       pulseRing.className = 'pulse-ring'
       pulseRing.style.borderColor = color
@@ -389,7 +410,8 @@ const renderMarkers = () => {
     }
 
     const dot = document.createElement('div')
-    dot.className = `marker-dot ${getSeverityClass(score)}`
+    dot.className = `marker-dot ${getSeverityClass(score ?? 0)}`
+    if (appStore.selectedIncident === incident.id) dot.classList.add('selected')
     dot.innerHTML = `<span>${icon}</span>`
     el.appendChild(dot)
 
@@ -408,6 +430,9 @@ const renderMarkers = () => {
 
     el.addEventListener('click', (e) => {
       e.stopPropagation()
+      // Same shared selection the Dashboard and Incidents page use, so the
+      // incident is highlighted everywhere.
+      appStore.setSelectedIncident(incident.id)
       const mapInstance = map.value
       if (!mapInstance) return
       mapInstance.flyTo({
@@ -445,6 +470,24 @@ watch(() => eventsStore.allIncidents.length, () => {
     renderMarkers()
   }
 })
+
+watch(() => appStore.selectedIncident, () => {
+  if (map.value?.isStyleLoaded()) {
+    renderMarkers()
+  }
+})
+
+const selectedIncident = computed(() =>
+  eventsStore.allIncidents.find(i => i.id === appStore.selectedIncident) ?? null
+)
+
+const openSelectedIncident = () => {
+  if (selectedIncident.value) router.push(`/incident/${selectedIncident.value.id}`)
+}
+
+const showSelectedInList = () => {
+  router.push('/incidents')
+}
 
 // Watch for 2D / 3D Mode Toggle from Header.vue
 watch(() => appStore.viewMode, (mode) => {
@@ -981,3 +1024,31 @@ onUnmounted(() => {
   }
 }
 </style>
+
+.selected-incident-card {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 280px;
+  padding: 12px 14px;
+}
+.selected-head { display: flex; flex-direction: column; }
+.selected-head small { opacity: 0.75; }
+.selected-metrics { display: flex; gap: 12px; font-size: 13px; opacity: 0.9; }
+.selected-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.selected-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.6);
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+}
+.selected-btn.primary { border-color: #22d3ee; color: #67e8f9; }
+.marker-dot.selected { box-shadow: 0 0 0 3px #facc15, 0 0 14px rgba(250, 204, 21, 0.7); transform: scale(1.15); }

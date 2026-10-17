@@ -204,9 +204,10 @@ class DataIngestionService:
         
         # Copy impact data to top level for frontend rendering
         impact = serialized.get('impact', {})
-        serialized['affectedArea'] = impact.get('affected_area_km2', 0)
-        serialized['affectedPopulation'] = impact.get('affected_population', 0)
-        serialized['threatScore'] = impact.get('risk_score', 50)
+        # No invented defaults: a missing measurement stays None so the UI shows "unavailable".
+        serialized['affectedArea'] = impact.get('affected_area_km2')
+        serialized['affectedPopulation'] = impact.get('affected_population')
+        serialized['threatScore'] = impact.get('risk_score')
         
         return serialized
     

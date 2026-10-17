@@ -19,19 +19,19 @@
     <div class="card-body">
       <div class="metric-row">
         <span class="label">AREA</span>
-        <span class="value">{{ incident.affectedArea.toFixed(0) }} km²</span>
+        <span class="value">{{ fmtFixed(incident.affectedArea, 0, ' km²') }}</span>
       </div>
       <div class="metric-row">
         <span class="label">POPULATION</span>
-        <span class="value">{{ (incident.affectedPopulation / 1000).toFixed(0) }}K</span>
+        <span class="value">{{ fmtThousands(incident.affectedPopulation) }}</span>
       </div>
       <div class="metric-row">
         <span class="label">TREND</span>
-        <span class="value trend-up">+{{ incident.trend.toFixed(1) }} km²/h</span>
+        <span class="value trend-up">{{ fmtSigned(incident.trend, 1, ' km²/h') }}</span>
       </div>
       <div class="metric-row">
         <span class="label">6h FORECAST</span>
-        <span class="value trend-up">+{{ incident.forecast6h.toFixed(0) }} km²</span>
+        <span class="value trend-up">{{ fmtSigned(incident.forecast6h, 0, ' km²') }}</span>
       </div>
     </div>
 
@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, defineProps, defineEmits } from 'vue'
 import { useI18n } from 'vue-i18n'
 import GlassPanel from '../atoms/GlassPanel.vue'

@@ -59,7 +59,8 @@
     "aiInsights": "INSIGHTS AI",
     "totalAffectedArea": "Całkowity Dotknięty Obszar",
     "totalPopulation": "Populacja Całkowita",
-    "activeIncidentsCount": "Aktywne Incydenty"
+    "activeIncidentsCount": "Aktywne Incydenty",
+    "showAllIncidents": "Pokaż wszystkie zdarzenia"
   },
   "incidents": {
     "title": "Incydenty",
@@ -303,7 +304,16 @@
     "threatScore": "Wskaźnik zagrożenia",
     "location": "Lokalizacja",
     "affectedFootprint": "Obszar dotknięty",
-    "populationAtRisk": "Populacja zagrożona"
+    "populationAtRisk": "Populacja zagrożona",
+    "detectionConfidence": "Pewność wykrycia",
+    "detectionConfidenceDesc": "Według źródła danych",
+    "dataSource": "Źródło danych",
+    "lastIngested": "Ostatnie pobranie",
+    "ingestTimeUnavailable": "Brak czasu pobrania",
+    "notScored": "Brak oceny",
+    "noScoreYet": "brak jeszcze oceny ryzyka",
+    "fromImpactAnalysis": "z analizy skutków",
+    "topResources": "Najważniejsze potrzebne zasoby"
   },
   "dashboardFilters": {
     "updating": "Aktualizacja…",
@@ -425,7 +435,10 @@
     "floods": "Powodzie",
     "seismic": "Sejsmiczne",
     "severeStorms": "Gwałtowne burze",
-    "otherHazards": "Inne zagrożenia"
+    "otherHazards": "Inne zagrożenia",
+    "openIncident": "Otwórz zdarzenie",
+    "showInList": "Pokaż na liście",
+    "affectedArea": "Dotknięty obszar"
   },
   "roadmap": {
     "predictTitle": "Prognozowanie",

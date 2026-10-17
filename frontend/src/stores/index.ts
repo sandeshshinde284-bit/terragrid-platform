@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { IncidentLevel1, AIInsight, DashboardState } from '@/types'
+import { sumKnown } from '@/utils/impactMetrics'
 
 // Prepare Forecast Store
 //
@@ -272,11 +273,11 @@ export const useEventsStore = defineStore('events', () => {
   )
 
   const totalAffectedPopulation = computed(() =>
-    incidents.value.reduce((sum, i) => sum + i.affectedPopulation, 0)
+    sumKnown(incidents.value.map(i => i.affectedPopulation))
   )
 
   const totalAffectedArea = computed(() =>
-    incidents.value.reduce((sum, i) => sum + i.affectedArea, 0)
+    sumKnown(incidents.value.map(i => i.affectedArea))
   )
 
   // Actions

@@ -47,7 +47,7 @@
               <div class="trend-icon">📈</div>
               <div class="trend-info">
                 <span class="label">{{ $t('incidents.trend') }}</span>
-                <span class="value">+{{ selectedIncident.trend.toFixed(1) }} km²/h</span>
+                <span class="value">{{ fmtSigned(selectedIncident.trend, 1, ' km²/h') }}</span>
                 <span class="status positive">{{ $t('analysis.accelerating') }}</span>
               </div>
             </div>
@@ -56,7 +56,7 @@
               <div class="trend-icon">🎯</div>
               <div class="trend-info">
                 <span class="label">{{ $t('incidents.forecast') }} (6h)</span>
-                <span class="value">+{{ selectedIncident.forecast6h.toFixed(0) }} km²</span>
+                <span class="value">{{ fmtSigned(selectedIncident.forecast6h, 0, ' km²') }}</span>
                 <span class="status">{{ $t('analysis.projected') }}</span>
               </div>
             </div>
@@ -74,7 +74,7 @@
               <div class="trend-icon">👥</div>
               <div class="trend-info">
                 <span class="label">{{ $t('analysis.density') }}</span>
-                <span class="value">{{ (selectedIncident.affectedPopulation / selectedIncident.affectedArea).toFixed(0) }}</span>
+                <span class="value">{{ selectedIncident.affectedPopulation != null && selectedIncident.affectedArea ? (selectedIncident.affectedPopulation / selectedIncident.affectedArea).toFixed(0) : DASH }}</span>
                 <span class="status">{{ $t('analysis.densityLabel') }}</span>
               </div>
             </div>
@@ -96,6 +96,7 @@
 </template>
 
 <script setup lang="ts">
+import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import Header from '@/components/organisms/Header.vue'
 import { useEventsStore } from '@/stores'

@@ -136,6 +136,15 @@
                     : $t('overviewTab.crisisAssessmentDesc') 
                   }}
                 </p>
+                <!-- Report summary: the first decisions. Full detail stays in the Impact, Map, Response and History tabs. -->
+                <div v-if="deepDossier && deepDossier.resource_matrix && deepDossier.resource_matrix.length" class="dossier-top-resources">
+                  <strong>{{ $t('overviewTab.topResources') }}</strong>
+                  <ul>
+                    <li v-for="r in deepDossier.resource_matrix.slice(0, 3)" :key="r.resource">
+                      {{ r.resource }} · {{ r.quantity }} · {{ r.assigned_agency }}
+                    </li>
+                  </ul>
+                </div>
               </div>
               <button 
                 class="recon-launch-button" 
@@ -152,24 +161,24 @@
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">☴</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">{{ $t('overviewTab.atmosphericWind') }}</span>
-                  <strong class="gauge-value">{{ (Math.abs(incident.trend) * 2.1 + 4.2).toFixed(1) }} m/s</strong>
-                  <small class="gauge-desc">{{ $t('overviewTab.surfaceWind') }}</small>
+                  <span class="gauge-label">{{ $t('overviewTab.detectionConfidence') }}</span>
+                  <strong class="gauge-value">{{ confidenceText }}</strong>
+                  <small class="gauge-desc">{{ $t('overviewTab.detectionConfidenceDesc') }}</small>
                 </div>
               </div>
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">🌡</span>
                 <div class="gauge-info">
-                  <span class="gauge-label">{{ $t('overviewTab.ambientSensors') }}</span>
-                  <strong class="gauge-value">28.4°C</strong>
-                  <small class="gauge-desc">{{ $t('overviewTab.humidity') }} 78%</small>
+                  <span class="gauge-label">{{ $t('overviewTab.dataSource') }}</span>
+                  <strong class="gauge-value">{{ incident.source || DASH }}</strong>
+                  <small class="gauge-desc">{{ lastIngestedText }}</small>
                 </div>
               </div>
               <div class="env-gauge-tile glass-panel">
                 <span class="gauge-icon mono-icon">⚑</span>
                 <div class="gauge-info">
                   <span class="gauge-label">{{ $t('overviewTab.exposedPopulation') }}</span>
-                  <strong class="gauge-value">{{ formatNumber(incident.affectedPopulation) }}</strong>
+                  <strong class="gauge-value">{{ fmtCount(incident.affectedPopulation) }}</strong>
                   <small class="gauge-desc">{{ $t('overviewTab.estimatedResidents') }}</small>
                 </div>
               </div>
@@ -177,8 +186,8 @@
                 <span class="gauge-icon mono-icon">◱</span>
                 <div class="gauge-info">
                   <span class="gauge-label">{{ $t('overviewTab.perimeterGrowth') }}</span>
-                  <strong class="gauge-value">+{{ (incident.trend ?? 0).toFixed(1) }} km²/h</strong>
-                  <small class="gauge-desc">6h {{ $t('overviewTab.projected') }} +{{ formatNumber(incident.forecast6h) }} km²</small>
+                  <strong class="gauge-value">{{ fmtSigned(incident.trend, 1, ' km²/h') }}</strong>
+                  <small class="gauge-desc">6h {{ $t('overviewTab.projected') }} {{ fmtSigned(incident.forecast6h, 0, ' km²') }}</small>
                 </div>
               </div>
             </div>
@@ -186,18 +195,18 @@
             <div class="metric-grid">
               <article class="metric-card glass-panel threat-card">
                 <span class="metric-label">{{ $t('overviewTab.threatScore') }}</span>
-                <strong class="metric-value threat-value">{{ threatScore }}<small>/100</small></strong>
+                <strong class="metric-value threat-value">{{ threatScore ?? DASH }}<small v-if="threatScore !== null">/100</small></strong>
                 <span class="metric-footnote">{{ threatLevel }} · {{ threatRationale }}</span>
-                <div class="progress-track"><span class="progress-fill threat-fill" :style="{ width: `${threatScore}%` }"></span></div>
+                <div class="progress-track"><span class="progress-fill threat-fill" :style="{ width: `${threatScore ?? 0}%` }"></span></div>
               </article>
               <article class="metric-card glass-panel">
                 <span class="metric-label">{{ $t('overviewTab.location') }}</span>
                 <strong class="metric-value compact-value">{{ incident.location }}</strong>
-                <span class="metric-footnote">{{ $t('overviewTab.affectedFootprint') }} {{ formatNumber(incident.affectedArea) }} km²</span>
+                <span class="metric-footnote">{{ $t('overviewTab.affectedFootprint') }} {{ fmtFixed(incident.affectedArea, 0, ' km²') }}</span>
               </article>
               <article class="metric-card glass-panel">
                 <span class="metric-label">{{ $t('overviewTab.populationAtRisk') }}</span>
-                <strong class="metric-value">{{ formatNumber(incident.affectedPopulation) }}</strong>
+                <strong class="metric-value">{{ fmtCount(incident.affectedPopulation) }}</strong>
                 <span class="metric-footnote">{{ $t('overviewTab.estimatedResidents') }}</span>
               </article>
               
@@ -216,10 +225,7 @@
                 <div class="summary-facts">
                   <div><span>Incident class</span><strong>{{ formatIncidentType(incident.type) }}</strong></div>
                   <div><span>Operational posture</span><strong>{{ operationalPosture }}</strong></div>
-                  <template v-if="appStore.isBackendMockModeEnabled">
-                    <div><span>Data quality</span><strong>{{ detail.dataQuality }}%</strong></div>
-                    <div><span>Next review</span><strong>In {{ detail.nextReview }}</strong></div>
-                  </template>
+                  <div><span>Last ingested</span><strong>{{ lastIngestedText }}</strong></div>
                 </div>
               </article>
               <article class="glass-panel action-panel">
@@ -297,7 +303,7 @@
           <TabAlerts 
             v-else-if="activeTab === 'alerts'" 
             :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
-            :detail="detail" 
+            :incident-id="incident.id" 
             @open-alerts="goTo('/alerts')"
           />
         </section>
@@ -307,6 +313,7 @@
 </template>
 
 <script setup lang="ts">
+import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -343,31 +350,6 @@ type TabId = 'overview' | 'impact' | 'map' | 'response' | 'history' | 'source' |
 type Status = 'Verified' | 'Pending' | 'Unverified'
 
 interface Tab { id: TabId; label: string; icon: string }
-interface DetailData {
-  dataQuality: number; nextReview: string; lastUpdated: Date; lastVerified: Date; coordinates: string; imageVerification: number
-  recommendedActions: { title: string; description: string; priority: string }[]
-  zones: { name: string; code: string; level: string; percentage: number; area: number; note: string }[]
-  populationByArea: { area: string; population: number; percent: number }[]
-  infrastructure: { label: string; icon: string; count: number; status: string }[]
-  resources: { name: string; required: string; fulfilled: number }[]
-  evidence: { id: string; title: string; source: string; captured: string; kind: string; status: Status }[]
-  responseMetrics: { label: string; value: string; note: string }[]
-  routes: { name: string; status: string; direction: string; distance: string; capacity: string; clearance: number; eta: string }[]
-  deployments: { name: string; location: string; count: string; icon: string; status: string }[]
-  evacuationTime: string
-  historicalPattern: string; pastIncidents: { year: string; name: string; location: string; duration: string; population: string; similarity: number }[]
-  comparisons: { label: string; current: string; baseline: string; delta: string; direction: string }[]
-  patterns: string[]; patternConfidence: number; lessons: { title: string; text: string }[]
-  sources: { name: string; icon: string; status: Status; description: string; records: number; confidence: number }[]
-  lineage: { label: string; value: string; confidence: number }[]
-  auditTrail: { time: string; action: string; actor: string; source: string }[]
-  aiForecast: { probability: number; headline: string; window: string; riskScore: number; confidence: number; timeline: { time: string; value: string; state: string }[]; riskBreakdown: { label: string; score: number }[]; signals: { title: string; detail: string; icon: string; impact: string }[]; actions: { title: string; reason: string }[] }
-  communicationMetrics: { label: string; value: string; note: string }[]
-  alertHistory: { time: string; message: string; channel: string; severity: string; status: string }[]
-  notifiedRegions: { name: string; count: number; delivery: number }[]
-  channels: { name: string; icon: string; percent: number }[]
-  responseOutcomes: { label: string; value: string; note: string }[]
-}
 
 const route = useRoute()
 const router = useRouter()
@@ -502,23 +484,38 @@ const tabs = computed<Tab[]>(() => [
   { id: 'alerts', label: t('detail.innerTabs.alerts'), icon: '⌁' },
 ])
 
-import mockDetails from '@/data/mock_incident_evidence.json'
-
-const detail = computed(() => {
-  const d = JSON.parse(JSON.stringify(mockDetails))
-  d.lastUpdated = new Date(Date.now() - 8 * 60000)
-  d.lastVerified = new Date(Date.now() - 14 * 60000)
-  return d
-})
 const incidentLabel = computed(() => incident.value ? `${formatIncidentType(incident.value.type)} event` : 'Incident')
-const threatScore = computed(() => incident.value ? Math.min(99, Math.round(incident.value.severity === 'high' ? 78 + Math.abs(incident.value.trend) : incident.value.severity === 'medium' ? 55 + incident.value.trend : 32 + incident.value.trend)) : 0)
-const threatLevel = computed(() => threatScore.value >= 80 ? 'Critical exposure' : threatScore.value >= 60 ? 'Elevated exposure' : 'Moderate exposure')
-const threatRationale = computed(() => incident.value?.trend && incident.value.trend > 10 ? 'rapid expansion detected' : 'stable monitoring posture')
+// Real backend risk score only. The old formula (severity + trend) produced a
+// number that looked measured but was invented.
+const threatScore = computed<number | null>(() => incident.value?.threatScore ?? null)
+const threatLevel = computed(() => {
+  const s = threatScore.value
+  if (s === null) return t('overviewTab.notScored')
+  return s >= 80 ? 'Critical exposure' : s >= 60 ? 'Elevated exposure' : 'Moderate exposure'
+})
+const threatRationale = computed(() => threatScore.value === null ? t('overviewTab.noScoreYet') : t('overviewTab.fromImpactAnalysis'))
+const confidenceText = computed(() => {
+  const c = incident.value?.confidence
+  return typeof c === 'number' && c > 0 ? `${Math.round(c * 100)}%` : DASH
+})
+const lastIngestedText = computed(() => {
+  const raw = incident.value?.data?.ingested_at
+  if (!raw) return t('overviewTab.ingestTimeUnavailable')
+  return `${t('overviewTab.lastIngested')} ${relativeTime(new Date(raw))}`
+})
 const operationalPosture = computed(() => incident.value?.status === 'active' ? 'Full response' : incident.value?.status === 'monitoring' ? 'Enhanced monitoring' : 'Recovery')
-const summaryText = computed(() => incident.value ? `A ${formatIncidentType(incident.value.type).toLowerCase()} incident is affecting ${incident.value.location}. The current footprint covers ${formatNumber(incident.value.affectedArea)} km² and includes an estimated ${formatNumber(incident.value.affectedPopulation)} residents. Models indicate ${incident.value.trend > 0 ? 'continued expansion' : 'contraction'} over the next six hours, requiring coordinated field response and continuous verification.` : '')
+const summaryText = computed(() => {
+  const inc = incident.value
+  if (!inc) return ''
+  const footprint = inc.affectedArea === null ? 'an area that has not been measured yet' : `${inc.affectedArea.toFixed(0)} km²`
+  const exposed = inc.affectedPopulation === null ? 'an exposed population that has not been estimated yet' : `an estimated ${inc.affectedPopulation.toLocaleString()} residents`
+  const projection = inc.trend === null
+    ? ''
+    : ` Impact analysis shows ${inc.trend > 0 ? 'growth' : 'no growth'} of ${inc.trend.toFixed(1)} km²/h.`
+  return `A ${formatIncidentType(inc.type).toLowerCase()} incident is affecting ${inc.location}. The current footprint covers ${footprint} and includes ${exposed}.${projection} Field response and continuous verification remain required.`
+})
 
 function goTo(path: string) { router.push(path) }
-function formatNumber(value: number) { return new Intl.NumberFormat('en-US').format(value) }
 function formatDate(value: Date) { return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)) }
 function relativeTime(value: Date) { const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60000)); return minutes < 60 ? `${minutes}m ago` : `${Math.round(minutes / 60)}h ago` }
 function formatIncidentType(type: Event['type']) { return type.charAt(0).toUpperCase() + type.slice(1) }
@@ -545,14 +542,14 @@ async function exportSitRepZip() {
       `GPS COORDINATES:    ${inc.coordinates ? `${inc.coordinates[0]?.toFixed(4)}° N, ${inc.coordinates[1]?.toFixed(4)}° E` : 'N/A'}`,
       `DETECTION TIME:     ${formatDate(inc.detectionTime)}`,
       `OPERATIONAL STATUS: ${inc.status.toUpperCase()}`,
-      `THREAT SCORE:       ${threatScore.value}/100 (${threatLevel.value})`,
+      `THREAT SCORE:       ${threatScore.value === null ? 'NOT SCORED' : `${threatScore.value}/100`} (${threatLevel.value})`,
       '-----------------------------------------------------------------',
       '  PHYSICAL EXPOSURE & EXPANSION METRICS                          ',
       '-----------------------------------------------------------------',
-      `AFFECTED FOOTPRINT:    ${formatNumber(inc.affectedArea)} km²`,
-      `POPULATION IN DANGER:  ${formatNumber(inc.affectedPopulation)} citizens`,
-      `GROWTH VELOCITY:       +${inc.trend?.toFixed(1) || '0.0'} km²/h`,
-      `6-HOUR MAXIMUM BUFFER: +${formatNumber(inc.forecast6h)} km²`,
+      `AFFECTED FOOTPRINT:    ${fmtFixed(inc.affectedArea, 0, ' km²')}`,
+      `POPULATION IN DANGER:  ${fmtCount(inc.affectedPopulation)} citizens`,
+      `GROWTH VELOCITY:       ${fmtSigned(inc.trend, 1, ' km²/h')}`,
+      `6-HOUR MAXIMUM BUFFER: ${fmtSigned(inc.forecast6h, 0, ' km²')}`,
       '-----------------------------------------------------------------',
       '  TACTICAL SITUATIONAL BRIEFING                                  ',
       '-----------------------------------------------------------------',
@@ -738,12 +735,8 @@ onMounted(async () => {
               countryCode: event.countryCode || 'UN',
               severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
               status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
-              threatScore: impact.risk_score ?? event.threatScore ?? 50,
+              ...impactMetricsFrom(event),
               detectionTime: new Date(event.event_timestamp || Date.now()),
-              affectedArea: impact.affected_area_km2 ?? event.affectedArea ?? 150,
-              affectedPopulation: impact.affected_population ?? event.affectedPopulation ?? 50000,
-              trend: impact.trend_km2_per_hour ?? event.trend ?? 5.2,
-              forecast6h: impact.forecast_6h_km2 ?? event.forecast6h ?? 31.2,
               coordinates: [event.latitude, event.longitude] as [number, number],
               source: source,
               confidence: event.confidence ?? event.data?.confidence ?? 0,

@@ -59,7 +59,8 @@
     "aiInsights": "KI-ERKENNTNISSE",
     "totalAffectedArea": "Gesamtbetroffene Fläche",
     "totalPopulation": "Gesamtbevölkerung",
-    "activeIncidentsCount": "Aktive Zwischenfälle"
+    "activeIncidentsCount": "Aktive Zwischenfälle",
+    "showAllIncidents": "Alle Vorfälle anzeigen"
   },
   "incidents": {
     "title": "Zwischenfälle",
@@ -303,7 +304,16 @@
     "threatScore": "Bedrohungswert",
     "location": "Standort",
     "affectedFootprint": "Betroffene Fläche",
-    "populationAtRisk": "Gefährdete Bevölkerung"
+    "populationAtRisk": "Gefährdete Bevölkerung",
+    "detectionConfidence": "Erkennungssicherheit",
+    "detectionConfidenceDesc": "Laut Datenquelle",
+    "dataSource": "Datenquelle",
+    "lastIngested": "Zuletzt erfasst",
+    "ingestTimeUnavailable": "Erfassungszeit unbekannt",
+    "notScored": "Nicht bewertet",
+    "noScoreYet": "noch keine Risikobewertung",
+    "fromImpactAnalysis": "aus der Wirkungsanalyse",
+    "topResources": "Wichtigste benötigte Ressourcen"
   },
   "dashboardFilters": {
     "updating": "Wird aktualisiert…",
@@ -425,7 +435,10 @@
     "floods": "Überschwemmungen",
     "seismic": "Erdbeben",
     "severeStorms": "Schwere Stürme",
-    "otherHazards": "Andere Gefahren"
+    "otherHazards": "Andere Gefahren",
+    "openIncident": "Vorfall öffnen",
+    "showInList": "In Liste zeigen",
+    "affectedArea": "Betroffene Fläche"
   },
   "roadmap": {
     "predictTitle": "Prognose",

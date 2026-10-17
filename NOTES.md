@@ -63,8 +63,12 @@ you open.
 during the external-review fact-check pass (not something the review itself
 caught).
 
-**Status:** deferred, explicitly flagged to user as a Respond-phase item.
-Not started. Known lead for Stage 2 (Respond audit) below.
+**Status:** RESOLVED on `feature/unified-incident-id` (Oct 17). The mock file
+was deleted. Overview now shows only real values, "—" when a value is missing.
+Also removed the same invented defaults from Dashboard, Incidents, Alerts,
+Map, Analysis, IncidentCard and the websocket feed (150 km², 50,000 people,
+5.2 km²/h, 31.2 km² forecast, threat score 50, wind speed and 28.4°C/78%
+sensor readings). Runtime-unverified: needs a live-DB check.
 
 ---
 
@@ -124,3 +128,21 @@ river station).
 - Incidents screen uses the shared `appStore.selectedIncident`, highlights the
   same row the Dashboard/map picked, and scrolls it into view.
 - Not runtime-tested against a live database yet; only compiled and built.
+
+
+## 7. Stage 2 Respond audit - status (Oct 17)
+
+- Point 2 (report flow): teaser now goes straight to the incident's overview;
+  report shows top 3 resources first. Still open: whether the AI plan and
+  dossier content is actually useful for an official (needs a domain check).
+- Point 3 (dashboard vs incidents): dashboard list shows top 5 by risk; the
+  Incidents page is the full table. Shared ID and selection in PR #16.
+- Point 4 (map highlight): full-screen map marker click now selects the
+  incident and shows an "Open incident" card.
+- Landing: `/` already loads the Response dashboard.
+- Fallback AI plan/dossier (`backend/data/fallbacks/*.json`) is one generic
+  "offline" message for every incident. Honest, but identical. Left as-is.
+- Demo mode (`initMockData` in the store) only runs when the user turns on
+  mock mode and the live fetch fails. Left as-is, deliberate.
+- Current status / Last operational update text in Overview is still
+  hardcoded English. Not a mock-data issue; left for a localisation pass.

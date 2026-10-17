@@ -76,25 +76,12 @@
           />
         </div>
 
-        <!-- Pagination Controls -->
+        <!-- The dashboard shows the highest-risk incidents only; the full,
+             filterable table lives on the Incidents page (one list per purpose). -->
         <div class="pagination-controls">
-          <button 
-            class="pagination-btn prev-btn"
-            @click="previousPage"
-            :disabled="currentPage === 1"
-          >
-            ← Previous
-          </button>
-          <span class="page-info">
-            Page {{ currentPage }} / {{ totalPages }}
-          </span>
-          <button 
-            class="pagination-btn next-btn"
-            @click="nextPage"
-            :disabled="currentPage >= totalPages"
-          >
-            Next →
-          </button>
+          <router-link to="/incidents" class="pagination-btn next-btn">
+            {{ filteredIncidents.length }} {{ $t('dashboard.showAllIncidents') }} →
+          </router-link>
         </div>
       </aside>
 
@@ -146,20 +133,20 @@
                 <div class="profile-item align-right">
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
                   <div class="threat-score-pill tooltip-container">
-                    <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
+                    <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) ?? DASH }}</span>
                     <span class="threat-score-max">/100</span><span class="info-hint" aria-hidden="true">ⓘ</span>
 
                     <!-- Floating Tactical Tooltip -->
                     <div class="tactical-tooltip">
                       <div class="tooltip-header">
-                        <span class="tooltip-dot" :class="getSeverityClass(getThreatScore(selectedIncidentData))"></span>
-                        <strong>THREAT LEVEL: {{ getThreatScore(selectedIncidentData) }}/100</strong>
+                        <span class="tooltip-dot" :class="getSeverityClass(getThreatScore(selectedIncidentData) ?? 0)"></span>
+                        <strong>THREAT LEVEL: {{ scoreText(selectedIncidentData) }}</strong>
                       </div>
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
                         <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence != null ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
-                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() : 'Estimating' }}</strong></div>
-                        <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
+                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ fmtCount(selectedIncidentData.affectedPopulation) }}</strong></div>
+                        <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>{{ fmtSigned(selectedIncidentData.trend, 1, ' km²/h') }}</strong></div>
                       </div>
                     </div>
                   </div>
@@ -171,19 +158,19 @@
             <div class="metadata-grid glass-subpanel">
               <div class="detail-item">
                 <label>{{ $t('incidents.affectedArea') }}</label>
-                <div class="metric-value">{{ (selectedIncidentData.affectedArea ?? 0).toFixed(1) }} km²</div>
+                <div class="metric-value">{{ fmtFixed(selectedIncidentData.affectedArea, 1, ' km²') }}</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.population') }}</label>
-                <div class="metric-value">{{ (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() }}</div>
+                <div class="metric-value">{{ fmtCount(selectedIncidentData.affectedPopulation) }}</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.trend') }}</label>
-                <div class="trend-value">+{{ (selectedIncidentData.trend ?? 0).toFixed(1) }} km²/h</div>
+                <div class="trend-value">{{ fmtSigned(selectedIncidentData.trend, 1, ' km²/h') }}</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.forecast') }}</label>
-                <div class="forecast-value">+{{ (selectedIncidentData.forecast6h ?? 0).toFixed(1) }} km²</div>
+                <div class="forecast-value">{{ fmtSigned(selectedIncidentData.forecast6h, 1, ' km²') }}</div>
               </div>
             </div>
 
@@ -241,20 +228,20 @@
                 <div class="profile-item align-right">
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
                   <div class="threat-score-pill tooltip-container">
-                    <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) }}</span>
+                    <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) ?? DASH }}</span>
                     <span class="threat-score-max">/100</span><span class="info-hint" aria-hidden="true">ⓘ</span>
 
                     <!-- Floating Tactical Tooltip -->
                     <div class="tactical-tooltip">
                       <div class="tooltip-header">
-                        <span class="tooltip-dot" :class="getSeverityClass(getThreatScore(selectedIncidentData))"></span>
-                        <strong>THREAT LEVEL: {{ getThreatScore(selectedIncidentData) }}/100</strong>
+                        <span class="tooltip-dot" :class="getSeverityClass(getThreatScore(selectedIncidentData) ?? 0)"></span>
+                        <strong>THREAT LEVEL: {{ scoreText(selectedIncidentData) }}</strong>
                       </div>
                       <p class="tooltip-desc">{{ getThreatTooltipText(getThreatScore(selectedIncidentData)) }}</p>
                       <div class="tooltip-factors">
                         <div class="factor-row"><span>🎯 Detection Confidence:</span> <strong>{{ selectedIncidentData.confidence != null ? ((selectedIncidentData.confidence) * 100).toFixed(0) + '%' : 'Unavailable' }}</strong></div>
-                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ selectedIncidentData.affectedPopulation ? (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() : 'Estimating' }}</strong></div>
-                        <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>+{{ selectedIncidentData.trend?.toFixed(1) || '0.0' }} km²/h</strong></div>
+                        <div class="factor-row"><span>👥 Population Density:</span> <strong>{{ fmtCount(selectedIncidentData.affectedPopulation) }}</strong></div>
+                        <div class="factor-row"><span>📈 Perimeter Growth:</span> <strong>{{ fmtSigned(selectedIncidentData.trend, 1, ' km²/h') }}</strong></div>
                       </div>
                     </div>
                   </div>
@@ -266,19 +253,19 @@
             <div class="metadata-grid glass-subpanel">
               <div class="detail-item">
                 <label>{{ $t('incidents.affectedArea') }}</label>
-                <div class="metric-value">{{ (selectedIncidentData.affectedArea ?? 0).toFixed(1) }} km²</div>
+                <div class="metric-value">{{ fmtFixed(selectedIncidentData.affectedArea, 1, ' km²') }}</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.population') }}</label>
-                <div class="metric-value">{{ (selectedIncidentData.affectedPopulation ?? 0).toLocaleString() }}</div>
+                <div class="metric-value">{{ fmtCount(selectedIncidentData.affectedPopulation) }}</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.trend') }}</label>
-                <div class="trend-value">+{{ (selectedIncidentData.trend ?? 0).toFixed(1) }} km²/h</div>
+                <div class="trend-value">{{ fmtSigned(selectedIncidentData.trend, 1, ' km²/h') }}</div>
               </div>
               <div class="detail-item">
                 <label>{{ $t('incidents.forecast') }}</label>
-                <div class="forecast-value">+{{ (selectedIncidentData.forecast6h ?? 0).toFixed(1) }} km²</div>
+                <div class="forecast-value">{{ fmtSigned(selectedIncidentData.forecast6h, 1, ' km²') }}</div>
               </div>
             </div>
 
@@ -324,8 +311,8 @@
           >
             <div class="insight-top">
               <span class="insight-type-tag">{{ getIncidentIcon(insight.type) }} {{ insight.type.toUpperCase() }}</span>
-              <span class="insight-score" :class="getSeverityClass(insight.threatScore)">
-                {{ insight.threatScore }}/100
+              <span class="insight-score" :class="getSeverityClass(insight.threatScore ?? 0)">
+                {{ insight.threatScore != null ? `${insight.threatScore}/100` : DASH }}
               </span>
             </div>
             <div class="insight-action">{{ insight.action }}</div>
@@ -398,6 +385,7 @@
 </template>
 
 <script setup lang="ts">
+import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
@@ -429,7 +417,8 @@ const selectedCountry = ref<string | null>(null)
 const selectedEventType = ref<string>('')
 const dashboardSearchQuery = ref('')
 
-const getThreatTooltipText = (score: number) => {
+const getThreatTooltipText = (score: number | null) => {
+  if (score === null) return 'No risk score is available from the backend for this incident yet.'
   if (score >= 80) return 'Severe hazard level. Imminent risk to civil population, primary transport arteries, and critical hospital infrastructure.'
   if (score >= 65) return 'Elevated hazard level. Rapid environmental expansion vector requiring shelter activation and first-responder mobilization.'
   if (score >= 50) return 'Moderate hazard level. Active environmental perimeter requiring continuous telemetry monitoring.'
@@ -552,10 +541,10 @@ const filteredIncidents = computed(() => {
 
 // Bottom bar stats based on filtered list
 const totalAffectedArea = computed(() =>
-  filteredIncidents.value.reduce((sum, i) => sum + (i.affectedArea || 0), 0)
+  sumKnown(filteredIncidents.value.map(i => i.affectedArea))
 )
 const totalPopulation = computed(() =>
-  filteredIncidents.value.reduce((sum, i) => sum + (i.affectedPopulation || 0), 0)
+  sumKnown(filteredIncidents.value.map(i => i.affectedPopulation))
 )
 const activeIncidentsCount = computed(() => filteredIncidents.value.length)
 
@@ -613,18 +602,21 @@ const liveCriticalInsights = computed(() => {
       incidentId: inc.id,
       type: inc.type || 'Hazard',
       location: inc.location,
-      threatScore: inc.threatScore || 50,
+      threatScore: inc.threatScore ?? null,
       action,
-      estimatedAffected: inc.affectedPopulation || 15000,
-      severity: (inc.threatScore && inc.threatScore >= 80) ? 'critical' : 'high'
+      estimatedAffected: inc.affectedPopulation,
+      // Critical only on a real score >= 80; otherwise keep the incident's own recorded severity.
+      severity: (inc.threatScore !== null && inc.threatScore >= 80) ? 'critical' : (inc.severity === 'high' ? 'high' : 'medium')
     }
   })
 })
 
+// Dashboard list = the highest-risk incidents (unscored ones last), not every
+// incident. The full list is on the Incidents page.
 const sortedAndPaginatedIncidents = computed(() => {
-  const startIndex = (currentPage.value - 1) * cardsPerPage.value
-  const endIndex = startIndex + cardsPerPage.value
-  return filteredIncidents.value.slice(startIndex, endIndex)
+  return [...filteredIncidents.value]
+    .sort((a, b) => (b.threatScore ?? -1) - (a.threatScore ?? -1))
+    .slice(0, cardsPerPage.value)
 })
 
 // Get incidents grouped by country
@@ -817,16 +809,15 @@ const getIncidentIcon = (type: string, location?: string): string => {
   return icons[t] || '🌤️'
 }
 
-const getThreatScore = (incident: IncidentLevel1 | null): number => {
-  if (!incident) return 0
-  if (incident.threatScore) return incident.threatScore
-  // Map severity to threat score
-  const severityMap: Record<string, number> = {
-    low: 25,
-    medium: 50,
-    high: 75,
-  }
-  return severityMap[incident.severity] || 75
+// Only the backend's real risk score counts. Severity used to be mapped to
+// made-up scores (25/50/75) here, which showed invented threat numbers.
+const getThreatScore = (incident: IncidentLevel1 | null): number | null => {
+  if (!incident) return null
+  return incident.threatScore ?? null
+}
+const scoreText = (incident: IncidentLevel1 | null): string => {
+  const s = getThreatScore(incident)
+  return s === null ? $t('overviewTab.notScored') : `${s}/100`
 }
 
 const getSeverityClass = (score?: number) => {
@@ -1008,12 +999,8 @@ const fetchIncidents = async () => {
           countryCode: countryCode,
           severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
           status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
-          threatScore: impact.risk_score ?? undefined,
+          ...impactMetricsFrom(event),
           detectionTime: new Date(event.event_timestamp || Date.now()),
-          affectedArea: impact.affected_area_km2 || 0,
-          affectedPopulation: impact.affected_population || 0,
-          trend: impact.trend_km2_per_hour || 0,
-          forecast6h: impact.forecast_6h_km2 || 0,
           coordinates: [event.latitude, event.longitude] as [number, number],
           source: source,
           confidence: event.confidence ?? event.data?.confidence ?? undefined,
@@ -1105,12 +1092,8 @@ onMounted(async () => {
                 countryCode: countryCode,
                 severity: (severity === 'critical' ? 'high' : severity) as 'low' | 'medium' | 'high',
                 status: event.status === 'detected' || event.status === 'active' ? 'active' : (event.status || 'active'),
-                threatScore: impact.risk_score ?? undefined,
+                ...impactMetricsFrom(event),
                 detectionTime: new Date(event.event_timestamp || Date.now()),
-                affectedArea: impact.affected_area_km2 ?? 150,
-                affectedPopulation: impact.affected_population ?? 50000,
-                trend: impact.trend_km2_per_hour ?? 5.2,
-                forecast6h: impact.forecast_6h_km2 ?? 31.2,
                 coordinates: [event.latitude, event.longitude] as [number, number],
                 source: source,
                 confidence: event.confidence || event.data?.confidence || 0,

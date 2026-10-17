@@ -59,7 +59,8 @@
     "aiInsights": "AI-INSIKTER",
     "totalAffectedArea": "Totalt Drabbat Område",
     "totalPopulation": "Total Befolkning",
-    "activeIncidentsCount": "Aktiva Incidenter"
+    "activeIncidentsCount": "Aktiva Incidenter",
+    "showAllIncidents": "Visa alla händelser"
   },
   "incidents": {
     "title": "Incidenter",
@@ -303,7 +304,16 @@
     "threatScore": "Hotpoäng",
     "location": "Plats",
     "affectedFootprint": "Påverkad yta",
-    "populationAtRisk": "Utsatt befolkning"
+    "populationAtRisk": "Utsatt befolkning",
+    "detectionConfidence": "Detekteringssäkerhet",
+    "detectionConfidenceDesc": "Enligt datakällan",
+    "dataSource": "Datakälla",
+    "lastIngested": "Senast inläst",
+    "ingestTimeUnavailable": "Inläsningstid saknas",
+    "notScored": "Ej bedömd",
+    "noScoreYet": "ingen riskbedömning ännu",
+    "fromImpactAnalysis": "från konsekvensanalysen",
+    "topResources": "Viktigaste resurser som behövs"
   },
   "dashboardFilters": {
     "updating": "Uppdaterar…",
@@ -425,7 +435,10 @@
     "floods": "Översvämningar",
     "seismic": "Seismisk",
     "severeStorms": "Svåra stormar",
-    "otherHazards": "Andra faror"
+    "otherHazards": "Andra faror",
+    "openIncident": "Öppna händelse",
+    "showInList": "Visa i listan",
+    "affectedArea": "Drabbat område"
   },
   "roadmap": {
     "predictTitle": "Prognos",
