@@ -63,10 +63,10 @@
               v-model="citySearch"
               type="search"
               class="rail-search"
-              placeholder="Search city or country..."
-              aria-label="Search cities"
+              :placeholder="$t('prepare.cityRail.searchPlaceholder')"
+              :aria-label="$t('prepare.cityRail.searchAriaLabel')"
             />
-            <nav ref="cityRailEl" class="city-rail" aria-label="Cities by risk">
+            <nav ref="cityRailEl" class="city-rail" :aria-label="$t('prepare.cityRail.railAriaLabel')">
               <button
                 v-for="city in filteredCities"
                 :key="cityKey(city)"
@@ -82,7 +82,7 @@
                 </span>
                 <span class="rail-risk">{{ worstRisk(city) }}</span>
               </button>
-              <p v-if="filteredCities.length === 0" class="rail-empty">No cities match "{{ citySearch }}"</p>
+              <p v-if="filteredCities.length === 0" class="rail-empty">{{ $t('prepare.cityRail.noMatch') }} "{{ citySearch }}"</p>
             </nav>
           </div>
 
@@ -92,13 +92,13 @@
                 <span class="radar-dot"></span>
               </div>
               <div class="loading-telemetry-text">
-                <strong class="cycling-step-text">Preparing alert messages for {{ selectedCity?.city }}...</strong>
+                <strong class="cycling-step-text">{{ $t('prepare.agencyAlerts.drafting') }} {{ selectedCity?.city }}...</strong>
               </div>
             </div>
 
             <div v-else-if="alertsError" class="empty-state glass-panel">
               <div class="empty-icon">⚠️</div>
-              <h3>Unable to create alert messages</h3>
+              <h3>{{ $t('prepare.agencyAlerts.unableToCreateTitle') }}</h3>
               <p>{{ alertsError }}</p>
             </div>
 
@@ -113,20 +113,20 @@
                   :class="confidenceClass(worstDayConfidence.confidence_pct)"
                   :aria-expanded="confidenceDetailExpanded"
                   @click="confidenceDetailExpanded = !confidenceDetailExpanded"
-                >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% agreement <span class="info-hint" aria-hidden="true">{{ confidenceDetailExpanded ? '▲' : 'ⓘ' }}</span></button>
+                >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% {{ $t('prepare.timeline.agreement') }} <span class="info-hint" aria-hidden="true">{{ confidenceDetailExpanded ? '▲' : 'ⓘ' }}</span></button>
                 <span class="source-badge" :class="sourceBadgeClass" :title="sourceLabel">{{ sourceLabelSimple }}</span>
               </div>
 
               <p v-if="worstDayConfidence && confidenceDetailExpanded" class="confidence-detail glass-panel">{{ confidenceTooltip }}</p>
 
               <div v-if="showLowConfidenceWarning" class="low-confidence-warning glass-panel">
-                ⚠️ This risk level had low confidence in forecast data. You may want to wait for the next forecast update before alerting.
+                {{ $t('prepare.agencyAlerts.lowConfidenceWarning') }}
               </div>
 
               <!-- Audience tabs: switch which single audience's template is shown,
                    since each is written in a different voice for a different reader. -->
               <div class="audience-tabs">
-                <div class="helper-text-above-tabs">Select which recipient group to alert</div>
+                <div class="helper-text-above-tabs">{{ $t('prepare.agencyAlerts.selectRecipientGroup') }}</div>
                 <button
                   v-for="aud in alertsPlan.alerts"
                   :key="aud.audience"
@@ -149,9 +149,9 @@
                     </button>
                     <template v-if="isWhatsAppEnabled">
                       <template v-if="whatsappRecipients.length > 0">
-                        <div class="helper-text-recipient">Choose who receives this alert</div>
-                        <select v-model="selectedRecipientPhone" class="recipient-select" aria-label="WhatsApp recipient" :placeholder="`Select recipient...`">
-                          <option value="" disabled selected>Select recipient...</option>
+                        <div class="helper-text-recipient">{{ $t('prepare.agencyAlerts.chooseRecipient') }}</div>
+                        <select v-model="selectedRecipientPhone" class="recipient-select" :aria-label="$t('prepare.agencyAlerts.whatsappRecipientAriaLabel')">
+                          <option value="" disabled selected>{{ $t('prepare.agencyAlerts.selectRecipient') }}</option>
                           <option v-for="r in whatsappRecipients" :key="r.phone_number" :value="r.phone_number">
                             {{ r.label }}
                           </option>
@@ -170,9 +170,9 @@
                       </RouterLink>
                     </template>
                     <template v-if="emailRecipients.length > 0">
-                      <div class="helper-text-recipient">Choose who receives this alert</div>
-                      <select v-model="selectedRecipientEmail" class="recipient-select" aria-label="Email recipient" :placeholder="`Select recipient...`">
-                        <option value="" disabled selected>Select recipient...</option>
+                      <div class="helper-text-recipient">{{ $t('prepare.agencyAlerts.chooseRecipient') }}</div>
+                      <select v-model="selectedRecipientEmail" class="recipient-select" :aria-label="$t('prepare.agencyAlerts.emailRecipientAriaLabel')">
+                        <option value="" disabled selected>{{ $t('prepare.agencyAlerts.selectRecipient') }}</option>
                         <option v-for="r in emailRecipients" :key="r.email" :value="r.email">
                           {{ r.label }}
                         </option>

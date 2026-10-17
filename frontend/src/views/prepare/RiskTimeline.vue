@@ -46,10 +46,10 @@
               v-model="citySearch"
               type="search"
               class="rail-search"
-              placeholder="Search city or country..."
-              aria-label="Search cities"
+              :placeholder="$t('prepare.cityRail.searchPlaceholder')"
+              :aria-label="$t('prepare.cityRail.searchAriaLabel')"
             />
-            <nav ref="cityRailEl" class="city-rail" aria-label="Cities by risk">
+            <nav ref="cityRailEl" class="city-rail" :aria-label="$t('prepare.cityRail.railAriaLabel')">
               <button
                 v-for="city in filteredCities"
                 :key="cityKey(city)"
@@ -65,7 +65,7 @@
                 </span>
                 <span class="rail-risk">{{ worstRisk(city) }}</span>
               </button>
-              <p v-if="filteredCities.length === 0" class="rail-empty">No cities match "{{ citySearch }}"</p>
+              <p v-if="filteredCities.length === 0" class="rail-empty">{{ $t('prepare.cityRail.noMatch') }} "{{ citySearch }}"</p>
             </nav>
           </div>
 
@@ -96,12 +96,12 @@
             <div v-if="selectedCity" class="timeline-strip glass-panel">
               <div class="timeline-strip-legend">
                 <p>
-                  Each day below is one point on the {{ forecastDayCount }}-day forecast. <strong>Confidence</strong> is how much of that day's own 3-hourly forecast checkpoints agreed on the risk level shown. Tap any confidence badge below for the full explanation.
+                  {{ $t('prepare.timeline.legendPrefix') }} {{ forecastDayCount }}-{{ $t('prepare.timeline.legendDayForecast') }} <strong>{{ $t('prepare.timeline.legendConfidenceWord') }}</strong> {{ $t('prepare.timeline.legendSuffix') }}
                 </p>
                 <div class="connector-legend">
-                  <span class="connector-legend-item"><span class="connector-swatch rising"></span> Risk rising</span>
-                  <span class="connector-legend-item"><span class="connector-swatch flat"></span> Holding steady</span>
-                  <span class="connector-legend-item"><span class="connector-swatch falling"></span> Risk easing</span>
+                  <span class="connector-legend-item"><span class="connector-swatch rising"></span> {{ $t('prepare.timeline.riskRising') }}</span>
+                  <span class="connector-legend-item"><span class="connector-swatch flat"></span> {{ $t('prepare.timeline.holdingSteady') }}</span>
+                  <span class="connector-legend-item"><span class="connector-swatch falling"></span> {{ $t('prepare.timeline.riskEasing') }}</span>
                 </div>
               </div>
               <div class="timeline-track">

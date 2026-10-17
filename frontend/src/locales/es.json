@@ -124,6 +124,12 @@
     "fetchingForecast": "Obteniendo pronóstico meteorológico...",
     "noForecastData": "Aún no hay datos de pronóstico",
     "noForecastDesc": "Ninguna ciudad devolvió un pronóstico. Si OPENWEATHERMAP_API_KEY no está configurado en el backend, esto permanece vacío.",
+    "cityRail": {
+      "searchPlaceholder": "Buscar ciudad o país...",
+      "searchAriaLabel": "Buscar ciudades",
+      "railAriaLabel": "Ciudades por riesgo",
+      "noMatch": "Ninguna ciudad coincide"
+    },
     "forecast": {
       "title": "Pronóstico de Riesgo Climático",
       "citiesMonitored": "ciudades monitoreadas · actualizado desde OpenWeatherMap",
@@ -136,7 +142,12 @@
       "lastUpdatedJustNow": "actualizado justo ahora",
       "sortRisk": "Riesgo",
       "sortName": "Nombre",
-      "retry": "Reintentar"
+      "retry": "Reintentar",
+      "filterHint": "Toca un número arriba para filtrar la lista por nivel de riesgo",
+      "checking": "Comprobando...",
+      "freshnessLabel": "Actualidad",
+      "completenessLabel": "Completitud",
+      "sufficiencyLabel": "Suficiencia de datos"
     },
     "timeline": {
       "title": "Riesgo en los Próximos Días",
@@ -155,6 +166,13 @@
       "nextActionLabel": "Siguiente:",
       "openChecklist": "Abrir lista de preparación",
       "draftAlert": "Redactar alerta a la agencia",
+      "legendPrefix": "Cada día abajo es un punto en el pronóstico de",
+      "legendDayForecast": "días.",
+      "legendConfidenceWord": "La concordancia",
+      "legendSuffix": "indica cuántas de las lecturas meteorológicas de ese día coincidieron con el nivel de riesgo mostrado. Toca cualquier indicador de concordancia para ver la explicación completa.",
+      "riskRising": "El riesgo aumenta",
+      "holdingSteady": "Se mantiene estable",
+      "riskEasing": "El riesgo disminuye",
       "evidenceLabel": "Evidencia",
       "riskAssessmentLabel": "Evaluación de riesgo",
       "recommendedActionLabel": "Acción recomendada",
@@ -202,7 +220,14 @@
       "addWhatsAppSettings": "💬 Agregar destinatario de WhatsApp en Configuración",
       "sendEmail": "✉️ Enviar por Correo",
       "addEmailSettings": "✉️ Agregar destinatario de correo en Configuración",
-      "whyThisTone": "Por qué este tono:"
+      "chooseRecipient": "Elige quién recibe esta alerta",
+      "selectRecipient": "Seleccionar destinatario...",
+      "whatsappRecipientAriaLabel": "Destinatario de WhatsApp",
+      "emailRecipientAriaLabel": "Destinatario de correo",
+      "whyThisTone": "Por qué este tono:",
+      "unableToCreateTitle": "No se pudieron crear los mensajes de alerta",
+      "selectRecipientGroup": "Selecciona qué grupo de destinatarios recibirá la alerta",
+      "lowConfidenceWarning": "⚠️ Este nivel de riesgo tuvo poca concordancia en los datos del pronóstico. Podría convenir esperar a la próxima actualización del pronóstico antes de enviar la alerta."
     }
   },
   "sourceTab": {

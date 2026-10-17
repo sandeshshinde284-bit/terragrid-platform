@@ -128,6 +128,12 @@
     "fetchingForecast": "Fetching weather forecast...",
     "noForecastData": "No forecast data yet",
     "noForecastDesc": "No cities returned a forecast. If OPENWEATHERMAP_API_KEY isn't set on the backend, this stays empty rather than showing invented numbers.",
+    "cityRail": {
+      "searchPlaceholder": "Search city or country...",
+      "searchAriaLabel": "Search cities",
+      "railAriaLabel": "Cities by risk",
+      "noMatch": "No cities match"
+    },
     "forecast": {
       "title": "Weather Risk Forecast",
       "citiesMonitored": "cities monitored · updated from OpenWeatherMap",
@@ -140,7 +146,12 @@
       "lastUpdatedJustNow": "updated just now",
       "sortRisk": "Risk",
       "sortName": "Name",
-      "retry": "Retry"
+      "retry": "Retry",
+      "filterHint": "Tap a number above to filter the list by risk level",
+      "checking": "Checking...",
+      "freshnessLabel": "Freshness",
+      "completenessLabel": "Completeness",
+      "sufficiencyLabel": "Sufficiency"
     },
     "timeline": {
       "title": "Risk Over the Next Few Days",
@@ -159,6 +170,13 @@
       "nextActionLabel": "Next:",
       "openChecklist": "Open preparedness checklist",
       "draftAlert": "Draft agency alert",
+      "legendPrefix": "Each day below is one point on the",
+      "legendDayForecast": "day forecast.",
+      "legendConfidenceWord": "Confidence",
+      "legendSuffix": "is how many of that day's own weather readings agreed on the risk level shown. Tap any confidence badge below for the full explanation.",
+      "riskRising": "Risk rising",
+      "holdingSteady": "Holding steady",
+      "riskEasing": "Risk easing",
       "evidenceLabel": "Evidence",
       "riskAssessmentLabel": "Risk assessment",
       "recommendedActionLabel": "Recommended action",
@@ -206,7 +224,14 @@
       "addWhatsAppSettings": "💬 Add a WhatsApp recipient in Settings",
       "sendEmail": "✉️ Send via Email",
       "addEmailSettings": "✉️ Add an email recipient in Settings",
-      "whyThisTone": "Why this tone:"
+      "chooseRecipient": "Choose who receives this alert",
+      "selectRecipient": "Select recipient...",
+      "whatsappRecipientAriaLabel": "WhatsApp recipient",
+      "emailRecipientAriaLabel": "Email recipient",
+      "whyThisTone": "Why this tone:",
+      "unableToCreateTitle": "Unable to create alert messages",
+      "selectRecipientGroup": "Select which recipient group to alert",
+      "lowConfidenceWarning": "⚠️ This risk level had low confidence in forecast data. You may want to wait for the next forecast update before alerting."
     }
   },
   "sourceTab": {

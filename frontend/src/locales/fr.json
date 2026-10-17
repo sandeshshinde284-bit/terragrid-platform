@@ -124,6 +124,12 @@
     "fetchingForecast": "Récupération des prévisions météo...",
     "noForecastData": "Pas encore de données de prévision",
     "noForecastDesc": "Aucune ville n'a renvoyé de prévisions. Si OPENWEATHERMAP_API_KEY n'est pas configuré sur le backend, cette zone reste vide.",
+    "cityRail": {
+      "searchPlaceholder": "Rechercher une ville ou un pays...",
+      "searchAriaLabel": "Rechercher des villes",
+      "railAriaLabel": "Villes par risque",
+      "noMatch": "Aucune ville ne correspond"
+    },
     "forecast": {
       "title": "Prévision des Risques Météo",
       "citiesMonitored": "villes surveillées · mis à jour depuis OpenWeatherMap",
@@ -136,7 +142,12 @@
       "lastUpdatedJustNow": "mis à jour à l'instant",
       "sortRisk": "Risque",
       "sortName": "Nom",
-      "retry": "Réessayer"
+      "retry": "Réessayer",
+      "filterHint": "Touchez un nombre ci-dessus pour filtrer la liste par niveau de risque",
+      "checking": "Vérification...",
+      "freshnessLabel": "Fraîcheur",
+      "completenessLabel": "Exhaustivité",
+      "sufficiencyLabel": "Suffisance des données"
     },
     "timeline": {
       "title": "Risque des Prochains Jours",
@@ -155,6 +166,13 @@
       "nextActionLabel": "Suivant :",
       "openChecklist": "Ouvrir la liste de préparation",
       "draftAlert": "Rédiger une alerte aux agences",
+      "legendPrefix": "Chaque jour ci-dessous est un point sur les prévisions à",
+      "legendDayForecast": "jours.",
+      "legendConfidenceWord": "La concordance",
+      "legendSuffix": "indique combien des relevés météo de ce jour correspondent au niveau de risque affiché. Touchez un badge de concordance pour voir l'explication complète.",
+      "riskRising": "Risque en hausse",
+      "holdingSteady": "Stable",
+      "riskEasing": "Risque en baisse",
       "evidenceLabel": "Preuves",
       "riskAssessmentLabel": "Évaluation du risque",
       "recommendedActionLabel": "Action recommandée",
@@ -202,7 +220,14 @@
       "addWhatsAppSettings": "💬 Ajouter un destinataire WhatsApp dans les Paramètres",
       "sendEmail": "✉️ Envoyer par Email",
       "addEmailSettings": "✉️ Ajouter un destinataire Email dans les Paramètres",
-      "whyThisTone": "Pourquoi ce ton :"
+      "chooseRecipient": "Choisissez qui reçoit cette alerte",
+      "selectRecipient": "Sélectionner un destinataire...",
+      "whatsappRecipientAriaLabel": "Destinataire WhatsApp",
+      "emailRecipientAriaLabel": "Destinataire Email",
+      "whyThisTone": "Pourquoi ce ton :",
+      "unableToCreateTitle": "Impossible de créer les messages d'alerte",
+      "selectRecipientGroup": "Sélectionnez le groupe de destinataires à alerter",
+      "lowConfidenceWarning": "⚠️ Ce niveau de risque reposait sur une faible concordance dans les données de prévision. Il peut être préférable d'attendre la prochaine mise à jour des prévisions avant d'alerter."
     }
   },
   "sourceTab": {

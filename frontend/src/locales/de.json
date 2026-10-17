@@ -124,6 +124,12 @@
     "fetchingForecast": "Wettervorhersage wird abgerufen...",
     "noForecastData": "Noch keine Vorhersagedaten",
     "noForecastDesc": "Keine Städte haben eine Vorhersage zurückgegeben. Wenn OPENWEATHERMAP_API_KEY im Backend nicht gesetzt ist, bleibt dies leer.",
+    "cityRail": {
+      "searchPlaceholder": "Stadt oder Land suchen...",
+      "searchAriaLabel": "Städte suchen",
+      "railAriaLabel": "Städte nach Risiko",
+      "noMatch": "Keine Städte stimmen überein"
+    },
     "forecast": {
       "title": "Wetterrisiko-Prognose",
       "citiesMonitored": "Städte überwacht · aktualisiert von OpenWeatherMap",
@@ -136,7 +142,12 @@
       "lastUpdatedJustNow": "gerade aktualisiert",
       "sortRisk": "Risiko",
       "sortName": "Name",
-      "retry": "Wiederholen"
+      "retry": "Wiederholen",
+      "filterHint": "Tippen Sie oben auf eine Zahl, um die Liste nach Risikostufe zu filtern",
+      "checking": "Wird geprüft...",
+      "freshnessLabel": "Aktualität",
+      "completenessLabel": "Vollständigkeit",
+      "sufficiencyLabel": "Ausreichende Daten"
     },
     "timeline": {
       "title": "Risiko in den nächsten Tagen",
@@ -155,6 +166,13 @@
       "nextActionLabel": "Weiter:",
       "openChecklist": "Checkliste zur Vorbereitung öffnen",
       "draftAlert": "Behördenwarnung entwerfen",
+      "legendPrefix": "Jeder Tag unten ist ein Punkt in der",
+      "legendDayForecast": "Tage-Vorhersage.",
+      "legendConfidenceWord": "Übereinstimmung",
+      "legendSuffix": "gibt an, wie viele der Wettermessungen dieses Tages mit der angezeigten Risikostufe übereinstimmten. Tippen Sie auf einen Übereinstimmungs-Badge für die vollständige Erklärung.",
+      "riskRising": "Risiko steigt",
+      "holdingSteady": "Bleibt stabil",
+      "riskEasing": "Risiko sinkt",
       "evidenceLabel": "Beweise",
       "riskAssessmentLabel": "Risikobewertung",
       "recommendedActionLabel": "Empfohlene Maßnahme",
@@ -202,7 +220,14 @@
       "addWhatsAppSettings": "💬 WhatsApp-Empfänger in den Einstellungen hinzufügen",
       "sendEmail": "✉️ Per E-Mail senden",
       "addEmailSettings": "✉️ E-Mail-Empfänger in den Einstellungen hinzufügen",
-      "whyThisTone": "Warum dieser Tonfall:"
+      "chooseRecipient": "Wählen Sie, wer diese Warnung erhält",
+      "selectRecipient": "Empfänger auswählen...",
+      "whatsappRecipientAriaLabel": "WhatsApp-Empfänger",
+      "emailRecipientAriaLabel": "E-Mail-Empfänger",
+      "whyThisTone": "Warum dieser Tonfall:",
+      "unableToCreateTitle": "Warnmeldungen konnten nicht erstellt werden",
+      "selectRecipientGroup": "Wählen Sie, welche Empfängergruppe benachrichtigt werden soll",
+      "lowConfidenceWarning": "⚠️ Diese Risikostufe beruhte auf einer geringen Übereinstimmung in den Prognosedaten. Es könnte sich lohnen, auf die nächste Prognose-Aktualisierung zu warten, bevor Sie eine Warnung senden."
     }
   },
   "sourceTab": {

@@ -124,6 +124,12 @@
     "fetchingForecast": "Recupero delle previsioni meteo...",
     "noForecastData": "Nessun dato di previsione disponibile",
     "noForecastDesc": "Nessuna città ha restituito previsioni. Se OPENWEATHERMAP_API_KEY non è impostato nel backend, resta vuoto.",
+    "cityRail": {
+      "searchPlaceholder": "Cerca città o paese...",
+      "searchAriaLabel": "Cerca città",
+      "railAriaLabel": "Città per rischio",
+      "noMatch": "Nessuna città corrisponde"
+    },
     "forecast": {
       "title": "Previsione del Rischio Meteo",
       "citiesMonitored": "città monitorate · aggiornato da OpenWeatherMap",
@@ -136,7 +142,12 @@
       "lastUpdatedJustNow": "aggiornato proprio ora",
       "sortRisk": "Rischio",
       "sortName": "Nome",
-      "retry": "Riprova"
+      "retry": "Riprova",
+      "filterHint": "Tocca un numero sopra per filtrare l'elenco per livello di rischio",
+      "checking": "Verifica in corso...",
+      "freshnessLabel": "Aggiornamento",
+      "completenessLabel": "Completezza",
+      "sufficiencyLabel": "Sufficienza dei dati"
     },
     "timeline": {
       "title": "Rischio nei Prossimi Giorni",
@@ -155,6 +166,13 @@
       "nextActionLabel": "Avanti:",
       "openChecklist": "Apri la lista di preparazione",
       "draftAlert": "Prepara avviso per le agenzie",
+      "legendPrefix": "Ogni giorno qui sotto è un punto della previsione a",
+      "legendDayForecast": "giorni.",
+      "legendConfidenceWord": "L'accordo",
+      "legendSuffix": "indica quante delle letture meteo di quel giorno concordano con il livello di rischio mostrato. Tocca un badge di accordo per la spiegazione completa.",
+      "riskRising": "Rischio in aumento",
+      "holdingSteady": "Stabile",
+      "riskEasing": "Rischio in calo",
       "evidenceLabel": "Prove",
       "riskAssessmentLabel": "Valutazione del rischio",
       "recommendedActionLabel": "Azione consigliata",
@@ -202,7 +220,14 @@
       "addWhatsAppSettings": "💬 Aggiungi un destinatario WhatsApp in Impostazioni",
       "sendEmail": "✉️ Invia tramite Email",
       "addEmailSettings": "✉️ Aggiungi un destinatario Email in Impostazioni",
-      "whyThisTone": "Perché questo tono:"
+      "chooseRecipient": "Scegli chi riceve questo avviso",
+      "selectRecipient": "Seleziona destinatario...",
+      "whatsappRecipientAriaLabel": "Destinatario WhatsApp",
+      "emailRecipientAriaLabel": "Destinatario email",
+      "whyThisTone": "Perché questo tono:",
+      "unableToCreateTitle": "Impossibile creare i messaggi di avviso",
+      "selectRecipientGroup": "Seleziona quale gruppo di destinatari avvisare",
+      "lowConfidenceWarning": "⚠️ Questo livello di rischio si basava su un basso accordo nei dati della previsione. Potrebbe convenire attendere il prossimo aggiornamento della previsione prima di inviare l'avviso."
     }
   },
   "sourceTab": {
