@@ -26,6 +26,12 @@
       <span class="error-text">Unable to load AI insights</span>
     </div>
 
+    <!-- AI unavailable: the backend returned its generic offline plan. Say so,
+         instead of presenting its generic line as a Critical Action. -->
+    <div v-else-if="aiPlan && aiPlan.is_fallback" class="teaser-empty">
+      <span class="empty-icon">⚠</span>
+      <span class="empty-text">AI analysis unavailable. Use standard protocols.</span>
+    </div>
     <!-- Content State -->
     <div v-else-if="aiPlan && topAction" class="teaser-content">
       <!-- Header -->
