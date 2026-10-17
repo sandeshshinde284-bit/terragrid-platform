@@ -190,7 +190,12 @@
                 </div>
 
                 <div class="day-row">
-                  <div v-for="day in city.daily" :key="day.date" class="day-chip" :class="day.risk_level.toLowerCase()">
+                  <div
+                    v-for="day in city.daily"
+                    :key="day.date"
+                    class="day-chip"
+                    :class="[day.risk_level.toLowerCase(), { dimmed: selectedRiskLevel && day.risk_level !== selectedRiskLevel }]"
+                  >
                     <span class="day-date">{{ formatDay(day.date) }}</span>
                     <span class="day-icon">{{ weatherIcon(day.dominant_weather) }}</span>
                     <span class="day-weather">{{ day.dominant_weather }}</span>
@@ -1080,7 +1085,7 @@ onUnmounted(() => {
   border-radius: 8px;
   border: 1px solid var(--glass-border);
   font-size: 11px;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, opacity 0.15s ease;
   background-clip: padding-box;
 }
 
@@ -1092,6 +1097,15 @@ onUnmounted(() => {
 .day-chip.yellow { border-color: rgba(234, 179, 8, 0.4); background: rgba(234, 179, 8, 0.12); }
 .day-chip.orange { border-color: rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.12); }
 .day-chip.red { border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.14); }
+
+/* When a risk-level filter is active, the city still shows its full week
+   for context, but the days that AREN'T why this city matched the filter
+   should visibly recede instead of looking just as prominent as the one
+   that did - otherwise clicking "ORANGE" and seeing a row of mostly green
+   chips reads as if the filter didn't work. */
+.day-chip.dimmed {
+  opacity: 0.35;
+}
 
 .day-date {
   font-weight: 700;
