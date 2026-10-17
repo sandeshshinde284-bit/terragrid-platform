@@ -52,11 +52,27 @@
               </button>
             </div>
           </div>
-          <div class="hero-summary">
-            <div v-for="level in ['RED', 'ORANGE', 'YELLOW', 'GREEN']" :key="level" class="summary-pill" :class="level.toLowerCase()">
-              <span class="summary-count">{{ riskCounts[level] }}</span>
-              <span class="summary-label">{{ level }}</span>
+          <div class="hero-summary-wrap">
+            <div class="hero-summary">
+              <button
+                v-for="level in ['RED', 'ORANGE', 'YELLOW', 'GREEN']"
+                :key="level"
+                type="button"
+                class="summary-pill"
+                :class="[level.toLowerCase(), {
+                  active: selectedRiskLevel === level,
+                  dimmed: selectedRiskLevel && selectedRiskLevel !== level,
+                  disabled: !canFilterByRisk
+                }]"
+                :disabled="!canFilterByRisk"
+                :title="canFilterByRisk ? `Show only ${level} cities` : 'Pick a country below to filter by risk level'"
+                @click="toggleRiskFilter(level)"
+              >
+                <span class="summary-count">{{ riskCounts[level] }}</span>
+                <span class="summary-label">{{ level }}</span>
+              </button>
             </div>
+            <span v-if="!canFilterByRisk" class="risk-filter-hint">Select a country below to filter by risk level</span>
           </div>
         </div>
 
@@ -67,29 +83,43 @@
             <button type="button" class="sot-retry-btn" @click="fetchSourceOfTruth">{{ $t('prepare.forecast.retry') }}</button>
           </div>
           <template v-else-if="sourceOfTruth">
+            <!-- Each row leads with a plain-language verdict (✅/⚠️ + short
+                 phrase) so it reads at a glance - the exact numbers follow
+                 for anyone who wants them, but understanding the row no
+                 longer requires parsing "TTL" or "thin days" jargon. -->
             <div class="sot-detail-row">
-              <strong>Freshness:</strong>
-              <span v-if="sourceOfTruth.freshness.note">{{ sourceOfTruth.freshness.note }}</span>
-              <span v-else>
-                Cache is {{ sourceOfTruth.freshness.cache_age_seconds }}s old
-                (TTL {{ sourceOfTruth.freshness.cache_ttl_seconds }}s) -
-                {{ sourceOfTruth.freshness.stale ? 'stale' : 'fresh' }}
+              <span class="sot-row-icon">{{ sourceOfTruth.freshness.stale ? '⚠️' : '✅' }}</span>
+              <strong>Freshness</strong>
+              <span class="sot-row-verdict">{{ sourceOfTruth.freshness.stale ? 'Data may be outdated' : "Data is up to date" }}</span>
+              <span class="sot-row-detail" v-if="sourceOfTruth.freshness.note">{{ sourceOfTruth.freshness.note }}</span>
+              <span class="sot-row-detail" v-else>
+                Last refreshed {{ sourceOfTruth.freshness.cache_age_seconds }}s ago
+                (we refresh every {{ sourceOfTruth.freshness.cache_ttl_seconds }}s)
               </span>
             </div>
             <div class="sot-detail-row">
-              <strong>Completeness:</strong>
-              {{ sourceOfTruth.completeness.returned_city_count }} / {{ sourceOfTruth.completeness.monitored_city_count }} monitored cities returned.
-              <span v-if="sourceOfTruth.completeness.note">{{ sourceOfTruth.completeness.note }}</span>
-              <span v-else-if="sourceOfTruth.completeness.missing_cities.length">
-                Missing: {{ sourceOfTruth.completeness.missing_cities.map((c: any) => c.city).join(', ') }}
+              <span class="sot-row-icon">{{ sourceOfTruth.completeness.returned_city_count === sourceOfTruth.completeness.monitored_city_count ? '✅' : '⚠️' }}</span>
+              <strong>Completeness</strong>
+              <span class="sot-row-verdict">{{ sourceOfTruth.completeness.returned_city_count }} of {{ sourceOfTruth.completeness.monitored_city_count }} monitored cities have data</span>
+              <span class="sot-row-detail" v-if="sourceOfTruth.completeness.note">{{ sourceOfTruth.completeness.note }}</span>
+              <span class="sot-row-detail" v-else-if="sourceOfTruth.completeness.missing_cities.length">
+                Still waiting on: {{ sourceOfTruth.completeness.missing_cities.map((c: any) => c.city).join(', ') }}
               </span>
             </div>
             <div class="sot-detail-row">
-              <strong>Sufficiency:</strong>
-              {{ sourceOfTruth.sufficiency.total_days_checked }} forecast days checked;
-              {{ sourceOfTruth.sufficiency.cities_with_thin_days.length }}
-              {{ sourceOfTruth.sufficiency.cities_with_thin_days.length === 1 ? 'city has' : 'cities have' }}
-              at least one day built from too few readings to fully trust its confidence score.
+              <span class="sot-row-icon">{{ sourceOfTruth.sufficiency.cities_with_thin_days.length === 0 ? '✅' : '⚠️' }}</span>
+              <strong>Sufficiency</strong>
+              <span class="sot-row-verdict">
+                {{ sourceOfTruth.sufficiency.cities_with_thin_days.length === 0
+                  ? 'Every forecast has enough data behind it'
+                  : `${sourceOfTruth.sufficiency.cities_with_thin_days.length} ${sourceOfTruth.sufficiency.cities_with_thin_days.length === 1 ? 'city has a' : 'cities have'} low-data day` }}
+              </span>
+              <span class="sot-row-detail">
+                Checked {{ sourceOfTruth.sufficiency.total_days_checked }} forecast-days total.
+                <template v-if="sourceOfTruth.sufficiency.cities_with_thin_days.length">
+                  Those days are shown with a lower confidence score rather than hidden, since there weren't enough weather readings to be fully sure.
+                </template>
+              </span>
             </div>
           </template>
         </div>
@@ -170,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
@@ -335,9 +365,40 @@ const sortedCities = (group: CountryGroup): CityForecast[] => {
 
 const selectedCountry = ref<string>('ALL')
 
+// Risk-level filter (click a RED/ORANGE/YELLOW/GREEN pill above the city
+// list). Deliberately gated behind picking a specific country first - with
+// "All" countries selected, filtering straight to e.g. GREEN could span
+// dozens of cities across the whole monitored region, which reads as noise
+// rather than a useful triage view. Once a country is picked, the list is
+// already small enough that highlighting one risk level actually helps.
+const selectedRiskLevel = ref<string | null>(null)
+
+const canFilterByRisk = computed(() => selectedCountry.value !== 'ALL')
+
+// Switching country (or back to "All") clears any active risk filter -
+// a RED filter chosen for one country shouldn't silently carry over and
+// hide cities in the next one you look at.
+watch(selectedCountry, () => {
+  selectedRiskLevel.value = null
+})
+
+const toggleRiskFilter = (level: string) => {
+  if (!canFilterByRisk.value) return
+  selectedRiskLevel.value = selectedRiskLevel.value === level ? null : level
+}
+
 const filteredGroups = computed<CountryGroup[]>(() => {
-  if (selectedCountry.value === 'ALL') return countryGroups.value
-  return countryGroups.value.filter(g => g.country === selectedCountry.value)
+  let groups = selectedCountry.value === 'ALL'
+    ? countryGroups.value
+    : countryGroups.value.filter(g => g.country === selectedCountry.value)
+
+  if (selectedRiskLevel.value) {
+    groups = groups
+      .map(g => ({ ...g, cities: g.cities.filter(c => worstRisk(c) === selectedRiskLevel.value) }))
+      .filter(g => g.cities.length > 0)
+  }
+
+  return groups
 })
 
 const riskCounts = computed(() => {
@@ -552,14 +613,34 @@ onUnmounted(() => {
 }
 
 .sot-detail-row {
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
 }
 
 .sot-detail-row strong {
   color: var(--text-primary);
-  margin-right: 4px;
+  margin-right: 2px;
+}
+
+.sot-row-icon {
+  font-size: 13px;
+}
+
+.sot-row-verdict {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sot-row-detail {
+  flex-basis: 100%;
+  font-size: 13px;
+  color: var(--text-muted);
+  opacity: 0.85;
 }
 
 .sot-detail-row.sot-error {
@@ -588,6 +669,86 @@ onUnmounted(() => {
   border-color: rgba(234, 179, 8, 0.8);
   box-shadow: 0 0 8px rgba(234, 179, 8, 0.3), inset 0 0 6px rgba(234, 179, 8, 0.1);
   transform: translateY(-1px);
+}
+
+/* ---- Risk-level summary pills ----
+   These had no base styling at all before this fix - .hero-summary,
+   .summary-pill, .summary-count and .summary-label were only ever touched
+   inside a max-width media query (layout tweaks), never given a base rule.
+   They rendered as unstyled, uncolored stacked text with no visual
+   distinction between RED/ORANGE/YELLOW/GREEN - exactly what showed up in
+   the screenshot this was reported from. Now they're real color-coded,
+   clickable filter pills, matching the palette already used by
+   .country-worst / .worst-badge / .day-chip elsewhere in this file. */
+
+.hero-summary-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.hero-summary {
+  display: flex;
+  gap: 10px;
+}
+
+.summary-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  font: inherit;
+  transition: all 0.15s ease;
+}
+
+.summary-count {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.summary-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.summary-pill.red { color: #ef4444; border-color: rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.1); }
+.summary-pill.orange { color: #f97316; border-color: rgba(249, 115, 22, 0.25); background: rgba(249, 115, 22, 0.1); }
+.summary-pill.yellow { color: #eab308; border-color: rgba(234, 179, 8, 0.25); background: rgba(234, 179, 8, 0.1); }
+.summary-pill.green { color: #22c55e; border-color: rgba(34, 197, 94, 0.25); background: rgba(34, 197, 94, 0.1); }
+
+.summary-pill:hover:not(.disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+}
+
+.summary-pill.active {
+  border-width: 2px;
+  box-shadow: 0 0 0 1px currentColor;
+}
+
+.summary-pill.dimmed {
+  opacity: 0.35;
+}
+
+.summary-pill.disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  filter: grayscale(0.4);
+}
+
+.risk-filter-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.75;
+  margin-top: -4px;
 }
 
 /* ---- Country filter ---- */

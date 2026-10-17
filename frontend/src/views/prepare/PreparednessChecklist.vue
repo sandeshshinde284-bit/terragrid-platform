@@ -105,10 +105,13 @@
                   :key="opt.agency"
                   type="button"
                   class="agency-chip"
-                  :class="{ active: selectedAgency === opt.agency }"
+                  :class="{ active: selectedAgency === opt.agency, 'agency-chip-complete': opt.pct === 100 }"
+                  :style="{ '--agency-fill-pct': opt.pct + '%' }"
+                  :title="`${opt.done} of ${opt.count} done`"
                   @click="selectedAgency = opt.agency"
                 >
-                  {{ opt.agency }} <span class="agency-count">{{ opt.count }}</span>
+                  <span class="agency-fill" aria-hidden="true"></span>
+                  <span class="agency-chip-label">{{ opt.agency }} <span class="agency-count">{{ opt.done }}/{{ opt.count }}</span></span>
                 </button>
               </div>
 
@@ -325,11 +328,25 @@ const completionStats = computed(() => {
 // --- Agency ownership filter (PR6) -------------------------------------------
 const selectedAgency = ref('ALL')
 
+// Each agency chip also shows a proportional green fill based on how many
+// of THAT agency's own actions are checked off (e.g. half-green at 1 of 2
+// done) - same per-item completedKeys state the progress bar and checkboxes
+// already use, just grouped per agency instead of across the whole list.
 const agencyOptions = computed(() => {
   const actions = actionsPlan.value?.actions || []
-  const counts = new Map<string, number>()
-  for (const a of actions) counts.set(a.agency, (counts.get(a.agency) || 0) + 1)
-  return Array.from(counts.entries()).map(([agency, count]) => ({ agency, count }))
+  const counts = new Map<string, { count: number; done: number }>()
+  for (const a of actions) {
+    const entry = counts.get(a.agency) || { count: 0, done: 0 }
+    entry.count++
+    if (isCompleted(a)) entry.done++
+    counts.set(a.agency, entry)
+  }
+  return Array.from(counts.entries()).map(([agency, { count, done }]) => ({
+    agency,
+    count,
+    done,
+    pct: count > 0 ? Math.round((done / count) * 100) : 0,
+  }))
 })
 
 // --- Deadline tracking (PR6): resolve the relative "Day N" into an actual
@@ -738,6 +755,7 @@ watch(selectedKey, () => {
 }
 
 .agency-chip {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -746,10 +764,12 @@ watch(selectedKey, () => {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .agency-chip.active {
@@ -758,8 +778,34 @@ watch(selectedKey, () => {
   color: #38bdf8;
 }
 
+/* Proportional green fill, e.g. half-green at 1 of 2 actions done for that
+   agency - same completion state the checkboxes and overall progress bar
+   already track, just scoped to one agency's own actions. Sits behind the
+   label (z-index via `isolation: isolate` above + no z-index needed on the
+   fill itself since it's the chip's only other stacking child). */
+.agency-fill {
+  position: absolute;
+  inset: 0;
+  width: var(--agency-fill-pct, 0%);
+  background: rgba(34, 197, 94, 0.28);
+  transition: width 0.25s ease;
+  z-index: 0;
+}
+
+.agency-chip-complete {
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.agency-chip-label {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .agency-count {
-  font-size: 10px;
+  font-size: 11px;
   background: rgba(255, 255, 255, 0.08);
   padding: 1px 6px;
   border-radius: 10px;
