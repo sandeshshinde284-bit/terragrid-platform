@@ -42,23 +42,33 @@
           <!-- Always-visible, worst-first city list: scan every city's status
                at a glance and jump straight to one with a single click - no
                dropdown to open/scroll/close per city. -->
-          <nav class="city-rail glass-panel" aria-label="Cities by risk">
-            <button
-              v-for="city in sortedCities"
-              :key="cityKey(city)"
-              type="button"
-              class="rail-item"
-              :class="[worstRisk(city).toLowerCase(), { active: cityKey(city) === selectedKey }]"
-              @click="selectedKey = cityKey(city)"
-            >
-              <span class="rail-dot"></span>
-              <span class="rail-text">
-                <span class="rail-name">{{ city.city }}</span>
-                <span class="rail-country">{{ getCountryName(city.country) }}</span>
-              </span>
-              <span class="rail-risk">{{ worstRisk(city) }}</span>
-            </button>
-          </nav>
+          <div class="city-rail-wrap glass-panel">
+            <input
+              v-model="citySearch"
+              type="search"
+              class="rail-search"
+              placeholder="Search city or country..."
+              aria-label="Search cities"
+            />
+            <nav ref="cityRailEl" class="city-rail" aria-label="Cities by risk">
+              <button
+                v-for="city in filteredCities"
+                :key="cityKey(city)"
+                type="button"
+                class="rail-item"
+                :class="[worstRisk(city).toLowerCase(), { active: cityKey(city) === selectedKey }]"
+                @click="selectedKey = cityKey(city)"
+              >
+                <span class="rail-dot"></span>
+                <span class="rail-text">
+                  <span class="rail-name">{{ city.city }}</span>
+                  <span class="rail-country">{{ getCountryName(city.country) }}</span>
+                </span>
+                <span class="rail-risk">{{ worstRisk(city) }}</span>
+              </button>
+              <p v-if="filteredCities.length === 0" class="rail-empty">No cities match "{{ citySearch }}"</p>
+            </nav>
+          </div>
 
           <div class="detail-panel">
             <div v-if="actionsLoading" class="empty-state glass-panel tactical-loading-container actions-loading">
@@ -173,6 +183,9 @@ import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
 import { getCountryName } from '@/utils/countries'
+// Shared with every other PREPARE screen - see usePrepareLookups.ts for why
+// that moved to one shared copy.
+import { RISK_RANK, cityKey, useCityRailFilter, worstRisk } from '@/composables/usePrepareLookups'
 
 const { t } = useI18n()
 
@@ -209,8 +222,6 @@ const actionsLoading = ref(false)
 const actionsError = ref('')
 const actionsSource = ref('')
 
-const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
-
 const CATEGORY_ICONS: Record<string, string> = {
   DRAINAGE: '🌊', MEDICAL: '🏥', EVACUATION: '🚤', SUPPLIES: '📦',
   COMMUNICATION: '📢', INFRASTRUCTURE: '🏗️',
@@ -242,15 +253,11 @@ const agencyIcon = (agency: string): string => {
   return '🏛️'
 }
 
-const cityKey = (city: CityForecast) => `${city.city}-${city.country}`
-
-const worstRisk = (city: CityForecast): string => {
-  return city.daily.reduce((worst, day) => (RISK_RANK[day.risk_level] > RISK_RANK[worst] ? day.risk_level : worst), 'GREEN')
-}
-
 const sortedCities = computed(() => {
   return [...cities.value].sort((a, b) => RISK_RANK[worstRisk(b)] - RISK_RANK[worstRisk(a)])
 })
+
+const { citySearch, cityRailEl, filteredCities, scrollActiveIntoView } = useCityRailFilter(sortedCities)
 
 const selectedCity = computed<CityForecast | null>(() => {
   return cities.value.find(c => cityKey(c) === selectedKey.value) || null
@@ -475,6 +482,7 @@ onMounted(async () => {
   if (cities.value.length > 0 && !selectedCity.value) {
     selectedKey.value = cityKey(sortedCities.value[0])
   }
+  scrollActiveIntoView()
 })
 
 watch(cities, (newCities) => {
@@ -486,6 +494,7 @@ watch(cities, (newCities) => {
 watch(selectedKey, () => {
   selectedAgency.value = 'ALL'
   if (selectedCity.value) fetchActionsForSelectedCity()
+  scrollActiveIntoView()
 })
 </script>
 
@@ -563,12 +572,44 @@ watch(selectedKey, () => {
   align-items: flex-start;
 }
 
-.city-rail {
+.city-rail-wrap {
   flex: 0 0 260px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   padding: 10px;
+}
+
+.rail-search {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.rail-search::placeholder {
+  color: var(--text-secondary);
+}
+
+.rail-search:focus {
+  border-color: var(--accent-cyan, #22d3ee);
+}
+
+.rail-empty {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 8px 4px;
+  margin: 0;
+}
+
+.city-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   max-height: 70vh;
   overflow-y: auto;
   /* Themed scrollbar instead of the browser's default light-gray one, which
@@ -1213,8 +1254,16 @@ watch(selectedKey, () => {
     flex-direction: column;
   }
 
-  .city-rail {
+  .city-rail-wrap {
     flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .rail-search {
+    width: 100%;
+  }
+
+  .city-rail {
     flex-direction: row;
     max-height: none;
     overflow-x: auto;

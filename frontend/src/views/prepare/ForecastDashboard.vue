@@ -63,7 +63,7 @@
                   active: selectedRiskLevel === level,
                   dimmed: selectedRiskLevel && selectedRiskLevel !== level,
                 }]"
-                :title="`Show only ${level} cities${selectedCountry !== 'ALL' ? ' in ' + countryMeta(selectedCountry).name : ''}`"
+                :title="`Show only ${level} cities${selectedCountry !== 'ALL' ? ' in ' + countryName(selectedCountry) : ''}`"
                 @click="toggleRiskFilter(level)"
               >
                 <span class="summary-count">{{ riskCounts[level] }}</span>
@@ -137,9 +137,9 @@
             :class="{ active: selectedCountry === group.country, [group.worstRisk.toLowerCase()]: true }"
             @click="selectedCountry = group.country"
           >
-            <img v-if="!failedFlags.has(group.country)" :src="flagUrl(group.country)" :alt="countryMeta(group.country).name" class="filter-flag" @error="onFlagError(group.country)" />
+            <img v-if="!failedFlags.has(group.country)" :src="flagUrl(group.country)" :alt="countryName(group.country)" class="filter-flag" @error="onFlagError(group.country)" />
             <span v-else class="flag-fallback">{{ group.country }}</span>
-            {{ countryMeta(group.country).name }} <span class="filter-count">{{ group.cities.length }}</span>
+            {{ countryName(group.country) }} <span class="filter-count">{{ group.cities.length }}</span>
           </button>
         </div>
 
@@ -148,9 +148,9 @@
         <div class="country-sections">
           <section v-for="group in filteredGroups" :key="group.country" class="country-section">
             <div class="country-header" :class="group.worstRisk.toLowerCase()">
-              <img v-if="!failedFlags.has(group.country)" :src="flagUrl(group.country)" :alt="countryMeta(group.country).name" class="country-flag" @error="onFlagError(group.country)" />
+              <img v-if="!failedFlags.has(group.country)" :src="flagUrl(group.country)" :alt="countryName(group.country)" class="country-flag" @error="onFlagError(group.country)" />
               <span v-else class="flag-fallback flag-fallback-lg">{{ group.country }}</span>
-              <span class="country-name">{{ countryMeta(group.country).name }}</span>
+              <span class="country-name">{{ countryName(group.country) }}</span>
               <span class="country-count">{{ group.cities.length }} {{ group.cities.length === 1 ? 'city' : 'cities' }}</span>
 
               <!-- Sort control only makes sense once there's more than a
@@ -218,6 +218,8 @@ import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
+import { useFlagFallback, weatherIcon, worstRisk, RISK_RANK } from '@/composables/usePrepareLookups'
+import { getCountryName as countryName } from '@/utils/countries'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
 
 type CityForecast = PrepareCityForecast
@@ -269,75 +271,13 @@ const lastUpdatedText = computed(() => {
   }
 })
 
-const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
 const RISK_EMOJI: Record<string, string> = { GREEN: '🟢', YELLOW: '🟡', ORANGE: '🟠', RED: '🔴' }
-
-// Country metadata is purely cosmetic (display name for the grouping header) -
-// it never changes risk calculation, which stays entirely backend-derived.
-const COUNTRY_META: Record<string, { name: string }> = {
-  IN: { name: 'India' },
-  NP: { name: 'Nepal' },
-  CN: { name: 'China' },
-  HK: { name: 'Hong Kong' },
-  BD: { name: 'Bangladesh' },
-  PK: { name: 'Pakistan' },
-  TH: { name: 'Thailand' },
-  VN: { name: 'Vietnam' },
-  SG: { name: 'Singapore' },
-  MY: { name: 'Malaysia' },
-  IQ: { name: 'Iraq' },
-  AE: { name: 'UAE' },
-  ET: { name: 'Ethiopia' },
-  KE: { name: 'Kenya' },
-  RW: { name: 'Rwanda' },
-  US: { name: 'United States' },
-}
-
-const countryMeta = (code: string) => COUNTRY_META[code] || { name: code }
-
-// Real flag images instead of flag emoji - emoji flags render as plain two-letter
-// text on Windows (no flag-emoji glyphs in its default font stack until very
-// recently), so they showed up as "IN"/"NP" instead of pictures. flagcdn.com
-// serves small flag PNGs by ISO 3166-1 alpha-2 code, which renders identically
-// across every OS/browser.
-const flagUrl = (code: string) => `https://flagcdn.com/w40/${code.toLowerCase()}.png`
-
-// If flagcdn.com is ever unreachable for a visitor, swap the broken-image
-// icon for the ISO country code as text instead of just hiding it - an
-// empty gap where a flag should be reads as a layout bug, while "IN"/"NP"
-// at least still carries the information the flag was there to show.
-const failedFlags = ref<Set<string>>(new Set())
-const onFlagError = (countryCode: string) => {
-  failedFlags.value.add(countryCode)
-}
-
 const riskEmoji = (level: string) => RISK_EMOJI[level] || '🟢'
 
-const WEATHER_ICONS: Record<string, string> = {
-  clear: '☀️',
-  clouds: '☁️',
-  rain: '🌧️',
-  drizzle: '🌦️',
-  thunderstorm: '⛈️',
-  snow: '❄️',
-  mist: '🌫️',
-  fog: '🌫️',
-  haze: '🌫️',
-  smoke: '🌫️',
-  dust: '🌪️',
-  sand: '🌪️',
-  ash: '🌋',
-  squall: '💨',
-  tornado: '🌪️',
-}
-
-const weatherIcon = (label: string) => WEATHER_ICONS[(label || '').toLowerCase()] || '🌡️'
-
-const worstRisk = (city: CityForecast): string => {
-  return city.daily.reduce((worst, day) => {
-    return RISK_RANK[day.risk_level] > RISK_RANK[worst] ? day.risk_level : worst
-  }, 'GREEN')
-}
+// Country names, risk ranking, worst-risk, flag URLs and weather icons used
+// to be copy-pasted into this file independently of the other 3 PREPARE
+// screens - see usePrepareLookups.ts for why that moved to one shared copy.
+const { failedFlags, onFlagError, flagUrl } = useFlagFallback()
 
 // Group by country, each group's cities sorted worst-risk-first, and the
 // groups themselves sorted worst-risk-first - a country with a RED city
@@ -359,7 +299,7 @@ const countryGroups = computed<CountryGroup[]>(() => {
   return groups.sort((a, b) => {
     const riskDiff = RISK_RANK[b.worstRisk] - RISK_RANK[a.worstRisk]
     if (riskDiff !== 0) return riskDiff
-    return countryMeta(a.country).name.localeCompare(countryMeta(b.country).name)
+    return countryName(a.country).localeCompare(countryName(b.country))
   })
 })
 
@@ -432,7 +372,7 @@ const riskCounts = computed(() => {
 const filterStatusText = computed(() => {
   const shownCount = filteredGroups.value.reduce((sum, g) => sum + g.cities.length, 0)
   const cityWord = shownCount === 1 ? 'city' : 'cities'
-  const countryPart = selectedCountry.value === 'ALL' ? 'all countries' : countryMeta(selectedCountry.value).name
+  const countryPart = selectedCountry.value === 'ALL' ? 'all countries' : countryName(selectedCountry.value)
 
   if (selectedRiskLevel.value) {
     return `Showing ${shownCount} ${selectedRiskLevel.value} ${cityWord} - ${countryPart}`

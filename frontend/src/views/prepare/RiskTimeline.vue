@@ -155,11 +155,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
+import { RISK_RANK, cityKey, useCityRailFilter, weatherIcon, worstRisk } from '@/composables/usePrepareLookups'
+import { getCountryName as countryName } from '@/utils/countries'
 import { usePrepareForecastStore, type PrepareCityForecast, type PrepareDailyForecast } from '@/stores'
 
 type CityForecast = PrepareCityForecast
@@ -178,21 +180,9 @@ const selectedKey = ref('')
 const route = useRoute()
 const router = useRouter()
 
-const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
-
-const COUNTRY_NAMES: Record<string, string> = {
-  IN: 'India', NP: 'Nepal', CN: 'China', HK: 'Hong Kong', BD: 'Bangladesh',
-  PK: 'Pakistan', TH: 'Thailand', VN: 'Vietnam', SG: 'Singapore', MY: 'Malaysia',
-  IQ: 'Iraq', AE: 'UAE', ET: 'Ethiopia', KE: 'Kenya', RW: 'Rwanda', US: 'United States',
-}
-const countryName = (code: string) => COUNTRY_NAMES[code] || code
-
-const WEATHER_ICONS: Record<string, string> = {
-  clear: '☀️', clouds: '☁️', rain: '🌧️', drizzle: '🌦️', thunderstorm: '⛈️',
-  snow: '❄️', mist: '🌫️', fog: '🌫️', haze: '🌫️', smoke: '🌫️',
-  dust: '🌪️', sand: '🌪️', ash: '🌋', squall: '💨', tornado: '🌪️',
-}
-const weatherIcon = (label: string) => WEATHER_ICONS[(label || '').toLowerCase()] || '🌡️'
+// Country names, risk ranking, worst-risk, city-key and weather icons used
+// to be copy-pasted into this file independently of the other 3 PREPARE
+// screens - see usePrepareLookups.ts for why that moved to one shared copy.
 
 // PR9 (confidence-based alerting): confidence_pct is the % of that day's own
 // 3-hour forecast entries that agreed with the chosen risk_level - a high
@@ -241,46 +231,21 @@ const confidenceTooltip = (day: PrepareDailyForecast): string => {
   return `${base} Below the 70% bar for an auto-recommended alert - likely a brief spike rather than a sustained risk.`
 }
 
-const cityKey = (city: CityForecast) => `${city.city}-${city.country}`
-
-const worstRisk = (city: CityForecast): string => {
-  return city.daily.reduce((worst, day) => (RISK_RANK[day.risk_level] > RISK_RANK[worst] ? day.risk_level : worst), 'GREEN')
-}
-
 // Worst-risk cities first, so the default selection (and the top of the
 // dropdown) is whatever actually needs attention, not an alphabetical pick.
 const sortedCities = computed(() => {
   return [...cities.value].sort((a, b) => RISK_RANK[worstRisk(b)] - RISK_RANK[worstRisk(a)])
 })
 
-// Text filter for the rail - with 40+ cities, scrolling to find one by eye
-// doesn't scale. Matches city name or country name/code so "india" finds
-// every Indian city at once.
-const citySearch = ref('')
-const filteredCities = computed(() => {
-  const q = citySearch.value.trim().toLowerCase()
-  if (!q) return sortedCities.value
-  return sortedCities.value.filter(c =>
-    c.city.toLowerCase().includes(q) ||
-    countryName(c.country).toLowerCase().includes(q) ||
-    c.country.toLowerCase().includes(q)
-  )
-})
+// Text filter for the rail (with 40+ cities, scrolling to find one by eye
+// doesn't scale) plus the scroll-into-view behavior for the active row -
+// shared with every other PREPARE screen that has a city rail, so the
+// search box and its behavior stay identical across screens.
+const { citySearch, cityRailEl, filteredCities, scrollActiveIntoView } = useCityRailFilter(sortedCities)
 
 const selectedCity = computed<CityForecast | null>(() => {
   return cities.value.find(c => cityKey(c) === selectedKey.value) || null
 })
-
-// Keeps the currently-selected row scrolled into view in the rail - without
-// this, picking a city (or arriving pre-selected via a Dashboard link) can
-// leave the active row scrolled off-screen, so there's no way to tell from
-// the rail itself which city the detail panel on the right belongs to.
-const cityRailEl = ref<HTMLElement | null>(null)
-const scrollActiveIntoView = () => {
-  nextTick(() => {
-    cityRailEl.value?.querySelector('.rail-item.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  })
-}
 
 // PR5: whether this city has any day worth pre-calculating evacuation
 // routes for - mirrors the backend's own gate (non-GREEN + PR9 confidence
