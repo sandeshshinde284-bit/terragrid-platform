@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     ADMIN_TOKEN: str = 'admin-secret-key'
     ALLOWED_ORIGINS: str = 'http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173'
     USE_MOCK_DATA: bool = False
+
+    # Automatic critical-incident emails (risk >= 80) are OFF by default.
+    # Alerts are sent only after an operator reviews and approves them.
+    AUTO_CRITICAL_EMAIL_ENABLED: bool = False
     
     # AI & GCP
     GCP_PROJECT_ID: str = 'terragrid-platform'

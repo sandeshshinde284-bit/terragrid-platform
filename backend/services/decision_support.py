@@ -643,6 +643,20 @@ class DecisionSupportService:
                 logger.debug(f"[GEMINI RESPONSE CLEANED]\n{cleaned_text}")
                 
                 dossier = json.loads(cleaned_text)
+                # Record which facilities came from OpenStreetMap, so the UI can
+                # tell them apart from the model's own suggestions.
+                if isinstance(dossier, dict):
+                    dossier["osm_sources"] = [
+                        {"name": item["name"], "category": category, "distance_km": item.get("distance_km")}
+                        for category, key in (
+                            ("hospital", "hospitals"),
+                            ("fire_station", "fire_stations"),
+                            ("critical_infrastructure", "critical_infrastructure"),
+                            ("shelter", "shelters"),
+                        )
+                        for item in (osm_facilities.get(key) or [])
+                        if item.get("name")
+                    ]
                 logger.info(f"[FEATURE_HEALTH] feature=gemini_deep_dossier status=success location={location} cascades={len(dossier.get('cascade_predictions', []))} resources={len(dossier.get('resource_matrix', []))} infrastructure={len(dossier.get('infrastructure_impact', []))}")
                 return dossier
 
