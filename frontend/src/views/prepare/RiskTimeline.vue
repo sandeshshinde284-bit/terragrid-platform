@@ -41,34 +41,51 @@
           <!-- Always-visible, worst-first city list: scan every city's status
                at a glance and jump straight to one with a single click - no
                dropdown to open/scroll/close per city. -->
-          <nav class="city-rail glass-panel" aria-label="Cities by risk">
-            <button
-              v-for="city in sortedCities"
-              :key="cityKey(city)"
-              type="button"
-              class="rail-item"
-              :class="[worstRisk(city).toLowerCase(), { active: cityKey(city) === selectedKey }]"
-              @click="selectedKey = cityKey(city)"
-            >
-              <span class="rail-dot"></span>
-              <span class="rail-text">
-                <span class="rail-name">{{ city.city }}</span>
-                <span class="rail-country">{{ countryName(city.country) }}</span>
-              </span>
-              <span class="rail-risk">{{ worstRisk(city) }}</span>
-            </button>
-          </nav>
+          <div class="city-rail-wrap glass-panel">
+            <input
+              v-model="citySearch"
+              type="search"
+              class="rail-search"
+              placeholder="Search city or country..."
+              aria-label="Search cities"
+            />
+            <nav ref="cityRailEl" class="city-rail" aria-label="Cities by risk">
+              <button
+                v-for="city in filteredCities"
+                :key="cityKey(city)"
+                type="button"
+                class="rail-item"
+                :class="[worstRisk(city).toLowerCase(), { active: cityKey(city) === selectedKey }]"
+                @click="selectedKey = cityKey(city)"
+              >
+                <span class="rail-dot"></span>
+                <span class="rail-text">
+                  <span class="rail-name">{{ city.city }}</span>
+                  <span class="rail-country">{{ countryName(city.country) }}</span>
+                </span>
+                <span class="rail-risk">{{ worstRisk(city) }}</span>
+              </button>
+              <p v-if="filteredCities.length === 0" class="rail-empty">No cities match "{{ citySearch }}"</p>
+            </nav>
+          </div>
 
           <div class="detail-panel">
-            <div v-if="selectedCity" class="escalation-summary glass-panel" :class="summary.toneClass">
+            <div v-if="selectedCity" class="escalation-summary glass-panel" :class="[summary.toneClass, { 'low-confidence': summary.lowConfidence }]">
               <span class="summary-icon">{{ summary.icon }}</span>
               <span class="summary-text">{{ summary.text }}</span>
             </div>
 
             <div v-if="selectedCity" class="timeline-strip glass-panel">
-              <p class="timeline-strip-legend">
-                Each day below is one point on the 7-day forecast. <strong>Confidence</strong> is how much of that day's own 3-hourly forecast checkpoints agreed on the risk level shown — high confidence means the whole day pointed the same way, low confidence means only part of the day did and the call may still shift.
-              </p>
+              <div class="timeline-strip-legend">
+                <p>
+                  Each day below is one point on the 7-day forecast. <strong>Confidence</strong> is how much of that day's own 3-hourly forecast checkpoints agreed on the risk level shown. Tap any confidence badge below for the full explanation.
+                </p>
+                <div class="connector-legend">
+                  <span class="connector-legend-item"><span class="connector-swatch rising"></span> Risk rising</span>
+                  <span class="connector-legend-item"><span class="connector-swatch flat"></span> Holding steady</span>
+                  <span class="connector-legend-item"><span class="connector-swatch falling"></span> Risk easing</span>
+                </div>
+              </div>
               <div class="timeline-track">
                 <template v-for="(day, index) in selectedCity.daily" :key="day.date">
                   <div class="timeline-node">
@@ -80,11 +97,14 @@
                       </div>
                     </div>
                     <span class="node-risk-label" :class="day.risk_level.toLowerCase()">{{ day.risk_level }}</span>
-                    <span
+                    <button
+                      type="button"
                       class="node-confidence"
                       :class="confidenceClass(day.confidence_pct)"
-                      :title="confidenceTooltip(day)"
-                    >{{ day.confidence_pct.toFixed(0) }}% {{ $t('prepare.timeline.agreement') }} &middot; {{ confidenceLabel(day.confidence_pct) }} <span class="info-hint" aria-hidden="true">ⓘ</span></span>
+                      :aria-expanded="expandedConfidence.has(day.date)"
+                      @click="toggleConfidenceDetail(day)"
+                    >{{ day.confidence_pct.toFixed(0) }}% {{ $t('prepare.timeline.agreement') }} &middot; {{ confidenceLabel(day.confidence_pct) }} <span class="info-hint" aria-hidden="true">{{ expandedConfidence.has(day.date) ? '▲' : 'ⓘ' }}</span></button>
+                    <p v-if="expandedConfidence.has(day.date)" class="node-confidence-detail">{{ confidenceTooltip(day) }}</p>
                     <span class="node-weather">{{ weatherIcon(day.dominant_weather) }} {{ day.dominant_weather }}</span>
                     <span class="node-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
                   </div>
@@ -135,8 +155,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { usePrepareForecastStore, type PrepareCityForecast, type PrepareDailyForecast } from '@/stores'
@@ -154,6 +175,8 @@ const apiHost = () =>
 const prepareForecastStore = usePrepareForecastStore()
 const { cities, loading, error } = storeToRefs(prepareForecastStore)
 const selectedKey = ref('')
+const route = useRoute()
+const router = useRouter()
 
 const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
 
@@ -194,6 +217,19 @@ const confidenceLabel = (pct: number): string => {
   return 'Low confidence'
 }
 
+// Which day-nodes currently have their confidence explanation expanded.
+// Keyed by date so it's independent per node. A hover-only `:title` doesn't
+// show on touch devices or in a recording, and the old "i" icon was marked
+// aria-hidden so assistive tech skipped it entirely - this makes the full
+// explanation a real, persistent, keyboard/touch-reachable toggle instead.
+const expandedConfidence = ref<Set<string>>(new Set())
+const toggleConfidenceDetail = (day: PrepareDailyForecast) => {
+  const next = new Set(expandedConfidence.value)
+  if (next.has(day.date)) next.delete(day.date)
+  else next.add(day.date)
+  expandedConfidence.value = next
+}
+
 const confidenceTooltip = (day: PrepareDailyForecast): string => {
   const base = `${day.confidence_pct.toFixed(0)}% of this day's 3-hour forecast readings agreed with the ${day.risk_level} call.`
   if (day.alert_recommended) {
@@ -217,9 +253,34 @@ const sortedCities = computed(() => {
   return [...cities.value].sort((a, b) => RISK_RANK[worstRisk(b)] - RISK_RANK[worstRisk(a)])
 })
 
+// Text filter for the rail - with 40+ cities, scrolling to find one by eye
+// doesn't scale. Matches city name or country name/code so "india" finds
+// every Indian city at once.
+const citySearch = ref('')
+const filteredCities = computed(() => {
+  const q = citySearch.value.trim().toLowerCase()
+  if (!q) return sortedCities.value
+  return sortedCities.value.filter(c =>
+    c.city.toLowerCase().includes(q) ||
+    countryName(c.country).toLowerCase().includes(q) ||
+    c.country.toLowerCase().includes(q)
+  )
+})
+
 const selectedCity = computed<CityForecast | null>(() => {
   return cities.value.find(c => cityKey(c) === selectedKey.value) || null
 })
+
+// Keeps the currently-selected row scrolled into view in the rail - without
+// this, picking a city (or arriving pre-selected via a Dashboard link) can
+// leave the active row scrolled off-screen, so there's no way to tell from
+// the rail itself which city the detail panel on the right belongs to.
+const cityRailEl = ref<HTMLElement | null>(null)
+const scrollActiveIntoView = () => {
+  nextTick(() => {
+    cityRailEl.value?.querySelector('.rail-item.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  })
+}
 
 // PR5: whether this city has any day worth pre-calculating evacuation
 // routes for - mirrors the backend's own gate (non-GREEN + PR9 confidence
@@ -297,7 +358,7 @@ const connectorTrend = (from: string, to: string): string => {
 const summary = computed(() => {
   const city = selectedCity.value
   if (!city || city.daily.length === 0) {
-    return { text: '', icon: '📈', toneClass: 'green' }
+    return { text: '', icon: '📈', toneClass: 'green', lowConfidence: false }
   }
 
   const daily = city.daily
@@ -309,7 +370,7 @@ const summary = computed(() => {
   const peakLabel = `Day ${peakIndex + 1} (${formatDay(peak.date)})`
 
   if (peak.risk_level === 'GREEN') {
-    return { text: `${city.city} stays GREEN across all ${daily.length} days - no escalation expected.`, icon: '✅', toneClass: 'green' }
+    return { text: `${city.city} stays GREEN across all ${daily.length} days - no escalation expected.`, icon: '✅', toneClass: 'green', lowConfidence: false }
   }
 
   const isStillRising = peakIndex === daily.length - 1 && RISK_RANK[peak.risk_level] > RISK_RANK[daily[0].risk_level]
@@ -320,12 +381,39 @@ const summary = computed(() => {
   else if (afterPeakEases) trendText = `then eases back to ${daily[daily.length - 1].risk_level} by Day ${daily.length}`
   else trendText = 'then holds'
 
+  // The headline used to state the peak risk as flat fact regardless of how
+  // confident that single day's call actually is - a day built on 13%
+  // agreement (effectively a forecast blip) read exactly the same as one
+  // built on 100% agreement. That's a real contradiction with the
+  // evacuation panel below, which deliberately won't act on anything under
+  // 70% confidence. So a low/medium-confidence peak gets an explicit
+  // caveat here instead of being stated as settled.
+  const confidenceCaveat = peak.confidence_pct < 70
+    ? ` (only ${peak.confidence_pct.toFixed(0)}% confidence on this call - could still shift)`
+    : ''
+
   return {
-    text: `${city.city} escalates to ${peak.risk_level} by ${peakLabel} - ${peak.dominant_weather.toLowerCase()}, ${peak.total_rain_mm.toFixed(0)}mm expected - ${trendText}.`,
+    text: `${city.city} escalates to ${peak.risk_level} by ${peakLabel}${confidenceCaveat} - ${peak.dominant_weather.toLowerCase()}, ${peak.total_rain_mm.toFixed(0)}mm expected - ${trendText}.`,
     icon: peak.risk_level === 'RED' ? '🔴' : peak.risk_level === 'ORANGE' ? '🟠' : '🟡',
     toneClass: peak.risk_level.toLowerCase(),
+    lowConfidence: peak.confidence_pct < 70,
   }
 })
+
+// Arriving with ?city=Chennai&country=IN (e.g. clicked from a Forecast
+// Dashboard city card) selects that exact city instead of always falling
+// back to the globally-worst one - without this, clicking into a specific
+// city's timeline always dropped you on a different city and made you
+// search the rail for the one you actually wanted.
+const selectFromQuery = (): boolean => {
+  const qCity = route.query.city
+  const qCountry = route.query.country
+  if (typeof qCity !== 'string' || typeof qCountry !== 'string') return false
+  const match = cities.value.find(c => c.city === qCity && c.country === qCountry)
+  if (!match) return false
+  selectedKey.value = cityKey(match)
+  return true
+}
 
 onMounted(async () => {
   // If another PREPARE page already loaded fresh forecast data, this
@@ -333,15 +421,32 @@ onMounted(async () => {
   // default selection from what's already there.
   await prepareForecastStore.ensureLoaded(fetchWithMockMode)
   if (cities.value.length > 0 && !selectedCity.value) {
-    selectedKey.value = cityKey(sortedCities.value[0])
+    if (!selectFromQuery()) {
+      selectedKey.value = cityKey(sortedCities.value[0])
+    }
   }
+  scrollActiveIntoView()
 })
 
 // Guard against the selected city disappearing from a future fetch (data refresh).
 watch(cities, (newCities) => {
   if (newCities.length > 0 && !selectedCity.value) {
-    selectedKey.value = cityKey(sortedCities.value[0])
+    if (!selectFromQuery()) {
+      selectedKey.value = cityKey(sortedCities.value[0])
+    }
   }
+})
+
+// Keep the URL in sync with whatever city is selected (clicking the rail,
+// not just arriving via a link) so the current view is always shareable/
+// bookmarkable, and so the active row can be scrolled into view every time
+// selection changes, not just on first load.
+watch(selectedKey, () => {
+  const city = selectedCity.value
+  if (city && (route.query.city !== city.city || route.query.country !== city.country)) {
+    router.replace({ query: { ...route.query, city: city.city, country: city.country } })
+  }
+  scrollActiveIntoView()
 })
 </script>
 
@@ -482,12 +587,44 @@ watch(cities, (newCities) => {
   align-items: flex-start;
 }
 
-.city-rail {
+.city-rail-wrap {
   flex: 0 0 260px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   padding: 10px;
+}
+
+.rail-search {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.rail-search::placeholder {
+  color: var(--text-secondary);
+}
+
+.rail-search:focus {
+  border-color: var(--accent-cyan, #22d3ee);
+}
+
+.rail-empty {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 8px 4px;
+  margin: 0;
+}
+
+.city-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   max-height: 70vh;
   overflow-y: auto;
   /* Themed scrollbar instead of the browser's default light-gray one, which
@@ -631,6 +768,13 @@ watch(cities, (newCities) => {
 .escalation-summary.orange { border-left-color: #f97316; }
 .escalation-summary.red { border-left-color: #ef4444; }
 
+/* A headline built on a low-confidence peak day gets a visibly different
+   treatment (dashed border) so it doesn't read with the same certainty as
+   a high-confidence one - the caveat text in summary.text explains why. */
+.escalation-summary.low-confidence {
+  border-left-style: dashed;
+}
+
 .summary-icon {
   font-size: 24px;
   flex-shrink: 0;
@@ -652,14 +796,58 @@ watch(cities, (newCities) => {
 
 .timeline-strip-legend {
   margin: 0 0 20px;
+  max-width: 760px;
+}
+
+.timeline-strip-legend p {
+  margin: 0 0 10px;
   font-size: 13px;
   line-height: 1.5;
   color: var(--text-secondary);
-  max-width: 760px;
 }
 
 .timeline-strip-legend strong {
   color: var(--text-primary);
+}
+
+/* Key for the connector lines between day nodes - without this, the
+   thickness/opacity differences driving "rising vs falling vs flat" are
+   invisible; nobody reverse-engineers that encoding on their own. */
+.connector-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.connector-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.connector-swatch {
+  display: inline-block;
+  width: 24px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent-cyan, #22d3ee);
+}
+
+.connector-swatch.rising {
+  height: 4px;
+  opacity: 1;
+}
+
+.connector-swatch.flat {
+  height: 3px;
+  opacity: 0.6;
+}
+
+.connector-swatch.falling {
+  height: 3px;
+  opacity: 0.3;
 }
 
 .timeline-strip::-webkit-scrollbar {
@@ -679,6 +867,23 @@ watch(cities, (newCities) => {
 .timeline-strip::-webkit-scrollbar-thumb {
   background: var(--accent-primary, #22d3ee);
   border-radius: 3px;
+}
+
+/* A thin 6px scrollbar is easy to miss - with 7 days of cards, the last one
+   or two are routinely cut off at normal screen widths with nothing
+   telling the viewer there's more to scroll to. This fade edge is the
+   same affordance already used for the mobile city rail, just applied
+   here unconditionally since the day strip overflows at desktop widths
+   too. */
+.timeline-strip::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 6px;
+  width: 40px;
+  background: linear-gradient(to right, transparent, rgba(10, 14, 22, 0.85));
+  pointer-events: none;
 }
 
 .timeline-track {
@@ -876,18 +1081,36 @@ watch(cities, (newCities) => {
   text-shadow: 0 0 4px rgba(252, 165, 165, 0.3);
 }
 
+/* Now a real <button> (was a plain <span> with a hover-only :title) so the
+   full confidence explanation is reachable on touch, in a recording, and
+   by keyboard/screen-reader users - not just on mouse hover. */
 .node-confidence {
+  font: inherit;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2px;
   padding: 2px 8px;
+  border: none;
   border-radius: 999px;
-  cursor: help;
+  cursor: pointer;
+}
+
+.node-confidence:focus-visible {
+  outline: 2px solid var(--accent-cyan, #22d3ee);
+  outline-offset: 2px;
 }
 
 .info-hint {
   font-size: 9px;
   opacity: 0.75;
+}
+
+.node-confidence-detail {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  max-width: 160px;
 }
 
 .node-confidence.confidence-high {
@@ -912,7 +1135,7 @@ watch(cities, (newCities) => {
 
 .node-metrics {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .timeline-connector {
@@ -972,8 +1195,16 @@ watch(cities, (newCities) => {
     flex-direction: column;
   }
 
-  .city-rail {
+  .city-rail-wrap {
     flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .rail-search {
+    width: 100%;
+  }
+
+  .city-rail {
     flex-direction: row;
     max-height: none;
     overflow-x: auto;
@@ -1001,6 +1232,17 @@ watch(cities, (newCities) => {
   .city-rail::-webkit-scrollbar-thumb {
     background: var(--accent-primary, #22d3ee);
     border-radius: 3px;
+  }
+
+  .city-rail::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 6px;
+    width: 24px;
+    background: linear-gradient(to right, transparent, rgba(10, 14, 22, 0.85));
+    pointer-events: none;
   }
 
   .rail-item {
@@ -1038,19 +1280,8 @@ watch(cities, (newCities) => {
     pointer-events: none;
   }
 
-  .city-rail {
+  .city-rail-wrap {
     padding: 8px;
-  }
-
-  .city-rail::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 6px;
-    width: 24px;
-    background: linear-gradient(to right, transparent, rgba(10, 14, 22, 0.85));
-    pointer-events: none;
   }
 }
 </style>
