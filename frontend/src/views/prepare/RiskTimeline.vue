@@ -81,7 +81,7 @@
                       class="node-confidence"
                       :class="confidenceClass(day.confidence_pct)"
                       :title="confidenceTooltip(day)"
-                    >{{ day.confidence_pct.toFixed(0) }}% {{ $t('prepare.timeline.agreement') }} <span class="info-hint" aria-hidden="true">ⓘ</span></span>
+                    >{{ day.confidence_pct.toFixed(0) }}% {{ $t('prepare.timeline.agreement') }} &middot; {{ confidenceLabel(day.confidence_pct) }} <span class="info-hint" aria-hidden="true">ⓘ</span></span>
                     <span class="node-weather">{{ weatherIcon(day.dominant_weather) }} {{ day.dominant_weather }}</span>
                     <span class="node-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
                   </div>
@@ -177,6 +177,18 @@ const confidenceClass = (pct: number): string => {
   if (pct >= 70) return 'confidence-high'
   if (pct >= 40) return 'confidence-medium'
   return 'confidence-low'
+}
+
+// Plain-language tier word shown inline next to the raw percentage. The
+// hover tooltip (confidenceTooltip below) spells the metric out in full,
+// but a recorded demo video can't show a hover state, so the percentage
+// alone ("13% agreement") previously meant nothing to a first-time viewer
+// without reading the tooltip - this makes the row self-explanatory at a
+// glance, in the video and in the app.
+const confidenceLabel = (pct: number): string => {
+  if (pct >= 70) return 'High confidence'
+  if (pct >= 40) return 'Medium confidence'
+  return 'Low confidence'
 }
 
 const confidenceTooltip = (day: PrepareDailyForecast): string => {
@@ -761,7 +773,7 @@ watch(cities, (newCities) => {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  min-width: 110px;
+  min-width: 120px;
   text-align: center;
   padding: 12px 8px;
   border-radius: 8px;
@@ -778,7 +790,7 @@ watch(cities, (newCities) => {
 }
 
 .node-day-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.65);
   text-transform: uppercase;
@@ -786,7 +798,7 @@ watch(cities, (newCities) => {
 }
 
 .node-date {
-  font-size: 12px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -817,7 +829,7 @@ watch(cities, (newCities) => {
 .node-dot.red { color: #ef4444; box-shadow: 0 0 16px rgba(239, 68, 68, 0.5); }
 
 .node-risk-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.4px;
   padding: 3px 6px;
@@ -850,10 +862,10 @@ watch(cities, (newCities) => {
 }
 
 .node-confidence {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2px;
-  padding: 1px 6px;
+  padding: 2px 8px;
   border-radius: 999px;
   cursor: help;
 }
@@ -879,12 +891,12 @@ watch(cities, (newCities) => {
 }
 
 .node-weather {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-primary);
 }
 
 .node-metrics {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
