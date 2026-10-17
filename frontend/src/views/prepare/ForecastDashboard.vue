@@ -176,7 +176,14 @@
             </div>
 
             <div class="city-grid">
-              <div v-for="city in sortedCities(group)" :key="`${city.city}-${city.country}`" class="city-card glass-panel" :class="worstRisk(city).toLowerCase()">
+              <RouterLink
+                v-for="city in sortedCities(group)"
+                :key="`${city.city}-${city.country}`"
+                :to="{ name: 'PrepareRiskTimeline', query: { city: city.city, country: city.country } }"
+                class="city-card glass-panel"
+                :class="worstRisk(city).toLowerCase()"
+                :title="`Open ${city.city}'s risk timeline`"
+              >
                 <div class="city-header">
                   <span class="city-name">{{ city.city }}</span>
                   <span class="worst-badge" :class="worstRisk(city).toLowerCase()">{{ riskEmoji(worstRisk(city)) }} {{ worstRisk(city) }}</span>
@@ -190,7 +197,7 @@
                     <span class="day-metrics">{{ day.total_rain_mm.toFixed(0) }}mm · {{ day.max_wind_ms.toFixed(0) }}m/s</span>
                   </div>
                 </div>
-              </div>
+              </RouterLink>
             </div>
           </section>
         </div>
@@ -203,6 +210,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import { RouterLink } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
@@ -1011,6 +1019,17 @@ onUnmounted(() => {
   gap: 10px;
   /* Tighter padding and gaps for better density while maintaining readability */
   border-top: 3px solid var(--glass-border);
+  /* Now a RouterLink into that city's Risk Timeline - reset link defaults
+     and add a hover cue so it reads as navigable, not just decorative. */
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.city-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .city-card.red { border-top-color: #ef4444; }
