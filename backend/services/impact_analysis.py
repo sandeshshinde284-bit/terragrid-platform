@@ -12,6 +12,7 @@ import math
 from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta
 import httpx
+from backend.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +108,9 @@ class ImpactAnalysisService:
             }
 
             # FEATURE 4 (Phase 2): Trigger external email alerts for critical threats
-            if risk_score >= 80:
+            # Automatic emails are disabled unless explicitly enabled. Operators
+            # approve every alert in the Response phase instead.
+            if risk_score >= 80 and settings.AUTO_CRITICAL_EMAIL_ENABLED:
                 try:
                     from backend.services.notifications import notification_service
                     from backend.services.evacuation_zones import EvacuationZoneService

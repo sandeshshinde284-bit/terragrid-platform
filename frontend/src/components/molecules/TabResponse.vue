@@ -7,6 +7,14 @@
       </div>
     </div>
 
+    <ResponseActions v-if="incidentId" :incident-id="incidentId" />
+
+    <div class="ai-review-banner" role="note">
+      <strong>AI recommendations, not decisions.</strong>
+      Nothing below has been done. An authorized officer must review and approve each action.
+      Routes and facilities are unverified until a field team confirms them.
+    </div>
+
     <div v-if="deepDossier" class="deep-ai-tab-container">
       
       <!-- Tactical Briefing -->
@@ -123,10 +131,13 @@
 </template>
 
 <script setup lang="ts">
+import ResponseActions from '@/components/molecules/ResponseActions.vue'
+
 defineProps<{
   deepDossier: any
   isAnalyzingDossier: boolean
   isBackendMockModeEnabled: boolean
+  incidentId?: string
 }>()
 
 defineEmits(['launch'])
@@ -149,6 +160,7 @@ function getPriorityLabel(priority: number | string): string {
 </script>
 
 <style scoped>
+.ai-review-banner { margin-bottom: 20px; padding: 12px 16px; border-radius: 8px; font-size: 14px; color: #fde68a; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.35); line-height: 1.5; }
 .glass-panel {
   background: var(--bg-panel);
   border: 1px solid var(--glass-border);

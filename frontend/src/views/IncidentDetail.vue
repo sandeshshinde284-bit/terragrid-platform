@@ -272,6 +272,7 @@
             :deepDossier="deepDossier" 
             :isAnalyzingDossier="isAnalyzingDossier" 
             :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
+            :incidentId="incident?.id"
             @launch="launchDeepAnalysis" 
           />
 
