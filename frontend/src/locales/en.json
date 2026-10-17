@@ -125,12 +125,13 @@
     }
   },
   "prepare": {
-    "fetchingForecast": "Fetching 7-day weather forecast...",
+    "fetchingForecast": "Fetching weather forecast...",
     "noForecastData": "No forecast data yet",
     "noForecastDesc": "No cities returned a forecast. If OPENWEATHERMAP_API_KEY isn't set on the backend, this stays empty rather than showing invented numbers.",
     "forecast": {
-      "title": "7-Day Risk Escalation",
+      "title": "Risk Escalation Forecast",
       "citiesMonitored": "cities monitored · updated from OpenWeatherMap",
+      "daysForecast": "day forecast",
       "loadError": "Couldn't load the forecast",
       "sourceOfTruth": "Source of Truth",
       "lastUpdated": "updated {time}",
@@ -141,7 +142,7 @@
     },
     "timeline": {
       "title": "Risk Escalation Timeline",
-      "subtitle": "How risk builds day by day for a single location, from the same 7-day forecast",
+      "subtitle": "How risk builds day by day for a single location, from the same live forecast window",
       "loading": "Building risk escalation timeline...",
       "loadError": "Couldn't load the timeline",
       "day": "Day",
@@ -152,7 +153,10 @@
       "recalculate": "Recalculate routes",
       "precalculate": "Pre-calculate routes",
       "hrs": "hrs",
-      "safety": "Safety"
+      "safety": "Safety",
+      "nextActionLabel": "Next:",
+      "openChecklist": "Open preparedness checklist",
+      "draftAlert": "Draft agency alert"
     },
     "checklist": {
       "title": "Preparedness Checklist",
@@ -395,7 +399,7 @@
   },
   "roadmap": {
     "predictTitle": "Predict",
-    "predictDesc": "Early-warning forecasting ahead of the current 7-day window. Feature scope not yet finalized.",
+    "predictDesc": "Early-warning forecasting ahead of the current forecast window. Feature scope not yet finalized.",
     "recoverTitle": "Recover",
     "recoverDesc": "Post-event recovery and resource reallocation tracking. Feature scope not yet finalized."
   },

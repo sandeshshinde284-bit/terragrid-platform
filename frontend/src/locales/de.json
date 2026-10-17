@@ -121,12 +121,13 @@
     }
   },
   "prepare": {
-    "fetchingForecast": "7-Tage-Wettervorhersage wird abgerufen...",
+    "fetchingForecast": "Wettervorhersage wird abgerufen...",
     "noForecastData": "Noch keine Vorhersagedaten",
     "noForecastDesc": "Keine Städte haben eine Vorhersage zurückgegeben. Wenn OPENWEATHERMAP_API_KEY im Backend nicht gesetzt ist, bleibt dies leer.",
     "forecast": {
-      "title": "7-Tage-Risikoeskalation",
+      "title": "Risikoeskalations-Prognose",
       "citiesMonitored": "Städte überwacht · aktualisiert von OpenWeatherMap",
+      "daysForecast": "Tage-Prognose",
       "loadError": "Vorhersage konnte nicht geladen werden",
       "sourceOfTruth": "Datenquelle der Wahrheit",
       "lastUpdated": "aktualisiert {time}",
@@ -148,7 +149,10 @@
       "recalculate": "Routen neu berechnen",
       "precalculate": "Routen vorberechnen",
       "hrs": "Std.",
-      "safety": "Sicherheit"
+      "safety": "Sicherheit",
+      "nextActionLabel": "Weiter:",
+      "openChecklist": "Checkliste zur Vorbereitung öffnen",
+      "draftAlert": "Behördenwarnung entwerfen"
     },
     "checklist": {
       "title": "Bereitschafts-Checkliste",
@@ -385,7 +389,7 @@
   },
   "roadmap": {
     "predictTitle": "Prognose",
-    "predictDesc": "Frühwarnsystem über das aktuelle 7-Tage-Fenster hinaus. Funktionsumfang noch nicht finalisiert.",
+    "predictDesc": "Frühwarnsystem über das aktuelle Prognosefenster hinaus. Funktionsumfang noch nicht finalisiert.",
     "recoverTitle": "Wiederherstellung",
     "recoverDesc": "Verfolgung der Erholung und Ressourcenzuweisung nach dem Ereignis. Funktionsumfang noch nicht finalisiert."
   },

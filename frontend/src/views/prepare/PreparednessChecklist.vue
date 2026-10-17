@@ -178,6 +178,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
@@ -216,6 +217,7 @@ const { fetchWithMockMode } = useMockMode()
 const prepareForecastStore = usePrepareForecastStore()
 const { cities, loading, error } = storeToRefs(prepareForecastStore)
 const selectedKey = ref('')
+const route = useRoute()
 
 const actionsPlan = ref<ActionsPlan | null>(null)
 const actionsLoading = ref(false)
@@ -474,20 +476,38 @@ const fetchActionsForSelectedCity = async () => {
   }
 }
 
+// Arriving with ?city=Chennai&country=IN (e.g. the "Open preparedness
+// checklist" link on Risk Timeline) selects that exact city instead of
+// always falling back to the globally-worst one - mirrors RiskTimeline's
+// own selectFromQuery so every PREPARE screen honors the same deep link.
+const selectFromQuery = (): boolean => {
+  const qCity = route.query.city
+  const qCountry = route.query.country
+  if (typeof qCity !== 'string' || typeof qCountry !== 'string') return false
+  const match = cities.value.find(c => c.city === qCity && c.country === qCountry)
+  if (!match) return false
+  selectedKey.value = cityKey(match)
+  return true
+}
+
 onMounted(async () => {
   // If another PREPARE page already loaded fresh forecast data, this
   // resolves immediately and the watch(cities, ...) below picks the
   // default selection from what's already there.
   await prepareForecastStore.ensureLoaded(fetchWithMockMode)
   if (cities.value.length > 0 && !selectedCity.value) {
-    selectedKey.value = cityKey(sortedCities.value[0])
+    if (!selectFromQuery()) {
+      selectedKey.value = cityKey(sortedCities.value[0])
+    }
   }
   scrollActiveIntoView()
 })
 
 watch(cities, (newCities) => {
   if (newCities.length > 0 && !selectedCity.value) {
-    selectedKey.value = cityKey(sortedCities.value[0])
+    if (!selectFromQuery()) {
+      selectedKey.value = cityKey(sortedCities.value[0])
+    }
   }
 })
 

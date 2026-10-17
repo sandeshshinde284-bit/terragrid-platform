@@ -17,7 +17,8 @@
         "confidence_pct": 75.0,
         "alert_recommended": true,
         "entries_count": 5,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 4
       },
       {
         "date": "2026-10-15",
@@ -30,7 +31,8 @@
         "confidence_pct": 62.5,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 5
       },
       {
         "date": "2026-10-16",
@@ -43,7 +45,8 @@
         "confidence_pct": 87.5,
         "alert_recommended": true,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 7
       },
       {
         "date": "2026-10-17",
@@ -56,7 +59,8 @@
         "confidence_pct": 62.5,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 5
       },
       {
         "date": "2026-10-18",
@@ -69,7 +73,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 3,
-        "data_sufficient": false
+        "data_sufficient": false,
+        "supporting_entries": 3
       }
     ]
   },
@@ -91,7 +96,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 5,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 5
       },
       {
         "date": "2026-10-15",
@@ -104,7 +110,8 @@
         "confidence_pct": 75.0,
         "alert_recommended": true,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 6
       },
       {
         "date": "2026-10-16",
@@ -117,7 +124,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-17",
@@ -130,7 +138,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-18",
@@ -143,7 +152,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 3,
-        "data_sufficient": false
+        "data_sufficient": false,
+        "supporting_entries": 3
       }
     ]
   },
@@ -165,7 +175,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 5,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 5
       },
       {
         "date": "2026-10-15",
@@ -178,7 +189,8 @@
         "confidence_pct": 75.0,
         "alert_recommended": true,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 6
       },
       {
         "date": "2026-10-16",
@@ -191,7 +203,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-17",
@@ -204,7 +217,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-18",
@@ -217,7 +231,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 3,
-        "data_sufficient": false
+        "data_sufficient": false,
+        "supporting_entries": 3
       }
     ]
   },
@@ -239,7 +254,8 @@
         "confidence_pct": 62.5,
         "alert_recommended": false,
         "entries_count": 5,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 3
       },
       {
         "date": "2026-10-15",
@@ -252,7 +268,8 @@
         "confidence_pct": 75.0,
         "alert_recommended": true,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 6
       },
       {
         "date": "2026-10-16",
@@ -265,7 +282,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-17",
@@ -278,7 +296,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-18",
@@ -291,7 +310,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 3,
-        "data_sufficient": false
+        "data_sufficient": false,
+        "supporting_entries": 3
       }
     ]
   },
@@ -313,7 +333,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 5,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 5
       },
       {
         "date": "2026-10-15",
@@ -326,7 +347,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-16",
@@ -339,7 +361,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-17",
@@ -352,7 +375,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-18",
@@ -365,7 +389,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 3,
-        "data_sufficient": false
+        "data_sufficient": false,
+        "supporting_entries": 3
       }
     ]
   },
@@ -387,7 +412,8 @@
         "confidence_pct": 75.0,
         "alert_recommended": true,
         "entries_count": 5,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 4
       },
       {
         "date": "2026-10-15",
@@ -400,7 +426,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-16",
@@ -413,7 +440,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-17",
@@ -426,7 +454,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-18",
@@ -439,7 +468,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 3,
-        "data_sufficient": false
+        "data_sufficient": false,
+        "supporting_entries": 3
       }
     ]
   },
@@ -461,7 +491,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 5,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 5
       },
       {
         "date": "2026-10-15",
@@ -474,7 +505,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-16",
@@ -487,7 +519,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-17",
@@ -500,7 +533,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-18",
@@ -513,7 +547,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 3,
-        "data_sufficient": false
+        "data_sufficient": false,
+        "supporting_entries": 3
       }
     ]
   },
@@ -535,7 +570,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 5,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 5
       },
       {
         "date": "2026-10-15",
@@ -548,7 +584,8 @@
         "confidence_pct": 75.0,
         "alert_recommended": true,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 6
       },
       {
         "date": "2026-10-16",
@@ -561,7 +598,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-17",
@@ -574,7 +612,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 8,
-        "data_sufficient": true
+        "data_sufficient": true,
+        "supporting_entries": 8
       },
       {
         "date": "2026-10-18",
@@ -587,7 +626,8 @@
         "confidence_pct": 95.0,
         "alert_recommended": false,
         "entries_count": 3,
-        "data_sufficient": false
+        "data_sufficient": false,
+        "supporting_entries": 3
       }
     ]
   }

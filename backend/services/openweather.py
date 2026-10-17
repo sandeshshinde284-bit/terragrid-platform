@@ -194,7 +194,7 @@ class OpenWeatherService:
             List of per-city forecast dicts, each with a "daily" list of
             {date, risk_level, dominant_weather, max_wind_ms, min_temp_c, max_temp_c,
              total_rain_mm, confidence_pct, alert_recommended, entries_count,
-             data_sufficient}
+             supporting_entries, data_sufficient}
         """
         if use_mock:
             logger.info("OpenWeather forecast: mock mode enabled (MOCK_MODE=true in .env), skipping live API call")
@@ -437,6 +437,11 @@ class OpenWeatherService:
                 "confidence_pct": confidence_pct,
                 "alert_recommended": alert_recommended,
                 "entries_count": total_count,
+                # The actual numerator behind confidence_pct (entries_count is the
+                # denominator) - sent as its own real number rather than making
+                # the frontend reverse-engineer it from a rounded percentage, so
+                # "X of Y checkpoints agreed" is always exact, not an approximation.
+                "supporting_entries": supporting_count,
                 "data_sufficient": data_sufficient,
             })
 

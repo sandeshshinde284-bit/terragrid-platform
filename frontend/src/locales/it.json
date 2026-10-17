@@ -121,12 +121,13 @@
     }
   },
   "prepare": {
-    "fetchingForecast": "Recupero delle previsioni meteo a 7 giorni...",
+    "fetchingForecast": "Recupero delle previsioni meteo...",
     "noForecastData": "Nessun dato di previsione disponibile",
     "noForecastDesc": "Nessuna città ha restituito previsioni. Se OPENWEATHERMAP_API_KEY non è impostato nel backend, resta vuoto.",
     "forecast": {
-      "title": "Escalation del Rischio a 7 Giorni",
+      "title": "Previsione di Escalation del Rischio",
       "citiesMonitored": "città monitorate · aggiornato da OpenWeatherMap",
+      "daysForecast": "giorni di previsione",
       "loadError": "Impossibile caricare le previsioni",
       "sourceOfTruth": "Fonte della Verità",
       "lastUpdated": "aggiornato {time}",
@@ -148,7 +149,10 @@
       "recalculate": "Ricalcola percorsi",
       "precalculate": "Pre-calcola percorsi",
       "hrs": "ore",
-      "safety": "Sicurezza"
+      "safety": "Sicurezza",
+      "nextActionLabel": "Avanti:",
+      "openChecklist": "Apri la lista di preparazione",
+      "draftAlert": "Prepara avviso per le agenzie"
     },
     "checklist": {
       "title": "Lista di Controllo della Preparazione",
@@ -385,7 +389,7 @@
   },
   "roadmap": {
     "predictTitle": "Previsione",
-    "predictDesc": "Previsioni di allerta precoce oltre l'attuale finestra di 7 giorni. Ambito funzionale non ancora finalizzato.",
+    "predictDesc": "Previsioni di allerta precoce oltre l'attuale finestra di previsione. Ambito funzionale non ancora finalizzato.",
     "recoverTitle": "Ripristino",
     "recoverDesc": "Monitoraggio del ripristino post-evento e della riallocazione delle risorse. Ambito funzionale non ancora finalizzato."
   },
