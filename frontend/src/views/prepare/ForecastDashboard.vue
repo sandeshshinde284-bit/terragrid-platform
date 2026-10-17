@@ -62,17 +62,14 @@
                 :class="[level.toLowerCase(), {
                   active: selectedRiskLevel === level,
                   dimmed: selectedRiskLevel && selectedRiskLevel !== level,
-                  disabled: !canFilterByRisk
                 }]"
-                :disabled="!canFilterByRisk"
-                :title="canFilterByRisk ? `Show only ${level} cities` : 'Pick a country below to filter by risk level'"
+                :title="`Show only ${level} cities${selectedCountry !== 'ALL' ? ' in ' + countryMeta(selectedCountry).name : ''}`"
                 @click="toggleRiskFilter(level)"
               >
                 <span class="summary-count">{{ riskCounts[level] }}</span>
                 <span class="summary-label">{{ level }}</span>
               </button>
             </div>
-            <span v-if="!canFilterByRisk" class="risk-filter-hint">Select a country below to filter by risk level</span>
           </div>
         </div>
 
@@ -366,14 +363,11 @@ const sortedCities = (group: CountryGroup): CityForecast[] => {
 const selectedCountry = ref<string>('ALL')
 
 // Risk-level filter (click a RED/ORANGE/YELLOW/GREEN pill above the city
-// list). Deliberately gated behind picking a specific country first - with
-// "All" countries selected, filtering straight to e.g. GREEN could span
-// dozens of cities across the whole monitored region, which reads as noise
-// rather than a useful triage view. Once a country is picked, the list is
-// already small enough that highlighting one risk level actually helps.
+// list). Works at any country scope, including "All" - clicking ORANGE
+// with every country visible filters the whole board down to ORANGE
+// cities globally, same as clicking it after picking one country filters
+// just that country's list.
 const selectedRiskLevel = ref<string | null>(null)
-
-const canFilterByRisk = computed(() => selectedCountry.value !== 'ALL')
 
 // Switching country (or back to "All") clears any active risk filter -
 // a RED filter chosen for one country shouldn't silently carry over and
@@ -383,7 +377,6 @@ watch(selectedCountry, () => {
 })
 
 const toggleRiskFilter = (level: string) => {
-  if (!canFilterByRisk.value) return
   selectedRiskLevel.value = selectedRiskLevel.value === level ? null : level
 }
 
@@ -401,9 +394,16 @@ const filteredGroups = computed<CountryGroup[]>(() => {
   return groups
 })
 
+// Scoped to whatever country is currently selected (or every city, under
+// "All") so the pill counts and the country filter always agree - picking
+// a country updates the RED/ORANGE/YELLOW/GREEN counts to that country's
+// own cities instead of staying pinned to the global totals.
 const riskCounts = computed(() => {
   const counts: Record<string, number> = { RED: 0, ORANGE: 0, YELLOW: 0, GREEN: 0 }
-  for (const city of cities.value) {
+  const relevantCities = selectedCountry.value === 'ALL'
+    ? cities.value
+    : cities.value.filter(c => c.country === selectedCountry.value)
+  for (const city of relevantCities) {
     counts[worstRisk(city)]++
   }
   return counts

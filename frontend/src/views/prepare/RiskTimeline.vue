@@ -66,6 +66,9 @@
             </div>
 
             <div v-if="selectedCity" class="timeline-strip glass-panel">
+              <p class="timeline-strip-legend">
+                Each day below is one point on the 7-day forecast. <strong>Confidence</strong> is how much of that day's own 3-hourly forecast checkpoints agreed on the risk level shown — high confidence means the whole day pointed the same way, low confidence means only part of the day did and the call may still shift.
+              </p>
               <div class="timeline-track">
                 <template v-for="(day, index) in selectedCity.daily" :key="day.date">
                   <div class="timeline-node">
@@ -645,6 +648,18 @@ watch(cities, (newCities) => {
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: var(--accent-primary, #22d3ee) transparent;
+}
+
+.timeline-strip-legend {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 760px;
+}
+
+.timeline-strip-legend strong {
+  color: var(--text-primary);
 }
 
 .timeline-strip::-webkit-scrollbar {
