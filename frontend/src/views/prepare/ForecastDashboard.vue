@@ -48,7 +48,7 @@
                 <span class="sot-label">{{ $t('prepare.forecast.sourceOfTruth') }}</span>
                 <span class="sot-divider">·</span>
                 <span class="sot-text">{{ sotStatusText }}</span>
-                <span class="sot-chevron">Details {{ sotExpanded ? '▲' : '▼' }}</span>
+                <span class="sot-chevron">{{ sotExpanded ? 'Hide details ▲' : 'Tap to view details ▼' }}</span>
               </button>
             </div>
           </div>
@@ -70,6 +70,7 @@
                 <span class="summary-label">{{ level }}</span>
               </button>
             </div>
+            <span class="risk-filter-hint">Tap a number above to filter the list by risk level</span>
           </div>
         </div>
 
@@ -109,7 +110,7 @@
               <span class="sot-row-verdict">
                 {{ sourceOfTruth.sufficiency.cities_with_thin_days.length === 0
                   ? 'Every forecast has enough data behind it'
-                  : `${sourceOfTruth.sufficiency.cities_with_thin_days.length} ${sourceOfTruth.sufficiency.cities_with_thin_days.length === 1 ? 'city has a' : 'cities have'} low-data day` }}
+                  : `${sourceOfTruth.sufficiency.cities_with_thin_days.length} ${sourceOfTruth.sufficiency.cities_with_thin_days.length === 1 ? 'city has' : 'cities have'} a low-data day` }}
               </span>
               <span class="sot-row-detail">
                 Checked {{ sourceOfTruth.sufficiency.total_days_checked }} forecast-days total.
@@ -141,6 +142,8 @@
             {{ countryMeta(group.country).name }} <span class="filter-count">{{ group.cities.length }}</span>
           </button>
         </div>
+
+        <div class="filter-status">{{ filterStatusText }}</div>
 
         <div class="country-sections">
           <section v-for="group in filteredGroups" :key="group.country" class="country-section">
@@ -409,6 +412,21 @@ const riskCounts = computed(() => {
   return counts
 })
 
+// A single always-visible line stating the combined effect of the country
+// filter and the risk-level filter together, so it's never ambiguous
+// whether a RED/ORANGE/YELLOW/GREEN pill click filtered the whole board
+// or just the currently-selected country.
+const filterStatusText = computed(() => {
+  const shownCount = filteredGroups.value.reduce((sum, g) => sum + g.cities.length, 0)
+  const cityWord = shownCount === 1 ? 'city' : 'cities'
+  const countryPart = selectedCountry.value === 'ALL' ? 'all countries' : countryMeta(selectedCountry.value).name
+
+  if (selectedRiskLevel.value) {
+    return `Showing ${shownCount} ${selectedRiskLevel.value} ${cityWord} - ${countryPart}`
+  }
+  return `Showing all ${shownCount} ${cityWord} - ${countryPart}`
+})
+
 const formatDay = (dateStr: string): string => {
   const d = new Date(dateStr)
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
@@ -440,13 +458,23 @@ const sotStatusIcon = computed(() => {
 
 const sotStatusText = computed(() => {
   // Short on purpose now that this lives as a small pill next to the meta
-  // line, not a full-width banner - the "Details ▼" label already in the
+  // line, not a full-width banner - the chevron label already in the
   // template says explicitly that there's more to click into.
   if (sotLoading.value) return 'Verifying data source...'
   if (sotError.value) return "Couldn't verify data source"
-  return sourceOfTruth.value?.overall === 'verified'
-    ? 'Data source verified'
-    : 'Data source degraded'
+  const sot = sourceOfTruth.value
+  if (!sot || sot.overall === 'verified') return 'Data source verified'
+
+  // "Degraded" alone, sitting right next to "updated this minute" in the
+  // meta row, reads as a contradiction - as if the data were both fresh
+  // and stale at once. Name which check actually failed so the badge
+  // doesn't imply a freshness problem when the real cause is unrelated
+  // (e.g. a few forecast-days with thin underlying data).
+  const reasons: string[] = []
+  if (sot.freshness.stale) reasons.push('may be outdated')
+  if (sot.completeness.returned_city_count < sot.completeness.monitored_city_count) reasons.push('some cities missing')
+  if (sot.sufficiency.cities_with_thin_days.length > 0) reasons.push('some days have thin data')
+  return reasons.length ? `Degraded - ${reasons.join(', ')}` : 'Data source degraded'
 })
 
 const fetchSourceOfTruth = async () => {
@@ -594,8 +622,10 @@ onUnmounted(() => {
 }
 
 .sot-chevron {
-  font-size: 11px;
-  opacity: 0.8;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 1;
+  color: var(--accent-cyan, #22d3ee);
   padding-left: 8px;
   border-left: 1px solid rgba(255, 255, 255, 0.15);
 }
@@ -615,7 +645,7 @@ onUnmounted(() => {
 .sot-detail-row {
   font-size: 14px;
   line-height: 1.6;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -639,8 +669,7 @@ onUnmounted(() => {
 .sot-row-detail {
   flex-basis: 100%;
   font-size: 13px;
-  color: var(--text-muted);
-  opacity: 0.85;
+  color: var(--text-secondary);
 }
 
 .sot-detail-row.sot-error {
@@ -744,11 +773,24 @@ onUnmounted(() => {
   filter: grayscale(0.4);
 }
 
+/* Always visible now (previously only rendered when the filter was
+   disabled, which this page no longer does) - without it, nothing on
+   screen tells a first-time visitor that the RED/ORANGE/YELLOW/GREEN
+   numbers above are clickable filters rather than plain stats. */
 .risk-filter-hint {
-  font-size: 11px;
-  color: var(--text-muted);
-  opacity: 0.75;
-  margin-top: -4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Combined-filter-state readout - always on screen so it's never
+   ambiguous whether a risk-level pill filtered the whole board or just
+   the currently-selected country; updates with both filters together. */
+.filter-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 2px 0 2px;
 }
 
 /* ---- Country filter ---- */
@@ -808,6 +850,24 @@ onUnmounted(() => {
 
 .filter-chip.active .filter-count {
   opacity: 0.8;
+}
+
+/* Each country chip shows its own worst risk level, mirroring the
+   .country-worst / .worst-badge palette used elsewhere on this page -
+   previously the [group.worstRisk.toLowerCase()] class was added by the
+   template but no matching CSS rule existed, so every chip rendered in
+   the same neutral cyan regardless of how severe that country's forecast
+   was. */
+.filter-chip.red { border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.filter-chip.orange { border-color: rgba(249, 115, 22, 0.35); background: rgba(249, 115, 22, 0.1); color: #f97316; }
+.filter-chip.yellow { border-color: rgba(234, 179, 8, 0.35); background: rgba(234, 179, 8, 0.1); color: #eab308; }
+.filter-chip.green { border-color: rgba(34, 197, 94, 0.35); background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+
+.filter-chip.red.active,
+.filter-chip.orange.active,
+.filter-chip.yellow.active,
+.filter-chip.green.active {
+  box-shadow: 0 0 8px currentColor, inset 0 0 6px currentColor;
 }
 
 .filter-flag {
@@ -890,7 +950,7 @@ onUnmounted(() => {
 
 .country-count {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .sort-toggle {
@@ -903,8 +963,8 @@ onUnmounted(() => {
   border-radius: 12px;
   border: 1px solid var(--glass-border);
   background: transparent;
-  color: var(--text-muted);
-  font-size: 10px;
+  color: var(--text-secondary);
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.2px;
   cursor: pointer;
@@ -1016,7 +1076,7 @@ onUnmounted(() => {
 
 .day-date {
   font-weight: 700;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-secondary);
 }
 
@@ -1028,16 +1088,15 @@ onUnmounted(() => {
 .day-weather {
   color: var(--text-primary);
   font-weight: 600;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.2;
 }
 
 .day-metrics {
-  color: var(--text-muted);
-  font-size: 10px;
+  color: var(--text-secondary);
+  font-size: 11px;
   margin-top: 1px;
   line-height: 1.3;
-  /* Metrics now readable - font size kept at 10px, better spacing */
 }
 
 .empty-state {
