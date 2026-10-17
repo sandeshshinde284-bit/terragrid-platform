@@ -47,10 +47,10 @@
               v-model="citySearch"
               type="search"
               class="rail-search"
-              placeholder="Search city or country..."
-              aria-label="Search cities"
+              :placeholder="$t('prepare.cityRail.searchPlaceholder')"
+              :aria-label="$t('prepare.cityRail.searchAriaLabel')"
             />
-            <nav ref="cityRailEl" class="city-rail" aria-label="Cities by risk">
+            <nav ref="cityRailEl" class="city-rail" :aria-label="$t('prepare.cityRail.railAriaLabel')">
               <button
                 v-for="city in filteredCities"
                 :key="cityKey(city)"
@@ -66,7 +66,7 @@
                 </span>
                 <span class="rail-risk">{{ worstRisk(city) }}</span>
               </button>
-              <p v-if="filteredCities.length === 0" class="rail-empty">No cities match "{{ citySearch }}"</p>
+              <p v-if="filteredCities.length === 0" class="rail-empty">{{ $t('prepare.cityRail.noMatch') }} "{{ citySearch }}"</p>
             </nav>
           </div>
 

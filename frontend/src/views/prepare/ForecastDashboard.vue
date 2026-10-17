@@ -70,7 +70,7 @@
                 <span class="summary-label">{{ level }}</span>
               </button>
             </div>
-            <span class="risk-filter-hint">Tap a number above to filter the list by risk level</span>
+            <span class="risk-filter-hint">{{ $t('prepare.forecast.filterHint') }}</span>
           </div>
         </div>
 
@@ -100,7 +100,7 @@
         </div>
 
         <div v-if="sotExpanded" class="sot-details glass-panel">
-          <div v-if="sotLoading" class="sot-detail-row">Checking...</div>
+          <div v-if="sotLoading" class="sot-detail-row">{{ $t('prepare.forecast.checking') }}</div>
           <div v-else-if="sotError" class="sot-detail-row sot-error">
             <span>⚠️ {{ sotError }}</span>
             <button type="button" class="sot-retry-btn" @click="fetchSourceOfTruth">{{ $t('prepare.forecast.retry') }}</button>
@@ -112,7 +112,7 @@
                  longer requires parsing "TTL" or "thin days" jargon. -->
             <div class="sot-detail-row">
               <span class="sot-row-icon">{{ sourceOfTruth.freshness.stale ? '⚠️' : '✅' }}</span>
-              <strong>Freshness</strong>
+              <strong>{{ $t('prepare.forecast.freshnessLabel') }}</strong>
               <span class="sot-row-verdict">{{ sourceOfTruth.freshness.stale ? 'Data may be outdated' : "Data is up to date" }}</span>
               <span class="sot-row-detail" v-if="sourceOfTruth.freshness.note">{{ sourceOfTruth.freshness.note }}</span>
               <span class="sot-row-detail" v-else>
@@ -122,7 +122,7 @@
             </div>
             <div class="sot-detail-row">
               <span class="sot-row-icon">{{ sourceOfTruth.completeness.returned_city_count === sourceOfTruth.completeness.monitored_city_count ? '✅' : '⚠️' }}</span>
-              <strong>Completeness</strong>
+              <strong>{{ $t('prepare.forecast.completenessLabel') }}</strong>
               <span class="sot-row-verdict">{{ sourceOfTruth.completeness.returned_city_count }} of {{ sourceOfTruth.completeness.monitored_city_count }} monitored cities have data</span>
               <span class="sot-row-detail" v-if="sourceOfTruth.completeness.note">{{ sourceOfTruth.completeness.note }}</span>
               <span class="sot-row-detail" v-else-if="sourceOfTruth.completeness.missing_cities.length">
@@ -131,7 +131,7 @@
             </div>
             <div class="sot-detail-row">
               <span class="sot-row-icon">{{ sourceOfTruth.sufficiency.cities_with_thin_days.length === 0 ? '✅' : '⚠️' }}</span>
-              <strong>Sufficiency</strong>
+              <strong>{{ $t('prepare.forecast.sufficiencyLabel') }}</strong>
               <span class="sot-row-verdict">
                 {{ sourceOfTruth.sufficiency.cities_with_thin_days.length === 0
                   ? 'Every forecast has enough data behind it'

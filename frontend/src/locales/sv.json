@@ -124,6 +124,12 @@
     "fetchingForecast": "Hämtar väderprognos...",
     "noForecastData": "Inga prognosdata ännu",
     "noForecastDesc": "Inga städer returnerade en prognos. Om OPENWEATHERMAP_API_KEY inte är inställd i backend förblir detta tomt.",
+    "cityRail": {
+      "searchPlaceholder": "Sök stad eller land...",
+      "searchAriaLabel": "Sök städer",
+      "railAriaLabel": "Städer efter risk",
+      "noMatch": "Inga städer matchar"
+    },
     "forecast": {
       "title": "Väderriskprognos",
       "citiesMonitored": "städer övervakade · uppdaterad från OpenWeatherMap",
@@ -136,7 +142,12 @@
       "lastUpdatedJustNow": "uppdaterad just nu",
       "sortRisk": "Risk",
       "sortName": "Namn",
-      "retry": "Försök igen"
+      "retry": "Försök igen",
+      "filterHint": "Tryck på en siffra ovan för att filtrera listan efter risknivå",
+      "checking": "Kontrollerar...",
+      "freshnessLabel": "Aktualitet",
+      "completenessLabel": "Fullständighet",
+      "sufficiencyLabel": "Tillräckliga data"
     },
     "timeline": {
       "title": "Risk de Kommande Dagarna",
@@ -155,6 +166,13 @@
       "nextActionLabel": "Nästa:",
       "openChecklist": "Öppna beredskapschecklistan",
       "draftAlert": "Utarbeta myndighetsvarning",
+      "legendPrefix": "Varje dag nedan är en punkt i",
+      "legendDayForecast": "dagarsprognosen.",
+      "legendConfidenceWord": "Överensstämmelse",
+      "legendSuffix": "visar hur många av dagens väderavläsningar som stämde överens med den visade risknivån. Tryck på en överensstämmelse-badge för hela förklaringen.",
+      "riskRising": "Risken ökar",
+      "holdingSteady": "Oförändrad",
+      "riskEasing": "Risken minskar",
       "evidenceLabel": "Belägg",
       "riskAssessmentLabel": "Riskbedömning",
       "recommendedActionLabel": "Rekommenderad åtgärd",
@@ -202,7 +220,14 @@
       "addWhatsAppSettings": "💬 Lägg till en WhatsApp-mottagare i Inställningar",
       "sendEmail": "✉️ Skicka via E-post",
       "addEmailSettings": "✉️ Lägg till en e-postmottagare i Inställningar",
-      "whyThisTone": "Varför denna ton:"
+      "chooseRecipient": "Välj vem som får denna varning",
+      "selectRecipient": "Välj mottagare...",
+      "whatsappRecipientAriaLabel": "WhatsApp-mottagare",
+      "emailRecipientAriaLabel": "E-postmottagare",
+      "whyThisTone": "Varför denna ton:",
+      "unableToCreateTitle": "Det gick inte att skapa varningsmeddelanden",
+      "selectRecipientGroup": "Välj vilken mottagargrupp som ska varnas",
+      "lowConfidenceWarning": "⚠️ Den här risknivån byggde på låg överensstämmelse i prognosdata. Det kan vara värt att vänta på nästa prognosuppdatering innan du skickar en varning."
     }
   },
   "sourceTab": {
