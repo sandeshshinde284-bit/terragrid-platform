@@ -34,6 +34,7 @@
           <div class="hero-left">
             <h2>{{ $t('prepare.checklist.title') }}</h2>
             <span class="hero-meta">{{ $t('prepare.checklist.subtitle') }}</span>
+            <span class="hero-helper">{{ $t('prepare.checklist.helperDesc') }}</span>
           </div>
         </div>
 
@@ -53,7 +54,7 @@
               <span class="rail-dot"></span>
               <span class="rail-text">
                 <span class="rail-name">{{ city.city }}</span>
-                <span class="rail-country">{{ countryName(city.country) }}</span>
+                <span class="rail-country">{{ getCountryName(city.country) }}</span>
               </span>
               <span class="rail-risk">{{ worstRisk(city) }}</span>
             </button>
@@ -65,13 +66,13 @@
                 <span class="radar-dot"></span>
               </div>
               <div class="loading-telemetry-text">
-                <strong class="cycling-step-text">Generating preparedness checklist for {{ selectedCity?.city }}...</strong>
+                <strong class="cycling-step-text">{{ $t('prepare.checklist.creatingPlan') }} {{ selectedCity?.city }}...</strong>
               </div>
             </div>
 
             <div v-else-if="actionsError" class="empty-state glass-panel">
               <div class="empty-icon">⚠️</div>
-              <h3>Couldn't generate the checklist</h3>
+              <h3>{{ $t('prepare.checklist.unableToCreate') }}</h3>
               <p>{{ actionsError }}</p>
             </div>
 
@@ -83,7 +84,7 @@
               </div>
 
               <div class="progress-bar-row glass-panel" v-if="completionStats.total > 0">
-                <span class="progress-label">{{ completionStats.done }} / {{ completionStats.total }} {{ $t('prepare.checklist.complete') }}</span>
+                <span class="progress-label">{{ completionStats.done }} of {{ completionStats.total }} action items completed</span>
                 <div class="progress-track">
                   <div class="progress-fill" :style="{ width: completionStats.pct + '%' }"></div>
                 </div>
@@ -91,32 +92,35 @@
               </div>
 
               <!-- Agency ownership filter: "what does Health Dept still owe me" -->
-              <div class="agency-filter" v-if="agencyOptions.length > 1">
-                <button
-                  type="button"
-                  class="agency-chip"
-                  :class="{ active: selectedAgency === 'ALL' }"
-                  @click="selectedAgency = 'ALL'"
-                >
-                  {{ $t('prepare.checklist.allAgencies') }} <span class="agency-count">{{ actionsPlan.actions.length }}</span>
-                </button>
-                <button
-                  v-for="opt in agencyOptions"
-                  :key="opt.agency"
-                  type="button"
-                  class="agency-chip"
-                  :class="{ active: selectedAgency === opt.agency, 'agency-chip-complete': opt.pct === 100 }"
-                  :style="{ '--agency-fill-pct': opt.pct + '%' }"
-                  :title="`${opt.done} of ${opt.count} done`"
-                  @click="selectedAgency = opt.agency"
-                >
-                  <span class="agency-fill" aria-hidden="true"></span>
-                  <span class="agency-chip-label">{{ opt.agency }} <span class="agency-count">{{ opt.done }}/{{ opt.count }}</span></span>
-                </button>
+              <div class="agency-filter-group" v-if="agencyOptions.length > 1">
+                <label class="filter-label">{{ $t('prepare.checklist.showingTasksFrom') }}</label>
+                <div class="agency-filter" :title="$t('prepare.checklist.agenciesGroupedByUrgency')">
+                  <button
+                    type="button"
+                    class="agency-chip"
+                    :class="{ active: selectedAgency === 'ALL' }"
+                    @click="selectedAgency = 'ALL'"
+                  >
+                    {{ $t('prepare.checklist.allAgencies') }} <span class="agency-count">{{ actionsPlan.actions.length }}</span>
+                  </button>
+                  <button
+                    v-for="opt in agencyOptions"
+                    :key="opt.agency"
+                    type="button"
+                    class="agency-chip"
+                    :class="{ active: selectedAgency === opt.agency, 'agency-chip-complete': opt.pct === 100 }"
+                    :style="{ '--agency-fill-pct': opt.pct + '%' }"
+                    :title="`${opt.agency} is responsible for this. ${opt.done} of ${opt.count} completed`"
+                    @click="selectedAgency = opt.agency"
+                  >
+                    <span class="agency-fill" aria-hidden="true"></span>
+                    <span class="agency-chip-label">{{ opt.agency }} <span class="agency-count">{{ opt.done }}/{{ opt.count }}</span></span>
+                  </button>
+                </div>
               </div>
 
               <div class="priority-section" v-for="tier in priorityTiers" :key="tier.priority" v-show="tier.actions.length > 0">
-                <div class="tier-header" :class="tier.className">
+                <div class="tier-header" :class="tier.className" :title="tier.tooltipText">
                   <span class="tier-dot"></span>
                   <span class="tier-label">{{ tier.label }}</span>
                   <span class="tier-count">{{ tier.actions.length }}</span>
@@ -131,7 +135,8 @@
                   >
                     <div class="action-top">
                       <span class="category-chip" :class="action.category.toLowerCase()">{{ categoryIcon(action.category) }} {{ action.category }}</span>
-                      <span class="deadline-chip" :class="deadlineInfo(action).urgency">{{ deadlineInfo(action).label }}</span>
+                      <span class="deadline-chip" :class="deadlineInfo(action).urgency" :title="deadlineTooltip(action)">{{ deadlineInfo(action).label }}</span>
+                      <span class="priority-badge" :class="getPriorityBadgeClass(action.priority)" :title="getPriorityLabel(action.priority)">{{ getPriorityIcon(action.priority) }}</span>
                     </div>
                     <label class="action-check-row">
                       <input
@@ -139,14 +144,16 @@
                         class="action-checkbox"
                         :checked="isCompleted(action)"
                         @change="toggleCompleted(action)"
+                        :title="$t('prepare.checklist.markComplete')"
                       />
                       <p class="action-text">{{ action.action }}</p>
                     </label>
                     <div class="action-agency">
                       <span class="agency-icon">{{ agencyIcon(action.agency) }}</span>
-                      <span>{{ action.agency }}</span>
+                      <span><strong>{{ action.agency }}</strong> {{ $t('prepare.checklist.responsibleFor') }}</span>
                     </div>
-                    <p class="action-rationale">{{ action.rationale }}</p>
+                    <p class="action-rationale">{{ truncateDescription(action.rationale) }}</p>
+                    <p class="checkbox-helper">{{ $t('prepare.checklist.markComplete') }}</p>
                   </div>
                 </div>
               </div>
@@ -165,6 +172,7 @@ import { useI18n } from 'vue-i18n'
 import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
+import { getCountryName } from '@/utils/countries'
 
 const { t } = useI18n()
 
@@ -202,13 +210,6 @@ const actionsError = ref('')
 const actionsSource = ref('')
 
 const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
-
-const COUNTRY_NAMES: Record<string, string> = {
-  IN: 'India', NP: 'Nepal', CN: 'China', HK: 'Hong Kong', BD: 'Bangladesh',
-  PK: 'Pakistan', TH: 'Thailand', VN: 'Vietnam', SG: 'Singapore', MY: 'Malaysia',
-  IQ: 'Iraq', AE: 'UAE', ET: 'Ethiopia', KE: 'Kenya', RW: 'Rwanda', US: 'United States',
-}
-const countryName = (code: string) => COUNTRY_NAMES[code] || code
 
 const CATEGORY_ICONS: Record<string, string> = {
   DRAINAGE: '🌊', MEDICAL: '🏥', EVACUATION: '🚤', SUPPLIES: '📦',
@@ -388,13 +389,56 @@ const priorityTiers = computed(() => {
   const all = actionsPlan.value?.actions || []
   const actions = selectedAgency.value === 'ALL' ? all : all.filter(a => a.agency === selectedAgency.value)
   return [
-    { priority: 1, label: t('prepare.checklist.tierImmediate'), className: 'immediate', actions: actions.filter(a => a.priority === 1) },
-    { priority: 2, label: t('prepare.checklist.tierHigh'), className: 'high', actions: actions.filter(a => a.priority === 2) },
-    { priority: 3, label: t('prepare.checklist.tierStaged'), className: 'staged', actions: actions.filter(a => a.priority === 3) },
+    { priority: 1, label: t('prepare.checklist.tierImmediate'), className: 'immediate', tooltipText: 'Tasks grouped by urgency level', actions: actions.filter(a => a.priority === 1) },
+    { priority: 2, label: t('prepare.checklist.tierHigh'), className: 'high', tooltipText: 'Tasks grouped by urgency level', actions: actions.filter(a => a.priority === 2) },
+    { priority: 3, label: t('prepare.checklist.tierStaged'), className: 'staged', tooltipText: 'Tasks grouped by urgency level', actions: actions.filter(a => a.priority === 3) },
   ]
 })
 
 const apiHost = () => import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+
+const truncateDescription = (text: string): string => {
+  if (!text) return ''
+  const lines = text.split('\n')
+  const truncated = lines.slice(0, 2).join('\n')
+  if (truncated.length > 150) {
+    return truncated.substring(0, 147) + '...'
+  }
+  return truncated.length < text.length ? truncated + '...' : truncated
+}
+
+const getPriorityBadgeClass = (priority: 1 | 2 | 3): string => {
+  if (priority === 1) return 'priority-immediate'
+  if (priority === 2) return 'priority-high'
+  return 'priority-staged'
+}
+
+const getPriorityIcon = (priority: 1 | 2 | 3): string => {
+  if (priority === 1) return '🔴'
+  if (priority === 2) return '🟠'
+  return '🔵'
+}
+
+const getPriorityLabel = (priority: 1 | 2 | 3): string => {
+  if (priority === 1) return 'Immediate action required'
+  if (priority === 2) return 'High priority'
+  return 'Staged implementation'
+}
+
+const deadlineTooltip = (action: PreparednessAction): string => {
+  const day = selectedCity.value?.daily?.[action.deadline_day - 1]
+  if (!day) return `Must be completed before Day ${action.deadline_day}`
+
+  const deadlineDate = new Date(`${day.date}T00:00:00`)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diffDays = Math.round((deadlineDate.getTime() - today.getTime()) / 86400000)
+
+  if (diffDays < 0) return `OVERDUE by ${Math.abs(diffDays)} day${Math.abs(diffDays) !== 1 ? 's' : ''}`
+  if (diffDays === 0) return 'DUE TODAY'
+  if (diffDays === 1) return 'Due tomorrow'
+  return `${diffDays} days remaining`
+}
 
 const fetchActionsForSelectedCity = async () => {
   const city = selectedCity.value
@@ -498,6 +542,14 @@ watch(selectedKey, () => {
 .hero-meta {
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.hero-helper {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  font-weight: 500;
 }
 
 /* Master-detail layout: an always-visible, worst-first city list beside the
@@ -754,6 +806,20 @@ watch(selectedKey, () => {
   flex-wrap: wrap;
 }
 
+.agency-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .agency-chip {
   position: relative;
   display: flex;
@@ -865,6 +931,27 @@ watch(selectedKey, () => {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(34, 197, 94, 0.08);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 0;
+}
+
+.action-card.completed::before {
+  opacity: 1;
+}
+
+.action-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .action-card:hover {
@@ -886,6 +973,33 @@ watch(selectedKey, () => {
   gap: 6px;
 }
 
+.priority-badge {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.priority-badge.priority-immediate {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.priority-badge.priority-high {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.priority-badge.priority-staged {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
 .category-chip {
   font-size: 11px;
   font-weight: 700;
@@ -904,12 +1018,27 @@ watch(selectedKey, () => {
 }
 
 .deadline-chip.today {
-  color: #eab308;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.deadline-chip.soon {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .deadline-chip.overdue {
-  color: #ef4444;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.2);
   font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .action-check-row {
@@ -945,7 +1074,12 @@ watch(selectedKey, () => {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  padding: 6px 8px;
+  background: rgba(56, 189, 248, 0.08);
+  border-radius: 4px;
+  border-left: 2px solid rgba(56, 189, 248, 0.2);
 }
 
 .action-rationale {
@@ -955,6 +1089,22 @@ watch(selectedKey, () => {
   line-height: 1.4;
   padding-top: 6px;
   border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-height: 2.8em;
+}
+
+.checkbox-helper {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+  padding: 4px 6px;
+  background: rgba(34, 197, 94, 0.08);
+  border-radius: 4px;
+  border-left: 2px solid rgba(34, 197, 94, 0.3);
+  font-weight: 500;
 }
 
 /* Tactical Loading Animation (matches ForecastDashboard.vue / RiskTimeline.vue) */
@@ -1052,6 +1202,10 @@ watch(selectedKey, () => {
     padding: 14px 16px;
   }
 
+  .hero-helper {
+    font-size: 12px;
+  }
+
   /* Stack the city rail above the detail panel, and lay it out as a
      horizontally scrollable row of compact chips rather than a tall
      vertical list eating the screen before the checklist even shows. */
@@ -1091,19 +1245,96 @@ watch(selectedKey, () => {
   }
 
   .city-rail::after {
-    content: '';
+    content: 'Scroll to see more cities';
     position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 6px;
-    width: 24px;
-    background: linear-gradient(to right, transparent, rgba(10, 14, 22, 0.85));
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: var(--text-secondary);
     pointer-events: none;
+    white-space: nowrap;
+    padding: 2px 4px;
+    background: rgba(10, 14, 22, 0.7);
+    border-radius: 3px;
   }
 
   .rail-item {
     flex: 0 0 auto;
     min-width: 150px;
+  }
+
+  .agency-filter-group {
+    gap: 6px;
+  }
+
+  .agency-filter {
+    flex-direction: column;
+  }
+
+  .agency-chip {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-top {
+    gap: 4px;
+  }
+
+  .category-chip {
+    font-size: 10px;
+  }
+
+  .deadline-chip {
+    font-size: 10px;
+  }
+
+  .priority-badge {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+
+  .action-text {
+    font-size: 13px;
+  }
+
+  .progress-bar-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .progress-label {
+    flex-basis: 100%;
+  }
+
+  .progress-track {
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .action-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+
+  .master-detail {
+    flex-direction: column;
+  }
+
+  .city-rail {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: auto;
+  }
+
+  .rail-item {
+    flex: 0 0 auto;
+    min-width: 140px;
   }
 }
 </style>

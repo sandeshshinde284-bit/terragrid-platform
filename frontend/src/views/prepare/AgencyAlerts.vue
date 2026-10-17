@@ -70,7 +70,7 @@
               <span class="rail-dot"></span>
               <span class="rail-text">
                 <span class="rail-name">{{ city.city }}</span>
-                <span class="rail-country">{{ countryName(city.country) }}</span>
+                <span class="rail-country">{{ getCountryName(city.country) }}</span>
               </span>
               <span class="rail-risk">{{ worstRisk(city) }}</span>
             </button>
@@ -82,13 +82,13 @@
                 <span class="radar-dot"></span>
               </div>
               <div class="loading-telemetry-text">
-                <strong class="cycling-step-text">Drafting agency alerts for {{ selectedCity?.city }}...</strong>
+                <strong class="cycling-step-text">Preparing alert messages for {{ selectedCity?.city }}...</strong>
               </div>
             </div>
 
             <div v-else-if="alertsError" class="empty-state glass-panel">
               <div class="empty-icon">⚠️</div>
-              <h3>Couldn't generate the alerts</h3>
+              <h3>Unable to create alert messages</h3>
               <p>{{ alertsError }}</p>
             </div>
 
@@ -100,19 +100,19 @@
                   v-if="worstDayConfidence"
                   class="confidence-badge"
                   :class="confidenceClass(worstDayConfidence.confidence_pct)"
-                  :title="`${worstDayConfidence.confidence_pct.toFixed(0)}% of that day's own 3-hour forecast readings agreed with its risk level.`"
+                  :title="`Reliability of this risk level: ${worstDayConfidence.confidence_pct.toFixed(0)}% of forecast data agreed on this risk level.`"
                 >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% agreement <span class="info-hint" aria-hidden="true">ⓘ</span></span>
                 <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
               </div>
 
               <div v-if="showLowConfidenceWarning" class="low-confidence-warning glass-panel">
-                ⚠️ Low forecast agreement ({{ worstDayConfidence?.confidence_pct.toFixed(0) }}%) on the day driving this risk level -
-                likely a brief spike rather than a sustained risk. Consider waiting for the next forecast cycle before alerting agencies.
+                ⚠️ This risk level had low confidence in forecast data. You may want to wait for the next forecast update before alerting.
               </div>
 
               <!-- Audience tabs: switch which single audience's template is shown,
                    since each is written in a different voice for a different reader. -->
               <div class="audience-tabs">
+                <div class="helper-text-above-tabs">Select which recipient group to alert</div>
                 <button
                   v-for="aud in alertsPlan.alerts"
                   :key="aud.audience"
@@ -130,12 +130,14 @@
                 <div class="alert-top">
                   <span class="channel-chip">{{ selectedAlert.channel }}</span>
                   <div class="alert-top-actions">
-                    <button type="button" class="copy-btn" @click="copyMessage(selectedAlert)">
-                      {{ justCopied ? $t('prepare.agencyAlerts.copied') : $t('prepare.agencyAlerts.copyMessage') }}
+                    <button type="button" class="copy-btn" :class="{ copied: justCopied }" @click="copyMessage(selectedAlert)">
+                      {{ justCopied ? '✓' : $t('prepare.agencyAlerts.copyMessage') }}
                     </button>
                     <template v-if="isWhatsAppEnabled">
                       <template v-if="whatsappRecipients.length > 0">
-                        <select v-model="selectedRecipientPhone" class="recipient-select" aria-label="WhatsApp recipient">
+                        <div class="helper-text-recipient">Choose who receives this alert</div>
+                        <select v-model="selectedRecipientPhone" class="recipient-select" aria-label="WhatsApp recipient" :placeholder="`Select recipient...`">
+                          <option value="" disabled selected>Select recipient...</option>
                           <option v-for="r in whatsappRecipients" :key="r.phone_number" :value="r.phone_number">
                             {{ r.label }}
                           </option>
@@ -154,7 +156,9 @@
                       </RouterLink>
                     </template>
                     <template v-if="emailRecipients.length > 0">
-                      <select v-model="selectedRecipientEmail" class="recipient-select" aria-label="Email recipient">
+                      <div class="helper-text-recipient">Choose who receives this alert</div>
+                      <select v-model="selectedRecipientEmail" class="recipient-select" aria-label="Email recipient" :placeholder="`Select recipient...`">
+                        <option value="" disabled selected>Select recipient...</option>
                         <option v-for="r in emailRecipients" :key="r.email" :value="r.email">
                           {{ r.label }}
                         </option>
@@ -176,10 +180,12 @@
                 <h3 class="alert-headline">{{ selectedAlert.headline }}</h3>
                 <p class="alert-message">{{ selectedAlert.message }}</p>
                 <p class="alert-tone-rationale">
-                  <span class="rationale-label">{{ $t('prepare.agencyAlerts.whyThisTone') }}</span> {{ selectedAlert.tone_rationale }}
+                  <span class="rationale-label">Why this message style was chosen:</span> {{ selectedAlert.tone_rationale }}
                 </p>
                 <p v-if="sendResult" class="send-result" :class="sendResult.success ? 'success' : 'error'">
-                  {{ sendResult.success ? '✅' : '⚠️' }} {{ sendResult.detail }}
+                  <span v-if="sendResult.success && sendResult.detail === 'copy'">✓ Message copied to clipboard</span>
+                  <span v-else-if="sendResult.success">✅ {{ sendResult.detail }}</span>
+                  <span v-else>⚠️ {{ sendResult.detail }}</span>
                 </p>
               </div>
             </template>
@@ -198,6 +204,7 @@ import Header from '@/components/organisms/Header.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { useWhatsApp } from '@/composables/useWhatsApp'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
+import { getCountryName } from '@/utils/countries'
 
 type CityForecast = PrepareCityForecast
 
@@ -235,13 +242,6 @@ const selectedAudience = ref('')
 const justCopied = ref(false)
 
 const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
-
-const COUNTRY_NAMES: Record<string, string> = {
-  IN: 'India', NP: 'Nepal', CN: 'China', HK: 'Hong Kong', BD: 'Bangladesh',
-  PK: 'Pakistan', TH: 'Thailand', VN: 'Vietnam', SG: 'Singapore', MY: 'Malaysia',
-  IQ: 'Iraq', AE: 'UAE', ET: 'Ethiopia', KE: 'Kenya', RW: 'Rwanda', US: 'United States',
-}
-const countryName = (code: string) => COUNTRY_NAMES[code] || code
 
 const AUDIENCE_META: Record<string, { label: string; icon: string }> = {
   FARMERS: { label: 'Farmers', icon: '🌾' },
@@ -320,7 +320,7 @@ const locationLine = computed(() => {
   const city = selectedCity.value
   const day = worstDayConfidence.value
   if (!city) return ''
-  const place = `📍 ${city.city}, ${countryName(city.country)}`
+  const place = `📍 ${city.city}, ${getCountryName(city.country)}`
   const when = day?.date ? ` — ${day.date}` : ''
   return `${place}${when}\n\n`
 })
@@ -329,7 +329,11 @@ const copyMessage = async (alert: AgencyAlert) => {
   try {
     await navigator.clipboard.writeText(alert.message)
     justCopied.value = true
-    setTimeout(() => { justCopied.value = false }, 1800)
+    sendResult.value = { success: true, detail: 'copy' }
+    setTimeout(() => { 
+      justCopied.value = false
+      sendResult.value = null
+    }, 1800)
   } catch {
     // Clipboard API can be unavailable (older browsers, insecure context) -
     // fail silently rather than block the user; the message is still on screen to select manually.
@@ -837,6 +841,13 @@ watch(selectedKey, () => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  flex-direction: column;
+}
+
+.helper-text-above-tabs {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: -4px;
 }
 
 .audience-tab {
@@ -848,7 +859,7 @@ watch(selectedKey, () => {
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -905,10 +916,17 @@ watch(selectedKey, () => {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 200ms ease;
 }
 
 .copy-btn:hover {
   background: rgba(255, 255, 255, 0.14);
+}
+
+.copy-btn.copied {
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
 }
 
 .recipient-select {
@@ -920,6 +938,11 @@ watch(selectedKey, () => {
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.helper-text-recipient {
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 .no-recipients-banner {
@@ -1072,7 +1095,7 @@ watch(selectedKey, () => {
 }
 
 .rationale-label {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -1212,6 +1235,32 @@ watch(selectedKey, () => {
     flex: 0 0 auto;
     min-width: 150px;
   }
+
+  .alert-top-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .recipient-select,
+  .copy-btn,
+  .send-whatsapp-btn,
+  .send-email-btn,
+  .configure-recipients-link {
+    width: 100%;
+  }
+
+  .audience-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .helper-text-above-tabs {
+    width: 100%;
+  }
+
+  .alert-card {
+    padding: 16px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1222,6 +1271,19 @@ watch(selectedKey, () => {
 
   .alerts-hero {
     padding: 14px 16px;
+  }
+
+  .alert-top-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .recipient-select,
+  .copy-btn,
+  .send-whatsapp-btn,
+  .send-email-btn,
+  .configure-recipients-link {
+    width: 100%;
   }
 }
 </style>

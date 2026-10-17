@@ -160,6 +160,16 @@
       "tierImmediate": "Natychmiastowe",
       "tierHigh": "Wysoki Priorytet",
       "tierStaged": "Etapowe"
+    ,
+      "helperDesc": "Oto kroki, które Twoje miasto powinno podjąć, aby przygotować się na tę katastrofę",
+      "creatingPlan": "Tworzenie planu działań dla",
+      "unableToCreate": "Nie można utworzyć listy kontrolnej",
+      "of": "z",
+      "actionItemsCompleted": "działań zakończonych",
+      "showingTasksFrom": "Wyświetlanie zadań z:",
+      "agenciesGroupedByUrgency": "Zadania pogrupowane według pilności",
+      "responsibleFor": "jest za to odpowiedzialny",
+      "markComplete": "Oznacz jako ukończone"
     },
     "agencyAlerts": {
       "title": "Szablony Alertów Agencji",

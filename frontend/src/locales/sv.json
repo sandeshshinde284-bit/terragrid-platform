@@ -160,6 +160,16 @@
       "tierImmediate": "Omedelbart",
       "tierHigh": "Hög Prioritet",
       "tierStaged": "Stegvis"
+    ,
+      "helperDesc": "Detta är de åtgärder som din stad bör vidta för att förbereda sig för denna katastrof",
+      "creatingPlan": "Skapar handlingsplan för",
+      "unableToCreate": "Kunde inte skapa checklista",
+      "of": "av",
+      "actionItemsCompleted": "åtgärder slutförda",
+      "showingTasksFrom": "Visar uppgifter från:",
+      "agenciesGroupedByUrgency": "Uppgifter grupperade efter brådska",
+      "responsibleFor": "ansvarar för detta",
+      "markComplete": "Markera som slutförd"
     },
     "agencyAlerts": {
       "title": "Mallar för Myndighetsvarningar",

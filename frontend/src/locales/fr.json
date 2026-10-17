@@ -160,6 +160,16 @@
       "tierImmediate": "Immédiat",
       "tierHigh": "Priorité Haute",
       "tierStaged": "Échelonné"
+    ,
+      "helperDesc": "Ce sont les mesures que votre ville devrait prendre pour se préparer à cette catastrophe",
+      "creatingPlan": "Création du plan d'action pour",
+      "unableToCreate": "Impossible de créer la liste de contrôle",
+      "of": "sur",
+      "actionItemsCompleted": "actions terminées",
+      "showingTasksFrom": "Affichage des tâches de :",
+      "agenciesGroupedByUrgency": "Tâches regroupées par urgence",
+      "responsibleFor": "est responsable de cela",
+      "markComplete": "Marquer comme terminé"
     },
     "agencyAlerts": {
       "title": "Modèles d'Alertes d'Agence",

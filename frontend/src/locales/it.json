@@ -160,6 +160,16 @@
       "tierImmediate": "Immediato",
       "tierHigh": "Priorità Alta",
       "tierStaged": "A Fasi"
+    ,
+      "helperDesc": "Questi sono i passaggi che la tua città dovrebbe intraprendere per prepararsi a questo disastro",
+      "creatingPlan": "Creazione del piano d'azione per",
+      "unableToCreate": "Impossibile creare la lista di controllo",
+      "of": "di",
+      "actionItemsCompleted": "azioni completate",
+      "showingTasksFrom": "Visualizzazione delle attività da:",
+      "agenciesGroupedByUrgency": "Attività raggruppate per urgenza",
+      "responsibleFor": "è responsabile di questo",
+      "markComplete": "Segna come completato"
     },
     "agencyAlerts": {
       "title": "Modelli di Avviso per le Agenzie",

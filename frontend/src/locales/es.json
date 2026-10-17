@@ -160,6 +160,16 @@
       "tierImmediate": "Inmediato",
       "tierHigh": "Alta Prioridad",
       "tierStaged": "Escalonado"
+    ,
+      "helperDesc": "Estos son los pasos que su ciudad debe seguir para prepararse para este desastre",
+      "creatingPlan": "Creando plan de acción para",
+      "unableToCreate": "No se puede crear la lista de verificación",
+      "of": "de",
+      "actionItemsCompleted": "elementos de acción completados",
+      "showingTasksFrom": "Mostrando tareas de:",
+      "agenciesGroupedByUrgency": "Tareas agrupadas por urgencia",
+      "responsibleFor": "es responsable de esto",
+      "markComplete": "Marcar como completado"
     },
     "agencyAlerts": {
       "title": "Plantillas de Alertas de Agencia",

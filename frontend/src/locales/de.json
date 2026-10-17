@@ -160,6 +160,16 @@
       "tierImmediate": "Unverzüglich",
       "tierHigh": "Hohe Priorität",
       "tierStaged": "Gestaffelt"
+    ,
+      "helperDesc": "Dies sind die Schritte, die Ihre Stadt unternehmen sollte, um sich auf diese Katastrophe vorzubereiten",
+      "creatingPlan": "Aktionsplan wird erstellt für",
+      "unableToCreate": "Checkliste konnte nicht erstellt werden",
+      "of": "von",
+      "actionItemsCompleted": "Aktionspunkten abgeschlossen",
+      "showingTasksFrom": "Zeige Aufgaben von:",
+      "agenciesGroupedByUrgency": "Aufgaben nach Dringlichkeit gruppiert",
+      "responsibleFor": "ist hierfür verantwortlich",
+      "markComplete": "Als erledigt markieren"
     },
     "agencyAlerts": {
       "title": "Behörden-Warnvorlagen",
