@@ -5,7 +5,7 @@
       <PreparePlaceholder
         icon="📊"
         :title="$t('header.phases.predict')"
-        description="Early-warning forecasting ahead of the current 7-day window. Feature scope not yet finalized."
+        :description="$t('roadmap.predictDesc')"
         :showComingSoon="true"
       />
     </div>

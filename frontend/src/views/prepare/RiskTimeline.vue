@@ -33,7 +33,7 @@
         <div class="timeline-hero glass-panel">
           <div class="hero-left">
             <h2>{{ $t('prepare.timeline.title') }}</h2>
-            <span class="hero-meta">{{ $t('prepare.timeline.subtitle') }}</span>
+            <span class="hero-meta">{{ $t('prepare.timeline.subtitle') }} ({{ forecastDayCount }} {{ $t('prepare.forecast.daysForecast') }})</span>
           </div>
         </div>
 
@@ -75,10 +75,28 @@
               <span class="summary-text">{{ summary.text }}</span>
             </div>
 
+            <!-- The four PREPARE tools used to be disconnected - this risk
+                 reading didn't carry over to Checklist or Agency Alerts, so
+                 switching tools meant losing the city you were just looking
+                 at and re-finding it in that tool's own rail. These links
+                 carry the selected city across, the same way a Forecast
+                 Dashboard city card already carries it into this page. -->
+            <div v-if="selectedCity" class="next-action-row">
+              <span class="next-action-label">{{ $t('prepare.timeline.nextActionLabel') }}</span>
+              <RouterLink
+                :to="{ name: 'PrepareChecklist', query: { city: selectedCity.city, country: selectedCity.country } }"
+                class="next-action-link checklist"
+              >✅ {{ $t('prepare.timeline.openChecklist') }}</RouterLink>
+              <RouterLink
+                :to="{ name: 'PrepareAgencyAlerts', query: { city: selectedCity.city, country: selectedCity.country } }"
+                class="next-action-link agency"
+              >📨 {{ $t('prepare.timeline.draftAlert') }}</RouterLink>
+            </div>
+
             <div v-if="selectedCity" class="timeline-strip glass-panel">
               <div class="timeline-strip-legend">
                 <p>
-                  Each day below is one point on the 7-day forecast. <strong>Confidence</strong> is how much of that day's own 3-hourly forecast checkpoints agreed on the risk level shown. Tap any confidence badge below for the full explanation.
+                  Each day below is one point on the {{ forecastDayCount }}-day forecast. <strong>Confidence</strong> is how much of that day's own 3-hourly forecast checkpoints agreed on the risk level shown. Tap any confidence badge below for the full explanation.
                 </p>
                 <div class="connector-legend">
                   <span class="connector-legend-item"><span class="connector-swatch rising"></span> Risk rising</span>
@@ -220,21 +238,43 @@ const toggleConfidenceDetail = (day: PrepareDailyForecast) => {
   expandedConfidence.value = next
 }
 
+// Selected-day explanation: states the real calculation behind the
+// percentage (X of Y checkpoints, not just the rounded number), where the
+// data came from, and whether the day's evidence is thin - instead of
+// leaving the viewer to trust a bare percentage.
 const confidenceTooltip = (day: PrepareDailyForecast): string => {
-  const base = `${day.confidence_pct.toFixed(0)}% of this day's 3-hour forecast readings agreed with the ${day.risk_level} call.`
+  const calc = `${day.supporting_entries} of ${day.entries_count} three-hour OpenWeatherMap forecast checkpoints for this day agreed with the ${day.risk_level} call (${day.confidence_pct.toFixed(0)}%).`
+
+  let verdict: string
   if (day.alert_recommended) {
-    return `${base} Confidence is high enough to act on.`
+    verdict = 'Confidence clears the 70% bar used for an auto-recommended alert.'
+  } else if (day.risk_level === 'GREEN') {
+    verdict = ''
+  } else {
+    verdict = 'Below the 70% bar for an auto-recommended alert - likely a brief spike rather than a sustained risk.'
   }
-  if (day.risk_level === 'GREEN') {
-    return base
-  }
-  return `${base} Below the 70% bar for an auto-recommended alert - likely a brief spike rather than a sustained risk.`
+
+  // A day on the edge of OpenWeatherMap's forecast window naturally has
+  // fewer 3-hour readings than a full day (8) - that's real, not missing,
+  // data, but it's thinner evidence and worth saying so explicitly rather
+  // than letting it look like an equally-strong call.
+  const sufficiency = day.data_sufficient
+    ? ''
+    : `Only ${day.entries_count} checkpoint${day.entries_count === 1 ? '' : 's'} ${day.entries_count === 1 ? 'was' : 'were'} available for this day - it sits at the edge of the forecast window, so this call rests on thinner evidence than the other days.`
+
+  return [calc, verdict, sufficiency].filter(Boolean).join(' ')
 }
 
 // Worst-risk cities first, so the default selection (and the top of the
 // dropdown) is whatever actually needs attention, not an alphabetical pick.
 const sortedCities = computed(() => {
   return [...cities.value].sort((a, b) => RISK_RANK[worstRisk(b)] - RISK_RANK[worstRisk(a)])
+})
+
+// Same real, data-derived day count as ForecastDashboard - see the matching
+// comment there for why this isn't a hardcoded "7".
+const forecastDayCount = computed(() => {
+  return cities.value.reduce((max, city) => Math.max(max, city.daily.length), 0)
 })
 
 // Text filter for the rail (with 40+ cities, scrolling to find one by eye
@@ -740,6 +780,51 @@ watch(selectedKey, () => {
   border-left-style: dashed;
 }
 
+.next-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: -4px 0 4px;
+}
+
+.next-action-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.next-action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 200ms ease;
+}
+
+.next-action-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.next-action-link.checklist:hover {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.next-action-link.agency:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
 .summary-icon {
   font-size: 24px;
   flex-shrink: 0;
@@ -834,8 +919,8 @@ watch(selectedKey, () => {
   border-radius: 3px;
 }
 
-/* A thin 6px scrollbar is easy to miss - with 7 days of cards, the last one
-   or two are routinely cut off at normal screen widths with nothing
+/* A thin 6px scrollbar is easy to miss - with several days of cards, the
+   last one or two are routinely cut off at normal screen widths with nothing
    telling the viewer there's more to scroll to. This fade edge is the
    same affordance already used for the mobile city rail, just applied
    here unconditionally since the day strip overflows at desktop widths

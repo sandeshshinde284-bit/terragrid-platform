@@ -121,12 +121,13 @@
     }
   },
   "prepare": {
-    "fetchingForecast": "Obteniendo pronóstico meteorológico de 7 días...",
+    "fetchingForecast": "Obteniendo pronóstico meteorológico...",
     "noForecastData": "Aún no hay datos de pronóstico",
     "noForecastDesc": "Ninguna ciudad devolvió un pronóstico. Si OPENWEATHERMAP_API_KEY no está configurado en el backend, esto permanece vacío.",
     "forecast": {
-      "title": "Escalada de Riesgo de 7 Días",
+      "title": "Pronóstico de Escalada de Riesgo",
       "citiesMonitored": "ciudades monitoreadas · actualizado desde OpenWeatherMap",
+      "daysForecast": "días de pronóstico",
       "loadError": "No se pudo cargar el pronóstico",
       "sourceOfTruth": "Fuente de la Verdad",
       "lastUpdated": "actualizado {time}",
@@ -148,7 +149,10 @@
       "recalculate": "Recalcular rutas",
       "precalculate": "Precalcular rutas",
       "hrs": "hrs",
-      "safety": "Seguridad"
+      "safety": "Seguridad",
+      "nextActionLabel": "Siguiente:",
+      "openChecklist": "Abrir lista de preparación",
+      "draftAlert": "Redactar alerta a la agencia"
     },
     "checklist": {
       "title": "Lista de Preparación",
@@ -385,7 +389,7 @@
   },
   "roadmap": {
     "predictTitle": "Predicción",
-    "predictDesc": "Pronóstico de alerta temprana más allá del período actual de 7 días. Alcance de funciones no finalizado.",
+    "predictDesc": "Pronóstico de alerta temprana más allá del período de pronóstico actual. Alcance de funciones no finalizado.",
     "recoverTitle": "Recuperación",
     "recoverDesc": "Seguimiento de la recuperación y reasignación de recursos tras el evento. Alcance de funciones no finalizado."
   },

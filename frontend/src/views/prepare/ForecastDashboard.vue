@@ -34,7 +34,7 @@
           <div class="hero-left">
             <h2>{{ $t('prepare.forecast.title') }}</h2>
             <div class="hero-meta-row">
-              <span class="hero-meta">{{ cities.length }} {{ $t('prepare.forecast.citiesMonitored') }} &middot; {{ lastUpdatedText }}</span>
+              <span class="hero-meta">{{ cities.length }} {{ $t('prepare.forecast.citiesMonitored') }} &middot; {{ forecastDayCount }} {{ $t('prepare.forecast.daysForecast') }} &middot; {{ lastUpdatedText }}</span>
 
               <button
                 type="button"
@@ -278,6 +278,16 @@ const riskEmoji = (level: string) => RISK_EMOJI[level] || '🟢'
 // to be copy-pasted into this file independently of the other 3 PREPARE
 // screens - see usePrepareLookups.ts for why that moved to one shared copy.
 const { failedFlags, onFlagError, flagUrl } = useFlagFallback()
+
+// The actual number of calendar days behind each city's forecast - computed
+// from the real data instead of a hardcoded "7", since OpenWeatherMap's
+// free-tier endpoint is a 5-day/3-hour-step forecast, not a 7-day one (the
+// exact count can be 5 or 6 depending on time of day). Using the longest
+// daily list present avoids under-reporting on the rare city whose window
+// starts slightly earlier than the rest.
+const forecastDayCount = computed(() => {
+  return cities.value.reduce((max, city) => Math.max(max, city.daily.length), 0)
+})
 
 // Group by country, each group's cities sorted worst-risk-first, and the
 // groups themselves sorted worst-risk-first - a country with a RED city

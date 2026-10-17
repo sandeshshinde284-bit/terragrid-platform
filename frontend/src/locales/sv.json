@@ -121,12 +121,13 @@
     }
   },
   "prepare": {
-    "fetchingForecast": "Hämtar 7-dagarsprognos...",
+    "fetchingForecast": "Hämtar väderprognos...",
     "noForecastData": "Inga prognosdata ännu",
     "noForecastDesc": "Inga städer returnerade en prognos. Om OPENWEATHERMAP_API_KEY inte är inställd i backend förblir detta tomt.",
     "forecast": {
-      "title": "7-Dagars Riskeskalering",
+      "title": "Riskeskaleringsprognos",
       "citiesMonitored": "städer övervakade · uppdaterad från OpenWeatherMap",
+      "daysForecast": "dagarsprognos",
       "loadError": "Kunde inte läsa in prognosen",
       "sourceOfTruth": "Källans Sanning",
       "lastUpdated": "uppdaterad {time}",
@@ -137,7 +138,7 @@
     },
     "timeline": {
       "title": "Tidslinje för Riskeskalering",
-      "subtitle": "Hur risken byggs upp dag för dag för en enskild plats från samma 7-dagarsprognos",
+      "subtitle": "Hur risken byggs upp dag för dag för en enskild plats från samma aktuella prognosfönster",
       "loading": "Skapar tidslinje för riskeskalering...",
       "loadError": "Kunde inte läsa in tidslinjen",
       "day": "Dag",
@@ -148,7 +149,10 @@
       "recalculate": "Omberäkna rutter",
       "precalculate": "Förberäkna rutter",
       "hrs": "tim",
-      "safety": "Säkerhet"
+      "safety": "Säkerhet",
+      "nextActionLabel": "Nästa:",
+      "openChecklist": "Öppna beredskapschecklistan",
+      "draftAlert": "Utarbeta myndighetsvarning"
     },
     "checklist": {
       "title": "Checklista för Beredskap",
@@ -385,7 +389,7 @@
   },
   "roadmap": {
     "predictTitle": "Prognos",
-    "predictDesc": "Tidig varning bortom det aktuella 7-dagarsfönstret. Funktionsomfånget är ännu inte fastställt.",
+    "predictDesc": "Tidig varning bortom det aktuella prognosfönstret. Funktionsomfånget är ännu inte fastställt.",
     "recoverTitle": "Återhämtning",
     "recoverDesc": "Spårning av återhämtning och resursallokering efter händelsen. Funktionsomfånget är ännu inte fastställt."
   },

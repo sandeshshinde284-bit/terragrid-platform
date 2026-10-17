@@ -27,6 +27,14 @@ export interface PrepareDailyForecast {
   // forecast data itself - not a fabricated score.
   confidence_pct: number
   alert_recommended: boolean
+  // The real numerator/denominator behind confidence_pct, e.g. "5 of 8" -
+  // lets the UI state the actual calculation instead of just the rounded
+  // percentage. entries_count is also how many 3-hour OpenWeatherMap
+  // readings fell on this calendar day (up to 8; fewer on the first/last
+  // day of the forecast window).
+  entries_count: number
+  supporting_entries: number
+  data_sufficient: boolean
 }
 
 export interface PrepareCityForecast {

@@ -121,12 +121,13 @@
     }
   },
   "prepare": {
-    "fetchingForecast": "Pobieranie 7-dniowej prognozy pogody...",
+    "fetchingForecast": "Pobieranie prognozy pogody...",
     "noForecastData": "Brak danych prognozy",
     "noForecastDesc": "Żadne miasto nie zwróciło prognozy. Jeśli OPENWEATHERMAP_API_KEY nie jest ustawiony w backendzie, pozostaje to puste.",
     "forecast": {
-      "title": "7-Dniowa Eskalacja Ryzyka",
+      "title": "Prognoza Eskalacji Ryzyka",
       "citiesMonitored": "miast monitorowanych · zaktualizowano z OpenWeatherMap",
+      "daysForecast": "dniowa prognoza",
       "loadError": "Nie udało się załadować prognozy",
       "sourceOfTruth": "Źródło Prawdy",
       "lastUpdated": "zaktualizowano {time}",
@@ -148,7 +149,10 @@
       "recalculate": "Przelicz trasy",
       "precalculate": "Wstępnie oblicz trasy",
       "hrs": "godz.",
-      "safety": "Bezpieczeństwo"
+      "safety": "Bezpieczeństwo",
+      "nextActionLabel": "Dalej:",
+      "openChecklist": "Otwórz listę kontrolną przygotowań",
+      "draftAlert": "Przygotuj alert dla służb"
     },
     "checklist": {
       "title": "Lista Kontrolna Przygotowania",
@@ -385,7 +389,7 @@
   },
   "roadmap": {
     "predictTitle": "Prognozowanie",
-    "predictDesc": "Wczesne ostrzeganie wykraczające poza bieżące 7-dniowe okno. Zakres funkcji nie został jeszcze sfinalizowany.",
+    "predictDesc": "Wczesne ostrzeganie wykraczające poza bieżące okno prognozy. Zakres funkcji nie został jeszcze sfinalizowany.",
     "recoverTitle": "Odbudowa",
     "recoverDesc": "Śledzenie odbudowy po zdarzeniu i ponownej alokacji zasobów. Zakres funkcji nie został jeszcze sfinalizowany."
   },

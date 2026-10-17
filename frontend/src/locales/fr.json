@@ -121,12 +121,13 @@
     }
   },
   "prepare": {
-    "fetchingForecast": "Récupération des prévisions météo sur 7 jours...",
+    "fetchingForecast": "Récupération des prévisions météo...",
     "noForecastData": "Pas encore de données de prévision",
     "noForecastDesc": "Aucune ville n'a renvoyé de prévisions. Si OPENWEATHERMAP_API_KEY n'est pas configuré sur le backend, cette zone reste vide.",
     "forecast": {
-      "title": "Escalade des Risques sur 7 Jours",
+      "title": "Prévision d'Escalade des Risques",
       "citiesMonitored": "villes surveillées · mis à jour depuis OpenWeatherMap",
+      "daysForecast": "jours de prévision",
       "loadError": "Impossible de charger les prévisions",
       "sourceOfTruth": "Source de Vérité",
       "lastUpdated": "mis à jour {time}",
@@ -148,7 +149,10 @@
       "recalculate": "Recalculer les itinéraires",
       "precalculate": "Pré-calculer les itinéraires",
       "hrs": "h",
-      "safety": "Sécurité"
+      "safety": "Sécurité",
+      "nextActionLabel": "Suivant :",
+      "openChecklist": "Ouvrir la liste de préparation",
+      "draftAlert": "Rédiger une alerte aux agences"
     },
     "checklist": {
       "title": "Liste de Préparation",
@@ -385,7 +389,7 @@
   },
   "roadmap": {
     "predictTitle": "Prévision",
-    "predictDesc": "Prévisions d'alerte précoce au-delà de la fenêtre actuelle de 7 jours. Portée des fonctionnalités non finalisée.",
+    "predictDesc": "Prévisions d'alerte précoce au-delà de la fenêtre de prévision actuelle. Portée des fonctionnalités non finalisée.",
     "recoverTitle": "Récupération",
     "recoverDesc": "Suivi de la récupération post-événement et de la réaffectation des ressources. Portée des fonctionnalités non finalisée."
   },
