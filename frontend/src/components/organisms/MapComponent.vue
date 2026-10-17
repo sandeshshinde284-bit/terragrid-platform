@@ -208,7 +208,8 @@ const renderMarkers = () => {
 
     if (lat === undefined || lon === undefined) return
 
-    const score = incident.threatScore ?? 50
+    // Unscored incidents get the lowest colour bucket and no number; no invented score.
+    const score = incident.threatScore ?? 0
     const color = getSeverityColor(score)
     const icon = getIncidentIcon(incident.type)
     const isSelected = appStore.selectedIncident === incident.id

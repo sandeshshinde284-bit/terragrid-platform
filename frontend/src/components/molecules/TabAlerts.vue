@@ -84,7 +84,7 @@ import { logError } from '@/utils/logger'
 
 const props = defineProps<{
   isBackendMockModeEnabled: boolean
-  detail: any
+  incidentId: string
 }>()
 
 defineEmits(['open-alerts'])
@@ -150,7 +150,7 @@ async function fetchAlerts(incidentId: string | undefined) {
   }
 }
 
-watch(() => props.detail?.id, (id) => {
+watch(() => props.incidentId, (id) => {
   fetchAlerts(id)
 }, { immediate: true })
 </script>

@@ -47,7 +47,7 @@
 
       <!-- Link to Full AI Insights -->
       <button class="view-full-btn" @click="navigateToInsights">
-        View Full AI Insights →
+        Open incident brief →
       </button>
     </div>
 
@@ -89,10 +89,11 @@ const remainingCount = computed(() => {
 
 // Navigate to Incident Detail and scroll to AI Insights tab
 const navigateToInsights = () => {
+  // Go straight to the incident's overview: that is where the recommended
+  // actions and the report are. The separate AI tab repeated the same plan.
   router.push({
     name: 'IncidentDetail',
-    params: { id: props.incidentId },
-    query: { tab: 'ai-insights' }
+    params: { id: props.incidentId }
   })
   emit('navigateToInsights')
 }

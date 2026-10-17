@@ -9,6 +9,7 @@
       <div class="header-top">
         <span class="icon">{{ iconMap[incident.type] }}</span>
         <h3>{{ incident.type.toUpperCase() }}</h3>
+        <span class="incident-id">{{ displayIncidentId(incident) }}</span>
       </div>
       <div class="header-bottom">
         <p class="location">{{ formatLocation(incident.location) }}</p>
@@ -19,19 +20,19 @@
     <div class="card-body">
       <div class="metric-row">
         <span class="label">AREA</span>
-        <span class="value">{{ incident.affectedArea.toFixed(0) }} km²</span>
+        <span class="value">{{ fmtFixed(incident.affectedArea, 0, ' km²') }}</span>
       </div>
       <div class="metric-row">
         <span class="label">POPULATION</span>
-        <span class="value">{{ (incident.affectedPopulation / 1000).toFixed(0) }}K</span>
+        <span class="value">{{ fmtThousands(incident.affectedPopulation) }}</span>
       </div>
       <div class="metric-row">
         <span class="label">TREND</span>
-        <span class="value trend-up">+{{ incident.trend.toFixed(1) }} km²/h</span>
+        <span class="value trend-up">{{ fmtSigned(incident.trend, 1, ' km²/h') }}</span>
       </div>
       <div class="metric-row">
         <span class="label">6h FORECAST</span>
-        <span class="value trend-up">+{{ incident.forecast6h.toFixed(0) }} km²</span>
+        <span class="value trend-up">{{ fmtSigned(incident.forecast6h, 0, ' km²') }}</span>
       </div>
     </div>
 
@@ -42,6 +43,8 @@
 </template>
 
 <script setup lang="ts">
+import { displayIncidentId } from '@/utils/incidentId'
+import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, defineProps, defineEmits } from 'vue'
 import { useI18n } from 'vue-i18n'
 import GlassPanel from '../atoms/GlassPanel.vue'
@@ -542,5 +545,18 @@ const selectIncident = () => {
     width: 100%;
     margin-top: auto;
   }
+}
+
+.incident-id {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.15);
+  vertical-align: middle;
 }
 </style>

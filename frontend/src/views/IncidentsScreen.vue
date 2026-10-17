@@ -104,10 +104,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="incident in filteredIncidents" :key="incident.id" class="incident-row" :class="{ expanded: expandedIncidentId === incident.id }" @click="toggleExpanded(incident.id)">
+            <tr v-for="incident in filteredIncidents" :key="incident.id" :data-incident-id="incident.id" class="incident-row" :class="{ expanded: expandedIncidentId === incident.id }" @click="toggleExpanded(incident.id)">
               <td class="type-cell">
                 <span class="type-icon">{{ getIcon(incident.type, incident.location) }}</span>
                 <span class="type-name">{{ formatType(incident.type, incident.location) }}</span>
+                <span class="incident-id">{{ displayIncidentId(incident) }}</span>
               </td>
               <td class="location-cell">
                 <span class="location-text">{{ cleanLocation(incident.location) }}</span>
@@ -118,10 +119,10 @@
               <td class="status-cell">
                 <span class="status-badge" :class="incident.status">{{ incident.status.toUpperCase() }}</span>
               </td>
-              <td class="threat-cell">{{ incident.threatScore }}/100</td>
-              <td class="area-cell">{{ (incident.affectedArea ?? 0).toFixed(1) }} km²</td>
-              <td class="population-cell">{{ (incident.affectedPopulation / 1000).toFixed(0) }}K</td>
-              <td class="trend-cell">+{{ (incident.trend ?? 0).toFixed(1) }} km²/h</td>
+              <td class="threat-cell">{{ incident.threatScore != null ? `${incident.threatScore}/100` : DASH }}</td>
+              <td class="area-cell">{{ fmtFixed(incident.affectedArea, 1, ' km²') }}</td>
+              <td class="population-cell">{{ fmtThousands(incident.affectedPopulation) }}</td>
+              <td class="trend-cell">{{ fmtSigned(incident.trend, 1, ' km²/h') }}</td>
               <td class="time-cell">{{ formatDate(incident.detectionTime) }}</td>
               <td class="action-cell">
                 <span class="action-badge">{{ getRecommendedAction(incident) }}</span>
@@ -144,10 +145,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { displayIncidentId } from '@/utils/incidentId'
+import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
+import { computed, ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
-import { useEventsStore } from '@/stores'
+import { useAppStore, useEventsStore } from '@/stores'
 import { logWarn } from '@/utils/logger'
 import type { IncidentLevel1 } from '@/types'
 
@@ -159,7 +162,12 @@ const filterStatus = ref('')
 const filterSeverity = ref('')
 const filterCountry = ref('')
 const selectedIncidentData = ref<IncidentLevel1 | null>(null)
-const expandedIncidentId = ref<string | null>(null)
+// Shared selection: the same store value the Dashboard, map markers and
+// cards write to, so picking an event on any screen highlights that same
+// event here (previously this screen kept its own local selection, so a
+// flood picked on the Dashboard showed up unmarked on this page).
+const appStore = useAppStore()
+const expandedIncidentId = computed(() => appStore.selectedIncident)
 const sortBy = ref<string>('threatScore')
 const sortOrder = ref<'asc' | 'desc'>('desc')
 
@@ -309,16 +317,19 @@ const filteredIncidents = computed(() => {
     if (filterSeverity.value) {
       const selected = filterSeverity.value.toLowerCase()
       const incSeverity = (incident.severity || '').toLowerCase()
-      const threat = incident.threatScore ?? 50
+      // Score bands apply only to incidents with a real backend score;
+      // unscored incidents match on their recorded severity alone.
+      const threat = incident.threatScore
+      const hasScore = threat !== null && threat !== undefined
 
       if (selected === 'critical') {
-        matchSeverity = incSeverity === 'critical' || threat >= 80
+        matchSeverity = incSeverity === 'critical' || (hasScore && threat >= 80)
       } else if (selected === 'high') {
-        matchSeverity = incSeverity === 'high' || (threat >= 65 && threat < 80)
+        matchSeverity = incSeverity === 'high' || (hasScore && threat >= 65 && threat < 80)
       } else if (selected === 'medium') {
-        matchSeverity = incSeverity === 'medium' || (threat >= 45 && threat < 65)
+        matchSeverity = incSeverity === 'medium' || (hasScore && threat >= 45 && threat < 65)
       } else if (selected === 'low') {
-        matchSeverity = incSeverity === 'low' || threat < 45
+        matchSeverity = incSeverity === 'low' || (hasScore && threat < 45)
       }
     }
 
@@ -395,18 +406,19 @@ const availableCountries = computed(() => {
   return Array.from(countries).sort()
 })
 
-const totalArea = computed(() => 
-  filteredIncidents.value.reduce((sum, i) => sum + i.affectedArea, 0)
+const totalArea = computed(() =>
+  sumKnown(filteredIncidents.value.map(i => i.affectedArea))
 )
 
 const totalPopulation = computed(() =>
-  filteredIncidents.value.reduce((sum, i) => sum + i.affectedPopulation, 0)
+  sumKnown(filteredIncidents.value.map(i => i.affectedPopulation))
 )
 
+// Average over incidents that have a real risk score only.
 const avgThreat = computed(() => {
-  if (filteredIncidents.value.length === 0) return 0
-  const sum = filteredIncidents.value.reduce((sum, i) => sum + i.threatScore, 0)
-  return sum / filteredIncidents.value.length
+  const scored = filteredIncidents.value.map(i => i.threatScore).filter((v): v is number => v != null)
+  if (scored.length === 0) return null
+  return scored.reduce((sum, v) => sum + v, 0) / scored.length
 })
 
 const formatDate = (date: Date) =>
@@ -422,11 +434,14 @@ const getTrendDirection = (trend: number): string => {
 }
 
 const getRecommendedAction = (incident: IncidentLevel1): string => {
-  const threat = incident.threatScore ?? 50
-  const pop = incident.affectedPopulation || 0
-  
+  const threat = incident.threatScore
+  // No invented score: without a real risk score there is no basis for a tier.
+  if (threat === null || threat === undefined) return '⏳ AWAITING RISK SCORE'
+  const pop = incident.affectedPopulation
+  const popClause = pop !== null ? ` (${(pop / 1000).toFixed(0)}K at risk)` : ''
+
   if (threat >= 80) {
-    return `🚨 MANDATORY EVACUATION (${(pop / 1000).toFixed(0)}K at risk)`
+    return `🚨 MANDATORY EVACUATION${popClause}`
   } else if (threat >= 65) {
     return `⚠️ PREPARE SHELTERS & DEPLOY FIRST RESPONDERS`
   } else if (threat >= 50) {
@@ -441,8 +456,28 @@ const viewIncident = (id: string) => {
 }
 
 const toggleExpanded = (id: string) => {
-  expandedIncidentId.value = expandedIncidentId.value === id ? null : id
+  appStore.setSelectedIncident(appStore.selectedIncident === id ? null : id)
 }
+
+// Bring the selected row into view (the list is long and can be scrolled
+// past it). Runs when the selection changes or when the page first loads
+// with a selection carried over from the Dashboard or the map.
+const scrollToSelected = async () => {
+  await nextTick()
+  const id = appStore.selectedIncident
+  if (!id) return
+  const row = document.querySelector<HTMLElement>(`[data-incident-id="${CSS.escape(id)}"]`)
+  row?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+}
+
+// Also re-run once the list has loaded, since a direct visit may open this
+// page before the rows exist.
+watch(
+  () => [appStore.selectedIncident, eventsStore.allIncidents.length] as const,
+  ([id]) => {
+    if (id) scrollToSelected()
+  }
+)
 
 const handleSort = (column: string) => {
   if (sortBy.value === column) {
@@ -533,12 +568,8 @@ onMounted(async () => {
             countryCode: e.countryCode || 'UN',
             severity: e.severity || 'medium',
             status: e.status || 'active',
-            threatScore: e.impact?.risk_score ?? 50,
+            ...impactMetricsFrom(e),
             detectionTime: new Date(e.event_timestamp || Date.now()),
-            affectedArea: e.impact?.affected_area_km2 ?? 150,
-            affectedPopulation: e.impact?.affected_population ?? 50000,
-            trend: e.impact?.trend_km2_per_hour ?? 5.2,
-            forecast6h: e.impact?.forecast_6h_km2 ?? 31.2,
             coordinates: [e.latitude, e.longitude] as [number, number],
           })))
         }
@@ -1661,4 +1692,17 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.3);
 }
 
+
+.incident-id {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.15);
+  vertical-align: middle;
+}
 </style>

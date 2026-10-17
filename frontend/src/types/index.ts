@@ -24,13 +24,14 @@ export interface IncidentLevel1 {
   location: string
   location_name?: string  // Full location name (for TabSource display)
   severity: Event['severity']
-  affectedArea: number
-  affectedPopulation: number
-  trend: number
-  forecast6h: number
+  // null = the backend has no measured value for this incident (show "—", never a guess)
+  affectedArea: number | null
+  affectedPopulation: number | null
+  trend: number | null
+  forecast6h: number | null
   detectionTime: Date
   status: 'active' | 'monitoring' | 'resolved'
-  threatScore?: number  // Optional threat score (0-100)
+  threatScore?: number | null  // Backend risk_score (0-100); null when not scored
   coordinates?: [number, number]  // lat, lng
   countryCode?: string  // Canonical 2-letter ISO country code (e.g., 'US', 'IN')
   source?: string       // API Origin (e.g. nasa_eonet, USGS_EARTHQUAKES, GDACS)
