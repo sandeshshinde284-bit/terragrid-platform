@@ -58,23 +58,33 @@
           <!-- Always-visible, worst-first city list: scan every city's status
                at a glance and jump straight to one with a single click - no
                dropdown to open/scroll/close per city. -->
-          <nav class="city-rail glass-panel" aria-label="Cities by risk">
-            <button
-              v-for="city in sortedCities"
-              :key="cityKey(city)"
-              type="button"
-              class="rail-item"
-              :class="[worstRisk(city).toLowerCase(), { active: cityKey(city) === selectedKey }]"
-              @click="selectedKey = cityKey(city)"
-            >
-              <span class="rail-dot"></span>
-              <span class="rail-text">
-                <span class="rail-name">{{ city.city }}</span>
-                <span class="rail-country">{{ getCountryName(city.country) }}</span>
-              </span>
-              <span class="rail-risk">{{ worstRisk(city) }}</span>
-            </button>
-          </nav>
+          <div class="city-rail-wrap glass-panel">
+            <input
+              v-model="citySearch"
+              type="search"
+              class="rail-search"
+              placeholder="Search city or country..."
+              aria-label="Search cities"
+            />
+            <nav ref="cityRailEl" class="city-rail" aria-label="Cities by risk">
+              <button
+                v-for="city in filteredCities"
+                :key="cityKey(city)"
+                type="button"
+                class="rail-item"
+                :class="[worstRisk(city).toLowerCase(), { active: cityKey(city) === selectedKey }]"
+                @click="selectedKey = cityKey(city)"
+              >
+                <span class="rail-dot"></span>
+                <span class="rail-text">
+                  <span class="rail-name">{{ city.city }}</span>
+                  <span class="rail-country">{{ getCountryName(city.country) }}</span>
+                </span>
+                <span class="rail-risk">{{ worstRisk(city) }}</span>
+              </button>
+              <p v-if="filteredCities.length === 0" class="rail-empty">No cities match "{{ citySearch }}"</p>
+            </nav>
+          </div>
 
           <div class="detail-panel">
             <div v-if="alertsLoading" class="empty-state glass-panel tactical-loading-container actions-loading">
@@ -96,14 +106,18 @@
               <div class="risk-context glass-panel" :class="selectedToneClass">
                 <span class="context-icon">{{ selectedToneIcon }}</span>
                 <span class="context-text">{{ alertsPlan.risk_context }}</span>
-                <span
+                <button
                   v-if="worstDayConfidence"
+                  type="button"
                   class="confidence-badge"
                   :class="confidenceClass(worstDayConfidence.confidence_pct)"
-                  :title="`Reliability of this risk level: ${worstDayConfidence.confidence_pct.toFixed(0)}% of forecast data agreed on this risk level.`"
-                >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% agreement <span class="info-hint" aria-hidden="true">ⓘ</span></span>
+                  :aria-expanded="confidenceDetailExpanded"
+                  @click="confidenceDetailExpanded = !confidenceDetailExpanded"
+                >{{ worstDayConfidence.confidence_pct.toFixed(0) }}% agreement <span class="info-hint" aria-hidden="true">{{ confidenceDetailExpanded ? '▲' : 'ⓘ' }}</span></button>
                 <span class="source-badge" :class="sourceBadgeClass">{{ sourceLabel }}</span>
               </div>
+
+              <p v-if="worstDayConfidence && confidenceDetailExpanded" class="confidence-detail glass-panel">{{ confidenceTooltip }}</p>
 
               <div v-if="showLowConfidenceWarning" class="low-confidence-warning glass-panel">
                 ⚠️ This risk level had low confidence in forecast data. You may want to wait for the next forecast update before alerting.
@@ -205,6 +219,9 @@ import { useMockMode } from '@/composables/useMockMode'
 import { useWhatsApp } from '@/composables/useWhatsApp'
 import { usePrepareForecastStore, type PrepareCityForecast } from '@/stores'
 import { getCountryName } from '@/utils/countries'
+// Shared with every other PREPARE screen - see usePrepareLookups.ts for why
+// that moved to one shared copy.
+import { RISK_RANK, cityKey, useCityRailFilter, worstRisk } from '@/composables/usePrepareLookups'
 
 type CityForecast = PrepareCityForecast
 
@@ -241,8 +258,6 @@ const alertsSource = ref('')
 const selectedAudience = ref('')
 const justCopied = ref(false)
 
-const RISK_RANK: Record<string, number> = { GREEN: 0, YELLOW: 1, ORANGE: 2, RED: 3 }
-
 const AUDIENCE_META: Record<string, { label: string; icon: string }> = {
   FARMERS: { label: 'Farmers', icon: '🌾' },
   HOSPITALS: { label: 'Hospitals', icon: '🏥' },
@@ -252,15 +267,11 @@ const AUDIENCE_META: Record<string, { label: string; icon: string }> = {
 const audienceLabel = (aud: string) => AUDIENCE_META[aud]?.label || aud
 const audienceIcon = (aud: string) => AUDIENCE_META[aud]?.icon || '📨'
 
-const cityKey = (city: CityForecast) => `${city.city}-${city.country}`
-
-const worstRisk = (city: CityForecast): string => {
-  return city.daily.reduce((worst, day) => (RISK_RANK[day.risk_level] > RISK_RANK[worst] ? day.risk_level : worst), 'GREEN')
-}
-
 const sortedCities = computed(() => {
   return [...cities.value].sort((a, b) => RISK_RANK[worstRisk(b)] - RISK_RANK[worstRisk(a)])
 })
+
+const { citySearch, cityRailEl, filteredCities, scrollActiveIntoView } = useCityRailFilter(sortedCities)
 
 const selectedCity = computed<CityForecast | null>(() => {
   return cities.value.find(c => cityKey(c) === selectedKey.value) || null
@@ -294,6 +305,19 @@ const confidenceClass = (pct: number): string => {
   if (pct >= 40) return 'confidence-medium'
   return 'confidence-low'
 }
+
+// Whether the confidence-badge explanation is expanded. A hover-only
+// `:title` doesn't show on touch devices or in a recording, and the old
+// "i" icon was marked aria-hidden so assistive tech skipped it entirely -
+// this makes the full explanation a real, persistent, keyboard/touch-
+// reachable toggle instead (same fix already applied in RiskTimeline).
+const confidenceDetailExpanded = ref(false)
+
+const confidenceTooltip = computed(() => {
+  const day = worstDayConfidence.value
+  if (!day) return ''
+  return `Reliability of this risk level: ${day.confidence_pct.toFixed(0)}% of forecast data agreed on this risk level.`
+})
 
 const showLowConfidenceWarning = computed(() => {
   const day = worstDayConfidence.value
@@ -528,6 +552,7 @@ onMounted(async () => {
   if (cities.value.length > 0 && !selectedCity.value) {
     selectedKey.value = cityKey(sortedCities.value[0])
   }
+  scrollActiveIntoView()
 })
 
 watch(cities, (newCities) => {
@@ -538,6 +563,8 @@ watch(cities, (newCities) => {
 
 watch(selectedKey, () => {
   if (selectedCity.value) fetchAlertsForSelectedCity()
+  confidenceDetailExpanded.value = false
+  scrollActiveIntoView()
 })
 </script>
 
@@ -605,12 +632,44 @@ watch(selectedKey, () => {
   align-items: flex-start;
 }
 
-.city-rail {
+.city-rail-wrap {
   flex: 0 0 260px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   padding: 10px;
+}
+
+.rail-search {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.rail-search::placeholder {
+  color: var(--text-secondary);
+}
+
+.rail-search:focus {
+  border-color: var(--accent-cyan, #22d3ee);
+}
+
+.rail-empty {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 8px 4px;
+  margin: 0;
+}
+
+.city-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   max-height: 70vh;
   overflow-y: auto;
   /* Themed scrollbar instead of the browser's default light-gray one, which
@@ -770,19 +829,37 @@ watch(selectedKey, () => {
   flex: 1;
 }
 
+/* Now a real <button> (was a plain <span> with a hover-only :title) so the
+   full confidence explanation is reachable on touch, in a recording, and
+   by keyboard/screen-reader users - not just on mouse hover. */
 .confidence-badge {
+  font: inherit;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 3px 8px;
+  border: none;
   border-radius: 999px;
   white-space: nowrap;
-  cursor: help;
+  cursor: pointer;
+}
+
+.confidence-badge:focus-visible {
+  outline: 2px solid var(--accent-cyan, #22d3ee);
+  outline-offset: 2px;
 }
 
 .confidence-badge .info-hint {
   font-size: 9px;
   opacity: 0.75;
+}
+
+.confidence-detail {
+  margin: -4px 0 0;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
 }
 
 .confidence-badge.confidence-high {
@@ -1189,8 +1266,16 @@ watch(selectedKey, () => {
     flex-direction: column;
   }
 
-  .city-rail {
+  .city-rail-wrap {
     flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .rail-search {
+    width: 100%;
+  }
+
+  .city-rail {
     flex-direction: row;
     max-height: none;
     overflow-x: auto;
