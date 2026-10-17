@@ -21,7 +21,7 @@
               <span class="facility-type-tag">{{ fac.facility_type }}</span>
               <span class="facility-risk" :class="fac.risk_level.toLowerCase()">{{ fac.risk_level }} Risk</span>
             </div>
-            <span class="facility-source" :class="fac.fromOsm ? 'osm' : 'ai'">{{ fac.fromOsm ? $t('impactTab.sourceOsm') : $t('impactTab.sourceAi') }}</span>
+            <span class="facility-source" :class="fac.fromOsm ? 'osm' : (fac.sourceKnown ? 'ai' : 'unknown')">{{ fac.fromOsm ? $t('impactTab.sourceOsm') : (fac.sourceKnown ? $t('impactTab.sourceAi') : $t('impactTab.sourceUnknown')) }}</span>
             <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.3;">{{ fac.facility_name }}</h4>
             <div class="facility-meta">
               <span>📍 {{ $t('impactTab.distance') }} {{ fac.distance ?? '—' }} km {{ $t('impactTab.fromEpicenter') }}</span>
@@ -110,6 +110,8 @@ const facilityRows = computed(() =>
     return {
       ...fac,
       fromOsm: !!osm,
+      // Dossiers from before the OSM tagging have no osm_sources list at all.
+      sourceKnown: Array.isArray(props.deepDossier?.osm_sources),
       // Use the measured OSM distance when we have one.
       distance: osm?.distance_km ?? fac.distance_km ?? null,
     }
@@ -189,6 +191,7 @@ const facilityRows = computed(() =>
   letter-spacing: 0.03em;
 }
 .facility-source.osm { color: #4ade80; background: rgba(74, 222, 128, 0.12); border: 1px solid rgba(74, 222, 128, 0.3); }
+.facility-source.unknown { color: #94a3b8; background: rgba(148,163,184,0.12); border: 1px dashed rgba(148,163,184,0.4); }
 .facility-source.ai { color: #fbbf24; background: rgba(251, 191, 36, 0.12); border: 1px dashed rgba(251, 191, 36, 0.5); }
 .ai-facility-card.ai-suggested { opacity: 0.9; border-style: dashed; }
 

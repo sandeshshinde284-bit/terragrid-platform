@@ -341,6 +341,7 @@
     "primaryCorridor": "Primary Evacuation Corridor",
     "primaryRouteTbd": "Primary Route TBD",
     "designatedPrimary": "Designated Primary Outbound Corridor",
+    "roadUnverified": "Road status unverified: not checked for flooding or blockages",
     "capacity": "CAPACITY",
     "clearance": "CLEARANCE",
     "secondaryRouteTbd": "Secondary Route TBD",
@@ -374,6 +375,7 @@
   "impactTab": {
     "sourceOsm": "OpenStreetMap",
     "sourceAi": "AI-suggested, unverified",
+    "sourceUnknown": "Source not recorded",
     "vulnerabilityMatrix": "Vulnerability Matrix",
     "exposedInfrastructure": "Exposed Critical Infrastructure",
     "distance": "Distance:",

@@ -26,6 +26,7 @@
               <div style="flex: 1;">
                 <strong style="color: #38bdf8; font-size: 16px;">{{ deepDossier.evacuation_corridors.primary_corridor || $t('mapTab.primaryRouteTbd') }}</strong>
                 <small style="display: block; color: #94a3b8; font-size: 14px;">{{ $t('mapTab.designatedPrimary') }}</small>
+                <span class="road-unverified">{{ $t('mapTab.roadUnverified') }}</span>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
                   <div style="background: rgba(52, 211, 153, 0.1); padding: 6px 8px; border-radius: 4px;">
                     <small style="color: #94a3b8; font-size: 12px;">{{ $t('mapTab.capacity') }}</small>
@@ -49,6 +50,7 @@
               <div style="flex: 1;">
                 <strong style="color: #cbd5e1; font-size: 16px;">{{ deepDossier.evacuation_corridors.alternative_route || $t('mapTab.secondaryRouteTbd') }}</strong>
                 <small style="display: block; color: #94a3b8; font-size: 14px;">{{ $t('mapTab.secondaryContingency') }}</small>
+                <span class="road-unverified">{{ $t('mapTab.roadUnverified') }}</span>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
                   <div style="background: rgba(168, 85, 247, 0.1); padding: 6px 8px; border-radius: 4px;">
                     <small style="color: #94a3b8; font-size: 12px;">{{ $t('mapTab.capacity') }}</small>
@@ -232,6 +234,7 @@ function getEvacuationDuration(deepDossier: any): string {
 </script>
 
 <style scoped>
+.road-unverified { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 700; color: #fde68a; background: rgba(251,191,36,0.12); border: 1px dashed rgba(251,191,36,0.5); padding: 2px 8px; border-radius: 4px; }
 .glass-panel {
   background: #0f172a;
   border: 1px solid #1e293b;
