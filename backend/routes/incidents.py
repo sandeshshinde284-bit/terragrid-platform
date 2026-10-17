@@ -112,8 +112,15 @@ def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
     
     Resolution strategy (in order):
     1. If numeric or prefixed format (event_123), extract and query by db.id
-    2. Query by external ID in data JSONB (nasa_id, gdacs_id, id field)
-    3. Fallback scan recent 200 events for any ID match
+    2. Query by external ID in data JSONB (nasa_id, gdacs_id, usgs_id, id field -
+       checked both at the top level of the data column AND one level deeper,
+       under data.data.*, since the NASA EONET / GDACS / USGS source adapters
+       (nasa_eonet.py, gdacs.py, usgs_earthquake.py) each nest their
+       provider-specific fields under their own "data" key inside the event
+       dict that gets stored verbatim as this column - so a NASA EONET event's
+       real id lives at data.data.nasa_id, not data.nasa_id. Checking both
+       keeps this working regardless of which shape a given stored row has.)
+    3. Fallback scan recent 200 events for any ID match (same two levels)
     4. Return None if not found (caller handles 404)
     
     Args:
@@ -145,33 +152,46 @@ def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
             logger.debug(f"[FIND_INCIDENT] Resolved numeric ID {incident_id} to DB id {db_id}")
             return event
     
-    # 2. Query by external ID in JSONB data
+    # 2. Query by external ID in JSONB data - top level AND one level deeper
+    # under data.data.* (see docstring: the source adapters nest their
+    # provider ids there, not at the top of the stored data column).
     try:
         event = db.query(Event).filter(
             (Event.data["id"].astext == clean_id) |
             (Event.data["nasa_id"].astext == clean_id) |
-            (Event.data["gdacs_id"].astext == clean_id)
+            (Event.data["gdacs_id"].astext == clean_id) |
+            (Event.data["usgs_id"].astext == clean_id) |
+            (Event.data["data"]["id"].astext == clean_id) |
+            (Event.data["data"]["nasa_id"].astext == clean_id) |
+            (Event.data["data"]["gdacs_id"].astext == clean_id) |
+            (Event.data["data"]["usgs_id"].astext == clean_id)
         ).first()
         if event:
             logger.debug(f"[FIND_INCIDENT] Found by external JSONB ID: {incident_id}")
             return event
     except Exception as e:
         logger.debug(f"[FIND_INCIDENT] JSONB query failed (expected for non-external IDs): {e}")
-    
+
     # 3. Fallback scan recent events
     for evt in db.query(Event).order_by(desc(Event.id)).limit(200).all():
-        if (str(evt.id) == clean_id or 
-            f"event_{evt.id}" == clean_id or 
+        if (str(evt.id) == clean_id or
+            f"event_{evt.id}" == clean_id or
             f"event-{evt.id}" == clean_id or
             f"inc_{evt.id}" == clean_id or
             f"inc-{evt.id}" == clean_id):
             logger.debug(f"[FIND_INCIDENT] Resolved {incident_id} to DB id {evt.id} by scanning events")
             return evt
-        
+
         data = evt.data or {}
-        if (str(data.get("id")) == clean_id or 
-            str(data.get("nasa_id")) == clean_id or 
-            str(data.get("gdacs_id")) == clean_id):
+        nested = data.get("data") or {}
+        if (str(data.get("id")) == clean_id or
+            str(data.get("nasa_id")) == clean_id or
+            str(data.get("gdacs_id")) == clean_id or
+            str(data.get("usgs_id")) == clean_id or
+            str(nested.get("id")) == clean_id or
+            str(nested.get("nasa_id")) == clean_id or
+            str(nested.get("gdacs_id")) == clean_id or
+            str(nested.get("usgs_id")) == clean_id):
             logger.debug(f"[FIND_INCIDENT] Found by data scan: {incident_id}")
             return evt
     
