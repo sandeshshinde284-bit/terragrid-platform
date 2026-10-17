@@ -20,7 +20,7 @@
       <transition name="fade">
         <div v-if="selectedIncident" class="selected-incident-card glass-panel">
           <div class="selected-head">
-            <strong>{{ selectedIncident.type }}</strong>
+            <strong>{{ selectedIncident.type }} <span class="incident-id">{{ displayIncidentId(selectedIncident.id) }}</span></strong>
             <small>{{ selectedIncident.location }}</small>
           </div>
           <div class="selected-metrics">
@@ -180,6 +180,7 @@
 </template>
 
 <script setup lang="ts">
+import { displayIncidentId } from '@/utils/incidentId'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { ref, reactive, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -1022,6 +1023,19 @@ onUnmounted(() => {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
+
+.incident-id {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.15);
+  vertical-align: middle;
 }
 </style>
 

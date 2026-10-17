@@ -76,7 +76,7 @@
 
       <section class="incident-hero">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="live-dot"></span> {{ $t('detail.incident') }} {{ incident.id.toUpperCase() }}</div>
+          <div class="eyebrow"><span class="live-dot"></span> {{ $t('detail.incident') }} {{ displayIncidentId(incident.id) }}</div>
           <h1>{{ incidentLabel }}</h1>
           <p class="hero-location"><span>⌖</span> {{ incident.location }} · {{ $t('detail.detected') }} {{ formatDate(incident.detectionTime) }}</p>
         </div>
@@ -313,6 +313,7 @@
 </template>
 
 <script setup lang="ts">
+import { displayIncidentId } from '@/utils/incidentId'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -2006,6 +2007,19 @@ body { background: var(--detail-bg) !important; }
   .recon-radar-canvas {
     height: 180px;
   }
+}
+
+.incident-id {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.15);
+  vertical-align: middle;
 }
 </style>
 

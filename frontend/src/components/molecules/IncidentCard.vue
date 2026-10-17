@@ -9,6 +9,7 @@
       <div class="header-top">
         <span class="icon">{{ iconMap[incident.type] }}</span>
         <h3>{{ incident.type.toUpperCase() }}</h3>
+        <span class="incident-id">{{ displayIncidentId(incident.id) }}</span>
       </div>
       <div class="header-bottom">
         <p class="location">{{ formatLocation(incident.location) }}</p>
@@ -42,6 +43,7 @@
 </template>
 
 <script setup lang="ts">
+import { displayIncidentId } from '@/utils/incidentId'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, defineProps, defineEmits } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -543,5 +545,18 @@ const selectIncident = () => {
     width: 100%;
     margin-top: auto;
   }
+}
+
+.incident-id {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.15);
+  vertical-align: middle;
 }
 </style>

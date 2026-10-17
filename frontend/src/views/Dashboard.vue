@@ -100,7 +100,7 @@
           <div class="detail-header">
             <div class="header-top">
               <span class="incident-type-icon">{{ getIncidentIcon(selectedIncidentData.type) }}</span>
-              <h3>{{ formatIncidentType(selectedIncidentData.type) }}</h3>
+              <h3>{{ formatIncidentType(selectedIncidentData.type) }} <span class="incident-id">{{ displayIncidentId(selectedIncidentData.id) }}</span></h3>
             </div>
             <button class="close-btn" @click="closeDetail">✕</button>
           </div>
@@ -196,7 +196,7 @@
           <div class="detail-header">
             <div class="header-top">
               <span class="incident-type-icon">{{ getIncidentIcon(selectedIncidentData.type) }}</span>
-              <h3>{{ formatIncidentType(selectedIncidentData.type) }}</h3>
+              <h3>{{ formatIncidentType(selectedIncidentData.type) }} <span class="incident-id">{{ displayIncidentId(selectedIncidentData.id) }}</span></h3>
             </div>
             <button class="close-btn" @click="closeDetail">✕</button>
           </div>
@@ -385,6 +385,7 @@
 </template>
 
 <script setup lang="ts">
+import { displayIncidentId } from '@/utils/incidentId'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -3920,5 +3921,18 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 .factor-row strong {
   color: #38bdf8;
   font-family: monospace;
+}
+
+.incident-id {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.15);
+  vertical-align: middle;
 }
 </style>

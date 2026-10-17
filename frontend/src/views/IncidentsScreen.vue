@@ -108,6 +108,7 @@
               <td class="type-cell">
                 <span class="type-icon">{{ getIcon(incident.type, incident.location) }}</span>
                 <span class="type-name">{{ formatType(incident.type, incident.location) }}</span>
+                <span class="incident-id">{{ displayIncidentId(incident.id) }}</span>
               </td>
               <td class="location-cell">
                 <span class="location-text">{{ cleanLocation(incident.location) }}</span>
@@ -144,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+import { displayIncidentId } from '@/utils/incidentId'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
@@ -1690,4 +1692,17 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.3);
 }
 
+
+.incident-id {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.15);
+  vertical-align: middle;
+}
 </style>
