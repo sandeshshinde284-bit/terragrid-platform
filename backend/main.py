@@ -116,6 +116,8 @@ load_dotenv(root_dir / ".env")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Modern FastAPI lifespan manager for startup and shutdown events"""
+    polling_service = None
+    
     try:
         from .services.polling import get_polling_service
         from .services.data_ingestion import DataIngestionService
@@ -123,22 +125,29 @@ async def lifespan(app: FastAPI):
         from backend.services.polling import get_polling_service
         from backend.services.data_ingestion import DataIngestionService
     
-    # --- Startup Logic ---
-    try:
-        polling_service = get_polling_service()
-        data_ingestion = DataIngestionService()
-        if polling_service.start(data_ingestion):
-            print("[OK] (Background Polling) initialized successfully")
-        else:
-            print("[WARN] Failed to start background polling")
-    except Exception as e:
-        print(f"[ERROR] Error during startup: {str(e)}")
+    async def start_background_services():
+        try:
+            import asyncio
+            await asyncio.sleep(2)  # Give Cloud Run time to confirm app is healthy
+            nonlocal polling_service
+            polling_service = get_polling_service()
+            data_ingestion = DataIngestionService()
+            if polling_service.start(data_ingestion):
+                print("[OK] (Background Polling) initialized successfully")
+            else:
+                print("[WARN] Failed to start background polling")
+        except Exception as e:
+            print(f"[ERROR] Error during background service startup: {str(e)}")
+    
+    # Schedule background startup but don't wait for it
+    import asyncio
+    asyncio.create_task(start_background_services())
         
     yield # App runs here
     
     # --- Shutdown Logic ---
     try:
-        if polling_service.is_running:
+        if polling_service and polling_service.is_running:
             polling_service.stop()
             print("[OK] Background polling stopped")
     except Exception as e:
