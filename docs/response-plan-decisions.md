@@ -62,6 +62,17 @@ Tested:
 - Over HTTP on a real event with no saved report: the endpoint returns the empty state.
 - Not tested: a real Gemini report, because none exists in this environment.
 
+## Step 3: done
+
+In `ResponsePlanPanel.vue`:
+- The panel opens on an overview: counts (total, approved, rejected, pending) and one button that matches the plan state. No report: no button, only the message. Nothing decided: "Create Response Plan". Decisions made but none approved: "Continue Response Plan". Any approved: "Manage Response Plan".
+- Create opens the selection: checkboxes, Select all, Clear selection, a count, and each action's AI priority and category (or "not in report"). All actions start selected.
+- Continue opens review for the selected actions plus any already decided. Resuming a plan reviews the pending actions.
+- Selection is screen state only. The screen says it is not saved, and a refresh clears it.
+- The existing approve and reject controls are unchanged.
+
+Tested in the browser with mocked plan responses (test data only, not saved): no report, fresh report, and one approved. All checks pass. Not yet checked by eye at tablet width.
+
 ## Next
 
-- Step 3: Create Response Plan screen (selection only, nothing saved). Frontend work.
+- Step 4: Review & Approve Actions. Refine decisions, add the duplicate-decision 409 handling, and show the report version per decision.
