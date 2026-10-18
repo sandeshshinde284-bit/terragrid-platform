@@ -4,6 +4,7 @@ from .event import Event
 from .analysis import Analysis
 from .alert import Alert
 from .geocoding import GeocodingCache
+from .embedding_cache import EmbeddingCache
 from .lineage import RawEvent, ValidationLog, EnrichmentLog, LineageChain
 from .recipient import AlertRecipient
 from .response import IncidentResponseLog, ResponseTask, ResponseAlert, IncidentReport, ResponsePlanDecision
