@@ -388,7 +388,7 @@
 
 <script setup lang="ts">
 import { displayIncidentId } from '@/utils/incidentId'
-import { readSession, writeSession, readCachedPlan, writeCachedPlan } from '@/utils/sessionState'
+import { readSession, writeSession } from '@/utils/sessionState'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -444,50 +444,30 @@ const loadingPhaseIndex = ref(0)
 const currentLoadingPhaseText = computed(() => loadingPhases[loadingPhaseIndex.value] || loadingPhases[0])
 let loadingInterval: any = null
 
-// Watch for incident selection to fetch Gemini AI Response Plan
+// When an incident is selected, show its saved crisis report (the latest version).
+// Selecting never calls Gemini: generating a report is an explicit action on the incident page.
 watch(
   () => appStore.selectedIncident,
   async (newId) => {
-    if (!newId) {
-      aiPlan.value = null
-      return
-    }
-
-    // Reuse the plan already shown in this tab, so a reload does not change the analysis.
-    const cached = readCachedPlan(newId)
-    if (cached) {
-      aiPlan.value = cached
-      isLoadingInsights.value = false
-      return
-    }
-
+    aiPlan.value = null
+    if (!newId) return
     try {
       isLoadingInsights.value = true
-      aiPlan.value = null
-      loadingPhaseIndex.value = 0
-      
-      if (loadingInterval) clearInterval(loadingInterval)
-      loadingInterval = setInterval(() => {
-        loadingPhaseIndex.value = (loadingPhaseIndex.value + 1) % loadingPhases.length
-      }, 850)
-      
-    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
-        
-      const response = await fetch(`${host}/api/v1/incidents/${newId}/insights`)
+      const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+      const response = await fetch(`${host}/api/v1/incidents/${newId}/deep-dossier`)
       if (response.ok) {
         const data = await response.json()
-        aiPlan.value = data.plan
-        // Fallback plans mean Gemini was unavailable. Do not freeze that result for the tab.
-        if (data.plan && !data.plan.is_fallback) writeCachedPlan(newId, data.plan)
+        if (data.dossier) {
+          aiPlan.value = { ...data.dossier, report_version: data.version ?? null, generated_at: data.generated_at ?? null }
+        }
       }
     } catch (err) {
-      logWarn('Could not fetch the AI insights plan', err)
+      logWarn('Could not load the saved crisis report', err)
     } finally {
-      if (loadingInterval) clearInterval(loadingInterval)
       isLoadingInsights.value = false
     }
-  }
-, { immediate: true }
+  },
+  { immediate: true }
 )
 
 // Stats for dashboard

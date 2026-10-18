@@ -229,20 +229,26 @@
                 </div>
               </article>
               <article class="glass-panel action-panel">
-                <div class="panel-heading"><div><span class="section-kicker">DECISION SUPPORT</span><h2>Recommended actions</h2></div><span class="ai-chip">AI PRIORITIZED</span></div>
+                <div class="panel-heading"><div><span class="section-kicker">DECISION SUPPORT</span><h2>AI recommendations</h2></div><span class="ai-chip">NEEDS OFFICER APPROVAL</span></div>
                 <div v-if="aiLoading" class="loading-state">
                   <span class="loading-spinner"></span>
-                  <p>Loading AI recommendations...</p>
+                  <p>Generating the crisis report...</p>
                 </div>
                 <div v-else-if="aiError" class="error-state">
                   <span class="error-icon">⚠</span>
                   <p>{{ aiError }}</p>
                 </div>
-                <ol v-else class="action-list">
-                  <li v-for="(action, index) in aiInsights" :key="action.id">
-                    <span class="action-number">0{{ Number(index) + 1 }}</span><div><strong>{{ action.action }}</strong><p>{{ action.reason || action.details || '' }}</p></div><span class="priority" :class="`priority-${action.severity}`">{{ action.severity }}</span>
-                  </li>
-                </ol>
+                <p v-else-if="!deepDossier" class="long-copy">No crisis report yet. Generate the report above to see AI recommendations.</p>
+                <template v-else>
+                  <p class="long-copy" style="font-size: 14px; margin-bottom: 10px;">
+                    From AI report v{{ deepDossier.version ?? 'latest' }}{{ deepDossier.generated_at ? ', ' + new Date(deepDossier.generated_at).toLocaleString() : '' }}. These are proposals. Nothing is authorized until an officer approves it in the Response tab.
+                  </p>
+                  <ol class="action-list">
+                    <li v-for="(action, index) in aiInsights" :key="action.id">
+                      <span class="action-number">0{{ Number(index) + 1 }}</span><div><strong>{{ action.action }}</strong></div>
+                    </li>
+                  </ol>
+                </template>
               </article>
             </div>
           </div>
@@ -333,20 +339,10 @@ import TabAiInsights from '@/components/molecules/TabAiInsights.vue'
 import TabAlerts from '@/components/molecules/TabAlerts.vue'
 
 // AI Insights data structure
-interface ResponsePlan {
-  immediate_actions: string[]
-  resource_allocation: Record<string, unknown>
-  evacuation_guidance: string
-  severity_assessment: string
-  country_context: string
-}
 
 interface AIInsight {
   id: string
   action: string
-  estimatedAffected?: number
-  timeUrgent: boolean
-  severity: 'urgent' | 'high' | 'medium' | 'low'
 }
 
 type TabId = 'overview' | 'impact' | 'map' | 'response' | 'history' | 'source' | 'ai' | 'alerts'
@@ -371,14 +367,16 @@ const activeTab = ref<TabId>('overview')
 const incidentId = computed(() => String(route.params.id || ''))
 const incident = computed<IncidentLevel1 | undefined>(() => eventsStore.allIncidents.find(item => item.id === incidentId.value))
 
-// AI Insights state
-const aiPlan = ref<ResponsePlan | null>(null)
-const aiInsights = ref<AIInsight[]>([])
-const aiLoading = ref(false)
+// AI state. The saved crisis report is the single source of recommendations.
+// There is no separate plan request, so the overview, AI tab, and export always agree.
 const aiError = ref<string | null>(null)
 
 // Tier 2 Deep Tactical AI Dossier State
 interface DeepDossier {
+  version?: number | null
+  generated_at?: string
+  immediate_actions?: string[]
+  severity_assessment?: string
   situational_assessment: string
   threat_level: string
   predictive_cascade: {
@@ -417,6 +415,13 @@ interface DeepDossier {
 
 const deepDossier = ref<DeepDossier | null>(null)
 const isAnalyzingDossier = ref(false)
+
+// Everything that shows recommendations reads from the saved report.
+const aiPlan = computed<DeepDossier | null>(() => deepDossier.value)
+const aiLoading = computed(() => isAnalyzingDossier.value)
+const aiInsights = computed<AIInsight[]>(() =>
+  (deepDossier.value?.immediate_actions || []).map((action, idx) => ({ id: `ai-action-${idx}`, action }))
+)
 const scannerActive = ref(false)
 const currentStepIndex = ref(0)
 const analysisSteps = [
@@ -445,8 +450,12 @@ async function launchDeepAnalysis() {
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
-    if (data.dossier) {
-      deepDossier.value = data.dossier
+    if (data.status === 'fallback') {
+      // AI is offline: nothing was saved. Keep the last saved report on screen.
+      aiError.value = 'AI analysis is unavailable right now. The last saved report is still shown.'
+    } else if (data.dossier) {
+      aiError.value = null
+      deepDossier.value = { ...data.dossier, version: data.version ?? null, generated_at: new Date().toISOString() }
     }
   } catch (err) {
     logError('Could not generate the deep AI dossier for this incident', err)
@@ -468,7 +477,7 @@ async function checkExistingDossier() {
     if (res.ok) {
       const data = await res.json()
       if (data.dossier) {
-        deepDossier.value = data.dossier
+        deepDossier.value = { ...data.dossier, version: data.version ?? null, generated_at: data.generated_at }
       }
     }
   } catch (e) {
@@ -586,7 +595,7 @@ async function exportSitRepZip() {
       '-----------------------------------------------------------------',
       'AI-RECOMMENDED DIRECTIVES (NOT AUTHORIZED UNTIL APPROVED BY AN OFFICER):',
       ...(aiInsights.value && aiInsights.value.length
-        ? aiInsights.value.map((a: any, idx: number) => `[DIRECTIVE 0${idx + 1}] Priority: ${a.severity?.toUpperCase() || 'HIGH'}\nAction: ${a.action}\n`)
+        ? aiInsights.value.map((a: any, idx: number) => `[RECOMMENDATION 0${idx + 1}] Status: AI proposal, NOT AUTHORIZED UNTIL APPROVED BY AN OFFICER\nAction: ${a.action}\n`)
         : ['[DIRECTIVE 01] Maintain active perimeter surveillance and deploy local emergency responders.\n']),
       '-----------------------------------------------------------------',
       `SECTOR JURISDICTION CONTEXT:\n${aiPlan.value?.country_context || 'FEMA / UN-OCHA Operational Standard Protocol'}`,
@@ -726,39 +735,6 @@ async function exportSitRepZip() {
   }
 }
 
-async function fetchAIInsights() {
-  if (!incidentId.value) return
-  aiLoading.value = true
-  aiError.value = null
-  try {
-    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
-    const mockParam = appStore.isBackendMockModeEnabled ? '?use_mock=true' : ''
-    const response = await fetch(`${host}/api/v1/incidents/${incidentId.value}/insights${mockParam}`)
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const data = await response.json()
-    if (data.plan) {
-      aiPlan.value = data.plan
-      // Transform backend plan to frontend insights
-      aiInsights.value = (data.plan.immediate_actions || []).map((action: string, idx: number) => ({
-        id: `ai-action-${idx}`,
-        eventId: incidentId.value ,
-        severity: idx === 0 ? 'critical' : 'secondary',
-        action: action,
-        reason: 'AI-generated tactical directive based on current environmental telemetry.',
-        confidence: data.plan.confidence_score || 0.85,
-        estimatedAffected: data.plan.estimated_affected || 0,
-        timeUrgent: idx === 0 ? 'Immediate' : 'Monitor',
-        details: ''
-      }))
-    }
-  } catch (err) {
-    aiError.value = err instanceof Error ? err.message : 'Failed to load AI insights'
-    logError(`AI Insights tab error for this incident: ${aiError.value}`)
-  } finally {
-    aiLoading.value = false
-  }
-}
-
 onMounted(async () => {
   if (eventsStore.allIncidents.length === 0) {
     try {
@@ -810,7 +786,6 @@ onMounted(async () => {
   }
 
   if (incidentId.value) {
-    fetchAIInsights()
     checkExistingDossier()
   }
 

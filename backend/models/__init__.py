@@ -6,7 +6,7 @@ from .alert import Alert
 from .geocoding import GeocodingCache
 from .lineage import RawEvent, ValidationLog, EnrichmentLog, LineageChain
 from .recipient import AlertRecipient
-from .response import IncidentResponseLog, ResponseTask, ResponseAlert
+from .response import IncidentResponseLog, ResponseTask, ResponseAlert, IncidentReport, ResponsePlanDecision
 
 __all__ = [
     "BaseModel",
@@ -22,4 +22,6 @@ __all__ = [
     "IncidentResponseLog",
     "ResponseTask",
     "ResponseAlert",
+    "IncidentReport",
+    "ResponsePlanDecision",
 ]

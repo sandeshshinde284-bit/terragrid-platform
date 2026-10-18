@@ -127,8 +127,9 @@
               <td class="time-cell" v-html="formatDateMultiLine(incident.detectionTime)"></td>
               <td class="action-cell">
                 <div class="action-badge-new">
-                  <span class="action-title">{{ getRecommendedActionTitle(incident) }}</span>
-                  <span class="action-subtitle">{{ getRecommendedActionSubtitle(incident) }}</span>
+                  <span class="action-title">{{ nextStepFor(incident).title }}</span>
+                  <span class="action-subtitle">{{ nextStepFor(incident).basis }}</span>
+                  <span v-if="incident.responseSummary?.top_action" class="action-ai" :title="'AI report v' + incident.responseSummary.report_version">AI proposal (report v{{ incident.responseSummary.report_version }}): {{ incident.responseSummary.top_action }}</span>
                 </div>
               </td>
               <td class="view-cell">
@@ -149,6 +150,7 @@
 </template>
 
 <script setup lang="ts">
+import { ruleBasedNextStep } from '@/utils/nextStep'
 import { displayIncidentId } from '@/utils/incidentId'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, ref, onMounted, watch, nextTick } from 'vue'
@@ -437,25 +439,6 @@ const getTrendDirection = (trend: number): string => {
   return trend > 12 ? 'accelerating' : trend > 5 ? 'stable' : 'decelerating'
 }
 
-const getRecommendedAction = (incident: IncidentLevel1): string => {
-  const threat = incident.threatScore
-  // No invented score: without a real risk score there is no basis for a tier.
-  if (threat === null || threat === undefined) return '⏳ AWAITING RISK SCORE'
-  const pop = incident.affectedPopulation
-  const popClause = pop !== null ? ` (${(pop / 1000).toFixed(0)}K at risk)` : ''
-
-  if (threat >= 80) {
-    return `🚨 MANDATORY EVACUATION${popClause}`
-  } else if (threat >= 65) {
-    return `⚠️ PREPARE SHELTERS & DEPLOY FIRST RESPONDERS`
-  } else if (threat >= 50) {
-    return `🛡️ ACTIVATE PERIMETER MONITORING`
-  } else {
-    return `📡 SENSOR SURVEILLANCE ACTIVE`
-  }
-}
-
-
 const formatArea = (area) => {
   if (area == null) return DASH;
   return '~' + Math.round(area) + ' km²';
@@ -481,20 +464,7 @@ const formatDateMultiLine = (date) => {
   return `<span title="Coordinated Universal Time" style="white-space: nowrap;">${d} ${m} &middot; ${t} <small style="color: #94a3b8; font-size: 11px;">UTC</small></span>`;
 };
 
-const getRecommendedActionTitle = (incident) => {
-  const threat = incident.threatScore;
-  const t = (incident.type || '').toLowerCase();
-  
-  if (threat == null) return 'Awaiting assessment';
-  if (threat >= 84) return 'Assess evacuation needs';
-  if (t.includes('wind')) return 'Verify wind impact';
-  if (t.includes('flood')) return 'Assess shelter readiness';
-  return 'Review response readiness';
-};
-
-const getRecommendedActionSubtitle = (incident) => {
-  return 'Review required';
-};
+const nextStepFor = (incident) => ruleBasedNextStep(incident)
 
 const viewIncident = (id: string) => {
   router.push(`/incident/${id}`)
@@ -616,6 +586,7 @@ onMounted(async () => {
             ...impactMetricsFrom(e),
             detectionTime: new Date(e.event_timestamp || Date.now()),
             coordinates: [e.latitude, e.longitude] as [number, number],
+            responseSummary: e.response_summary ?? null,
           })))
         }
       }

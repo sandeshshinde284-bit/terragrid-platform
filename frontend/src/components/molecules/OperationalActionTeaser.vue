@@ -73,7 +73,7 @@
     <!-- Empty State -->
     <div v-else class="teaser-empty">
       <span class="empty-icon">📋</span>
-      <span class="empty-text">No AI analysis yet</span>
+      <span class="empty-text">No AI report yet. Generate it on the incident page.</span>
     </div>
   </div>
 </template>
@@ -110,7 +110,7 @@ const allActions = computed(() => {
   const basis: string[] = props.aiPlan?.immediate_action_evidence || []
   return actions.map((text, i) => ({
     text,
-    basis: basis[i] && !/no supporting input/i.test(basis[i]) ? basis[i] : 'not cited by the model. Check before acting.',
+    basis: basis[i] && !/no supporting input/i.test(basis[i]) ? basis[i] : 'No per-action evidence in this report. Check before acting.',
   }))
 })
 // Short summary for the panel; the full reasoning sits behind "Show full reasoning".

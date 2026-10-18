@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models.response import IncidentResponseLog, ResponseTask, ResponseAlert
+from backend.models.response import IncidentResponseLog, ResponseTask, ResponseAlert, IncidentReport, ResponsePlanDecision
 from backend.routes.incidents import find_incident_by_id
 from backend.services.notifications import notification_service
 
@@ -306,5 +306,122 @@ def reject_alert(incident_id: str, alert_id: int, body: AlertDecisionBody, db: S
     alert.status = "rejected"
     alert.decided_by = body.actor
     _log(db, event.id, "alert_rejected", body.actor, {"alert_id": alert.id, "reason": body.reason})
+    db.commit()
+    return _serialize_state(db, event.id)
+
+
+# ---------------------------------------------------------------------------
+# Response plan: operator decisions on the latest crisis report's
+# recommendations. Approving creates a ResponseTask that remembers which
+# report version and action it came from. Reports are never edited here.
+# ---------------------------------------------------------------------------
+
+class PlanDecisionBody(ActorBody):
+    report_id: int
+    action_index: int = Field(ge=0)
+    decision: str  # approve | reject
+    assignee: Optional[str] = Field(default=None, max_length=120)
+    priority: str = Field(default="medium")
+    due_at: Optional[datetime] = None
+    reason: Optional[str] = Field(default=None, max_length=500)
+
+
+@router.get("/{incident_id}/response/plan")
+def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
+    """The latest report's recommendations, with each one's decision so far."""
+    from backend.services.report_versions import latest_report, report_payload
+    event = _event_or_404(incident_id, db)
+    report = latest_report(db, event.id)
+    if not report:
+        return {"report": None, "actions": [], "message": "Generate a crisis report first. Its recommendations appear here."}
+
+    decisions = {
+        d.action_index: d for d in
+        db.query(ResponsePlanDecision).filter(ResponsePlanDecision.report_id == report.id).all()
+    }
+    dossier = report_payload(report)
+    actions = []
+    for i, text in enumerate(dossier.get("immediate_actions") or []):
+        d = decisions.get(i)
+        actions.append({
+            "index": i,
+            "text": text,
+            "decision": d.decision if d else None,
+            "decided_by": d.decided_by if d else None,
+            "task_id": d.task_id if d else None,
+            "reason": d.reason if d else None,
+        })
+    return {
+        "report": {
+            "id": report.id,
+            "version": report.version,
+            "generated_at": report.created_at.isoformat() + "Z",
+            "model": report.model_name,
+            "is_ai_generated": True,
+        },
+        "actions": actions,
+        "note": "AI recommendations. Each needs an officer's approval before it becomes a task.",
+    }
+
+
+@router.post("/{incident_id}/response/plan/decide")
+def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = Depends(get_db)):
+    from backend.services.report_versions import latest_report, report_payload
+    event = _event_or_404(incident_id, db)
+    if body.decision not in {"approve", "reject"}:
+        raise HTTPException(status_code=400, detail="decision must be approve or reject")
+    if body.priority not in PRIORITIES:
+        raise HTTPException(status_code=400, detail="Unknown priority")
+
+    report = db.query(IncidentReport).filter(IncidentReport.id == body.report_id, IncidentReport.event_id == event.id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    latest = latest_report(db, event.id)
+    if latest is None or latest.id != report.id:
+        raise HTTPException(status_code=409, detail="This report has been superseded. Review the latest report's recommendations.")
+
+    actions = report_payload(report).get("immediate_actions") or []
+    if body.action_index >= len(actions):
+        raise HTTPException(status_code=400, detail="No recommendation at that index")
+    text = actions[body.action_index]
+
+    if db.query(ResponsePlanDecision).filter(
+        ResponsePlanDecision.report_id == report.id, ResponsePlanDecision.action_index == body.action_index
+    ).first():
+        raise HTTPException(status_code=409, detail="This recommendation already has a decision")
+
+    task_id = None
+    if body.decision == "approve":
+        if not body.assignee:
+            raise HTTPException(status_code=400, detail="An assignee is required to approve")
+        task = ResponseTask(
+            event_id=event.id,
+            title=text[:250] + ("…" if len(text) > 250 else ""),
+            assignee=body.assignee,
+            status="open",
+            priority=body.priority,
+            due_at=_to_utc_naive(body.due_at),
+            note=f"From AI report v{report.version}, recommendation {body.action_index + 1}. Full text: {text}",
+            created_by=body.actor,
+        )
+        db.add(task)
+        db.flush()
+        task_id = task.id
+
+    db.add(ResponsePlanDecision(
+        event_id=event.id,
+        report_id=report.id,
+        action_index=body.action_index,
+        action_text=text,
+        decision="approved" if body.decision == "approve" else "rejected",
+        task_id=task_id,
+        decided_by=body.actor,
+        reason=body.reason,
+    ))
+    _log(db, event.id, "plan_" + ("approved" if body.decision == "approve" else "rejected"), body.actor, {
+        "report_version": report.version,
+        "action_index": body.action_index,
+        "task_id": task_id,
+    })
     db.commit()
     return _serialize_state(db, event.id)
