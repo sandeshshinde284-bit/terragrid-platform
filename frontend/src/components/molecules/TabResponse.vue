@@ -17,69 +17,85 @@
 
     <div v-if="deepDossier" class="deep-ai-tab-container">
       
-      <!-- Tactical Briefing -->
-      <article class="glass-panel" style="padding: 16px; margin-bottom: 20px; border-left: 4px solid var(--detail-accent);">
-        <p style="margin: 0; font-size: 18px; color: var(--text-primary); line-height: 1.6;">
-          <strong style="color: var(--detail-accent); font-family: ui-monospace, monospace; margin-right: 8px;">{{ $t('responseTab.tacticalBriefing') }}</strong>
-          {{ deepDossier.severity_assessment || $t('responseTab.situationalPending') }}
-        </p>
-      </article>
-
-      <!-- PHASED RESPONSE TIMELINE -->
-      <article class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
-        <div class="panel-heading">
-          <div><span class="section-kicker">{{ $t('responseTab.operationalPhases') }}</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">{{ $t('responseTab.responseTimeline') }}</h3></div>
-        </div>
-
-        <!-- IMMEDIATE PHASE -->
-        <div class="phase-block immediate" style="margin-bottom: 16px;">
-          <div class="phase-badge immediate">{{ $t('responseTab.immediatePhase') }}</div>
-          <div class="phase-actions">
-            <div v-if="deepDossier.immediate_actions && deepDossier.immediate_actions.length > 0">
-              <div v-for="(action, idx) in deepDossier.immediate_actions" :key="`imm-${idx}`" class="action-item">
-                <span class="action-priority">P1</span>
-                <span class="action-text">{{ action }}</span>
-                <span class="action-deadline">{{ $t('responseTab.startNow') }}</span>
-              </div>
-            </div>
-            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 16px;">{{ $t('responseTab.noImmediate') }}</div>
+      <!-- Tactical Briefing - Redesigned Card -->
+      <div class="glass-panel-new" style="padding: 24px; margin-bottom: 20px; border-left: 4px solid var(--detail-accent);">
+        <div style="display: flex; align-items: flex-start; gap: 16px;">
+          <div style="font-size: 32px; flex-shrink: 0;">⚠️</div>
+          <div>
+            <h3 style="margin: 0 0 8px 0; color: var(--text-primary); font-size: 16px;">{{ $t('responseTab.tacticalBriefing') }}</h3>
+            <p style="margin: 0; font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+              {{ deepDossier.severity_assessment || $t('responseTab.situationalPending') }}
+            </p>
           </div>
         </div>
+      </div>
 
-        <!-- URGENT PHASE -->
-        <div class="phase-block urgent" style="margin-bottom: 16px;">
-          <div class="phase-badge urgent">{{ $t('responseTab.urgentPhase') }}</div>
-          <div class="phase-actions">
-            <div v-if="deepDossier.high_priority_actions && deepDossier.high_priority_actions.length > 0">
-              <div v-for="(action, idx) in deepDossier.high_priority_actions" :key="`urg-${idx}`" class="action-item">
-                <span class="action-priority">P2</span>
-                <span class="action-text">{{ action }}</span>
-                <span class="action-deadline">{{ $t('responseTab.completeBy') }}</span>
-              </div>
-            </div>
-            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 16px;">{{ $t('responseTab.noUrgent') }}</div>
-          </div>
+      <!-- PHASED RESPONSE TIMELINE - Redesigned -->
+      <div class="glass-panel-new" style="padding: 24px; margin-bottom: 20px;">
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 16px; font-weight: 700;">{{ $t('responseTab.operationalPhases') }}</h3>
+          <p style="margin: 0; color: var(--text-secondary); font-size: 13px;">{{ $t('responseTab.responseTimeline') }}</p>
         </div>
 
-        <!-- SUSTAINED PHASE -->
-        <div class="phase-block sustained">
-          <div class="phase-badge sustained">{{ $t('responseTab.sustainedPhase') }}</div>
-          <div class="phase-actions">
-            <div v-if="deepDossier.medium_priority_actions && deepDossier.medium_priority_actions.length > 0">
-              <div v-for="(action, idx) in deepDossier.medium_priority_actions" :key="`sus-${idx}`" class="action-item">
-                <span class="action-priority">P3</span>
-                <span class="action-text">{{ action }}</span>
-                <span class="action-deadline">{{ $t('responseTab.ongoing') }}</span>
+        <!-- Phases Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+          <!-- IMMEDIATE PHASE -->
+          <div class="phase-card" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center; color: #f87171; font-weight: 700; font-size: 14px;">1</div>
+              <div>
+                <h4 style="margin: 0; color: #f87171; font-size: 13px; font-weight: 700; text-transform: uppercase;">{{ $t('responseTab.immediatePhase') }}</h4>
+                <p style="margin: 0; color: var(--text-secondary); font-size: 11px;">{{ $t('responseTab.startNow') }}</p>
               </div>
             </div>
-            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 16px;">{{ $t('responseTab.noSustained') }}</div>
+            <div v-if="deepDossier.immediate_actions && deepDossier.immediate_actions.length > 0" style="display: flex; flex-direction: column; gap: 8px;">
+              <div v-for="(action, idx) in deepDossier.immediate_actions" :key="`imm-${idx}`" style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; color: var(--text-primary); font-size: 12px; line-height: 1.4;">
+                {{ action }}
+              </div>
+            </div>
+            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 12px;">{{ $t('responseTab.noImmediate') }}</div>
+          </div>
+
+          <!-- URGENT PHASE -->
+          <div class="phase-card" style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); border-radius: 8px; padding: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(249, 115, 22, 0.2); display: flex; align-items: center; justify-content: center; color: #fb923c; font-weight: 700; font-size: 14px;">2</div>
+              <div>
+                <h4 style="margin: 0; color: #fb923c; font-size: 13px; font-weight: 700; text-transform: uppercase;">{{ $t('responseTab.urgentPhase') }}</h4>
+                <p style="margin: 0; color: var(--text-secondary); font-size: 11px;">{{ $t('responseTab.completeBy') }}</p>
+              </div>
+            </div>
+            <div v-if="deepDossier.high_priority_actions && deepDossier.high_priority_actions.length > 0" style="display: flex; flex-direction: column; gap: 8px;">
+              <div v-for="(action, idx) in deepDossier.high_priority_actions" :key="`urg-${idx}`" style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; color: var(--text-primary); font-size: 12px; line-height: 1.4;">
+                {{ action }}
+              </div>
+            </div>
+            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 12px;">{{ $t('responseTab.noUrgent') }}</div>
+          </div>
+
+          <!-- SUSTAINED PHASE -->
+          <div class="phase-card" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; color: #fbbf24; font-weight: 700; font-size: 14px;">3</div>
+              <div>
+                <h4 style="margin: 0; color: #fbbf24; font-size: 13px; font-weight: 700; text-transform: uppercase;">{{ $t('responseTab.sustainedPhase') }}</h4>
+                <p style="margin: 0; color: var(--text-secondary); font-size: 11px;">{{ $t('responseTab.ongoing') }}</p>
+              </div>
+            </div>
+            <div v-if="deepDossier.medium_priority_actions && deepDossier.medium_priority_actions.length > 0" style="display: flex; flex-direction: column; gap: 8px;">
+              <div v-for="(action, idx) in deepDossier.medium_priority_actions" :key="`sus-${idx}`" style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; color: var(--text-primary); font-size: 12px; line-height: 1.4;">
+                {{ action }}
+              </div>
+            </div>
+            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 12px;">{{ $t('responseTab.noSustained') }}</div>
           </div>
         </div>
-      </article>
+      </div>
 
-      <article class="glass-panel" style="padding: 20px;">
-        <div class="panel-heading">
-          <div><span class="section-kicker">{{ $t('responseTab.assetDeployment') }}</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">{{ $t('responseTab.operationalLogistics') }}</h3></div>
+      <div class="glass-panel-new" style="padding: 24px;">
+        <div style="margin-bottom: 20px;">
+          <h3 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 16px; font-weight: 700;">{{ $t('responseTab.assetDeployment') }}</h3>
+          <p style="margin: 0; color: var(--text-secondary); font-size: 13px;">{{ $t('responseTab.operationalLogistics') }}</p>
         </div>
         <div class="resource-matrix-table-wrapper" style="overflow-x: auto;">
           <table class="ai-resource-table" style="width: 100%; border-collapse: collapse;">
@@ -109,7 +125,7 @@
             </tbody>
           </table>
         </div>
-      </article>
+      </div>
     </div>
 
     <div v-else-if="isAnalyzingDossier" class="deep-ai-tab-container">
