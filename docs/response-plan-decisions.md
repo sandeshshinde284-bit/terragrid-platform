@@ -38,6 +38,15 @@ Change this file if a decision changes; the code follows it.
 - Step 4 must handle the concurrent duplicate-decision case (409, not 500).
 - Step 7 (activity log) is no longer optional: approve, reject and task updates are already logged, so it is verification only.
 
+## Step 1: done
+
+- Added `ai_priority`, `ai_category` and `officer_priority` to `response_plan_decisions`.
+- Migration `005_decision_snapshot` adds them. It is written to work with the startup `create_all` path, which builds these tables outside the migrations. Tested: upgrade, downgrade and upgrade again on the local database.
+- The decide endpoint copies the AI values from the saved report by index. The client cannot set them.
+- `officer_priority` is set only for approvals.
+- `decided_at` was not added. `created_at` already records when the decision was saved, so a second timestamp would duplicate it.
+- Not yet tested: a real approval through the endpoint. That needs a saved Gemini report, and none exists in this environment.
+
 ## Next
 
-- Step 1: add `ai_priority`, `ai_category`, `officer_priority` and `decided_at` to `response_plan_decisions` (Alembic migration). Waiting for go-ahead.
+- Step 2: extend `GET /response/plan` to return the AI values, decisions, linked tasks and counts.

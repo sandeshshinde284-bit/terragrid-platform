@@ -385,10 +385,16 @@ def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = D
     if latest is None or latest.id != report.id:
         raise HTTPException(status_code=409, detail="This report has been superseded. Review the latest report's recommendations.")
 
-    actions = report_payload(report).get("immediate_actions") or []
+    payload = report_payload(report)
+    actions = payload.get("immediate_actions") or []
     if body.action_index >= len(actions):
         raise HTTPException(status_code=400, detail="No recommendation at that index")
     text = actions[body.action_index]
+    # AI values are copied from the saved report, never from the client.
+    priorities = payload.get("immediate_action_priority") or []
+    categories = payload.get("immediate_action_category") or []
+    ai_priority = priorities[body.action_index] if body.action_index < len(priorities) else None
+    ai_category = categories[body.action_index] if body.action_index < len(categories) else None
 
     if db.query(ResponsePlanDecision).filter(
         ResponsePlanDecision.report_id == report.id, ResponsePlanDecision.action_index == body.action_index
@@ -422,6 +428,9 @@ def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = D
         task_id=task_id,
         decided_by=body.actor,
         reason=body.reason,
+        ai_priority=ai_priority,
+        ai_category=ai_category,
+        officer_priority=body.priority if body.decision == "approve" else None,
     ))
     _log(db, event.id, "plan_" + ("approved" if body.decision == "approve" else "rejected"), body.actor, {
         "report_version": report.version,
