@@ -412,6 +412,21 @@ def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
         "by_status": by_status,
     }
 
+    activity_rows = (
+        db.query(IncidentResponseLog)
+        .filter(IncidentResponseLog.event_id == event.id,
+                IncidentResponseLog.action.in_(["plan_approved", "plan_rejected", "task_updated", "plan_details_saved"]))
+        .order_by(IncidentResponseLog.created_at.desc(), IncidentResponseLog.id.desc())
+        .limit(30).all()
+    )
+    activity = [{"action": row.action, "actor": row.actor,
+                 "at": _iso(row.created_at),
+                 "detail": json.loads(row.detail) if row.detail else {}}
+                for row in activity_rows]
+    # The current report is always the latest. Older approved tasks remain visible.
+    previous_report_tasks = sum(1 for t in tasks_out if t["report_version"] is not None
+                                and report is not None and t["report_version"] < report.version)
+
     plan_row = db.query(ResponsePlan).filter(ResponsePlan.event_id == event.id).first()
     plan_details = _plan_details_out(plan_row)
 
@@ -423,6 +438,8 @@ def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
             "review": {"total": 0, "approved": 0, "rejected": 0, "pending": 0},
             "tasks": tasks_out,
             "task_summary": task_summary,
+            "activity": activity,
+            "previous_report_tasks": previous_report_tasks,
             "message": "Generate a crisis report first. Its recommendations appear here.",
         }
 
@@ -472,6 +489,8 @@ def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
         },
         "tasks": tasks_out,
         "task_summary": task_summary,
+            "activity": activity,
+            "previous_report_tasks": previous_report_tasks,
         "note": "AI recommendations. Each needs an officer's approval before it becomes a task.",
     }
 

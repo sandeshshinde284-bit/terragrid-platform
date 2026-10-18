@@ -442,62 +442,33 @@
 
       <!-- STAGE 3: PLAN SUMMARY -->
       <div v-else-if="stage === 'summary'" class="plan-dashboard">
-        <div class="glass-panel-new" style="padding: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <div>
-              <h3 style="margin: 0; color: #f8fafc; font-size: 18px;">Plan Summary</h3>
-              <p class="hint">Overview of authorized response tasks and operational outcomes.</p>
-            </div>
-            <button class="pp-secondary" @click="stage = 'review'">&larr; Back to Review</button>
+        <div class="glass-panel-new" style="padding: 22px;">
+          <div class="ps-head">
+            <div><h3>Plan Summary</h3><p class="hint">Recommendation review and response task execution are tracked separately.</p></div>
+            <button class="pp-secondary" @click="stage = 'review'">← Back to Review</button>
           </div>
-
-          <div class="summary-stats-grid" style="margin-bottom: 24px;">
-            <div class="stat-card green">
-              <div class="stat-icon-wrapper green">✓</div>
-              <div class="stat-content">
-                <div class="stat-value green">{{ reviewActions.filter(a => a.decision === 'approved').length }}</div>
-                <div class="stat-label">Approved Tasks</div>
-              </div>
-            </div>
-            <div class="stat-card red">
-              <div class="stat-icon-wrapper red">✕</div>
-              <div class="stat-content">
-                <div class="stat-value red">{{ reviewActions.filter(a => a.decision === 'rejected').length }}</div>
-                <div class="stat-label">Rejected Actions</div>
-              </div>
-            </div>
-            <div class="stat-card blue">
-              <div class="stat-icon-wrapper blue">📋</div>
-              <div class="stat-content">
-                <div class="stat-value blue">{{ reviewActions.length }}</div>
-                <div class="stat-label">Total Actions Reviewed</div>
-              </div>
-            </div>
+          <div class="ps-incident">
+            <div><strong>{{ props.incidentType || 'Incident' }} response plan</strong><span>{{ props.incidentLocation || props.incidentId }}</span></div>
+            <div><span>Source crisis report</span><strong>Version {{ plan?.report?.version ?? '—' }}</strong><small>{{ formatTime(plan?.report?.generated_at) }}</small></div>
+            <div><span>Review status</span><strong>{{ plan?.review?.pending === 0 ? 'Review complete' : 'Review in progress' }}</strong><small>{{ plan?.review?.pending ?? 0 }} awaiting decision</small></div>
           </div>
-
-          <div class="table-wrap">
-            <table class="rec-table-new">
-              <thead>
-                <tr>
-                  <th class="col-num">#</th>
-                  <th>Task Description</th>
-                  <th>Status</th>
-                  <th>Priority</th>
-                  <th>Assigned Team</th>
-                  <th>Decided By</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="a in reviewActions.filter(x => x.decision === 'approved')" :key="a.index">
-                  <td class="col-num">{{ a.index + 1 }}</td>
-                  <td class="rec-text">{{ a.text }}</td>
-                  <td><span class="status-pill pill-selected">Approved</span></td>
-                  <td>{{ (forms[a.index]?.priority || a.priority || 'high').toUpperCase() }}</td>
-                  <td>{{ forms[a.index]?.assignee || 'District Response Unit' }}</td>
-                  <td>{{ a.decided_by || actor || '-' }}</td>
-                </tr>
-              </tbody>
-            </table>
+          <div v-if="(plan?.previous_report_tasks ?? 0) > 0" class="ps-notice">{{ plan.previous_report_tasks }} task(s) originated from earlier crisis report versions and remain active in the incident record.</div>
+          <div class="ps-metrics">
+            <div class="ps-card"><h4>Recommendation Decisions</h4><div class="ps-counts"><div><b>{{ plan?.review?.approved ?? 0 }}</b><span>Approved</span></div><div><b>{{ plan?.review?.rejected ?? 0 }}</b><span>Rejected</span></div><div><b>{{ plan?.review?.pending ?? 0 }}</b><span>Pending</span></div><div><b>{{ plan?.review?.total ?? 0 }}</b><span>Total</span></div></div></div>
+            <div class="ps-card"><h4>Execution Status · Approved Tasks</h4><div class="ps-counts"><div><b>{{ statusCount('done') }}</b><span>Completed</span></div><div><b>{{ statusCount('in_progress') }}</b><span>In progress</span></div><div><b>{{ statusCount('open') }}</b><span>Not started</span></div><div><b>{{ statusCount('blocked') }}</b><span>Blocked</span></div></div></div>
+            <div class="ps-card"><h4>Execution Progress</h4><div class="ps-progress-number">{{ executionPercent }}%</div><div class="ps-track"><div :style="{ width: executionPercent + '%' }"></div></div><p class="hint">{{ plan?.task_summary?.done ?? 0 }} of {{ plan?.task_summary?.approved ?? 0 }} approved tasks completed</p></div>
+          </div>
+          <div class="ps-bottom">
+            <div class="ps-card"><h4>Actions from Current Report ({{ plan?.actions?.length ?? 0 }})</h4>
+              <div class="table-wrap"><table class="rec-table-new"><thead><tr><th>#</th><th>Recommendation</th><th>Officer Priority</th><th>Decision</th><th>Task Status</th><th>Owner</th></tr></thead>
+                <tbody><tr v-for="a in (plan?.actions || [])" :key="a.index"><td>{{ a.index + 1 }}</td><td class="rec-text">{{ a.text }}</td><td>{{ a.officer_priority || '—' }}</td><td><span :class="['ps-pill', a.decision || 'pending']">{{ a.decision || 'Pending' }}</span></td><td>{{ statusLabel(a.task?.status) }}</td><td>{{ a.task?.assignee || '—' }}</td></tr>
+                  <tr v-if="!plan?.actions?.length"><td colspan="6">No recommendations available from the latest report.</td></tr></tbody></table></div>
+            </div>
+            <div class="ps-side">
+              <div class="ps-card"><h4>Task Progress</h4><div v-for="entry in taskStatusRows" :key="entry.key" class="ps-status-row"><span>{{ entry.label }}</span><b>{{ entry.count }}</b><div class="ps-track"><div :style="{ width: entry.percent + '%' }"></div></div><span>{{ entry.percent }}%</span></div></div>
+              <div v-if="blockedTasks.length" class="ps-card"><h4>Blocked Work</h4><div v-for="t in blockedTasks" :key="t.id" class="ps-activity"><strong>{{ t.title }}</strong><span>{{ t.note || 'No reason recorded' }}</span></div></div>
+              <div class="ps-card"><h4>Recorded Activity</h4><div v-if="!plan?.activity?.length" class="hint">No recorded response-plan activity.</div><div v-for="(item, idx) in (plan?.activity || []).slice(0, 8)" :key="idx" class="ps-activity"><strong>{{ activityLabel(item.action) }}</strong><span>{{ item.actor }} · {{ formatTime(item.at) }}</span></div></div>
+            </div>
           </div>
         </div>
       </div>
@@ -553,6 +524,19 @@ const allSelected = computed(() =>
 const reviewActions = computed(() =>
   (plan.value?.actions || []).filter((a: any) => a.decision || isSelected(a.index))
 )
+
+const statusCount = (key: string) => Number(plan.value?.task_summary?.by_status?.[key] || 0)
+const executionPercent = computed(() => {
+  const total = Number(plan.value?.task_summary?.approved || 0)
+  return total ? Math.round(100 * Number(plan.value?.task_summary?.done || 0) / total) : 0
+})
+const taskStatusRows = computed(() => [
+  { key: 'done', label: 'Completed' }, { key: 'in_progress', label: 'In progress' },
+  { key: 'open', label: 'Not started' }, { key: 'blocked', label: 'Blocked' },
+].map(item => ({ ...item, count: statusCount(item.key), percent: plan.value?.task_summary?.approved ? Math.round(100 * statusCount(item.key) / plan.value.task_summary.approved) : 0 })))
+const blockedTasks = computed(() => (plan.value?.tasks || []).filter((t: any) => t.status === 'blocked' && t.report_version != null))
+const statusLabel = (status?: string) => ({ done: 'Completed', in_progress: 'In progress', open: 'Not started', blocked: 'Blocked' } as Record<string, string>)[status || ''] || '—'
+const activityLabel = (action: string) => ({ plan_approved: 'Recommendation approved', plan_rejected: 'Recommendation rejected', task_updated: 'Task status updated', plan_details_saved: 'Plan details saved' } as Record<string, string>)[action] || action
 
 const isSelected = (index: number) => selected.value.includes(index)
 
@@ -1004,4 +988,8 @@ tr.decided { opacity: 0.5; background: rgba(0, 0, 0, 0.2); }
   .stepper { grid-template-columns: 1fr; }
   .summary-stats-grid { grid-template-columns: 1fr 1fr; }
 }
+</style>
+
+<style scoped>
+.ps-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.ps-head h3{margin:0 0 5px;color:#f8fafc;font-size:22px}.ps-incident{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;background:rgba(8,47,73,.42);border:1px solid rgba(34,211,238,.17);padding:18px;border-radius:9px;margin-bottom:16px}.ps-incident>div{display:flex;flex-direction:column;gap:6px}.ps-incident strong{color:#e2e8f0}.ps-incident span,.ps-incident small{color:#94a3b8;font-size:12px}.ps-notice{padding:12px 16px;border:1px solid rgba(245,158,11,.45);color:#fcd34d;background:rgba(245,158,11,.08);border-radius:8px;margin-bottom:16px}.ps-metrics{display:grid;grid-template-columns:1.2fr 1.4fr 1fr;gap:14px;margin-bottom:14px}.ps-card{background:rgba(8,31,52,.78);border:1px solid rgba(56,189,248,.22);border-radius:9px;padding:16px;min-width:0}.ps-card h4{margin:0 0 18px;color:#e2e8f0;font-size:14px}.ps-counts{display:flex;justify-content:space-between;gap:8px}.ps-counts>div{display:flex;flex-direction:column;gap:6px}.ps-counts b{font-size:23px;color:#e2e8f0}.ps-counts span{font-size:11px;color:#94a3b8}.ps-progress-number{font-size:26px;font-weight:700;color:#5eead4;margin-bottom:8px}.ps-track{height:9px;background:#1e3a53;border-radius:20px;overflow:hidden}.ps-track>div{height:100%;background:linear-gradient(90deg,#06b6d4,#10b981);border-radius:20px}.ps-card>.hint{margin-top:10px}.ps-bottom{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:14px}.ps-side{display:flex;flex-direction:column;gap:14px}.ps-status-row{display:grid;grid-template-columns:90px 20px 1fr 38px;gap:8px;align-items:center;margin-bottom:14px;font-size:12px;color:#cbd5e1}.ps-status-row b{color:#f8fafc}.ps-activity{display:flex;flex-direction:column;gap:5px;padding:9px 0;border-bottom:1px solid rgba(148,163,184,.13)}.ps-activity strong{font-size:12px;color:#e2e8f0}.ps-activity span{font-size:11px;color:#94a3b8}.ps-pill{display:inline-block;border-radius:16px;padding:4px 9px;text-transform:capitalize;font-size:11px;background:#334155;color:#cbd5e1}.ps-pill.approved{background:rgba(16,185,129,.16);color:#6ee7b7}.ps-pill.rejected{background:rgba(239,68,68,.14);color:#fca5a5}.ps-pill.pending{background:rgba(245,158,11,.14);color:#fcd34d}@media(max-width:1050px){.ps-metrics,.ps-bottom{grid-template-columns:1fr}.ps-incident{grid-template-columns:1fr 1fr}}@media(max-width:600px){.ps-incident{grid-template-columns:1fr}.ps-head{align-items:flex-start;flex-direction:column}}
 </style>
