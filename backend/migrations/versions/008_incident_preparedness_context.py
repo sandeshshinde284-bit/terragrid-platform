@@ -3,7 +3,7 @@
 Snapshot of preparedness assessment linked to an incident.
 Stores city, hazard, risk, assessment time, and checklist snapshot.
 
-Revision ID: 008_incident_preparedness_context
+Revision ID: 008_preparedness_context
 Revises: 007_response_plan_details
 Create Date: 2026-10-18 00:00:00.000000
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 
 # revision identifiers, used by Alembic.
-revision = '008_incident_preparedness_context'
+revision = '008_preparedness_context'
 down_revision = '007_response_plan_details'
 branch_labels = None
 depends_on = None

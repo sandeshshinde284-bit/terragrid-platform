@@ -2,8 +2,8 @@
 
 Allow saving preparedness assessments without linking to an incident for later linking.
 
-Revision ID: 009_make_event_id_nullable
-Revises: 008_incident_preparedness_context
+Revision ID: 009_nullable_event_id
+Revises: 008_preparedness_context
 Create Date: 2026-10-18 00:00:00.000000
 """
 from alembic import op
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '009_make_event_id_nullable'
-down_revision = '008_incident_preparedness_context'
+revision = '009_nullable_event_id'
+down_revision = '008_preparedness_context'
 branch_labels = None
 depends_on = None
 
