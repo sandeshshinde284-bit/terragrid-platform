@@ -219,8 +219,10 @@
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- PREPARE → RESPONSE Handoff Panel -->
+          <!-- PREPARE → RESPONSE Handoff Panel (Right Sidebar) -->
+          <div class="handoff-sidebar">
             <PreparednessHandoffPanel
               v-if="selectedCity"
               :city="selectedCity.city"
@@ -702,6 +704,17 @@ watch(selectedKey, () => {
   flex: 1;
   min-height: 0;
   align-items: flex-start;
+}
+
+.handoff-sidebar {
+  flex: 0 0 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary, #22d3ee) transparent;
 }
 
 .city-rail-wrap {
