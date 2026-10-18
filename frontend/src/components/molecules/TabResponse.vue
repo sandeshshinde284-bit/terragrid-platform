@@ -29,7 +29,6 @@
       <article class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
         <div class="panel-heading">
           <div><span class="section-kicker">{{ $t('responseTab.operationalPhases') }}</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">{{ $t('responseTab.responseTimeline') }}</h3></div>
-          <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">PHASE-RESP-01</span>
         </div>
 
         <!-- IMMEDIATE PHASE -->
@@ -81,7 +80,6 @@
       <article class="glass-panel" style="padding: 20px;">
         <div class="panel-heading">
           <div><span class="section-kicker">{{ $t('responseTab.assetDeployment') }}</span><h3 style="margin:0; font-size: 16px; color: var(--text-primary);">{{ $t('responseTab.operationalLogistics') }}</h3></div>
-          <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">LOG-ASSET-01</span>
         </div>
         <div class="resource-matrix-table-wrapper" style="overflow-x: auto;">
           <table class="ai-resource-table" style="width: 100%; border-collapse: collapse;">
@@ -110,7 +108,6 @@
               </tr>
             </tbody>
           </table>
-          <span class="provenance-tag">[Logistics: TerraGrid Tactical Engine | Confidence Scored]</span>
         </div>
       </article>
     </div>
@@ -122,171 +119,6 @@
         <GenerationNotice variant="full" :startedAt="generationStartedAt ?? null" />
       </div>
 
-      <!-- RESPONSE OPERATIONS SECTION (matching mock) -->
-      <article class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px;">
-          <div>
-            <h2 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px 0;">Response Operations</h2>
-            <p style="font-size: 16px; color: var(--text-secondary); margin: 0;">Create a response plan from AI recommendations, review and approve actions, and track execution.</p>
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Linked to Crisis Report</div>
-            <div style="font-size: 14px; color: #0284c7; font-weight: 600;">Not generated yet</div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">Waiting for AI crisis report</div>
-          </div>
-        </div>
-
-        <!-- Workflow Progress Steps -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
-          <div style="display: flex; align-items: center; gap: 8px; padding: 12px; background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 6px;">
-            <div style="width: 36px; height: 36px; background: var(--accent-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #0f172a; flex-shrink: 0;">1</div>
-            <div>
-              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Plan & Review</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Create and review plan</div>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px; padding: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px;">
-            <div style="width: 36px; height: 36px; background: rgba(59, 130, 246, 0.3); border: 2px solid rgba(59, 130, 246, 0.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #3b82f6; flex-shrink: 0;">2</div>
-            <div>
-              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Approve Plan</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Officer decisions</div>
-            </div>
-          </div>
-          <!-- <div style="display: flex; align-items: center; gap: 8px; padding: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px;">
-            <div style="width: 36px; height: 36px; background: rgba(59, 130, 246, 0.3); border: 2px solid rgba(59, 130, 246, 0.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #3b82f6; flex-shrink: 0;">3</div>
-            <div>
-              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Active Tasks</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">Track progress</div>
-            </div>
-          </div> -->
-          <div style="display: flex; align-items: center; gap: 8px; padding: 12px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px;">
-            <div style="width: 36px; height: 36px; background: rgba(59, 130, 246, 0.3); border: 2px solid rgba(59, 130, 246, 0.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #3b82f6; flex-shrink: 0;">4</div>
-            <div>
-              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Plan Summary</div>
-              <div style="font-size: 12px; color: var(--text-secondary);">View outcomes</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- AI Recommendations Available Banner (Yellow) -->
-        <div style="margin-bottom: 20px; padding: 16px; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 6px; display: flex; align-items: center; gap: 12px;">
-          <div style="font-size: 24px;">💡</div>
-          <div style="flex: 1;">
-            <div style="font-size: 14px; font-weight: 600; color: #fbbf24;">AI Recommendations Available</div>
-            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">Generating specialized recommendations based on crisis report...</div>
-          </div>
-          <button style="background: #0284c7; border: 1px solid #0284c7; color: var(--text-primary); border-radius: 4px; padding: 8px 16px; font-size: 14px; font-weight: 600; cursor: pointer;">Create Response Plan</button>
-        </div>
-
-        <!-- Recommendations Summary Stats Section Header -->
-        <div style="margin-bottom: 16px;">
-          <h3 style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin: 0;">Recommendations Summary</h3>
-        </div>
-
-        <!-- Recommendations Summary Stats (4 Cards with Icons) -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
-          <!-- Total AI Recommendations (Blue) -->
-          <div style="padding: 16px; background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.2); border-radius: 8px; display: flex; align-items: flex-start; gap: 12px;">
-            <div style="font-size: 28px; min-width: 40px; margin-top: 4px;">📋</div>
-            <div style="flex: 1;">
-              <div style="font-size: 28px; font-weight: 700; color: #0284c7; line-height: 1;">5</div>
-              <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; line-height: 1.3;">Total AI recommendations<br>From crisis report v3</div>
-            </div>
-          </div>
-
-          <!-- Selected for Plan (Green) -->
-          <div style="padding: 16px; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 8px; display: flex; align-items: flex-start; gap: 12px;">
-            <div style="font-size: 28px; min-width: 40px; margin-top: 4px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; color: #22c55e;">✓</div>
-            <div style="flex: 1;">
-              <div style="font-size: 28px; font-weight: 700; color: #22c55e; line-height: 1;">0</div>
-              <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; line-height: 1.3;">Selected for plan<br>Not yet selected</div>
-            </div>
-          </div>
-
-          <!-- Converted to Tasks (Blue) -->
-          <div style="padding: 16px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; display: flex; align-items: flex-start; gap: 12px;">
-            <div style="font-size: 28px; min-width: 40px; margin-top: 4px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: rgba(59, 130, 246, 0.2); border-radius: 50%; color: #3b82f6;">⚙️</div>
-            <div style="flex: 1;">
-              <div style="font-size: 28px; font-weight: 700; color: #3b82f6; line-height: 1;">0</div>
-              <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; line-height: 1.3;">Converted to tasks<br>After approval</div>
-            </div>
-          </div>
-
-          <!-- Rejected (Red) -->
-          <div style="padding: 16px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; display: flex; align-items: flex-start; gap: 12px;">
-            <div style="font-size: 28px; min-width: 40px; margin-top: 4px; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: rgba(239, 68, 68, 0.2); border-radius: 50%; color: #ef4444;">✕</div>
-            <div style="flex: 1;">
-              <div style="font-size: 28px; font-weight: 700; color: #ef4444; line-height: 1;">0</div>
-              <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; line-height: 1.3;">Rejected<br>Not required for response</div>
-            </div>
-          </div>
-        </div>
-      </article>
-
-      <!-- AI Recommendations from Crisis Report (Skeleton Table) -->
-      <article class="glass-panel" style="padding: 20px; margin-bottom: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <div>
-            <h3 style="margin: 0 0 4px 0; font-size: 16px; color: var(--text-primary);">AI Recommendations from Crisis Report</h3>
-            <div style="font-size: 13px; color: var(--text-secondary);">Review the recommendations below and select the ones to include in your response plan.</div>
-          </div>
-          <div style="display: inline-block; background: rgba(251, 191, 36, 0.2); color: #fbbf24; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">AI GENERATED</div>
-        </div>
-        <div class="resource-matrix-table-wrapper" style="overflow-x: auto;">
-          <table class="ai-resource-table skeleton-table" style="width: 100%;">
-            <thead>
-              <tr style="border-bottom: 2px solid #334155;">
-                <th style="padding: 12px 10px;"><input type="checkbox" disabled style="width: 18px; height: 18px; cursor: pointer;"></th>
-                <th style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></th>
-                <th style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></th>
-                <th style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></th>
-                <th style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></th>
-                <th style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="n in 5" :key="n" style="border-bottom: 1px solid var(--glass-border);">
-                <td style="padding: 12px 10px;"><input type="checkbox" disabled style="width: 18px; height: 18px; cursor: pointer;"></td>
-                <td style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></td>
-                <td style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></td>
-                <td style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></td>
-                <td style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></td>
-                <td style="padding: 12px 10px;"><div class="skeleton-line skeleton-sm"></div></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </article>
-
-      <!-- Response Plan Details Panel (Right Side) -->
-      <article class="glass-panel" style="padding: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Response Plan Details</h3>
-          <div style="display: inline-block; background: rgba(147, 51, 234, 0.2); color: #c084fc; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">Draft</div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Plan name</div>
-            <div class="skeleton-line" style="height: 18px;"></div>
-          </div>
-          <div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Description</div>
-            <div class="skeleton-line" style="height: 18px;"></div>
-          </div>
-          <div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Created by</div>
-            <div class="skeleton-line skeleton-sm" style="width: 60%;"></div>
-          </div>
-          <div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Status</div>
-            <div class="skeleton-line skeleton-sm" style="width: 40%;"></div>
-          </div>
-          <div>
-            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Selected actions</div>
-            <div class="skeleton-line skeleton-sm" style="width: 50%;"></div>
-          </div>
-        </div>
-      </article>
     </div>
 
     <!-- INITIAL STATE: No report generated yet -->

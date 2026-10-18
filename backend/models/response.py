@@ -85,3 +85,18 @@ class ResponsePlanDecision(BaseModel):
     ai_priority = Column(String(12), nullable=True)  # IMMEDIATE, HIGH, STAGED
     ai_category = Column(String(40), nullable=True)
     officer_priority = Column(String(10), nullable=True)  # critical, high, medium, low (lowercase)
+
+
+class ResponsePlan(BaseModel):
+    """
+    The plan's name and description for an incident, saved by the officer.
+    One per incident. created_by and created_at record the first save.
+    """
+    __tablename__ = "response_plans"
+    __table_args__ = (UniqueConstraint("event_id", name="uq_response_plan_event"),)
+
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
+    name = Column(String(200), nullable=True)
+    description = Column(Text, nullable=True)
+    created_by = Column(String(120), nullable=False)
+    updated_by = Column(String(120), nullable=False)

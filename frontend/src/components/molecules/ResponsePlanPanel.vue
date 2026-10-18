@@ -11,6 +11,13 @@
       </div>
     </header>
 
+    <!-- Officer name: typed, not logged in. Needed on every stage to save or decide. -->
+    <label class="form-label officer-bar">
+      <span>Officer (required to save or decide)</span>
+      <input v-model="actor" class="form-input" maxlength="120" placeholder="Name of the officer" />
+      <small style="color: #64748b; font-size: 11px;">There is no login yet. The name is recorded as typed.</small>
+    </label>
+
     <!-- 3-Step Progress Bar -->
     <div class="stepper-new-wrapper">
       <ol class="stepper-new" aria-label="Response plan stages">
@@ -191,11 +198,13 @@
               <div class="plan-form">
                 <label class="form-label">
                   <span>Plan name</span>
-                  <input v-model="customPlanName" class="form-input" />
+                  <input v-model="customPlanName" class="form-input" :placeholder="suggestedPlanName" @blur="savePlanDetails" />
                 </label>
                 <label class="form-label">
                   <span>Description</span>
-                  <textarea v-model="planDescription" class="form-textarea" rows="3" placeholder="Operational response plan for incident..."></textarea>
+                  <textarea v-model="planDescription" class="form-textarea" rows="3" placeholder="Describe the response plan" @blur="savePlanDetails"></textarea>
+                  <small v-if="detailsError" class="pp-error" role="alert" style="padding: 6px 8px;">{{ detailsError }}</small>
+                  <small v-else-if="detailsSaved" style="color: #64748b; font-size: 11px;">Saved</small>
                 </label>
 
                 <div class="meta-list">
@@ -205,11 +214,11 @@
                   </div>
                   <div class="meta-row">
                     <span class="meta-lab">Created by</span>
-                    <span class="meta-val">{{ firstDecision?.decided_by || 'Not started' }}</span>
+                    <span class="meta-val">{{ plan.plan?.created_by || 'Not saved yet' }}</span>
                   </div>
                   <div class="meta-row">
                     <span class="meta-lab">Created on</span>
-                    <span class="meta-val">{{ firstDecision ? formatTime(firstDecision.decided_at) : '-' }}</span>
+                    <span class="meta-val">{{ plan.plan ? formatTime(plan.plan.created_at) : '-' }}</span>
                   </div>
                   <div class="meta-row">
                     <span class="meta-lab">Status</span>
@@ -265,11 +274,6 @@
                 <button class="btn-outline" @click="backToSelect" style="padding: 6px 12px;">&larr; Back to Selection</button>
               </div>
 
-              <label class="form-label" style="margin: 0 0 14px;">
-                <span>Officer approving (required)</span>
-                <input v-model="actor" class="form-input" maxlength="120" placeholder="Name of the officer making these decisions" />
-                <small style="color: #64748b; font-size: 11px;">There is no login yet. The name is recorded as typed.</small>
-              </label>
               <div v-if="actionError" class="pp-error" role="alert" style="margin-bottom: 14px;">{{ actionError }}</div>
 
               <div class="table-wrap">
@@ -491,6 +495,11 @@ const forms = reactive<Record<number, { assignee: string; priority: string; reas
 
 const customPlanName = ref('')
 const planDescription = ref('')
+const detailsError = ref<string | null>(null)
+const detailsSaved = ref(false)
+// Last saved values, so blur only saves when something changed.
+const savedName = ref('')
+const savedDescription = ref('')
 
 // Stages: 'select' (Plan & Review), 'review' (Review & Approve), 'summary' (Plan Summary)
 const stage = ref<'select' | 'review' | 'summary'>('select')
@@ -576,12 +585,12 @@ const TASK_STATUS_LABELS: Record<string, string> = {
 // Officer priority is suggested from the AI priority, and the officer can change it.
 const AI_TO_OFFICER: Record<string, string> = { IMMEDIATE: 'critical', HIGH: 'high', STAGED: 'medium' }
 
-// First decision on this report, used for "Created by / Created on".
-const firstDecision = computed(() =>
-  (plan.value?.actions || [])
-    .filter((a: any) => a.decided_at)
-    .sort((x: any, y: any) => x.decided_at.localeCompare(y.decided_at))[0] || null
-)
+// Name suggested from the incident. Shown as a placeholder until the officer saves a name.
+const suggestedPlanName = computed(() => {
+  const type = props.incidentType ? props.incidentType.charAt(0).toUpperCase() + props.incidentType.slice(1) : 'Incident'
+  const place = props.incidentLocation || ''
+  return `${place ? place + ' ' : ''}${type} · Response Plan`
+})
 
 const planStatus = computed(() => {
   const r = plan.value?.review
@@ -630,13 +639,45 @@ async function load() {
       selectAll()
     }
 
-    if (!customPlanName.value) {
-      const type = props.incidentType ? props.incidentType.charAt(0).toUpperCase() + props.incidentType.slice(1) : 'Incident'
-      const place = props.incidentLocation || ''
-      customPlanName.value = `${place ? place + ' ' : ''}${type} · Response Plan`
-    }
+    customPlanName.value = plan.value.plan?.name || ''
+    planDescription.value = plan.value.plan?.description || ''
+    savedName.value = plan.value.plan?.name || ''
+    savedDescription.value = plan.value.plan?.description || ''
   } catch (err) {
     loadError.value = 'Could not load the response plan. Try again.'
+  }
+}
+
+async function savePlanDetails() {
+  if (!plan.value?.report) return
+  const name = customPlanName.value.trim()
+  const description = planDescription.value.trim()
+  if (name === savedName.value && description === savedDescription.value) return
+  const who = actor.value.trim()
+  if (!who) {
+    detailsError.value = "Type the officer's name above to save plan details."
+    return
+  }
+  detailsError.value = null
+  detailsSaved.value = false
+  try {
+    const res = await fetch(`${host}/api/v1/incidents/${props.incidentId}/response/plan/details`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actor: who, name: name || undefined, description: description || undefined }),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      detailsError.value = typeof body.detail === 'string' ? body.detail : `Could not save plan details (HTTP ${res.status}).`
+      return
+    }
+    const saved = await res.json()
+    savedName.value = saved.name || ''
+    savedDescription.value = saved.description || ''
+    if (plan.value) plan.value.plan = saved
+    detailsSaved.value = true
+  } catch (err) {
+    detailsError.value = 'Could not reach the server. The plan details were not saved.'
   }
 }
 
@@ -689,6 +730,8 @@ watch(() => props.incidentId, () => {
 </script>
 
 <style scoped>
+.officer-bar { max-width: 360px; }
+
 .plan-panel {
   margin-top: 16px;
   display: flex;

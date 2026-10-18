@@ -13,11 +13,11 @@ from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models.response import IncidentResponseLog, ResponseTask, ResponseAlert, IncidentReport, ResponsePlanDecision
+from backend.models.response import IncidentResponseLog, ResponseTask, ResponseAlert, IncidentReport, ResponsePlanDecision, ResponsePlan
 from backend.routes.incidents import find_incident_by_id
 from backend.services.notifications import notification_service
 
@@ -32,6 +32,15 @@ PRIORITIES = {"critical", "high", "medium", "low"}  # stored lowercase; the offi
 
 class ActorBody(BaseModel):
     actor: str = Field(min_length=1, max_length=120)
+
+    @field_validator("actor")
+    @classmethod
+    def _actor_not_blank(cls, value: str) -> str:
+        # Typed name, recorded as given; surrounding spaces removed and blank names refused.
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Enter the officer's name")
+        return cleaned
 
 
 class StatusBody(ActorBody):
@@ -317,6 +326,24 @@ def reject_alert(incident_id: str, alert_id: int, body: AlertDecisionBody, db: S
 # report version and action it came from. Reports are never edited here.
 # ---------------------------------------------------------------------------
 
+class PlanDetailsBody(ActorBody):
+    name: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2000)
+
+
+def _plan_details_out(row: Optional[ResponsePlan]) -> Optional[Dict[str, Any]]:
+    if row is None:
+        return None
+    return {
+        "name": row.name,
+        "description": row.description,
+        "created_by": row.created_by,
+        "created_at": row.created_at.isoformat() + "Z",
+        "updated_by": row.updated_by,
+        "updated_at": row.updated_at.isoformat() + "Z",
+    }
+
+
 class PlanDecisionBody(ActorBody):
     report_id: int
     action_index: int = Field(ge=0)
@@ -385,8 +412,12 @@ def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
         "by_status": by_status,
     }
 
+    plan_row = db.query(ResponsePlan).filter(ResponsePlan.event_id == event.id).first()
+    plan_details = _plan_details_out(plan_row)
+
     if not report:
         return {
+            "plan": plan_details,
             "report": None,
             "actions": [],
             "review": {"total": 0, "approved": 0, "rejected": 0, "pending": 0},
@@ -424,6 +455,7 @@ def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
     approved = sum(1 for a in actions if a["decision"] == "approved")
     rejected = sum(1 for a in actions if a["decision"] == "rejected")
     return {
+        "plan": plan_details,
         "report": {
             "id": report.id,
             "version": report.version,
@@ -442,6 +474,27 @@ def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
         "task_summary": task_summary,
         "note": "AI recommendations. Each needs an officer's approval before it becomes a task.",
     }
+
+
+@router.post("/{incident_id}/response/plan/details")
+def save_plan_details(incident_id: str, body: PlanDetailsBody, db: Session = Depends(get_db)):
+    """Save the plan's name and description. The first save records who created the plan."""
+    event = _event_or_404(incident_id, db)
+    name = body.name.strip() if body.name and body.name.strip() else None
+    description = body.description.strip() if body.description and body.description.strip() else None
+    row = db.query(ResponsePlan).filter(ResponsePlan.event_id == event.id).first()
+    if row is None:
+        row = ResponsePlan(event_id=event.id, name=name, description=description,
+                           created_by=body.actor, updated_by=body.actor)
+        db.add(row)
+    else:
+        row.name = name
+        row.description = description
+        row.updated_by = body.actor
+    _log(db, event.id, "plan_details_saved", body.actor, {"name": name})
+    db.commit()
+    db.refresh(row)
+    return _plan_details_out(row)
 
 
 @router.post("/{incident_id}/response/plan/decide")
