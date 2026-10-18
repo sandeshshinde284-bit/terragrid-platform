@@ -6,10 +6,10 @@
         <h3>Response Operations</h3>
         <p class="hint">Create a response plan from AI recommendations, review and approve actions, and track execution.</p>
       </div>
-      <div v-if="plan?.report" class="linked-card">
+      <div class="linked-card">
         <span class="linked-label">Linked to Crisis Report</span>
-        <strong>Version {{ plan.report.version }}</strong>
-        <span class="muted small">Generated {{ formatTime(plan.report.generated_at) }}</span>
+        <strong>{{ plan?.report ? `Version ${plan.report.version}` : 'Not generated yet' }}</strong>
+        <span class="muted small">{{ plan?.report ? `Generated ${formatTime(plan.report.generated_at)}` : 'Waiting for AI crisis report' }}</span>
       </div>
     </header>
 
@@ -35,8 +35,12 @@
 
     <div v-if="loadError" class="pp-error" role="alert">{{ loadError }}</div>
 
-    <div v-if="plan && !plan.report" class="pp-empty">
-      {{ plan.message || 'Generate a crisis report first. Its recommendations appear here.' }}
+    <div v-if="plan && !plan.report" class="ai-banner ai-banner-placeholder" role="note">
+      <div class="ai-banner-main">
+        <strong>AI recommendations will appear here</strong>
+        <span>{{ plan.message || 'Generate a crisis report first. Its recommendations appear here.' }}</span>
+      </div>
+      <button class="pp-primary" disabled>{{ primaryLabel }}</button>
     </div>
 
     <template v-else-if="plan && plan.report">
@@ -69,7 +73,7 @@
           <template v-if="stage === 'select'">
             <div class="table-head">
               <div>
-                <h4>AI Recommendations for Response Plan</h4>
+                <h4>AI Recommendations for Response Plan <span class="ai-tag">AI generated</span></h4>
                 <p class="hint">Select the recommendations to include. Selecting is not approval.</p>
               </div>
               <div class="table-actions">
@@ -240,7 +244,9 @@ const selected = ref<number[]>([])
 
 const started = computed(() => (plan.value?.review?.approved ?? 0) + (plan.value?.review?.rejected ?? 0) > 0)
 
+// One place decides the button label: no report, no decisions, in review, or some approved.
 const primaryLabel = computed(() => {
+  if (!plan.value?.report) return 'Generate Crisis Report First'
   if ((plan.value?.review?.approved ?? 0) > 0) return 'Manage Response Plan'
   if (started.value) return 'Continue Response Plan'
   return 'Create Response Plan'
@@ -417,6 +423,9 @@ watch(() => props.incidentId, () => {
 .ai-banner-note { display: flex; flex-direction: column; gap: 2px; max-width: 320px; }
 .ai-banner-note strong { color: #fcd34d; font-size: 13px; }
 .ai-banner-note span { color: #cbd5e1; font-size: 12px; }
+.ai-banner-placeholder { background: rgba(15,23,42,.5); border-color: rgba(251,191,36,.25); }
+.ai-banner-placeholder strong { color: #fcd34d; }
+.ai-tag { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; letter-spacing: .02em; background: rgba(251,191,36,.18); color: #fcd34d; vertical-align: middle; }
 
 .resume-card { display: flex; flex-direction: column; gap: 14px; padding: 16px; border-radius: 8px; background: rgba(15,23,42,.5); border: 1px solid rgba(71,85,105,.4); }
 .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
