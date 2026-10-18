@@ -6,6 +6,16 @@
         <h3>Response Operations</h3>
         <p class="hint">Create a response plan from AI recommendations, review and approve actions, and track execution.</p>
       </div>
+      <div class="officer-identity" :class="{ 'officer-identity-ready': !!actor.trim() }">
+        <label for="response-reviewing-officer" class="officer-identity-label">
+          <span class="officer-identity-icon">👤</span>
+          <span>Reviewing Officer <span v-if="stage !== 'summary'" class="required-indicator">Required for decisions</span></span>
+        </label>
+        <div v-if="stage === 'summary'" class="officer-summary-name">{{ actor.trim() || 'Not entered in this session' }}</div>
+        <input v-else id="response-reviewing-officer" v-model="actor" class="form-input officer-identity-input" maxlength="120" autocomplete="name" placeholder="Enter your full name" :aria-invalid="!!actionError && !actor.trim()" />
+        <small v-if="stage !== 'summary'" class="officer-identity-help">Your name is recorded with each saved decision. No login is required.</small>
+        <small v-else class="officer-identity-help">Current session · decision history is shown below</small>
+      </div>
     </header>
 
     <!-- 3-Step Progress Bar -->
@@ -23,13 +33,6 @@
         <div><strong>Plan Summary</strong><small>View plan status and outcomes</small></div>
       </li>
     </ol>
-
-    <!-- Officer name: typed, not logged in -->
-    <label class="form-label officer-bar">
-      <span>Officer (required to save or decide)</span>
-      <input v-model="actor" class="form-input" maxlength="120" placeholder="Name of the officer" />
-      <small style="color: #64748b; font-size: 11px;">There is no login yet. The name is recorded as typed.</small>
-    </label>
 
     <div v-if="loadError" class="pp-error" role="alert">{{ loadError }}</div>
 
@@ -440,36 +443,30 @@
         </div>
       </div>
 
-      <!-- STAGE 3: PLAN SUMMARY -->
+      <!-- STAGE 3: PLAN SUMMARY — all values from the persisted response-plan API -->
       <div v-else-if="stage === 'summary'" class="plan-dashboard">
-        <div class="glass-panel-new" style="padding: 22px;">
-          <div class="ps-head">
-            <div><h3>Plan Summary</h3><p class="hint">Recommendation review and response task execution are tracked separately.</p></div>
+        <div class="glass-panel-new summary-shell">
+          <div class="summary-top">
+            <div><div class="summary-eyebrow">RESPONSE OPERATIONS <span>›</span> STEP 3 OF 3</div><h3 class="summary-heading">📋 Plan Summary</h3><p class="hint">Review decisions and execution progress are tracked separately.</p></div>
             <button class="pp-secondary" @click="stage = 'review'">← Back to Review</button>
           </div>
-          <div class="ps-incident">
-            <div><strong>{{ props.incidentType || 'Incident' }} response plan</strong><span>{{ props.incidentLocation || props.incidentId }}</span></div>
-            <div><span>Source crisis report</span><strong>Version {{ plan?.report?.version ?? '—' }}</strong><small>{{ formatTime(plan?.report?.generated_at) }}</small></div>
-            <div><span>Review status</span><strong>{{ plan?.review?.pending === 0 ? 'Review complete' : 'Review in progress' }}</strong><small>{{ plan?.review?.pending ?? 0 }} awaiting decision</small></div>
+          <div class="summary-context">
+            <div><span class="summary-caption">Incident</span><strong>{{ props.incidentType || 'Incident' }}</strong><small>{{ props.incidentLocation || props.incidentId }}</small></div>
+            <div><span class="summary-caption">Response plan</span><strong>{{ plan.plan?.name || 'Incident Response Plan' }}</strong><small>{{ plan.plan?.created_at ? 'Created ' + formatTime(plan.plan.created_at) : 'Plan details not recorded' }}</small></div>
+            <div><span class="summary-caption">Latest crisis report</span><strong>Version {{ plan.report.version }}</strong><small>{{ formatTime(plan.report.generated_at) }}</small></div>
           </div>
-          <div v-if="(plan?.previous_report_tasks ?? 0) > 0" class="ps-notice">{{ plan.previous_report_tasks }} task(s) originated from earlier crisis report versions and remain active in the incident record.</div>
-          <div class="ps-metrics">
-            <div class="ps-card"><h4>Recommendation Decisions</h4><div class="ps-counts"><div><b>{{ plan?.review?.approved ?? 0 }}</b><span>Approved</span></div><div><b>{{ plan?.review?.rejected ?? 0 }}</b><span>Rejected</span></div><div><b>{{ plan?.review?.pending ?? 0 }}</b><span>Pending</span></div><div><b>{{ plan?.review?.total ?? 0 }}</b><span>Total</span></div></div></div>
-            <div class="ps-card"><h4>Execution Status · Approved Tasks</h4><div class="ps-counts"><div><b>{{ statusCount('done') }}</b><span>Completed</span></div><div><b>{{ statusCount('in_progress') }}</b><span>In progress</span></div><div><b>{{ statusCount('open') }}</b><span>Not started</span></div><div><b>{{ statusCount('blocked') }}</b><span>Blocked</span></div></div></div>
-            <div class="ps-card"><h4>Execution Progress</h4><div class="ps-progress-number">{{ executionPercent }}%</div><div class="ps-track"><div :style="{ width: executionPercent + '%' }"></div></div><p class="hint">{{ plan?.task_summary?.done ?? 0 }} of {{ plan?.task_summary?.approved ?? 0 }} approved tasks completed</p></div>
+          <div v-if="olderTasks.length" class="summary-notice">{{ olderTasks.length }} task(s) originated from earlier crisis report versions. Previously approved work is retained when a new report is generated.</div>
+          <div class="summary-metrics">
+            <div class="summary-box"><h4>Recommendation Decisions <small>Latest report · v{{ plan.report.version }}</small></h4><div class="metric-row"><div><strong class="metric-green">{{ plan.review?.approved ?? 0 }}</strong><small>Approved</small></div><div><strong class="metric-red">{{ plan.review?.rejected ?? 0 }}</strong><small>Rejected</small></div><div><strong class="metric-amber">{{ plan.review?.pending ?? 0 }}</strong><small>Pending</small></div><div><strong>{{ plan.review?.total ?? 0 }}</strong><small>Total</small></div></div></div>
+            <div class="summary-box"><h4>Execution Status <small>Approved tasks · all versions</small></h4><div class="metric-row"><div><strong class="metric-green">{{ statusCount('done') }}</strong><small>Completed</small></div><div><strong class="metric-cyan">{{ statusCount('in_progress') }}</strong><small>In progress</small></div><div><strong class="metric-amber">{{ statusCount('open') + statusCount('acknowledged') }}</strong><small>Not started / acknowledged</small></div><div><strong class="metric-red">{{ statusCount('blocked') }}</strong><small>Blocked</small></div></div></div>
+            <div class="summary-box"><h4>Overall Progress</h4><div class="summary-percent">{{ executionPercent }}%</div><div class="summary-progress-track"><div class="summary-progress-fill" :style="{width: executionPercent + '%'}"></div></div><small>{{ plan.task_summary?.done ?? 0 }} of {{ plan.task_summary?.approved ?? 0 }} approved tasks completed</small></div>
           </div>
-          <div class="ps-bottom">
-            <div class="ps-card"><h4>Actions from Current Report ({{ plan?.actions?.length ?? 0 }})</h4>
-              <div class="table-wrap"><table class="rec-table-new"><thead><tr><th>#</th><th>Recommendation</th><th>Officer Priority</th><th>Decision</th><th>Task Status</th><th>Owner</th></tr></thead>
-                <tbody><tr v-for="a in (plan?.actions || [])" :key="a.index"><td>{{ a.index + 1 }}</td><td class="rec-text">{{ a.text }}</td><td>{{ a.officer_priority || '—' }}</td><td><span :class="['ps-pill', a.decision || 'pending']">{{ a.decision || 'Pending' }}</span></td><td>{{ statusLabel(a.task?.status) }}</td><td>{{ a.task?.assignee || '—' }}</td></tr>
-                  <tr v-if="!plan?.actions?.length"><td colspan="6">No recommendations available from the latest report.</td></tr></tbody></table></div>
-            </div>
-            <div class="ps-side">
-              <div class="ps-card"><h4>Task Progress</h4><div v-for="entry in taskStatusRows" :key="entry.key" class="ps-status-row"><span>{{ entry.label }}</span><b>{{ entry.count }}</b><div class="ps-track"><div :style="{ width: entry.percent + '%' }"></div></div><span>{{ entry.percent }}%</span></div></div>
-              <div v-if="blockedTasks.length" class="ps-card"><h4>Blocked Work</h4><div v-for="t in blockedTasks" :key="t.id" class="ps-activity"><strong>{{ t.title }}</strong><span>{{ t.note || 'No reason recorded' }}</span></div></div>
-              <div class="ps-card"><h4>Recorded Activity</h4><div v-if="!plan?.activity?.length" class="hint">No recorded response-plan activity.</div><div v-for="(item, idx) in (plan?.activity || []).slice(0, 8)" :key="idx" class="ps-activity"><strong>{{ activityLabel(item.action) }}</strong><span>{{ item.actor }} · {{ formatTime(item.at) }}</span></div></div>
-            </div>
+          <div class="summary-lower">
+            <div class="summary-box"><h4>Actions from Latest Report ({{ plan.actions?.length || 0 }})</h4><div class="table-wrap"><table class="rec-table-new"><thead><tr><th>#</th><th>Recommendation</th><th>Officer priority</th><th>Decision</th><th>Task status</th><th>Owner</th></tr></thead><tbody><tr v-for="a in plan.actions" :key="a.index"><td>{{ a.index + 1 }}</td><td class="rec-text">{{ a.text }}</td><td><span v-if="a.officer_priority" :class="['priority-chip', String(a.officer_priority).toLowerCase()]">{{ a.officer_priority }}</span><span v-else>—</span></td><td><span :class="['summary-decision', a.decision || 'pending']">{{ a.decision || 'Pending' }}</span></td><td><span :class="['task-chip', a.task?.status || 'none']">{{ statusLabel(a.task?.status) }}</span></td><td>{{ a.task?.assignee || '—' }}</td></tr><tr v-if="!plan.actions?.length"><td colspan="6">No recommendations in the latest report.</td></tr></tbody></table></div></div>
+            <div class="summary-side"><div class="summary-box"><h4>Task Progress</h4><div v-for="item in statusBreakdown" :key="item.key" class="summary-status-row"><span>{{ item.label }}</span><strong>{{ item.count }}</strong><div class="summary-mini-track"><div :style="{width: item.percent + '%'}"></div></div><small>{{ item.percent }}%</small></div></div><div v-if="blockedTasks.length" class="summary-box"><h4>Blocked Work</h4><div v-for="task in blockedTasks" :key="task.id" class="blocked-entry"><strong>{{ task.title }}</strong><small>{{ task.assignee || 'Unassigned' }} · {{ task.note || 'No blocker note available' }}</small></div></div></div>
           </div>
+          <div v-if="olderTasks.length" class="summary-box" style="margin-top: 14px;"><h4>Tasks from Earlier Report Versions</h4><div class="table-wrap"><table class="rec-table-new"><thead><tr><th>Task</th><th>Source version</th><th>Status</th><th>Owner</th></tr></thead><tbody><tr v-for="task in olderTasks" :key="task.id"><td>{{ task.title }}</td><td>v{{ task.report_version }}</td><td>{{ statusLabel(task.status) }}</td><td>{{ task.assignee || '—' }}</td></tr></tbody></table></div></div>
+          <p class="summary-footnote">Approval authorizes a response task; it does not confirm field deployment. Task progress reflects saved task statuses, not review completion.</p>
         </div>
       </div>
     </template>
@@ -525,18 +522,12 @@ const reviewActions = computed(() =>
   (plan.value?.actions || []).filter((a: any) => a.decision || isSelected(a.index))
 )
 
-const statusCount = (key: string) => Number(plan.value?.task_summary?.by_status?.[key] || 0)
-const executionPercent = computed(() => {
-  const total = Number(plan.value?.task_summary?.approved || 0)
-  return total ? Math.round(100 * Number(plan.value?.task_summary?.done || 0) / total) : 0
-})
-const taskStatusRows = computed(() => [
-  { key: 'done', label: 'Completed' }, { key: 'in_progress', label: 'In progress' },
-  { key: 'open', label: 'Not started' }, { key: 'blocked', label: 'Blocked' },
-].map(item => ({ ...item, count: statusCount(item.key), percent: plan.value?.task_summary?.approved ? Math.round(100 * statusCount(item.key) / plan.value.task_summary.approved) : 0 })))
+const statusCount = (status: string): number => Number(plan.value?.task_summary?.by_status?.[status] ?? 0)
+const executionPercent = computed(() => { const total = Number(plan.value?.task_summary?.approved ?? 0); return total ? Math.round(Number(plan.value?.task_summary?.done ?? 0) / total * 100) : 0 })
+const olderTasks = computed(() => (plan.value?.tasks || []).filter((t: any) => t.report_version != null && Number(t.report_version) < Number(plan.value?.report?.version)))
 const blockedTasks = computed(() => (plan.value?.tasks || []).filter((t: any) => t.status === 'blocked' && t.report_version != null))
-const statusLabel = (status?: string) => ({ done: 'Completed', in_progress: 'In progress', open: 'Not started', blocked: 'Blocked' } as Record<string, string>)[status || ''] || '—'
-const activityLabel = (action: string) => ({ plan_approved: 'Recommendation approved', plan_rejected: 'Recommendation rejected', task_updated: 'Task status updated', plan_details_saved: 'Plan details saved' } as Record<string, string>)[action] || action
+const statusLabel = (status?: string | null) => ({ open: 'Not started', acknowledged: 'Acknowledged', in_progress: 'In progress', blocked: 'Blocked', done: 'Completed' } as Record<string,string>)[status || ''] || '—'
+const statusBreakdown = computed(() => { const total = Number(plan.value?.task_summary?.approved ?? 0); return [{key:'done',label:'Completed'},{key:'in_progress',label:'In progress'},{key:'open',label:'Not started'},{key:'acknowledged',label:'Acknowledged'},{key:'blocked',label:'Blocked'}].map(x => ({...x,count:statusCount(x.key),percent:total ? Math.round(statusCount(x.key)/total*100) : 0})) })
 
 const isSelected = (index: number) => selected.value.includes(index)
 
@@ -988,8 +979,56 @@ tr.decided { opacity: 0.5; background: rgba(0, 0, 0, 0.2); }
   .stepper { grid-template-columns: 1fr; }
   .summary-stats-grid { grid-template-columns: 1fr 1fr; }
 }
-</style>
 
-<style scoped>
-.ps-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.ps-head h3{margin:0 0 5px;color:#f8fafc;font-size:22px}.ps-incident{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;background:rgba(8,47,73,.42);border:1px solid rgba(34,211,238,.17);padding:18px;border-radius:9px;margin-bottom:16px}.ps-incident>div{display:flex;flex-direction:column;gap:6px}.ps-incident strong{color:#e2e8f0}.ps-incident span,.ps-incident small{color:#94a3b8;font-size:12px}.ps-notice{padding:12px 16px;border:1px solid rgba(245,158,11,.45);color:#fcd34d;background:rgba(245,158,11,.08);border-radius:8px;margin-bottom:16px}.ps-metrics{display:grid;grid-template-columns:1.2fr 1.4fr 1fr;gap:14px;margin-bottom:14px}.ps-card{background:rgba(8,31,52,.78);border:1px solid rgba(56,189,248,.22);border-radius:9px;padding:16px;min-width:0}.ps-card h4{margin:0 0 18px;color:#e2e8f0;font-size:14px}.ps-counts{display:flex;justify-content:space-between;gap:8px}.ps-counts>div{display:flex;flex-direction:column;gap:6px}.ps-counts b{font-size:23px;color:#e2e8f0}.ps-counts span{font-size:11px;color:#94a3b8}.ps-progress-number{font-size:26px;font-weight:700;color:#5eead4;margin-bottom:8px}.ps-track{height:9px;background:#1e3a53;border-radius:20px;overflow:hidden}.ps-track>div{height:100%;background:linear-gradient(90deg,#06b6d4,#10b981);border-radius:20px}.ps-card>.hint{margin-top:10px}.ps-bottom{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:14px}.ps-side{display:flex;flex-direction:column;gap:14px}.ps-status-row{display:grid;grid-template-columns:90px 20px 1fr 38px;gap:8px;align-items:center;margin-bottom:14px;font-size:12px;color:#cbd5e1}.ps-status-row b{color:#f8fafc}.ps-activity{display:flex;flex-direction:column;gap:5px;padding:9px 0;border-bottom:1px solid rgba(148,163,184,.13)}.ps-activity strong{font-size:12px;color:#e2e8f0}.ps-activity span{font-size:11px;color:#94a3b8}.ps-pill{display:inline-block;border-radius:16px;padding:4px 9px;text-transform:capitalize;font-size:11px;background:#334155;color:#cbd5e1}.ps-pill.approved{background:rgba(16,185,129,.16);color:#6ee7b7}.ps-pill.rejected{background:rgba(239,68,68,.14);color:#fca5a5}.ps-pill.pending{background:rgba(245,158,11,.14);color:#fcd34d}@media(max-width:1050px){.ps-metrics,.ps-bottom{grid-template-columns:1fr}.ps-incident{grid-template-columns:1fr 1fr}}@media(max-width:600px){.ps-incident{grid-template-columns:1fr}.ps-head{align-items:flex-start;flex-direction:column}}
+/* Plan Summary */
+.summary-shell { padding: 22px; }
+.summary-top { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:18px; }
+.summary-heading { font-size:22px; color:#f8fafc; margin:0 0 6px; }
+.summary-context { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+.summary-context > div,.summary-box { background:rgba(6,25,45,.72); border:1px solid rgba(24,136,192,.35); border-radius:10px; padding:16px; min-width:0; }
+.summary-context strong,.summary-context small,.summary-caption { display:block; }
+.summary-context strong { color:#f1f5f9; font-size:15px; margin:5px 0; }
+.summary-context small,.summary-caption,.summary-box small { color:#94a3b8; font-size:12px; }
+.summary-notice { color:#fbbf24; border:1px solid rgba(245,158,11,.4); background:rgba(245,158,11,.07); padding:12px 16px; border-radius:9px; margin-bottom:16px; font-size:13px; }
+.summary-metrics { display:grid; grid-template-columns:1.15fr 1.35fr 1fr; gap:12px; margin-bottom:14px; }
+.summary-box h4 { color:#e2e8f0; font-size:14px; margin:0 0 18px; }
+.summary-box h4 small { font-weight:400; display:block; margin-top:4px; }
+.metric-row { display:flex; justify-content:space-between; gap:9px; }
+.metric-row > div { min-width:0; text-align:center; }
+.metric-row strong { display:block; font-size:24px; color:#f8fafc; }
+.metric-row small { display:block; margin-top:5px; }
+.metric-green { color:#34d399!important; }.metric-red { color:#fb7185!important; }.metric-amber { color:#fbbf24!important; }.metric-cyan { color:#38bdf8!important; }
+.summary-percent { font-size:27px; font-weight:700; color:#f8fafc; }
+.summary-progress-track,.summary-mini-track { height:9px; border-radius:20px; overflow:hidden; background:#1e3a56; margin:12px 0; }
+.summary-progress-fill,.summary-mini-track > div { height:100%; border-radius:20px; background:linear-gradient(90deg,#06b6d4,#10b981); }
+.summary-lower { display:grid; grid-template-columns:minmax(0,2fr) minmax(270px,1fr); gap:14px; }
+.summary-side { display:flex; flex-direction:column; gap:14px; }
+.summary-status-row { display:grid; grid-template-columns:100px 22px minmax(40px,1fr) 35px; align-items:center; gap:8px; color:#cbd5e1; font-size:12px; margin:12px 0; }
+.summary-status-row .summary-mini-track { margin:0; }.summary-status-row small { text-align:right; }
+.summary-decision { text-transform:capitalize; color:#fbbf24; }.summary-decision.approved { color:#34d399; }.summary-decision.rejected { color:#fb7185; }
+.blocked-entry { margin-top:12px; }.blocked-entry strong,.blocked-entry small { display:block; }.blocked-entry strong { color:#f8fafc; font-size:12px; margin-bottom:4px; }
+.summary-footnote { color:#94a3b8; font-size:12px; margin:15px 0 0; }
+@media(max-width:1050px){.summary-metrics{grid-template-columns:1fr 1fr}.summary-metrics>.summary-box:last-child{grid-column:1/-1}.summary-lower{grid-template-columns:1fr}}
+@media(max-width:640px){.summary-context,.summary-metrics{grid-template-columns:1fr}.summary-metrics>.summary-box:last-child{grid-column:auto}.summary-top{align-items:flex-start;flex-direction:column}.summary-shell{padding:12px}}
+
+/* Visible reviewer identity stays inside the Response Operations heading, not between the stepper and content. */
+.officer-identity { width:min(100%, 340px); flex:0 0 310px; padding:12px 14px; border:1px solid rgba(56,189,248,.36); border-radius:10px; background:linear-gradient(130deg,rgba(8,47,73,.9),rgba(15,23,42,.9)); box-shadow:inset 0 1px 0 rgba(125,211,252,.07); }
+.officer-identity-ready { border-color:rgba(52,211,153,.36); }
+.officer-identity-label { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; color:#f1f5f9; margin-bottom:8px; }
+.officer-identity-icon { font-size:16px; }
+.required-indicator { font-size:10px; font-weight:600; color:#fbbf24; margin-left:4px; }
+.officer-identity-input { width:100%; box-sizing:border-box; min-height:38px; border:1px solid rgba(56,189,248,.45); background:rgba(2,13,27,.65); border-radius:6px; padding:8px 10px; color:#f8fafc; }
+.officer-identity-input:focus { outline:2px solid rgba(34,211,238,.5); outline-offset:1px; }
+.officer-identity-help { display:block; margin-top:6px; color:#9cb4c9; font-size:11px; line-height:1.4; }
+.officer-summary-name { color:#34d399; font-weight:700; font-size:15px; }
+.summary-eyebrow { font-size:10px; letter-spacing:1.3px; font-weight:700; color:#38bdf8; margin-bottom:7px; }
+.summary-eyebrow span { margin:0 5px; color:#64748b; }
+.priority-chip,.task-chip { display:inline-flex; padding:4px 9px; border-radius:20px; font-size:11px; font-weight:700; text-transform:capitalize; border:1px solid rgba(148,163,184,.28); background:rgba(148,163,184,.1); color:#cbd5e1; white-space:nowrap; }
+.priority-chip.high,.priority-chip.critical { color:#fb7185; border-color:rgba(251,113,133,.4); background:rgba(251,113,133,.1); }
+.priority-chip.medium { color:#fbbf24; border-color:rgba(251,191,36,.4); background:rgba(251,191,36,.1); }
+.priority-chip.low { color:#38bdf8; border-color:rgba(56,189,248,.4); background:rgba(56,189,248,.1); }
+.task-chip.done { color:#34d399; background:rgba(52,211,153,.12); }
+.task-chip.in_progress { color:#38bdf8; background:rgba(56,189,248,.12); }
+.task-chip.blocked { color:#fb7185; background:rgba(251,113,133,.12); }
+@media(max-width:720px) { .officer-identity { flex:1 1 100%; width:100%; } }
 </style>

@@ -15,84 +15,36 @@
       :incident-location="incident?.location_name ?? null"
     />
 
-    <div v-if="deepDossier" class="deep-ai-tab-container">
-      
-      <!-- Tactical Briefing - Redesigned Card -->
-      <div class="glass-panel-new" style="padding: 24px; margin-bottom: 20px; border-left: 4px solid var(--detail-accent);">
-        <div style="display: flex; align-items: flex-start; gap: 16px;">
-          <div style="font-size: 32px; flex-shrink: 0;">⚠️</div>
-          <div>
-            <h3 style="margin: 0 0 8px 0; color: var(--text-primary); font-size: 16px;">{{ $t('responseTab.tacticalBriefing') }}</h3>
-            <p style="margin: 0; font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
-              {{ deepDossier.severity_assessment || $t('responseTab.situationalPending') }}
-            </p>
+    <!-- Supplemental AI context: available on the Response tab, collapsed by default so
+         the officer's plan/review/summary remains the primary workspace. -->
+    <section v-if="deepDossier" class="response-context">
+      <button class="context-toggle" type="button" :aria-expanded="showContext" @click="showContext = !showContext">
+        <span class="context-icon">◈</span>
+        <span class="context-heading">
+          <strong>AI Situation Brief & Suggested Priorities</strong>
+          <small>Supporting context from the crisis report · {{ totalSuggestedActions }} suggested actions · Not yet approved tasks</small>
+        </span>
+        <span class="context-toggle-label">{{ showContext ? 'Hide details' : 'View details' }} {{ showContext ? '▴' : '▾' }}</span>
+      </button>
+      <div v-if="showContext" class="context-body">
+        <div class="context-brief">
+          <div class="context-title"><span>⚠</span> Situation assessment <span class="context-ai-label">AI-generated · verify before action</span></div>
+          <p>{{ deepDossier.severity_assessment || $t('responseTab.situationalPending') }}</p>
+        </div>
+        <div class="context-priorities-header">
+          <div><h3>Suggested response priorities</h3><p>Grouped by report urgency, not fixed operational deadlines.</p></div>
+          <span class="context-count">{{ totalSuggestedActions }} suggestions</span>
+        </div>
+        <div v-if="totalSuggestedActions" class="context-priority-grid">
+          <div v-for="group in populatedActionGroups" :key="group.key" class="context-priority-card" :class="group.key">
+            <div class="priority-card-title"><span class="priority-dot"></span>{{ group.label }} <span class="priority-number">{{ group.actions.length }}</span></div>
+            <ul><li v-for="(action, idx) in group.actions" :key="idx">{{ action }}</li></ul>
           </div>
         </div>
+        <p v-else class="context-empty">No response actions were included in the current crisis report.</p>
+        <p class="context-disclaimer">These are report suggestions, not approved response tasks. Use Create Response Plan and Review & Approve above to record officer decisions.</p>
       </div>
-
-      <!-- PHASED RESPONSE TIMELINE - Redesigned -->
-      <div class="glass-panel-new" style="padding: 24px; margin-bottom: 20px;">
-        <div style="margin-bottom: 20px;">
-          <h3 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 16px; font-weight: 700;">{{ $t('responseTab.operationalPhases') }}</h3>
-          <p style="margin: 0; color: var(--text-secondary); font-size: 13px;">{{ $t('responseTab.responseTimeline') }}</p>
-        </div>
-
-        <!-- Phases Grid -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
-          <!-- IMMEDIATE PHASE -->
-          <div class="phase-card" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-              <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center; color: #f87171; font-weight: 700; font-size: 14px;">1</div>
-              <div>
-                <h4 style="margin: 0; color: #f87171; font-size: 13px; font-weight: 700; text-transform: uppercase;">{{ $t('responseTab.immediatePhase') }}</h4>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 11px;">{{ $t('responseTab.startNow') }}</p>
-              </div>
-            </div>
-            <div v-if="deepDossier.immediate_actions && deepDossier.immediate_actions.length > 0" style="display: flex; flex-direction: column; gap: 8px;">
-              <div v-for="(action, idx) in deepDossier.immediate_actions" :key="`imm-${idx}`" style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; color: var(--text-primary); font-size: 12px; line-height: 1.4;">
-                {{ action }}
-              </div>
-            </div>
-            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 12px;">{{ $t('responseTab.noImmediate') }}</div>
-          </div>
-
-          <!-- URGENT PHASE -->
-          <div class="phase-card" style="background: rgba(249, 115, 22, 0.08); border: 1px solid rgba(249, 115, 22, 0.25); border-radius: 8px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-              <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(249, 115, 22, 0.2); display: flex; align-items: center; justify-content: center; color: #fb923c; font-weight: 700; font-size: 14px;">2</div>
-              <div>
-                <h4 style="margin: 0; color: #fb923c; font-size: 13px; font-weight: 700; text-transform: uppercase;">{{ $t('responseTab.urgentPhase') }}</h4>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 11px;">{{ $t('responseTab.completeBy') }}</p>
-              </div>
-            </div>
-            <div v-if="deepDossier.high_priority_actions && deepDossier.high_priority_actions.length > 0" style="display: flex; flex-direction: column; gap: 8px;">
-              <div v-for="(action, idx) in deepDossier.high_priority_actions" :key="`urg-${idx}`" style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; color: var(--text-primary); font-size: 12px; line-height: 1.4;">
-                {{ action }}
-              </div>
-            </div>
-            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 12px;">{{ $t('responseTab.noUrgent') }}</div>
-          </div>
-
-          <!-- SUSTAINED PHASE -->
-          <div class="phase-card" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-              <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; color: #fbbf24; font-weight: 700; font-size: 14px;">3</div>
-              <div>
-                <h4 style="margin: 0; color: #fbbf24; font-size: 13px; font-weight: 700; text-transform: uppercase;">{{ $t('responseTab.sustainedPhase') }}</h4>
-                <p style="margin: 0; color: var(--text-secondary); font-size: 11px;">{{ $t('responseTab.ongoing') }}</p>
-              </div>
-            </div>
-            <div v-if="deepDossier.medium_priority_actions && deepDossier.medium_priority_actions.length > 0" style="display: flex; flex-direction: column; gap: 8px;">
-              <div v-for="(action, idx) in deepDossier.medium_priority_actions" :key="`sus-${idx}`" style="padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; color: var(--text-primary); font-size: 12px; line-height: 1.4;">
-                {{ action }}
-              </div>
-            </div>
-            <div v-else style="color: var(--text-secondary); padding: 8px; font-size: 12px;">{{ $t('responseTab.noSustained') }}</div>
-          </div>
-        </div>
-      </div>
-
-    </div>
+    </section>
 
     <div v-else-if="isAnalyzingDossier" class="deep-ai-tab-container">
       
@@ -119,10 +71,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import GenerationNotice from './GenerationNotice.vue'
 import ResponsePlanPanel from '@/components/molecules/ResponsePlanPanel.vue'
 
-defineProps<{
+defineEmits(['launch'])
+
+const props = defineProps<{
   deepDossier: any
   isAnalyzingDossier: boolean
   generationStartedAt?: number | null
@@ -131,26 +86,50 @@ defineProps<{
   incident?: any
 }>()
 
-defineEmits(['launch'])
-
-function getPriorityClass(priority: number | string): string {
-  const p = typeof priority === 'string' ? parseInt(priority) : priority
-  if (p === 1) return 'priority-tag immediate'
-  if (p === 2) return 'priority-tag high'
-  if (p === 3) return 'priority-tag staged'
-  return 'priority-tag'
-}
-
-function getPriorityLabel(priority: number | string): string {
-  const p = typeof priority === 'string' ? parseInt(priority) : priority
-  if (p === 1) return 'IMMEDIATE'
-  if (p === 2) return 'HIGH'
-  if (p === 3) return 'STAGED'
-  return 'UNKNOWN'
-}
+const showContext = ref(false)
+const populatedActionGroups = computed(() => [
+  { key: 'immediate', label: 'IMMEDIATE', actions: props.deepDossier?.immediate_actions ?? [] },
+  { key: 'high', label: 'HIGH', actions: props.deepDossier?.high_priority_actions ?? [] },
+  { key: 'staged', label: 'STAGED', actions: props.deepDossier?.medium_priority_actions ?? [] },
+].filter(group => Array.isArray(group.actions) && group.actions.length > 0))
+const totalSuggestedActions = computed(() => populatedActionGroups.value.reduce((sum, group) => sum + group.actions.length, 0))
 </script>
 
 <style scoped>
+/* Compact, on-demand AI context below the operational workflow */
+.response-context { margin: 20px 0; border: 1px solid rgba(34, 211, 238, .22); border-radius: 12px; background: linear-gradient(120deg, rgba(6, 30, 50, .95), rgba(10, 20, 34, .95)); overflow: hidden; }
+.context-toggle { width: 100%; padding: 17px 20px; background: transparent; border: 0; color: #e5f5ff; display: flex; align-items: center; gap: 14px; cursor: pointer; text-align: left; }
+.context-toggle:hover { background: rgba(14, 165, 233, .07); }
+.context-icon { font-size: 24px; color: #22d3ee; }
+.context-heading { display: flex; flex: 1; flex-direction: column; gap: 5px; }
+.context-heading strong { font-size: 15px; }
+.context-heading small { color: #9fb7c9; font-size: 12px; }
+.context-toggle-label { color: #38bdf8; font-size: 12px; white-space: nowrap; }
+.context-body { padding: 0 20px 20px; }
+.context-brief { padding: 16px; background: rgba(13, 39, 59, .75); border: 1px solid rgba(56, 189, 248, .15); border-radius: 9px; }
+.context-title { font-size: 14px; font-weight: 700; color: #e7f6ff; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.context-title > span:first-child { color: #fbbf24; }
+.context-ai-label { color: #9cb5c8; font-size: 11px; font-weight: 400; }
+.context-brief p { font-size: 13px; line-height: 1.65; color: #c4d8e7; margin: 9px 0 0; }
+.context-priorities-header { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 12px; gap: 12px; }
+.context-priorities-header h3 { font-size: 15px; margin: 0 0 4px; color: #e7f6ff; }
+.context-priorities-header p { font-size: 12px; color: #91a9bc; margin: 0; }
+.context-count { color: #7dd3fc; font-size: 12px; white-space: nowrap; }
+.context-priority-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.context-priority-card { padding: 15px; border-radius: 9px; border: 1px solid rgba(148, 163, 184, .2); background: rgba(15, 23, 42, .65); }
+.context-priority-card.immediate { border-color: rgba(248, 113, 113, .35); }
+.context-priority-card.high { border-color: rgba(251, 146, 60, .35); }
+.context-priority-card.staged { border-color: rgba(251, 191, 36, .35); }
+.priority-card-title { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #dcebf5; }
+.priority-dot { width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; }
+.immediate .priority-dot { background: #f87171; }
+.high .priority-dot { background: #fb923c; }
+.priority-number { margin-left: auto; color: #a7bfd2; }
+.context-priority-card ul { padding-left: 18px; margin: 12px 0 0; }
+.context-priority-card li { color: #cbddeb; font-size: 12px; line-height: 1.6; margin: 0 0 8px; }
+.context-disclaimer, .context-empty { font-size: 12px; color: #95b1c5; margin: 15px 0 0; line-height: 1.5; }
+@media (max-width: 640px) { .context-toggle { padding: 14px; } .context-body { padding: 0 14px 14px; } .context-toggle-label { font-size: 11px; } }
+
 .ai-review-banner { margin-bottom: 20px; padding: 12px 16px; border-radius: 8px; font-size: 14px; color: #fde68a; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.35); line-height: 1.5; }
 .glass-panel {
   background: var(--bg-panel);
