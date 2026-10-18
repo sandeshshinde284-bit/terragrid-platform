@@ -28,7 +28,7 @@ def upgrade():
     op.create_table(
         TABLE,
         sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('event_id', sa.Integer(), nullable=False),
+        sa.Column('event_id', sa.Integer(), nullable=True),
         sa.Column('city', sa.String(length=120), nullable=False),
         sa.Column('country', sa.String(length=120), nullable=False),
         sa.Column('hazard_type', sa.String(length=50), nullable=True),
