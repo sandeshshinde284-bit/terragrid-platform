@@ -37,8 +37,8 @@
       <!-- Header -->
       <div class="teaser-header">
         <span class="teaser-pulse-dot"></span>
-        <label class="teaser-title">AI-recommended next step</label>
-        <span class="review-tag">Evidence + review required</span>
+        <label class="teaser-title">Suggested next step</label>
+        <span class="review-tag">Needs officer approval</span>
       </div>
 
       <!-- Top Action Only -->
@@ -56,13 +56,8 @@
         </div>
       </div>
 
-      <!-- Evidence behind the recommendation, shown with it -->
-      <div v-if="evidence && evidence.length" class="evidence-box">
-        <span class="evidence-title">Evidence</span>
-        <ul class="evidence-list">
-          <li v-for="(line, i) in evidence" :key="i">{{ line }}</li>
-        </ul>
-      </div>
+      <!-- Where the suggestion comes from -->
+      <p v-if="basedOn" class="based-on">Based on: {{ basedOn }}</p>
 
       <!-- Show count of remaining actions if > 1 -->
       <div v-if="remainingCount > 0" class="remaining-badge">
@@ -92,7 +87,7 @@ const props = defineProps<{
   isLoading: boolean
   error: string | null | undefined
   incidentId: string
-  evidence?: string[]
+  basedOn?: string
 }>()
 
 const emit = defineEmits<{
@@ -345,9 +340,7 @@ const navigateToInsights = () => {
   padding-top: 2px;
 }
 
-.evidence-box { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 6px; background: rgba(15,23,42,0.5); }
-.evidence-title { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: #94a3b8; text-transform: uppercase; }
-.evidence-list { margin: 0; padding-left: 16px; font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 2px; }
+.based-on { margin: 0; font-size: 12px; color: #94a3b8; }
 
 .all-actions { display: flex; flex-direction: column; gap: 8px; }
 .action-basis { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #e2e8f0; }
@@ -368,6 +361,7 @@ const navigateToInsights = () => {
   margin-left: 6px;
   font-size: 11px;
   color: #fde68a;
+  font-weight: 400;
 }
 
 .action-text {

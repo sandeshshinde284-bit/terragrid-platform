@@ -113,7 +113,7 @@
               :isLoading="isLoadingInsights"
               :error="null"
               :incidentId="selectedIncidentData.id"
-              :evidence="evidenceFor(selectedIncidentData)"
+              :basedOn="basedOnFor(selectedIncidentData)"
               @navigateToInsights="() => { /* Router link handles this */ }"
             />
 
@@ -209,7 +209,7 @@
               :isLoading="isLoadingInsights"
               :error="null"
               :incidentId="selectedIncidentData.id"
-              :evidence="evidenceFor(selectedIncidentData)"
+              :basedOn="basedOnFor(selectedIncidentData)"
               @navigateToInsights="() => { /* Router link handles this */ }"
             />
 
@@ -747,14 +747,10 @@ const previousPage = () => {
   }
 }
 
-// What the action panel is based on, so the recommendation is shown next to its evidence.
-const evidenceFor = (inc: any): string[] => {
-  const lines: string[] = []
-  lines.push(`Source: ${inc.source || 'not recorded'}`)
-  lines.push(`Detected: ${inc.detectionTime ? new Date(inc.detectionTime).toLocaleString() : 'time not recorded'}`)
-  lines.push(`Threat score (model): ${getThreatScore(inc) ?? 'not scored'}`)
-  lines.push('Impact figures are model estimates')
-  return lines
+// One line under the suggestion: where the data came from and when it was detected.
+const basedOnFor = (inc: any): string => {
+  const when = inc.detectionTime ? new Date(inc.detectionTime).toLocaleString() : 'time not recorded'
+  return `${inc.source || 'source not recorded'}, detected ${when}`
 }
 
 const expandIncident = (id: string) => {
