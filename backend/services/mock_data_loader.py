@@ -38,24 +38,8 @@ class MockDataLoader:
             return [] if sub_dir == "mocks" and not filename.startswith("demo_") else {}
 
     @classmethod
-    def load_fallback_ai_plan(cls) -> Dict[str, Any]:
-        return cls._load_json("fallbacks", "ai_offline_plan.json", inject_fallback_flag=True)
-
-    @classmethod
-    def load_fallback_dossier(cls) -> Dict[str, Any]:
-        return cls._load_json("fallbacks", "ai_offline_dossier.json", inject_fallback_flag=True)
-
-    @classmethod
     def load_default_impact(cls) -> Dict[str, Any]:
         return cls._load_json("fallbacks", "default_impact.json", inject_fallback_flag=True)
-
-    @classmethod
-    def load_mock_plan(cls) -> Dict[str, Any]:
-        return cls._load_json("mocks", "demo_plan.json", inject_mock_flag=True)
-
-    @classmethod
-    def load_mock_dossier(cls) -> Dict[str, Any]:
-        return cls._load_json("mocks", "demo_dossier.json", inject_mock_flag=True)
 
     @classmethod
     def load_mock_incidents(cls, source: str) -> List[Dict[str, Any]]:

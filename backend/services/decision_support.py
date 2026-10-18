@@ -6,10 +6,14 @@ import logging
 from typing import Dict, Any, List, Optional
 
 from .prompt_schemas import DEEP_DOSSIER_SCHEMA_TEXT, RESPONSE_PLAN_SCHEMA_TEXT, PREPAREDNESS_ACTIONS_SCHEMA_TEXT, AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT
-from .location_context import get_location_context
 from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
+
+def unavailable_ai_result(kind: str, reason: str) -> Dict[str, Any]:
+    """Explicit marker that live AI output is unavailable. It carries no content."""
+    return {"is_fallback": True, "unavailable": True, "kind": kind, "reason": reason}
+
 
 class DecisionSupportService:
     """
@@ -47,36 +51,25 @@ class DecisionSupportService:
         except Exception as e:
             logger.warning(f"DecisionSupportService: Could not initialize Vertex AI SDK ({type(e).__name__}: {e}). Will use fallback plans.")
 
-    def generate_response_plan(self, incident: Dict[str, Any], zone_data: Optional[Dict[str, Any]] = None, use_mock: bool = False) -> Dict[str, Any]:
+    def generate_response_plan(self, incident: Dict[str, Any], zone_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Generates a tailored, country-specific disaster response plan.
         
         Args:
             incident: Dictionary containing disaster metrics (location_name, threat_score, event_type).
             zone_data: Optional evacuation zone statistics.
-            use_mock: If True, bypasses API and returns a rich fabricated demonstration plan.
             
         Returns:
             Structured JSON response containing immediate actions, evacuation advice, and resource allocations.
         """
-        from .mock_data_loader import MockDataLoader
-        
         location = incident.get("location_name", "Unknown Region")
         event_type = incident.get("event_type", "disaster").upper()
         threat_score = incident.get("threatScore") or incident.get("impact", {}).get("risk_score", 50)
         pop_at_risk = zone_data.get("total_population_affected") if zone_data else (incident.get("affectedPopulation") or 10000)
 
-        # Graceful fallback when AI model is unavailable
-        fallback_plan = MockDataLoader.load_fallback_ai_plan()
-
-        # Use mock data for demonstration mode
-        if use_mock:
-            mock_plan = MockDataLoader.load_mock_plan()
-            logger.info(f"Returning rich mock demonstration plan for {location}")
-            return mock_plan
-
+        # No stored or demo content: without a live model there is no plan.
         if not self.model:
-            return fallback_plan
+            return unavailable_ai_result("response_plan", "Gemini model is not configured")
 
         try:
             # The existing 6 APIs (NASA EONET, GDACS, USGS, OpenWeather, NOAA) provide complete India coverage
@@ -94,8 +87,6 @@ class DecisionSupportService:
             
             logger.info(f"[GEMINI ANALYSIS] Data sources for {location}: {', '.join(data_sources)}")
             
-            location_context = get_location_context(location)
-            agencies_list = "\n            ".join([f"- {agency}" for agency in location_context["secondary_agencies"]])
             
             
             # imd_context = ""
@@ -128,12 +119,7 @@ class DecisionSupportService:
             DATA SOURCES INTEGRATED:
             {', '.join(data_sources)}
 
-            LOCATION-SPECIFIC CONTEXT:
-            - Primary Agency: {location_context['primary_agency']}
-            - Secondary Agencies:
-            {agencies_list}
-            - Key Staging Areas: {", ".join(location_context['staging_areas'][:2])}
-            - Average Response Times: Helicopter {location_context['avg_response_times_minutes']['helicopter']} min, Ambulance {location_context['avg_response_times_minutes']['ambulance']} min
+            NO LOCATION DATABASE: Do not name agencies, facilities, staging areas or response times unless they appear in the input above.
 
             {imd_context}
 
@@ -188,7 +174,7 @@ class DecisionSupportService:
             logger.warning("Vertex AI decision support generation failed. Returning tactical fallback.")
 
         logger.info(f"[FEATURE_HEALTH] feature=gemini_response_plan status=fallback location={location} model_initialized={self.model is not None}")
-        return fallback_plan
+        return unavailable_ai_result("response_plan", "Gemini request failed")
 
     def generate_preparedness_actions(self, city_forecast: Dict[str, Any], use_mock: bool = False) -> Dict[str, Any]:
         """
@@ -424,7 +410,7 @@ class DecisionSupportService:
 
         return fallback_alerts
 
-    def generate_deep_tactical_dossier(self, event_data: Dict[str, Any], use_mock: bool = False, db_session=None) -> Dict[str, Any]:
+    def generate_deep_tactical_dossier(self, event_data: Dict[str, Any], db_session=None) -> Dict[str, Any]:
         """
         Tier 2 Deep Intelligence Dossier: Fuses multi-source telemetry from NASA, USGS,
         OpenWeather, and GDACS, sending a multi-variable military prompt to Google Cloud Vertex AI
@@ -432,7 +418,6 @@ class DecisionSupportService:
         
         Args:
             event_data: Incident data.
-            use_mock: If True, bypasses API and returns a rich fabricated demonstration dossier.
             db_session: Optional DB session for historical queries.
         """
         event_type = event_data.get("event_type", "Hazard")
@@ -456,7 +441,6 @@ class DecisionSupportService:
         pressure = weather_data.get("pressure_hpa", 1013)
         weather_desc = weather_data.get("description", "Active weather conditions")
 
-        from .mock_data_loader import MockDataLoader
         from .infrastructure import InfrastructureService
         from .evacuation_zones import EvacuationZoneService
         from backend.models.event import Event
@@ -556,22 +540,11 @@ class DecisionSupportService:
         else:
             gis_injection += "\n            - (No OSRM road network geometries retrieved. Rely on cardinal direction egress.)"
 
-        # Transparent AI Offline Fallback
-        fallback_dossier = MockDataLoader.load_fallback_dossier()
-        
-        # Rich demonstration dossier
-        if use_mock:
-            mock_dossier = MockDataLoader.load_mock_dossier()
-            logger.info(f"Returning rich mock demonstration dossier for {location}")
-            return mock_dossier
-
         if not self.model:
-            logger.warning("Vertex AI model unconfigured. Returning transparent offline state.")
-            return fallback_dossier
+            logger.warning("Vertex AI model unconfigured. No dossier generated.")
+            return unavailable_ai_result("deep_dossier", "Gemini model is not configured")
 
         try:
-            location_context = get_location_context(location)
-            agencies_list = "\n            ".join([f"- {agency}" for agency in location_context["secondary_agencies"][:3]])
             
             prompt = f"""
             Generate a detailed intelligence dossier for this live disaster incident using integrated sensor telemetry and geospatial analysis.
@@ -589,12 +562,7 @@ class DecisionSupportService:
               â€¢ Barometric Pressure: {pressure} hPa | Weather: {weather_desc}
             - Source Telemetry: {source}
 
-            LOCATION-SPECIFIC CONTEXT:
-            - Primary Agency: {location_context['primary_agency']}
-            - Secondary Response Agencies:
-            {agencies_list}
-            - Key Staging Areas: {", ".join(location_context['staging_areas'][:2])}
-            - Average Response Times: Helicopter {location_context['avg_response_times_minutes']['helicopter']} min, Ambulance {location_context['avg_response_times_minutes']['ambulance']} min, Fire Engine {location_context['avg_response_times_minutes']['fire_engine']} min
+            NO LOCATION DATABASE: Do not name agencies, facilities, staging areas or response times unless they appear in the input above.
 
             {history_injection}
             {gis_injection}
@@ -665,7 +633,7 @@ class DecisionSupportService:
             logger.warning("Returning operational contingency dossier.")
 
         logger.info(f"[FEATURE_HEALTH] feature=gemini_deep_dossier status=fallback location={location} model_initialized={self.model is not None}")
-        return fallback_dossier
+        return unavailable_ai_result("deep_dossier", "Gemini request failed")
 
 # Lazy-load singleton to avoid blocking startup during Gemini SDK initialization
 _decision_support_service = None
