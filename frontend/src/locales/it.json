@@ -365,7 +365,11 @@
     "colAgency": "Agenzia Assegnata",
     "colLocation": "Luogo di Schieramento",
     "colEta": "ETA",
-    "colPriority": "Priorità"
+    "colPriority": "Priorità",
+    "stepReviewApprove": "Review & Approve Plan",
+    "stepPlanReview": "Plan & Review",
+    "stepActivityLog": "Activity Log",
+    "stepPlanSummary": "Plan Summary"
   },
   "impactTab": {
     "sourceOsm": "OpenStreetMap",

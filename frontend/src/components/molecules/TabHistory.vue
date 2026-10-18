@@ -16,7 +16,7 @@
               ⏱️ +{{ cascade.timeframe_hours }} {{ $t('historyTab.hours') }}
             </span>
             <span class="delta-badge" style="font-family: ui-monospace, monospace; font-size: 18px; font-weight: 700; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); padding: 4px 10px; border-radius: 4px;">
-              +{{ cascade.perimeter_delta_km2.toFixed(1) }} km² {{ $t('historyTab.expansion') }}
+              +{{ (cascade.perimeter_delta_km2 || 0).toFixed(1) }} km² {{ $t('historyTab.expansion') }}
             </span>
           </div>
           

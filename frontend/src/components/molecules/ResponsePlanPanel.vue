@@ -6,11 +6,13 @@
         <h3>Response Operations</h3>
         <p class="hint">Create a response plan from AI recommendations, review and approve actions, and track execution.</p>
       </div>
-      <div class="linked-card">
+<!-- Commented out linked-card
+<div class="linked-card">
         <span class="linked-label">Linked to Crisis Report</span>
         <strong>{{ plan?.report ? `Version ${plan.report.version}` : 'Not generated yet' }}</strong>
         <span class="muted small">{{ plan?.report ? `Generated ${formatTime(plan.report.generated_at)}` : 'Waiting for AI crisis report' }}</span>
-      </div>
+      </div> 
+--> 
     </header>
 
     <!-- Five stages. All stages are now functional. -->
@@ -23,10 +25,10 @@
         <span class="step-no">{{ stepDone(2) ? '✓' : '2' }}</span>
         <div><strong>Review &amp; Approve</strong><small>Officer decisions and assignment</small></div>
       </li>
-      <li :class="stepClass(3)">
+      <!-- <li :class="stepClass(3)">
         <span class="step-no">{{ stepDone(3) ? '✓' : '3' }}</span>
         <div><strong>Active Tasks</strong><small>Track execution and progress</small></div>
-      </li>
+      </li> -->
       <li :class="stepClass(4)">
         <span class="step-no">{{ stepDone(4) ? '✓' : '4' }}</span>
         <div><strong>Plan Summary</strong><small>View plan status and outcomes</small></div>

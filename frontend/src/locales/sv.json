@@ -365,7 +365,11 @@
     "colAgency": "Tilldelad Myndighet",
     "colLocation": "Insatsplats",
     "colEta": "ETA",
-    "colPriority": "Prioritet"
+    "colPriority": "Prioritet",
+    "stepReviewApprove": "Review & Approve Plan",
+    "stepPlanReview": "Plan & Review",
+    "stepActivityLog": "Activity Log",
+    "stepPlanSummary": "Plan Summary"
   },
   "impactTab": {
     "sourceOsm": "OpenStreetMap",

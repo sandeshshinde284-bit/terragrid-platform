@@ -13,14 +13,15 @@ import json
 import hashlib
 import logging
 import time
+import threading
 from typing import Dict, Any, List, Optional, Tuple
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 EMBEDDING_MODEL = "text-embedding-004"  # Vertex AI embedding model
-BATCH_SIZE = 50          # texts per embedding request
-RETRY_WAITS = (2, 4)     # seconds to wait after a quota error, before retrying
+BATCH_SIZE = 100         # texts per embedding request (increased from 50 to reduce chunking)
+RETRY_WAITS = (12, 24, 48)  # seconds to wait after quota error (increased to 12s = quota refresh window)
 CANDIDATE_LIMIT = 100    # past incidents compared per report
 
 
@@ -38,6 +39,10 @@ class VectorRAGEngine:
         self.location = os.getenv("GCP_REGION", "us-central1")
         self.embedding_model = EMBEDDING_MODEL
         self.similarity_threshold = 0.6  # Cosine similarity threshold
+        
+        # Quota-aware throttling: serializes embedding requests to 1 per 12+ seconds
+        self._embedding_lock = threading.Semaphore(1)
+        self._last_embedding_time = 0
 
         try:
             from vertexai.language_models import TextEmbeddingModel
@@ -93,20 +98,41 @@ class VectorRAGEngine:
         return {row.text_hash: json.loads(row.vector) for row in rows}
 
     def _embed_batch(self, texts: List[str]) -> Optional[List[List[float]]]:
-        """One embedding request. Retries briefly on quota errors. None if it still fails."""
+        """
+        One embedding request. Retries on quota errors with quota-aware delays.
+        
+        Throttles all embedding requests to respect 5 req/min quota:
+        - Only 1 request at a time (semaphore)
+        - Enforces 12+ second gap between requests (quota refresh window)
+        - Returns None if embedding fails after retries
+        """
         if not self.embedding_client:
             return None
-        for attempt in range(len(RETRY_WAITS) + 1):
-            try:
-                results = self.embedding_client.get_embeddings(texts)
-                return [item.values for item in results]
-            except Exception as e:
-                is_quota = type(e).__name__ == "ResourceExhausted" or "429" in str(e)
-                if is_quota and attempt < len(RETRY_WAITS):
-                    time.sleep(RETRY_WAITS[attempt])
-                    continue
-                logger.error(f"VectorRAGEngine: embedding request failed ({type(e).__name__}: {e})")
-                return None
+        
+        with self._embedding_lock:
+            # Enforce 12+ second gap between requests (5 req/min = 1 req per 12 seconds)
+            now = time.time()
+            elapsed = now - self._last_embedding_time
+            if elapsed < 12:
+                wait_time = 12 - elapsed
+                logger.debug(f"VectorRAGEngine: throttling {wait_time:.1f}s to respect quota (5 req/min)")
+                time.sleep(wait_time)
+            
+            # Now safe to call API (quota window refreshed)
+            for attempt in range(len(RETRY_WAITS) + 1):
+                try:
+                    results = self.embedding_client.get_embeddings(texts)
+                    self._last_embedding_time = time.time()
+                    return [item.values for item in results]
+                except Exception as e:
+                    is_quota = type(e).__name__ == "ResourceExhausted" or "429" in str(e)
+                    if is_quota and attempt < len(RETRY_WAITS):
+                        wait_seconds = RETRY_WAITS[attempt]
+                        logger.warning(f"VectorRAGEngine: quota exhausted, retrying in {wait_seconds}s (attempt {attempt+1})")
+                        time.sleep(wait_seconds)
+                        continue
+                    logger.error(f"VectorRAGEngine: embedding request failed ({type(e).__name__}: {e})")
+                    return None
         return None
 
     def _store(self, db_session, vectors_by_hash: Dict[str, List[float]]) -> None:

@@ -365,7 +365,11 @@
     "colAgency": "Agence Assignée",
     "colLocation": "Lieu de Déploiement",
     "colEta": "ETA",
-    "colPriority": "Priorité"
+    "colPriority": "Priorité",
+    "stepReviewApprove": "Review & Approve Plan",
+    "stepPlanReview": "Plan & Review",
+    "stepActivityLog": "Activity Log",
+    "stepPlanSummary": "Plan Summary"
   },
   "impactTab": {
     "sourceOsm": "OpenStreetMap",
