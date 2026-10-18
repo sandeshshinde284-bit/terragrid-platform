@@ -98,9 +98,10 @@
         <h3 class="panel-title">Recommended actions</h3>
         <span class="chip ai">AI generated</span>
 
-        <p v-if="!report" class="empty">No crisis report yet. Generate the full report to see AI recommendations.</p>
-        <p v-else-if="!actions.length" class="empty">The latest report has no recommended actions.</p>
-        <ol v-else class="actions">
+        <GenerationNotice v-if="isGenerating" :startedAt="generationStartedAt ?? null" />
+        <p v-if="!report && !isGenerating" class="empty">No crisis report yet. Generate the full report to see AI recommendations.</p>
+        <p v-else-if="report && !actions.length" class="empty">The latest report has no recommended actions.</p>
+        <ol v-else-if="actions.length" class="actions">
           <li v-for="(action, i) in actions" :key="i">
             <span class="num">{{ String(i + 1).padStart(2, '0') }}</span>
             <span class="action-text">{{ action }}</span>
@@ -145,6 +146,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import GenerationNotice from './GenerationNotice.vue'
 import { parseServerTime } from '@/utils/time'
 
 const props = defineProps<{
@@ -152,6 +154,7 @@ const props = defineProps<{
   details: any | null   // raw fields from GET /api/v1/incidents/{id}: ingested_at, magnitude, depth_km
   report: any | null    // latest saved crisis report: version, generated_at, dossier fields
   isGenerating: boolean
+  generationStartedAt?: number | null
   reportError: string | null
   exportingZip: boolean
 }>()

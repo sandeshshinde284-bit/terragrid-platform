@@ -1,9 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { logError } from '../utils/logger'
-import i18n from '../i18n'
-
-const tr = (key: string) => i18n.global.t(key)
 
 // Background crisis-report jobs, one per incident. The request runs here, not
 // inside a page component, so it keeps going while the user switches tabs or
@@ -38,15 +35,15 @@ export const useDossierJobsStore = defineStore('dossierJobs', () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
       if (data.status === 'fallback') {
-        jobs.value[incidentId] = { ...jobs.value[incidentId], state: 'fallback', message: tr('generation.unavailable') }
+        jobs.value[incidentId] = { ...jobs.value[incidentId], state: 'fallback', message: 'AI analysis is unavailable right now. The last saved report is still shown.' }
       } else if (data.dossier) {
         jobs.value[incidentId] = { ...jobs.value[incidentId], state: 'done', message: null, result: data }
       } else {
-        jobs.value[incidentId] = { ...jobs.value[incidentId], state: 'error', message: tr('generation.noReport') }
+        jobs.value[incidentId] = { ...jobs.value[incidentId], state: 'error', message: 'The AI response contained no report. The last saved report is still shown.' }
       }
     } catch (err) {
       logError('Could not generate the deep AI dossier for this incident', err)
-      jobs.value[incidentId] = { ...jobs.value[incidentId], state: 'error', message: tr('generation.failed') }
+      jobs.value[incidentId] = { ...jobs.value[incidentId], state: 'error', message: 'Could not generate the report. The last saved report is still shown.' }
     }
   }
 
