@@ -30,7 +30,7 @@ CASCADE_PREDICTION_ITEM = {
 }
 
 INFRASTRUCTURE_ITEM = {
-    "facility_name": "string (real name, e.g. 'St. Jude Regional Hospital')",
+    "facility_name": "string (facility name from the input data only; 'Not in input data' if absent)",
     "facility_type": "string (Hospital, Power Grid, Water Treatment, Bridge, Fire Station, School, Shelter)",
     "distance_km": "float",
     "risk_level": "string (CRITICAL, HIGH, or MODERATE)",
@@ -46,7 +46,7 @@ CHOKE_POINT = {
 }
 
 SAFE_ASSEMBLY_ZONE = {
-    "name": "string (e.g. 'Lincoln High School Football Stadium')",
+    "name": "string (site name from the input data only; 'Not in input data' if absent)",
     "latitude": "float",
     "longitude": "float",
     "capacity_people": "integer"
@@ -62,9 +62,9 @@ EVACUATION_CORRIDORS = {
 
 DEEP_DOSSIER_SCHEMA_TEXT = """
 {
-  "country_context": "string (e.g. 'FEMA Region 6 Jurisdiction: Port Fourchon Sector, Louisiana')",
+  "country_context": "string (jurisdiction from the input data only; 'Not in input data' if absent)",
   "severity_assessment": "string (2-3 sentence tactical overview in sentence case)",
-  "trigger_event": "string (e.g., 'Northeast monsoon bringing 120mm rainfall')",
+  "trigger_event": "string (one sentence drawn from the input telemetry)",
   "infrastructure_factors": [
     "string (e.g., 'Dam drainage capacity only 80mm/h')",
     "string (e.g., 'Upstream gates opened at emergency flow rate')"
@@ -142,9 +142,9 @@ DEEP_DOSSIER_SCHEMA_TEXT = """
 
 RESPONSE_PLAN_SCHEMA_TEXT = """
 {
-  "country_context": "string (e.g. 'FEMA Region 6 Jurisdiction: Port Fourchon Sector, Louisiana')",
+  "country_context": "string (jurisdiction from the input data only; 'Not in input data' if absent)",
   "severity_assessment": "string (2-sentence tactical overview in sentence case)",
-  "trigger_event": "string (e.g., 'Northeast monsoon bringing 120mm rainfall')",
+  "trigger_event": "string (one sentence drawn from the input telemetry)",
   "infrastructure_factors": [
     "string (e.g., 'Dam drainage capacity only 80mm/h')",
     "string (e.g., 'Upstream gates opened at emergency flow rate')"
@@ -173,7 +173,7 @@ PREPAREDNESS_ACTIONS_SCHEMA_TEXT = """
   "risk_context": "string (1-2 sentence summary of the escalation window driving these actions, e.g. 'Thunderstorm risk escalates to RED by Day 3 with 46mm rainfall and 20m/s winds.')",
   "actions": [
     {
-      "action": "string (specific, concrete task - e.g. 'Clear and desilt monsoon drains in low-lying wards')",
+      "action": "string (specific, concrete task for this incident)",
       "agency": "string (specific real-world owning body - e.g. 'Municipal Corporation - Drainage Dept')",
       "category": "string (enum: DRAINAGE, MEDICAL, EVACUATION, SUPPLIES, COMMUNICATION, INFRASTRUCTURE)",
       "priority": "integer (1=IMMEDIATE, 2=HIGH, 3=STAGED)",

@@ -199,38 +199,6 @@ def find_incident_by_id(incident_id: str, db: Session) -> Optional[Event]:
     logger.debug(f"[FIND_INCIDENT] Not found: '{incident_id}'")
     return None
 
-def _validate_mock_mode_access(use_mock: bool, admin_token: Optional[str] = None) -> bool:
-    """
-    Validate that mock mode is only enabled in development or by authorized users.
-    
-    In production, use_mock=true is only allowed with valid admin token.
-    In development (use_mock via environment), always allowed.
-    """
-    if not use_mock:
-        return True
-    
-    # If admin token is provided and valid, allow mock mode
-    if admin_token and admin_token == ADMIN_TOKEN:
-        logger.info("[MOCK-MODE] Admin authorization confirmed, mock mode access granted")
-        return True
-    
-    # In development, mock mode is allowed (relies on environment)
-    dev_mode = settings.ENVIRONMENT.lower() in ["dev", "development", "local"]
-    if dev_mode:
-        logger.debug("[MOCK-MODE] Development mode: mock access allowed")
-        return True
-
-    # If the operator has explicitly turned on USE_MOCK_DATA (e.g. demo mode
-    # in production for evaluators), honor it without requiring a per-request
-    # admin token - the setting itself is the authorization.
-    if settings.USE_MOCK_DATA:
-        logger.debug("[MOCK-MODE] USE_MOCK_DATA enabled: mock access allowed")
-        return True
-    
-    # Production + no token = deny
-    logger.warning("[MOCK-MODE] Unauthorized mock mode access attempted in production, request blocked")
-    return False
-
 @router.get("")
 async def get_all_incidents(
     db: Session = Depends(get_db),
@@ -438,26 +406,16 @@ async def get_flood_detection(incident_id: str, db: Session = Depends(get_db)):
 
 @router.get("/{incident_id}/insights")
 async def get_incident_insights(
-    incident_id: str, 
+    incident_id: str,
     db: Session = Depends(get_db),
-    use_mock: bool = Query(False, description="Bypass Gemini AI and return mock demonstration plan"),
-    admin_token: str = Query(None, description="Admin token for mock mode access")
 ):
     """
     Generate AI Decision Support plan (Feature 6).
     Uses Gemini 1.5 Flash to synthesize tactical emergency actions for this incident.
     
-    **Security:** use_mock=true requires admin token in production. Development mode allows unrestricted mock access.
+    Returns only live model output. If Gemini is unavailable, responds 503 with no content.
     """
     try:
-        # Validate mock mode access
-        if use_mock and not _validate_mock_mode_access(use_mock, admin_token):
-            logger.warning(f"[INSIGHTS] Unauthorized mock mode access for {incident_id}, request blocked")
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Mock mode requires admin authorization in production"
-            )
-        
         incident = find_incident_by_id(incident_id, db)
         if not incident:
             logger.warning(f"[INSIGHTS] Incident not found: {incident_id}")
@@ -482,25 +440,18 @@ async def get_incident_insights(
         
         # Generate AI plan
         from backend.services.decision_support import get_decision_support_service
-        plan = get_decision_support_service().generate_response_plan(incident_dict, zone_data, use_mock=use_mock)
-        
-        if not plan:
-            logger.warning(f"[INSIGHTS] Empty plan returned for {incident_id}")
-            raise HTTPException(status_code=500, detail="AI Decision Support failed to generate a plan")
-        
-        if plan.get("is_fallback"):
-            logger.info(f"[INSIGHTS] Serving fallback plan (Gemini API unavailable)")
-        elif use_mock:
-            logger.info(f"[INSIGHTS] Demo mode: mock plan for {incident_id}")
-        else:
-            logger.info(f"[INSIGHTS] AI plan generated for {incident_id}")
-        
+        plan = get_decision_support_service().generate_response_plan(incident_dict, zone_data)
+
+        if not plan or plan.get("is_fallback"):
+            logger.info(f"[INSIGHTS] No live plan for {incident_id}")
+            raise HTTPException(status_code=503, detail="AI analysis is unavailable right now")
+
+        logger.info(f"[INSIGHTS] AI plan generated for {incident_id}")
         return {
             "status": "success",
             "incident_id": incident_id,
             "location": incident.location_name,
             "plan": plan,
-            "is_mock": use_mock or bool(plan.get("is_fallback"))
         }
     except HTTPException:
         raise
@@ -510,26 +461,16 @@ async def get_incident_insights(
 
 @router.post("/{incident_id}/deep-analysis")
 async def generate_deep_incident_analysis(
-    incident_id: str, 
+    incident_id: str,
     db: Session = Depends(get_db),
-    use_mock: bool = Query(False, description="Bypass Gemini and return mock dossier"),
-    admin_token: str = Query(None, description="Admin token for mock mode access")
 ):
     """
     Deep Analysis: Crisis intelligence including predictions, infrastructure impact,
     evacuation corridors, and resource requirements.
     Results cached in PostgreSQL Event.data['deep_dossier'].
     
-    **Security:** use_mock=true requires admin token in production.
     """
     try:
-        # Validate mock mode access
-        if use_mock and not _validate_mock_mode_access(use_mock, admin_token):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Mock mode requires admin authorization in production"
-            )
-        
         incident = find_incident_by_id(incident_id, db)
         if not incident:
             logger.warning(f"[DEEP-DOSSIER] Incident not found: {incident_id}")
@@ -550,8 +491,7 @@ async def generate_deep_incident_analysis(
         
         from backend.services.decision_support import get_decision_support_service
         dossier = get_decision_support_service().generate_deep_tactical_dossier(
-            incident_dict, 
-            use_mock=use_mock, 
+            incident_dict,
             db_session=db
         )
         
@@ -563,7 +503,6 @@ async def generate_deep_incident_analysis(
                 "location": incident.location_name,
                 "dossier": dossier,
                 "saved": False,
-                "is_mock": True,
             }
         from backend.services.report_versions import save_report_version
         report = save_report_version(db, incident, dossier)
@@ -576,7 +515,6 @@ async def generate_deep_incident_analysis(
             "dossier": dossier,
             "version": report.version,
             "saved": True,
-            "is_mock": use_mock,
         }
     except HTTPException:
         raise
