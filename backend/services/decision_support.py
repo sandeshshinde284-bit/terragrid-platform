@@ -12,7 +12,12 @@ logger = logging.getLogger(__name__)
 
 def unavailable_ai_result(kind: str, reason: str) -> Dict[str, Any]:
     """Explicit marker that live AI output is unavailable. It carries no content."""
-    return {"is_fallback": True, "unavailable": True, "kind": kind, "reason": reason}
+    result: Dict[str, Any] = {"is_fallback": True, "unavailable": True, "ai_available": False, "kind": kind, "reason": reason}
+    if kind == "preparedness":
+        result.update(risk_context="", actions=[])
+    elif kind == "agency_alerts":
+        result.update(risk_context="", alerts=[])
+    return result
 
 
 class DecisionSupportService:
@@ -209,7 +214,6 @@ class DecisionSupportService:
         country = city_forecast.get("country", "")
         daily = city_forecast.get("daily", [])
 
-        fallback_actions = MockDataLoader.load_fallback_preparedness_actions()
 
         if use_mock:
             # Mock mode still reflects the selected city's actual (mock) risk level,
@@ -223,10 +227,10 @@ class DecisionSupportService:
 
         if not daily:
             logger.warning(f"No forecast days available for {city}, {country} - cannot generate actions.")
-            return fallback_actions
+            return unavailable_ai_result("preparedness", "Gemini is unavailable or returned no usable output")
 
         if not self.model:
-            return fallback_actions
+            return unavailable_ai_result("preparedness", "Gemini is unavailable or returned no usable output")
 
         try:
             severity_rank = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
@@ -298,7 +302,7 @@ class DecisionSupportService:
             logger.exception(f"Preparedness action generation failed for {city}: {type(e).__name__} - {str(e)}")
             logger.warning("Vertex AI preparedness action generation failed. Returning offline fallback.")
 
-        return fallback_actions
+        return unavailable_ai_result("preparedness", "Gemini is unavailable or returned no usable output")
 
     def generate_agency_alerts(self, city_forecast: Dict[str, Any], use_mock: bool = False) -> Dict[str, Any]:
         """
@@ -324,7 +328,6 @@ class DecisionSupportService:
         country = city_forecast.get("country", "")
         daily = city_forecast.get("daily", [])
 
-        fallback_alerts = MockDataLoader.load_fallback_agency_alerts()
 
         if use_mock:
             # Mock mode still reflects the selected city's actual (mock) risk
@@ -338,10 +341,10 @@ class DecisionSupportService:
 
         if not daily:
             logger.warning(f"No forecast days available for {city}, {country} - cannot generate alerts.")
-            return fallback_alerts
+            return unavailable_ai_result("agency_alerts", "Gemini is unavailable or returned no usable output")
 
         if not self.model:
-            return fallback_alerts
+            return unavailable_ai_result("agency_alerts", "Gemini is unavailable or returned no usable output")
 
         try:
             severity_rank = {"GREEN": 0, "YELLOW": 1, "ORANGE": 2, "RED": 3}
@@ -417,7 +420,7 @@ class DecisionSupportService:
             logger.exception(f"Agency alert generation failed for {city}: {type(e).__name__} - {str(e)}")
             logger.warning("Vertex AI agency alert generation failed. Returning offline fallback.")
 
-        return fallback_alerts
+        return unavailable_ai_result("agency_alerts", "Gemini is unavailable or returned no usable output")
 
     def generate_deep_tactical_dossier(self, event_data: Dict[str, Any], use_mock: bool = False, db_session=None) -> Dict[str, Any]:
         """

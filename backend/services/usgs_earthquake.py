@@ -116,7 +116,7 @@ class USGSEarthquakeService:
                 "location_name": location_name,
                 "source": "USGS_EARTHQUAKES",
                 "event_timestamp": event_timestamp,
-                "confidence": 0.98,  # USGS data is highly reliable
+                "confidence": None,  # USGS does not report a per-event confidence
                 "is_verified": True,
                 "data": {
                     "usgs_id": properties.get("id"),

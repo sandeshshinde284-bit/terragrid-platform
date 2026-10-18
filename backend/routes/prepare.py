@@ -191,7 +191,7 @@ async def get_preparedness_actions(
             "source": (
                 "Mock demonstration data" if actions_plan.get("is_mock_demo")
                 else "Gemini 2.5 Flash via Vertex AI" if actions_plan.get("ai_available")
-                else "Offline fallback checklist"
+                else "AI unavailable"
             ),
             "data": actions_plan,
             "timestamp": datetime.utcnow().isoformat(),
@@ -371,7 +371,7 @@ async def get_agency_alerts(
             "source": (
                 "Mock demonstration data" if alerts_plan.get("is_mock_demo")
                 else "Gemini 2.5 Flash via Vertex AI" if alerts_plan.get("ai_available")
-                else "Offline fallback alert"
+                else "AI unavailable"
             ),
             "data": alerts_plan,
             "timestamp": datetime.utcnow().isoformat(),

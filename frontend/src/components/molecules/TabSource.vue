@@ -37,12 +37,15 @@
           <!-- Column 2: Confidence Score -->
           <div style="background: var(--bg-subtle); padding: 12px; border-radius: 6px;">
             <small style="color: var(--text-secondary); text-transform: uppercase; font-size: 16px; letter-spacing: 0.05em;">{{ $t('sourceTab.confidence') }}</small>
-            <div :style="{ color: getConfidenceColor(incident.confidence * 100), fontWeight: '600', marginTop: '6px', fontSize: '18px', fontFamily: 'ui-monospace, monospace' }">
-              {{ Math.round(incident.confidence * 100) }}%
-            </div>
-            <small style="color: var(--text-secondary); margin-top: 4px; display: block; font-size: 15px;">
-              {{ getConfidenceLabel(incident.confidence * 100) }}
-            </small>
+            <template v-if="incident.confidence">
+              <div :style="{ color: getConfidenceColor(incident.confidence * 100), fontWeight: '600', marginTop: '6px', fontSize: '18px', fontFamily: 'ui-monospace, monospace' }">
+                {{ Math.round(incident.confidence * 100) }}%
+              </div>
+              <small style="color: var(--text-secondary); margin-top: 4px; display: block; font-size: 15px;">
+                {{ getConfidenceLabel(incident.confidence * 100) }}
+              </small>
+            </template>
+            <div v-else style="margin-top: 6px; font-size: 16px; color: var(--text-secondary);">Not available</div>
           </div>
 
           <!-- Column 3: Data Freshness -->
@@ -250,7 +253,7 @@ function getIncidentDataDisplay(): Record<string, string> {
     if (props.incident.longitude) display['longitude'] = String(props.incident.longitude)
     if (props.incident.severity) display['severity'] = String(props.incident.severity)
     if (props.incident.status) display['status'] = String(props.incident.status)
-    display['confidence'] = `${Math.round((props.incident.confidence || 0) * 100)}%`
+    display['confidence'] = props.incident.confidence ? `${Math.round(props.incident.confidence * 100)}%` : 'Not available'
     display['source'] = String(props.incident.source || 'Unknown')
   }
 

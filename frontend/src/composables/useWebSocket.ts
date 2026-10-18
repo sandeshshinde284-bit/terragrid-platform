@@ -116,7 +116,7 @@ export function useWebSocket() {
                     detectionTime: new Date(event.event_timestamp || event.created_at || Date.now()),
                     coordinates: [event.latitude || 0, event.longitude || 0] as [number, number],
                     source: source,
-                    confidence: event.confidence || event.data?.confidence || 0,
+                    confidence: event.confidence ?? event.data?.confidence ?? null,
                     event_timestamp: event.event_timestamp || event.created_at || Date.now(),
                     data: event.data || {},
                   }
