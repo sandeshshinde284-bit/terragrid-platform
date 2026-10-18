@@ -118,6 +118,10 @@
       </article>
     </div>
 
+    <div v-else-if="isAnalyzingDossier" class="phase2-center-container">
+      <GenerationNotice variant="full" :startedAt="generationStartedAt ?? null" />
+    </div>
+
     <div v-else-if="!isBackendMockModeEnabled" class="phase2-center-container">
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🚑</div>
@@ -133,6 +137,7 @@
 </template>
 
 <script setup lang="ts">
+import GenerationNotice from './GenerationNotice.vue'
 import ResponseActions from '@/components/molecules/ResponseActions.vue'
 import ResponsePlanPanel from '@/components/molecules/ResponsePlanPanel.vue'
 import EvidenceStatus from '@/components/molecules/EvidenceStatus.vue'
@@ -140,6 +145,7 @@ import EvidenceStatus from '@/components/molecules/EvidenceStatus.vue'
 defineProps<{
   deepDossier: any
   isAnalyzingDossier: boolean
+  generationStartedAt?: number | null
   isBackendMockModeEnabled: boolean
   incidentId?: string
   incident?: any

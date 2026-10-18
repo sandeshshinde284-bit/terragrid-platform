@@ -68,6 +68,10 @@
       </article>
     </div>
 
+    <div v-else-if="isAnalyzingDossier" class="phase2-center-container">
+      <GenerationNotice variant="full" :startedAt="generationStartedAt ?? null" />
+    </div>
+
     <div v-else-if="!isBackendMockModeEnabled" class="phase2-center-container">
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🏢</div>
@@ -83,11 +87,13 @@
 </template>
 
 <script setup lang="ts">
+import GenerationNotice from './GenerationNotice.vue'
 import { computed } from 'vue'
 
 const props = defineProps<{
   deepDossier: any
   isAnalyzingDossier: boolean
+  generationStartedAt?: number | null
   isBackendMockModeEnabled: boolean
 }>()
 

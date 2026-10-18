@@ -90,8 +90,9 @@
           <TabImpact 
             v-else-if="activeTab === 'impact'" 
             :deepDossier="deepDossier" 
-            :isAnalyzingDossier="isAnalyzingDossier" 
-            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
+            :isAnalyzingDossier="isAnalyzingDossier"
+            :generationStartedAt="generationStartedAt"
+            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled"
             @launch="launchDeepAnalysis" 
           />
 
@@ -99,8 +100,9 @@
           <TabMap 
             v-else-if="activeTab === 'map'" 
             :deepDossier="deepDossier" 
-            :isAnalyzingDossier="isAnalyzingDossier" 
-            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
+            :isAnalyzingDossier="isAnalyzingDossier"
+            :generationStartedAt="generationStartedAt"
+            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled"
             @launch="launchDeepAnalysis" 
             @open-map="goTo('/map')"
           />
@@ -109,8 +111,9 @@
           <TabResponse 
             v-else-if="activeTab === 'response'" 
             :deepDossier="deepDossier" 
-            :isAnalyzingDossier="isAnalyzingDossier" 
-            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
+            :isAnalyzingDossier="isAnalyzingDossier"
+            :generationStartedAt="generationStartedAt"
+            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled"
             :incidentId="incident?.id"
             :incident="incident"
             @launch="launchDeepAnalysis" 
@@ -120,8 +123,9 @@
           <TabHistory 
             v-else-if="activeTab === 'history'" 
             :deepDossier="deepDossier" 
-            :isAnalyzingDossier="isAnalyzingDossier" 
-            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
+            :isAnalyzingDossier="isAnalyzingDossier"
+            :generationStartedAt="generationStartedAt"
+            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled"
             @launch="launchDeepAnalysis" 
           />
 

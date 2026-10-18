@@ -98,7 +98,7 @@
         <h3 class="panel-title">Recommended actions</h3>
         <span class="chip ai">AI generated</span>
 
-        <GenerationNotice v-if="isGenerating" :startedAt="generationStartedAt ?? null" />
+        <GenerationNotice v-if="isGenerating" variant="full" :startedAt="generationStartedAt ?? null" />
         <p v-if="!report && !isGenerating" class="empty">No crisis report yet. Generate the full report to see AI recommendations.</p>
         <p v-else-if="report && !actions.length" class="empty">The latest report has no recommended actions.</p>
         <ol v-else-if="actions.length" class="actions">
