@@ -8,12 +8,49 @@
     </div>
 
     <template v-else>
+      <!-- Tactical Neural Scanner HUD Overlay -->
+      <transition name="fade">
+        <div v-if="scannerActive" class="neural-scanner-overlay">
+          <div class="neural-scanner-modal glass-panel">
+            <div class="scanner-header">
+              <span class="scanner-radar-icon">📡</span>
+              <div class="scanner-titles">
+                <h4>Analyzing incident data and generating response plan</h4>
+                <small>Gathering data from multiple sources...</small>
+              </div>
+            </div>
+
+            <div class="scanner-body">
+              <div class="radar-scanline-bar">
+                <div class="scanline-glow"></div>
+              </div>
+
+              <div class="scanner-step-list">
+                <div 
+                  v-for="(step, sIdx) in analysisSteps" 
+                  :key="sIdx" 
+                  class="scanner-step-item"
+                  :class="{ active: currentStepIndex === sIdx, complete: currentStepIndex > sIdx }"
+                >
+                  <span class="step-indicator">{{ currentStepIndex > sIdx ? '✓' : (currentStepIndex === sIdx ? '⟳' : '○') }}</span>
+                  <span class="step-label">{{ step }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+
       <header class="detail-header sticky-header">
-        <nav class="header-navigation" aria-label="Breadcrumb">
-          <button class="breadcrumb-back" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">← Back to Incidents</button>
+        <div class="header-navigation">
+          <span class="phase-indicator-badge">{{ $t('header.phases.response') }}</span>
+          <button class="primary-back-btn" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">
+            <span class="back-arrow">←</span>
+            <span class="back-text">{{ $t('detail.activeIncidents') }}</span>
+          </button>
           <span class="breadcrumb-separator">/</span>
-          <span class="breadcrumb-current">Incident: <strong class="breadcrumb-id">{{ displayIncidentId(incident) }}</strong></span>
-        </nav>
+          <span class="breadcrumb-current">{{ incident.location }}</span>
+        </div>
         <div class="header-actions">
           <button class="ghost-button" type="button" @click="goTo('/')">{{ $t('detail.dashboardBtn') }}</button>
           <button class="ghost-button" type="button" @click="goTo('/map')">{{ $t('detail.liveMapBtn') }}</button>
@@ -39,16 +76,14 @@
 
       <section class="incident-hero">
         <div class="hero-copy">
-          <h1><svg class="hazard-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="2,12 6,12 9,4 13,20 16,12 22,12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>{{ incidentLabel }}</h1>
-          <p class="hero-location">{{ incident.location }} · Detected {{ formatDetected(incident.detectionTime) }}</p>
+          <div class="eyebrow"><span class="live-dot"></span> {{ $t('detail.incident') }} {{ displayIncidentId(incident) }}</div>
+          <h1>{{ incidentLabel }}</h1>
+          <p class="hero-location"><span>⌖</span> {{ incident.location }} · {{ $t('detail.detected') }} {{ formatDate(incident.detectionTime) }}</p>
         </div>
         <div class="hero-status">
-          <div class="hero-badges">
-            <span class="type-badge" :class="`type-${incident.type}`">{{ formatIncidentType(incident.type) }}</span>
-            <span class="severity-badge" :class="`severity-${incident.severity}`">{{ incident.severity.toUpperCase() }} SEVERITY</span>
-            <span class="status-badge" :class="`status-${incident.status}`">{{ formatStatus(incident.status) }}</span>
-          </div>
-          <span v-if="lastUpdatedText" class="last-updated">Last ingest: {{ lastUpdatedText }}</span>
+          <span class="type-badge" :class="`type-${incident.type}`">{{ formatIncidentType(incident.type) }}</span>
+          <span class="severity-badge" :class="`severity-${incident.severity}`">{{ incident.severity.toUpperCase() }} {{ $t('detail.severityLabel') }}</span>
+          <span class="status-badge" :class="`status-${incident.status}`">{{ formatStatus(incident.status) }}</span>
         </div>
       </section>
 
@@ -66,8 +101,6 @@
         </button>
       </nav>
 
-      <GenerationNotice v-if="isAnalyzingDossier && activeTab !== 'overview'" :startedAt="generationStartedAt" class="generation-bar" />
-
       <Transition name="tab-fade" mode="out-in">
         <section :key="activeTab" class="tab-content">
           <!-- OVERVIEW -->
@@ -78,7 +111,6 @@
             :details="incidentDetails"
             :report="deepDossier"
             :isGenerating="isAnalyzingDossier"
-            :generationStartedAt="generationStartedAt"
             :reportError="aiError"
             :exportingZip="isExportingZip"
             @generate="launchDeepAnalysis"
@@ -90,9 +122,8 @@
           <TabImpact 
             v-else-if="activeTab === 'impact'" 
             :deepDossier="deepDossier" 
-            :isAnalyzingDossier="isAnalyzingDossier"
-            :generationStartedAt="generationStartedAt"
-            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled"
+            :isAnalyzingDossier="isAnalyzingDossier" 
+            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
             @launch="launchDeepAnalysis" 
           />
 
@@ -100,9 +131,8 @@
           <TabMap 
             v-else-if="activeTab === 'map'" 
             :deepDossier="deepDossier" 
-            :isAnalyzingDossier="isAnalyzingDossier"
-            :generationStartedAt="generationStartedAt"
-            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled"
+            :isAnalyzingDossier="isAnalyzingDossier" 
+            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
             @launch="launchDeepAnalysis" 
             @open-map="goTo('/map')"
           />
@@ -111,9 +141,8 @@
           <TabResponse 
             v-else-if="activeTab === 'response'" 
             :deepDossier="deepDossier" 
-            :isAnalyzingDossier="isAnalyzingDossier"
-            :generationStartedAt="generationStartedAt"
-            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled"
+            :isAnalyzingDossier="isAnalyzingDossier" 
+            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
             :incidentId="incident?.id"
             :incident="incident"
             @launch="launchDeepAnalysis" 
@@ -123,9 +152,8 @@
           <TabHistory 
             v-else-if="activeTab === 'history'" 
             :deepDossier="deepDossier" 
-            :isAnalyzingDossier="isAnalyzingDossier"
-            :generationStartedAt="generationStartedAt"
-            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled"
+            :isAnalyzingDossier="isAnalyzingDossier" 
+            :isBackendMockModeEnabled="appStore.isBackendMockModeEnabled" 
             @launch="launchDeepAnalysis" 
           />
 
@@ -158,8 +186,6 @@
 </template>
 
 <script setup lang="ts">
-import GenerationNotice from '../components/molecules/GenerationNotice.vue'
-import { useDossierJobsStore } from '../stores/dossierJobs'
 import { displayIncidentId } from '@/utils/incidentId'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, ref, onMounted, watch } from 'vue'
@@ -209,11 +235,7 @@ const incident = computed<IncidentLevel1 | undefined>(() => eventsStore.allIncid
 
 // AI state. The saved crisis report is the single source of recommendations.
 // There is no separate plan request, so the overview, AI tab, and export always agree.
-const jobs = useDossierJobsStore()
-const job = computed(() => jobs.jobFor(incidentId.value))
-const isAnalyzingDossier = computed(() => job.value?.state === 'running')
-const generationStartedAt = computed<number | null>(() => (job.value?.state === 'running' ? job.value.startedAt : null))
-const aiError = computed<string | null>(() => (job.value?.state === 'fallback' || job.value?.state === 'error' ? job.value.message : null))
+const aiError = ref<string | null>(null)
 
 // Tier 2 Deep Tactical AI Dossier State
 interface DeepDossier {
@@ -259,6 +281,7 @@ interface DeepDossier {
 
 const deepDossier = ref<DeepDossier | null>(null)
 const incidentDetails = ref<any | null>(null)
+const isAnalyzingDossier = ref(false)
 
 // Everything that shows recommendations reads from the saved report.
 const aiPlan = computed<DeepDossier | null>(() => deepDossier.value)
@@ -266,18 +289,51 @@ const aiLoading = computed(() => isAnalyzingDossier.value)
 const aiInsights = computed<AIInsight[]>(() =>
   (deepDossier.value?.immediate_actions || []).map((action, idx) => ({ id: `ai-action-${idx}`, action }))
 )
+const scannerActive = ref(false)
+const currentStepIndex = ref(0)
+const analysisSteps = [
+  'Loading satellite imagery & weather data from multiple sources...',
+  'Identifying critical facilities within impact zone...',
+  'Forecasting event progression for 6, 12, and 24 hours ahead...',
+  'Generating evacuation strategy & resource allocation plan...'
+]
 
-// Apply a finished background job to this page. It runs on mount as well, so a
-// report that finished while the user was on another screen still appears.
-function applyDossier(data: any) {
-  deepDossier.value = { ...data.dossier, version: data.version ?? null, generated_at: new Date().toISOString() }
-}
-watch(() => job.value?.result, (result) => { if (result) applyDossier(result) }, { immediate: true })
-
-// Starts a background job. Nothing blocks: the user can switch tabs while it runs.
-function launchDeepAnalysis() {
+async function launchDeepAnalysis() {
   if (!incidentId.value) return
-  jobs.start(incidentId.value)
+  isAnalyzingDossier.value = true
+  scannerActive.value = true
+  currentStepIndex.value = 0
+  const stepInterval = setInterval(() => {
+    if (currentStepIndex.value < analysisSteps.length - 1) {
+      currentStepIndex.value++
+    }
+  }, 1100)
+
+  try {
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const res = await fetch(`${host}/api/v1/incidents/${incidentId.value}/deep-analysis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    if (data.status === 'fallback') {
+      // AI is offline: nothing was saved. Keep the last saved report on screen.
+      aiError.value = 'AI analysis is unavailable right now. The last saved report is still shown.'
+    } else if (data.dossier) {
+      aiError.value = null
+      deepDossier.value = { ...data.dossier, version: data.version ?? null, generated_at: new Date().toISOString() }
+    }
+  } catch (err) {
+    logError('Could not generate the deep AI dossier for this incident', err)
+  } finally {
+    clearInterval(stepInterval)
+    currentStepIndex.value = analysisSteps.length
+    setTimeout(() => {
+      isAnalyzingDossier.value = false
+      scannerActive.value = false
+    }, 600)
+  }
 }
 
 async function loadIncidentDetails() {
@@ -339,21 +395,6 @@ const summaryText = computed(() => {
 })
 
 function goTo(path: string) { router.push(path) }
-// Detected time with its UTC offset, e.g. "Oct 17, 2026, 05:06 AM UTC+5".
-function formatDetected(value: Date | string | null | undefined): string {
-  const d = value ? new Date(value) : null
-  if (!d || isNaN(d.getTime())) return 'time not recorded'
-  const parts = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'shortOffset' }).formatToParts(d)
-  const get = (type: string) => parts.find(p => p.type === type)?.value ?? ''
-  const offset = (get('timeZoneName') || 'GMT').replace('GMT', 'UTC')
-  return `${get('month')} ${get('day')}, ${get('year')}, ${get('hour')}:${get('minute')} ${get('dayPeriod')} ${offset}`.replace(/\s+/g, ' ').trim()
-}
-const lastUpdatedText = computed(() => {
-  const raw = incidentDetails.value?.ingested_at
-  if (!raw) return ''
-  const d = new Date(/(Z|[+-]\d{2}:?\d{2})$/.test(raw) ? raw : `${raw}Z`)
-  return isNaN(d.getTime()) ? '' : formatDetected(d)
-})
 function formatDate(value: Date) { return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)) }
 function relativeTime(value: Date) { const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60000)); return minutes < 60 ? `${minutes}m ago` : `${Math.round(minutes / 60)}h ago` }
 function formatIncidentType(type: Event['type']) { return type.charAt(0).toUpperCase() + type.slice(1) }
@@ -598,7 +639,7 @@ onMounted(async () => {
               detectionTime: new Date(event.event_timestamp || Date.now()),
               coordinates: [event.latitude, event.longitude] as [number, number],
               source: source,
-              confidence: event.confidence ?? event.data?.confidence ?? null,
+              confidence: event.confidence ?? event.data?.confidence ?? 0,
               event_timestamp: event.event_timestamp || event.created_at || Date.now(),
               data: event.data || {},
             }
@@ -678,331 +719,6 @@ function getCascadeColorHex(colorCode?: string): string {
 
 <style scoped>
 :global(body) { background: #0f0f0f; }
-.overview-top-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: rgba(245, 158, 11, 0.05);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  margin-bottom: 24px;
-}
-.banner-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.warning-circle {
-  width: 40px;
-  height: 40px;
-  background: #f59e0b;
-  color: #0f172a;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 20px;
-}
-.banner-text-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.banner-title {
-  color: #fcd34d;
-  font-size: 14px;
-}
-.banner-desc {
-  color: #fbbf24;
-  font-size: 13px;
-}
-.banner-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.banner-timestamp {
-  color: #94a3b8;
-  font-size: 12px;
-}
-.btn-update {
-  background: #38bdf8;
-  color: #0f172a;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.btn-export {
-  background: transparent;
-  color: #e2e8f0;
-  border: 1px solid rgba(255,255,255,0.2);
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.section-icon {
-  font-size: 24px;
-}
-.section-icon.amber {
-  color: #f59e0b;
-  text-shadow: 0 0 10px rgba(245,158,11,0.5);
-}
-.section-header h3 {
-  margin: 0;
-  font-size: 18px;
-  color: #f8fafc;
-}
-
-.snapshot-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-.snapshot-tile {
-  display: flex;
-  padding: 20px;
-  gap: 16px;
-  align-items: flex-start;
-}
-.tile-icon-circle {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-.threat-icon {
-  background: rgba(239, 68, 68, 0.15);
-  border: 2px solid #ef4444;
-}
-.blue-icon {
-  background: rgba(56, 189, 248, 0.1);
-  border: 2px solid rgba(56, 189, 248, 0.3);
-}
-.red-icon {
-  background: rgba(244, 63, 94, 0.1);
-  border: 2px solid rgba(244, 63, 94, 0.3);
-}
-
-.tile-right {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-.tile-label {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-bottom: 4px;
-}
-.tile-value {
-  font-size: 24px;
-  font-weight: 800;
-  color: #f8fafc;
-  margin-bottom: 6px;
-}
-.tile-value-small {
-  font-size: 16px;
-  font-weight: 700;
-  color: #f8fafc;
-  margin-bottom: 6px;
-}
-.threat-value {
-  color: #ef4444;
-  font-size: 32px;
-}
-.tile-desc {
-  font-size: 11px;
-  color: #64748b;
-}
-
-.threat-bar-container {
-  height: 4px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-.threat-bar-fill {
-  height: 100%;
-  background: #ef4444;
-}
-
-.overview-two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-.situation-section, .ai-support-section {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-}
-.situation-content p {
-  color: #cbd5e1;
-  line-height: 1.6;
-  font-size: 15px;
-  margin-bottom: 24px;
-}
-.situation-meta {
-  display: flex;
-  gap: 24px;
-  margin-top: auto;
-}
-.meta-col {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.meta-label {
-  font-size: 11px;
-  color: #94a3b8;
-}
-.meta-val {
-  font-size: 14px;
-  font-weight: 600;
-  color: #f8fafc;
-}
-
-.ai-chip-new {
-  background: rgba(56,189,248,0.15);
-  color: #38bdf8;
-  border: 1px solid #38bdf8;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
-}
-.action-list-new {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-.action-row-new {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.action-circle {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 14px;
-  color: #fff;
-  flex-shrink: 0;
-}
-.action-circle.critical { background: #ef4444; }
-.action-circle.high { background: #f97316; }
-.action-circle.medium { background: #38bdf8; }
-
-.action-text-new {
-  flex: 1;
-  color: #e2e8f0;
-  font-size: 14px;
-}
-.action-badge-right {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 800;
-  border: 1px solid;
-}
-.action-badge-right.critical { color: #fca5a5; border-color: #ef4444; background: rgba(239,68,68,0.1); }
-.action-badge-right.high { color: #fdba74; border-color: #f59e0b; background: rgba(245,158,11,0.1); }
-.action-badge-right.medium { color: #7dd3fc; border-color: #38bdf8; background: rgba(56,189,248,0.1); }
-
-.ai-support-footer {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.review-ghost-btn {
-  align-self: flex-start;
-  background: transparent;
-  border: 1px solid var(--accent-cyan);
-  color: var(--accent-cyan);
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.footer-disclaimer {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.info-icon { color: #94a3b8; font-size: 14px; }
-.disclaimer-text { color: #64748b; font-size: 11px; }
-
-.resource-section {
-  padding: 24px;
-}
-.resource-warning {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-radius: 6px;
-  margin-bottom: 24px;
-}
-.warning-text { color: #fbbf24; font-size: 13px; }
-.resource-card-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-.resource-card {
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  padding: 16px;
-}
-.res-top {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.ai-estimated-tag {
-  color: #f59e0b;
-  border: 1px solid #f59e0b;
-  font-size: 9px;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-.res-name { color: #94a3b8; font-size: 12px; margin-bottom: 4px; }
-.res-quant { color: #f8fafc; font-size: 16px; margin-bottom: 16px; }
-.res-quant strong { font-size: 20px; }
-.res-bottom {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-}
-.res-priority { color: #ef4444; }
-.res-loc { color: #94a3b8; }
-
-
 .incident-detail { min-height: 100%; padding: 24px clamp(16px, 4vw, 56px) 64px; color: #f8fafc; background: radial-gradient(circle at 85% 0%, rgba(14,165,233,.09), transparent 28%), #0f0f0f; }
 .glass-panel { background: rgba(22, 29, 39, .72); border: 1px solid rgba(148,163,184,.17); border-radius: 14px; backdrop-filter: blur(14px); box-shadow: 0 14px 40px rgba(0,0,0,.2); }
 .glass-panel:hover { border-color: rgba(14,165,233,.4); transition: border-color .25s ease; }
@@ -1592,6 +1308,123 @@ body { background: var(--detail-bg) !important; }
   padding: 10px 20px;
 }
 
+/* ===== TACTICAL NEURAL SCANNER HUD ===== */
+.neural-scanner-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 15, 25, 0.88);
+  backdrop-filter: blur(14px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.neural-scanner-modal {
+  max-width: 560px;
+  width: 100%;
+  padding: 32px 28px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #38bdf8;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.scanner-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.scanner-radar-icon {
+  font-size: 34px;
+  animation: radarPulse 2s infinite;
+}
+
+@keyframes radarPulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.scanner-titles h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.8px;
+}
+
+.scanner-titles small {
+  color: #94a3b8;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.radar-scanline-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.scanline-glow {
+  width: 40%;
+  height: 100%;
+  background: #38bdf8;
+  box-shadow: 0 0 14px #38bdf8;
+  position: absolute;
+  animation: scanSweep 1.5s infinite ease-in-out;
+}
+
+@keyframes scanSweep {
+  0% { left: -40%; }
+  100% { left: 100%; }
+}
+
+.scanner-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.scanner-step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.scanner-step-item.active {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.scanner-step-item.complete {
+  color: #10b981;
+}
+
+.step-indicator {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  font-size: 16px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
 /* ===== DEEP AI TABS STYLING ===== */
 .deep-ai-tab-container {
   display: flex;
@@ -2086,21 +1919,6 @@ body { background: var(--detail-bg) !important; }
   color: #cbd5e1;
   background: rgba(148, 163, 184, 0.15);
   vertical-align: middle;
-}
-
-/* Header and hero, matching the approved reference */
-.breadcrumb-back { background: none; border: none; padding: 0; color: #94a3b8; font-size: 14px; cursor: pointer; }
-.breadcrumb-back:hover { color: #e2e8f0; }
-.breadcrumb-id { color: #22d3ee; font-weight: 700; }
-.hero-copy h1 { display: flex; align-items: center; gap: 10px; }
-.hazard-icon { width: 28px; height: 28px; color: #ef4444; flex-shrink: 0; }
-.hero-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-.hero-badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
-.last-updated { font-size: 12px; color: #64748b; }
-@media (max-width: 720px) {
-  .incident-hero { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .hero-status { align-items: flex-start; }
-  .hero-badges { justify-content: flex-start; }
 }
 </style>
 
