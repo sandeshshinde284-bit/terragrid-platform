@@ -43,7 +43,7 @@
 import { logFeature, logError } from '@/utils/logger'
 import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
 import { useEventsStore, useAppStore } from '@/stores'
-import { useRouter } from 'vue-router'
+import { displayIncidentId } from '@/utils/incidentId'
 import type { IncidentLevel1 } from '@/types'
 import * as mapboxgl from 'mapbox-gl/esm'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -60,7 +60,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const eventsStore = useEventsStore()
 const appStore = useAppStore()
-const router = useRouter()
 
 const activeIncidents = computed(() => {
   return props.incidents || eventsStore.allIncidents
@@ -233,7 +232,11 @@ const renderMarkers = () => {
     dot.className = `marker-dot ${getSeverityClass(score)}`
     if (isSelected || isExpanded) {
       dot.classList.add('selected')
+    } else if (appStore.selectedIncident) {
+      dot.classList.add('dimmed')
     }
+    // Hover shows which incident this is, so similar markers can be told apart.
+    dot.title = `${displayIncidentId(incident)} · ${String(incident.type || '').toUpperCase()}`
 
     dot.innerHTML = `<span>${icon}</span>`
     el.appendChild(dot)
@@ -241,9 +244,10 @@ const renderMarkers = () => {
     // Handle clicks to open the dashboard sidebar
     el.addEventListener('click', (e) => {
       e.stopPropagation()
+      // Same as clicking the card: select it, open its panel, and the
+      // selection watcher starts the AI plan. Stays on this screen.
       appStore.setSelectedIncident(incident.id)
-      // Open the actual incident page (same id the Dashboard and Incidents use).
-      router.push({ name: 'IncidentDetail', params: { id: incident.id } })
+      appStore.setExpandedIncident(incident.id)
     })
 
     const marker = new mapboxgl.Marker({ element: el })
@@ -448,6 +452,10 @@ onUnmounted(() => {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
   transition: all 0.2s ease;
   z-index: 10;
+}
+
+.marker-dot.dimmed {
+  opacity: 0.45;
 }
 
 .marker-dot:hover, .marker-dot.selected {

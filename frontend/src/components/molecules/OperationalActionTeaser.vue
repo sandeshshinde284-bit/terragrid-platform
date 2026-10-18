@@ -37,13 +37,15 @@
       <!-- Header -->
       <div class="teaser-header">
         <span class="teaser-pulse-dot"></span>
-        <label class="teaser-title">⚡ Critical Action</label>
+        <label class="teaser-title">AI-recommended next step</label>
+        <span class="review-tag">Evidence + review required</span>
       </div>
 
       <!-- Top Action Only -->
       <div class="teaser-action-card">
         <span class="action-num">01</span>
-        <span class="action-text">{{ topAction }}</span>
+        <span class="action-text">{{ expanded ? topAction : shortAction }}</span>
+        <button v-if="topAction.length > shortAction.length" class="show-more" @click="expanded = !expanded">{{ expanded ? 'Show less' : 'Show full reasoning' }}</button>
       </div>
 
       <!-- Show count of remaining actions if > 1 -->
@@ -66,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps<{
@@ -88,6 +90,14 @@ const topAction = computed(() => {
 })
 
 // Count remaining actions
+const expanded = ref(false)
+// Short summary for the panel; the full reasoning sits behind "Show full reasoning".
+const shortAction = computed(() => {
+  const t = topAction.value || ''
+  if (t.length <= 140) return t
+  return t.slice(0, 140).replace(/\s+\S*$/, '') + '…'
+})
+
 const remainingCount = computed(() => {
   const actions = props.aiPlan?.immediate_actions || []
   return Math.max(0, actions.length - 1)
@@ -308,8 +318,25 @@ const navigateToInsights = () => {
   padding-top: 2px;
 }
 
+.show-more {
+  margin-top: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #7dd3fc;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.review-tag {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 11px;
+  color: #fde68a;
+}
+
 .action-text {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   color: var(--text-secondary);
   word-break: break-word;

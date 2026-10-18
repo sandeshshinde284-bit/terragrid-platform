@@ -63,6 +63,9 @@
     "aiInsights": "AI INSIGHTS",
     "totalAffectedArea": "Total Affected Area",
     "totalPopulation": "Total Population",
+    "estimatedExposureArea": "Estimated exposure area",
+    "estimatedPopulationExposed": "Estimated population exposed",
+    "exposureNote": "Modelled. Overlapping footprints can be counted twice.",
     "activeIncidentsCount": "Active Incidents",
     "showAllIncidents": "Show all incidents"
   },

@@ -175,12 +175,12 @@
             </div>
 
             <!-- 4. SITUATION BRIEFING (Boxed & Padded) -->
-            <div class="summary-card glass-subpanel">
-              <span class="card-section-label">Situation Summary</span>
+            <details class="summary-card glass-subpanel">
+              <summary class="card-section-label">Situation Summary <span class="expand-hint">(show)</span></summary>
               <p class="summary-text">
                 {{ aiPlan?.is_fallback ? 'AI assessment unavailable for this incident.' : (aiPlan?.severity_assessment || `${formatIncidentType(selectedIncidentData.type, selectedIncidentData.location)} near ${selectedIncidentData.location}, status: ${selectedIncidentData.status}.`) }}
               </p>
-            </div>
+            </details>
           </div>
 </aside>
       </transition>
@@ -270,12 +270,12 @@
             </div>
 
             <!-- 4. SITUATION BRIEFING (Mobile) -->
-            <div class="summary-card glass-subpanel">
-              <span class="card-section-label">{{ $t('common.details') }}</span>
+            <details class="summary-card glass-subpanel">
+              <summary class="card-section-label">{{ $t('common.details') }} <span class="expand-hint">(show)</span></summary>
               <p class="summary-text">
                 {{ aiPlan?.is_fallback ? 'AI assessment unavailable for this incident.' : (aiPlan?.severity_assessment || `${formatIncidentType(selectedIncidentData.type)} near ${selectedIncidentData.location}, status: ${selectedIncidentData.status}.`) }}
               </p>
-            </div>
+            </details>
           </div>
         </div>
       </transition>
@@ -330,12 +330,13 @@
       <!-- Left: Macro Stats -->
       <div class="metrics-group">
         <div class="metric">
-          <span class="label">{{ $t('dashboard.totalAffectedArea') }}</span>
+          <span class="label">{{ $t('dashboard.estimatedExposureArea') }}</span>
           <span class="value">{{ (totalAffectedArea ?? 0).toFixed(1) }} km²</span>
         </div>
         <div class="metric">
-          <span class="label">{{ $t('dashboard.totalPopulation') }}</span>
+          <span class="label">{{ $t('dashboard.estimatedPopulationExposed') }}</span>
           <span class="value">{{ (totalPopulation ?? 0).toLocaleString() }}</span>
+          <span class="metric-note">{{ $t('dashboard.exposureNote') }}</span>
         </div>
         <div class="metric">
           <span class="label">{{ $t('dashboard.activeIncidentsCount') }}</span>
@@ -613,8 +614,19 @@ const liveCriticalInsights = computed(() => {
 
 // Dashboard list = the first few of the filtered list, which is already sorted
 // by the sort dropdown (threat by default). The full list is on Incidents.
+// The selected incident moves to the top of the list, so the card the user is viewing is always first.
+const listWithSelectedFirst = computed(() => {
+  const list = [...filteredIncidents.value]
+  const idx = appStore.selectedIncident ? list.findIndex(i => i.id === appStore.selectedIncident) : -1
+  if (idx > 0) {
+    const [selected] = list.splice(idx, 1)
+    list.unshift(selected)
+  }
+  return list
+})
+
 const sortedAndPaginatedIncidents = computed(() => {
-  return filteredIncidents.value.slice(0, cardsPerPage.value)
+  return listWithSelectedFirst.value.slice(0, cardsPerPage.value)
 })
 
 // Get incidents grouped by country
@@ -1158,7 +1170,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 
 .content-grid {
   display: grid;
-  grid-template-columns: 320px 1fr 300px;
+  grid-template-columns: 360px 1fr 300px;
   gap: 16px;
   flex: 1;
   min-height: 0;
@@ -1166,7 +1178,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
 }
 
 .content-grid.detail-open {
-  grid-template-columns: 320px 1fr 340px;
+  grid-template-columns: 360px 1fr 340px;
 }
 
 .glass-panel {
@@ -1295,7 +1307,18 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   flex-direction: column;
   gap: 0;
   padding: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100vh - 150px);
+}
+
+.expand-hint { font-weight: 400; color: #64748b; }
+
+.metric-note {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 400;
 }
 
 .detail-header {
