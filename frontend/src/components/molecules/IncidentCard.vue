@@ -121,8 +121,8 @@ const selectIncident = () => {
 .incident-card :deep(.content) {
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  gap: 8px;
+  padding: 10px 12px;
+  gap: 6px;
   height: 100%;
 }
 

@@ -434,8 +434,13 @@ const renderMarkers = () => {
       // Same shared selection the Dashboard and Incidents page use, so the
       // incident is highlighted everywhere.
       appStore.setSelectedIncident(incident.id)
-      // Open the actual incident page, as the Dashboard map does.
-      router.push({ name: 'IncidentDetail', params: { id: incident.id } })
+      const mapInstance = map.value
+      if (!mapInstance) return
+      mapInstance.flyTo({
+        center: [lon, lat],
+        zoom: Math.max(mapInstance.getZoom(), 5),
+        speed: 1.2
+      })
     })
 
     const marker = new mapboxgl.Marker({ element: el })
