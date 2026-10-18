@@ -341,11 +341,16 @@ def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
     }
     dossier = report_payload(report)
     actions = []
+    priorities = dossier.get("immediate_action_priority") or []
+    categories = dossier.get("immediate_action_category") or []
     for i, text in enumerate(dossier.get("immediate_actions") or []):
         d = decisions.get(i)
         actions.append({
             "index": i,
             "text": text,
+            # Reports saved before these fields existed have no value; None means "not in report".
+            "priority": priorities[i] if i < len(priorities) else None,
+            "category": categories[i] if i < len(categories) else None,
             "decision": d.decision if d else None,
             "decided_by": d.decided_by if d else None,
             "task_id": d.task_id if d else None,
