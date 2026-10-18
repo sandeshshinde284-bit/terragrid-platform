@@ -81,7 +81,8 @@ DEEP_DOSSIER_SCHEMA_TEXT = """
       "deployment_location": "string (real street/location)",
       "estimated_arrival_minutes": "integer (0-480)",
       "priority": "integer (1=IMMEDIATE, 2=HIGH, 3=STAGED)",
-      "confidence": "integer (0-100)"
+      "confidence": "integer (0-100)",
+      "purpose": "string (one short line: what this resource does in this incident, e.g. 'Aerial damage assessment of collapsed routes')"
     }
   ],
   "cascade_predictions": [

@@ -135,6 +135,7 @@
           </div>
           <span class="resource-type">{{ r.label }}</span>
           <strong class="resource-qty">{{ r.quantity }} <small v-if="r.unit">{{ r.unit }}</small></strong>
+          <span v-if="r.purpose" class="resource-purpose">{{ r.purpose }}</span>
           <span class="resource-note">{{ r.priorityLabel }}<template v-if="r.location"> · {{ r.location }}</template></span>
         </article>
       </div>
@@ -266,12 +267,14 @@ const PRIORITY_LABEL: Record<number, string> = { 1: 'Immediate', 2: 'High priori
 // Estimates from the report's resource_matrix, grouped by resource type. Nothing is invented.
 const resources = computed(() => {
   const rows: any[] = props.report?.resource_matrix || []
-  const groups = new Map<string, { quantity: number; unit: string; priority: number | null; location: string | null }>()
+  const groups = new Map<string, { quantity: number; unit: string; priority: number | null; location: string | null; purpose: string | null }>()
   for (const r of rows) {
     const name = String(r.resource || '')
     const qty = Number(r.quantity)
     if (!name || Number.isNaN(qty)) continue
-    const g = groups.get(name) || { quantity: 0, unit: r.unit_measure || '', priority: null, location: r.deployment_location || null }
+    const g = groups.get(name) || { quantity: 0, unit: r.unit_measure || '', priority: null, location: r.deployment_location || null, purpose: null }
+    // Purpose comes from the report only. Older reports do not include it, so nothing is shown.
+    if (!g.purpose && typeof r.purpose === 'string' && r.purpose.trim()) g.purpose = r.purpose.trim()
     g.quantity += qty
     const p = Number(r.priority)
     if (!Number.isNaN(p) && (g.priority === null || p < g.priority)) g.priority = p
@@ -285,6 +288,7 @@ const resources = computed(() => {
     unit: g.unit,
     priorityLabel: g.priority !== null ? (PRIORITY_LABEL[g.priority] || '') : '',
     location: g.location,
+    purpose: g.purpose,
   }))
 })
 </script>
@@ -371,6 +375,7 @@ const resources = computed(() => {
 .resource-qty { font-size: 22px; color: #f8fafc; }
 .resource-qty small { font-size: 13px; color: #94a3b8; }
 .resource-note { font-size: 12px; color: #64748b; line-height: 1.4; }
+.resource-purpose { font-size: 13px; color: #cbd5e1; line-height: 1.4; }
 
 /* Responsive: tablet and mobile */
 @media (max-width: 1100px) {
