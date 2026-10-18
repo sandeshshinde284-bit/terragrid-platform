@@ -286,7 +286,8 @@
     "compilingZip": "ZIP WIRD ERSTELLT...",
     "exportSitRep": "📦 Lagebericht-Paket exportieren (.ZIP)",
     "viewIncidentMap": "🗺️ Zwischenfall auf taktischer Karte anzeigen",
-    "verifiedReportActive": "🟢 VERIFIZIERTER EINSATZBERICHT AKTIV",
+    "verifiedReportActive": "🟡 KI-BERICHT ERSTELLT · NICHT VERIFIZIERT",
+    "detectedAgo": "Erkannt {time}",
     "fullCrisisReady": "⚡ VOLLSTÄNDIGER KRISENBERICHT BEREIT ZUR SYNTHESE",
     "crisisAssessmentTitle": "Krisenbewertung & Auswirkungsprognose",
     "crisisAssessmentDesc": "Umfassende 6h/12h/24h-Katastrophenausbreitungsprognosen, Schwachstellenbewertungen für Krankenhäuser und kritische Infrastruktur sowie Notfalllogistikmatrizen synthetisieren.",
@@ -367,6 +368,8 @@
     "colPriority": "Priorität"
   },
   "impactTab": {
+    "sourceOsm": "OpenStreetMap",
+    "sourceAi": "KI-Vorschlag, ungeprüft",
     "vulnerabilityMatrix": "Schwachstellenmatrix",
     "exposedInfrastructure": "Gefährdete kritische Infrastruktur",
     "distance": "Entfernung:",

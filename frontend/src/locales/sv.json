@@ -286,7 +286,8 @@
     "compilingZip": "SKAPAR ZIP...",
     "exportSitRep": "📦 Exportera Lägesrapport (.ZIP)",
     "viewIncidentMap": "🗺️ Visa Incident på Taktisk Karta",
-    "verifiedReportActive": "🟢 VERIFIERAD OPERATIV RAPPORT AKTIV",
+    "verifiedReportActive": "🟡 AI-RAPPORT GENERERAD · EJ VERIFIERAD",
+    "detectedAgo": "Upptäckt {time}",
     "fullCrisisReady": "⚡ FULLSTÄNDIG KRISRAPPORT REDO ATT SYNTETISERAS",
     "crisisAssessmentTitle": "Krisbedömning & Konsekvensprognos",
     "crisisAssessmentDesc": "Syntetisera omfattande 6h/12h/24h spridningsprognoser, sårbarhetsbedömningar för sjukhus och infrastruktur samt nödlogistikmatriser.",
@@ -367,6 +368,8 @@
     "colPriority": "Prioritet"
   },
   "impactTab": {
+    "sourceOsm": "OpenStreetMap",
+    "sourceAi": "AI-förslag, overifierat",
     "vulnerabilityMatrix": "Sårbarhetsmatris",
     "exposedInfrastructure": "Exponerad Kritisk Infrastruktur",
     "distance": "Avstånd:",

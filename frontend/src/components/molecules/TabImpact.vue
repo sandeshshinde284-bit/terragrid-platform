@@ -16,14 +16,15 @@
           <span class="panel-code" style="color: #475569; font: 700 10px ui-monospace, monospace;">AI-IA-01</span>
         </div>
         <div class="ai-facility-grid">
-          <div v-for="fac in deepDossier.critical_infrastructure" :key="fac.facility_name" class="ai-facility-card glass-subpanel">
+          <div v-for="fac in facilityRows" :key="fac.facility_name" class="ai-facility-card glass-subpanel" :class="{ 'ai-suggested': !fac.fromOsm }">
             <div class="facility-top">
               <span class="facility-type-tag">{{ fac.facility_type }}</span>
               <span class="facility-risk" :class="fac.risk_level.toLowerCase()">{{ fac.risk_level }} Risk</span>
             </div>
+            <span class="facility-source" :class="fac.fromOsm ? 'osm' : (fac.sourceKnown ? 'ai' : 'unknown')">{{ fac.fromOsm ? $t('impactTab.sourceOsm') : (fac.sourceKnown ? $t('impactTab.sourceAi') : $t('impactTab.sourceUnknown')) }}</span>
             <h4 style="margin: 0 0 8px 0; font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1.3;">{{ fac.facility_name }}</h4>
             <div class="facility-meta">
-              <span>📍 {{ $t('impactTab.distance') }} {{ fac.distance_km }} km {{ $t('impactTab.fromEpicenter') }}</span>
+              <span>📍 {{ $t('impactTab.distance') }} {{ fac.distance ?? '—' }} km {{ $t('impactTab.fromEpicenter') }}</span>
             </div>
             <div class="facility-action">
               <strong>{{ $t('impactTab.directive') }}</strong> {{ fac.action_required }}
@@ -83,13 +84,39 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+
+const props = defineProps<{
   deepDossier: any
   isAnalyzingDossier: boolean
   isBackendMockModeEnabled: boolean
 }>()
 
 defineEmits(['launch'])
+
+const normName = (s: string) => (s || '').trim().toLowerCase()
+
+// Facilities the backend pulled from OpenStreetMap. Anything else in
+// critical_infrastructure is the model's own suggestion and is labelled so.
+const osmByName = computed(() => {
+  const m = new Map<string, any>()
+  for (const s of props.deepDossier?.osm_sources || []) m.set(normName(s.name), s)
+  return m
+})
+
+const facilityRows = computed(() =>
+  (props.deepDossier?.critical_infrastructure || []).map((fac: any) => {
+    const osm = osmByName.value.get(normName(fac.facility_name))
+    return {
+      ...fac,
+      fromOsm: !!osm,
+      // Dossiers from before the OSM tagging have no osm_sources list at all.
+      sourceKnown: Array.isArray(props.deepDossier?.osm_sources),
+      // Use the measured OSM distance when we have one.
+      distance: osm?.distance_km ?? fac.distance_km ?? null,
+    }
+  })
+)
 </script>
 
 <style scoped>
@@ -154,6 +181,19 @@ defineEmits(['launch'])
   margin-top: 14px;
 }
 
+
+.facility-source {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+}
+.facility-source.osm { color: #4ade80; background: rgba(74, 222, 128, 0.12); border: 1px solid rgba(74, 222, 128, 0.3); }
+.facility-source.unknown { color: #94a3b8; background: rgba(148,163,184,0.12); border: 1px dashed rgba(148,163,184,0.4); }
+.facility-source.ai { color: #fbbf24; background: rgba(251, 191, 36, 0.12); border: 1px dashed rgba(251, 191, 36, 0.5); }
+.ai-facility-card.ai-suggested { opacity: 0.9; border-style: dashed; }
 
 .ai-facility-card {
   background: rgba(15, 23, 42, 0.6);

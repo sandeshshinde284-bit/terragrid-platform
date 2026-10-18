@@ -9,9 +9,10 @@ Calculates and analyzes impact of disasters:
 """
 import logging
 import math
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime, timedelta
 import httpx
+from backend.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -78,21 +79,24 @@ class ImpactAnalysisService:
             
             # Get trend/forecast (6-hour expansion)
             trend_area = cls._calculate_trend(event_type, affected_area)
-            forecast_6h = affected_area + trend_area
+            forecast_6h = None if trend_area is None else affected_area + trend_area
             
             # Get impact zones
             impact_zones = cls._get_impact_zones(lat, lon, affected_area)
             
             impact_result = {
-                "is_estimated": False,
-                "data_quality": "VERIFIED_COMPUTATION",
+                # Area, population and risk come from a model (base areas,
+                # density grid, weights), not from a measurement.
+                "is_estimated": True,
+                "data_quality": "MODEL_ESTIMATE",
                 "affected_area_km2": round(affected_area, 2),
                 "affected_population": int(affected_population),
                 "population_density_km2": int(pop_density),
                 "vulnerability_score": round(vulnerability, 1),
                 "risk_score": round(risk_score, 1),
-                "trend_km2_per_hour": round(trend_area / 6, 2),  # Per hour rate
-                "forecast_6h_km2": round(forecast_6h, 2),
+                # None = not modelled for this hazard type (shown as a dash).
+                "trend_km2_per_hour": None if trend_area is None else round(trend_area / 6, 2),
+                "forecast_6h_km2": None if forecast_6h is None else round(forecast_6h, 2),
                 "impact_zones": impact_zones,
                 "severity_level": cls._interpret_severity(risk_score),
                 "humanitarian_impact": cls._calculate_humanitarian_impact(
@@ -104,7 +108,9 @@ class ImpactAnalysisService:
             }
 
             # FEATURE 4 (Phase 2): Trigger external email alerts for critical threats
-            if risk_score >= 80:
+            # Automatic emails are disabled unless explicitly enabled. Operators
+            # approve every alert in the Response phase instead.
+            if risk_score >= 80 and settings.AUTO_CRITICAL_EMAIL_ENABLED:
                 try:
                     from backend.services.notifications import notification_service
                     from backend.services.evacuation_zones import EvacuationZoneService
@@ -246,19 +252,22 @@ class ImpactAnalysisService:
         return min(100.0, risk)
     
     @classmethod
-    def _calculate_trend(cls, event_type: str, base_area: float) -> float:
-        """Calculate area expansion over 6 hours"""
-        # Expansion rates by event type
+    def _calculate_trend(cls, event_type: str, base_area: float) -> Optional[float]:
+        """Estimated area expansion over 6 hours, or None when not modelled.
+
+        Earthquakes, volcanoes and landslides have no expansion model here, so
+        they return None rather than a 0 km² trend that looks measured.
+        """
+        # Expansion rates by event type (assumed, not measured)
         expansion_rates = {
-            "fire": 0.25,      # Fires expand 25% in 6h
-            "earthquake": 0.0, # Earthquakes don't expand
-            "flood": 0.15,     # Floods spread gradually
-            "storm": 0.05,     # Storms move slowly
-            "volcano": 0.0,
-            "landslide": 0.0,
+            "fire": 0.25,      # Assumed: fires grow 25% in 6h
+            "flood": 0.15,     # Assumed: floods spread 15% in 6h
+            "storm": 0.05,     # Assumed: storms grow 5% in 6h
         }
-        
-        rate = expansion_rates.get(event_type, 0.1)
+
+        rate = expansion_rates.get(event_type)
+        if rate is None:
+            return None
         return base_area * rate
     
     @classmethod
