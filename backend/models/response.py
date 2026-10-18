@@ -4,7 +4,7 @@ operator-approved alert drafts. Every row names the operator who acted,
 as typed on screen. There is no login yet, so these names are
 self-declared, not authenticated.
 """
-from sqlalchemy import Column, String, Integer, ForeignKey, Text, DateTime
+from sqlalchemy import Column, String, Integer, ForeignKey, Text, DateTime, UniqueConstraint
 from .base import BaseModel
 
 
@@ -45,3 +45,38 @@ class ResponseAlert(BaseModel):
     created_by = Column(String(120), nullable=False)
     decided_by = Column(String(120), nullable=True)
     delivery_results = Column(Text, nullable=True)  # JSON list of {recipient, success, detail}
+
+
+class IncidentReport(BaseModel):
+    """
+    A saved, versioned Gemini crisis report. Each Generate or Update creates
+    a new version; nothing is overwritten. Fallback (offline) results are not
+    stored, so an outage cannot replace a real report.
+    """
+    __tablename__ = "incident_reports"
+    __table_args__ = (UniqueConstraint("event_id", "version", name="uq_incident_report_version"),)
+
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False, index=True)
+    version = Column(Integer, nullable=False)
+    payload = Column(Text, nullable=False)  # JSON: the full dossier as returned by Gemini
+    top_action = Column(Text, nullable=True)  # first recommendation, for quick display
+    model_name = Column(String(80), nullable=False)  # the configured Gemini model
+
+
+class ResponsePlanDecision(BaseModel):
+    """
+    An operator's decision on one recommendation from one report version.
+    Approving creates a ResponseTask; the decision keeps the link to the
+    report and action it came from. Decisions are final.
+    """
+    __tablename__ = "response_plan_decisions"
+    __table_args__ = (UniqueConstraint("report_id", "action_index", name="uq_plan_decision_action"),)
+
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False, index=True)
+    report_id = Column(Integer, ForeignKey("incident_reports.id"), nullable=False, index=True)
+    action_index = Column(Integer, nullable=False)
+    action_text = Column(Text, nullable=False)  # snapshot of the recommendation as it was reviewed
+    decision = Column(String(10), nullable=False)  # approved, rejected
+    task_id = Column(Integer, ForeignKey("response_tasks.id"), nullable=True)
+    decided_by = Column(String(120), nullable=False)
+    reason = Column(Text, nullable=True)

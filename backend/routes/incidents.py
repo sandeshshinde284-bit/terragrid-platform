@@ -294,9 +294,9 @@ async def get_all_incidents(
             response_dict['timestamp'] = incident.event_timestamp.isoformat() if incident.event_timestamp else None
             
             # Provide defaults for optional fields
-            response_dict['affectedArea'] = response_dict.get('affectedArea', 0)
-            response_dict['affectedPopulation'] = response_dict.get('affectedPopulation', 0)
-            response_dict['threatScore'] = response_dict.get('threatScore', 50)
+            response_dict['affectedArea'] = response_dict.get('affectedArea')
+            response_dict['affectedPopulation'] = response_dict.get('affectedPopulation')
+            response_dict['threatScore'] = response_dict.get('threatScore')
             
             result.append(response_dict)
         
@@ -552,23 +552,28 @@ async def generate_deep_incident_analysis(
             db_session=db
         )
         
-        # Cache dossier in PostgreSQL
-        try:
-            curr_data = dict(incident.data or {})
-            curr_data["deep_dossier"] = dossier
-            incident.data = curr_data
-            db.commit()
-            logger.info(f"[DEEP-DOSSIER] Cached dossier for {incident_id}")
-        except Exception as cache_err:
-            logger.warning(f"[DEEP-DOSSIER] Cache failed: {cache_err}")
-            db.rollback()
-        
+        # Offline (fallback) results are shown but never stored as a report version.
+        if dossier.get("is_fallback"):
+            return {
+                "status": "fallback",
+                "incident_id": incident_id,
+                "location": incident.location_name,
+                "dossier": dossier,
+                "saved": False,
+                "is_mock": True,
+            }
+        from backend.services.report_versions import save_report_version
+        report = save_report_version(db, incident, dossier)
+        logger.info(f"[DEEP-DOSSIER] Saved report version {report.version} for {incident_id}")
+
         return {
             "status": "success",
             "incident_id": incident_id,
             "location": incident.location_name,
             "dossier": dossier,
-            "is_mock": use_mock or bool(dossier.get("is_fallback"))
+            "version": report.version,
+            "saved": True,
+            "is_mock": use_mock,
         }
     except HTTPException:
         raise
@@ -578,31 +583,71 @@ async def generate_deep_incident_analysis(
 
 @router.get("/{incident_id}/deep-dossier")
 async def get_deep_incident_dossier(incident_id: str, db: Session = Depends(get_db)):
-    """Retrieve cached deep incident analysis results"""
+    """Return the latest saved crisis report (no AI call)."""
+    from backend.services.report_versions import latest_report, report_payload
     try:
         incident = find_incident_by_id(incident_id, db)
         if not incident:
             raise HTTPException(status_code=404, detail=f"Incident not found")
-        
+
+        report = latest_report(db, incident.id)
+        if report:
+            return {"status": "success", "incident_id": incident_id, "version": report.version,
+                    "generated_at": report.created_at.isoformat() + "Z", "dossier": report_payload(report)}
+
+        # Reports saved before versioning live only in incident data.
         dossier = (incident.data or {}).get("deep_dossier")
         if not dossier:
-            return {
-                "status": "pending",
-                "incident_id": incident_id,
-                "dossier": None,
-                "message": "Deep analysis has not been generated for this incident"
-            }
-        
-        return {
-            "status": "success",
-            "incident_id": incident_id,
-            "dossier": dossier
-        }
+            return {"status": "pending", "incident_id": incident_id, "dossier": None,
+                    "message": "Deep analysis has not been generated for this incident"}
+        return {"status": "success", "incident_id": incident_id, "version": None, "dossier": dossier}
     except HTTPException:
         raise
     except Exception as e:
         logger.exception(f"Failed to retrieve dossier for {incident_id}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{incident_id}/reports")
+async def list_incident_reports(incident_id: str, db: Session = Depends(get_db)):
+    """Version history of the crisis report, newest first (summaries only)."""
+    from backend.models.response import IncidentReport
+    incident = find_incident_by_id(incident_id, db)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    rows = (
+        db.query(IncidentReport)
+        .filter(IncidentReport.event_id == incident.id)
+        .order_by(IncidentReport.version.desc())
+        .all()
+    )
+    return {
+        "incident_id": incident_id,
+        "reports": [
+            {"version": r.version, "generated_at": r.created_at.isoformat() + "Z",
+             "top_action": r.top_action, "model": r.model_name}
+            for r in rows
+        ],
+    }
+
+
+@router.get("/{incident_id}/reports/{version}")
+async def get_incident_report_version(incident_id: str, version: int, db: Session = Depends(get_db)):
+    """One saved report version, in full."""
+    from backend.models.response import IncidentReport
+    from backend.services.report_versions import report_payload
+    incident = find_incident_by_id(incident_id, db)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    row = (
+        db.query(IncidentReport)
+        .filter(IncidentReport.event_id == incident.id, IncidentReport.version == version)
+        .first()
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Report version not found")
+    return {"incident_id": incident_id, "version": row.version,
+            "generated_at": row.created_at.isoformat() + "Z", "dossier": report_payload(row)}
 
 @router.get("/{incident_id}/analyses")
 async def get_analyses(incident_id: str, db: Session = Depends(get_db)):
