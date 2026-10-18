@@ -783,9 +783,9 @@ watch(selectedCity, (city) => {
 }
 
 .rail-item.yellow .rail-risk {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.15);
-  text-shadow: 0 0 4px rgba(251, 191, 36, 0.3);
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.15);
+  text-shadow: 0 0 4px rgba(34, 211, 238, 0.3);
 }
 
 .rail-item.orange .rail-risk {
@@ -1121,16 +1121,16 @@ watch(selectedCity, (city) => {
 }
 
 .deadline-chip.today {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.15);
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.15);
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 700;
 }
 
 .deadline-chip.soon {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.12);
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.12);
   padding: 2px 6px;
   border-radius: 4px;
 }

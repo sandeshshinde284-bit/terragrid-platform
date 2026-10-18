@@ -833,9 +833,9 @@ watch(selectedCity, (city) => {
 }
 
 .rail-item.yellow .rail-risk {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.15);
-  text-shadow: 0 0 4px rgba(251, 191, 36, 0.3);
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.15);
+  text-shadow: 0 0 4px rgba(34, 211, 238, 0.3);
 }
 
 .rail-item.orange .rail-risk {
@@ -1169,7 +1169,7 @@ watch(selectedCity, (city) => {
   border-radius: 6px;
   border: 1px solid rgba(96, 165, 250, 0.4);
   background: rgba(96, 165, 250, 0.12);
-  color: #60a5fa;
+  color: #06b6d4;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
