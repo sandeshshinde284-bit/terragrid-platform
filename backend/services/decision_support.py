@@ -51,23 +51,32 @@ class DecisionSupportService:
         except Exception as e:
             logger.warning(f"DecisionSupportService: Could not initialize Vertex AI SDK ({type(e).__name__}: {e}). Will use fallback plans.")
 
-    def generate_response_plan(self, incident: Dict[str, Any], zone_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def generate_response_plan(self, incident: Dict[str, Any], zone_data: Optional[Dict[str, Any]] = None, use_mock: bool = False) -> Dict[str, Any]:
         """
         Generates a tailored, country-specific disaster response plan.
         
         Args:
             incident: Dictionary containing disaster metrics (location_name, threat_score, event_type).
             zone_data: Optional evacuation zone statistics.
+            use_mock: If True, bypasses API and returns a rich fabricated demonstration plan.
             
         Returns:
             Structured JSON response containing immediate actions, evacuation advice, and resource allocations.
         """
+        from .mock_data_loader import MockDataLoader
+        
         location = incident.get("location_name", "Unknown Region")
         event_type = incident.get("event_type", "disaster").upper()
         threat_score = incident.get("threatScore") or incident.get("impact", {}).get("risk_score", 50)
         pop_at_risk = zone_data.get("total_population_affected") if zone_data else (incident.get("affectedPopulation") or 10000)
 
-        # No stored or demo content: without a live model there is no plan.
+
+        # Use mock data for demonstration mode
+        if use_mock:
+            mock_plan = MockDataLoader.load_mock_plan()
+            logger.info(f"Returning rich mock demonstration plan for {location}")
+            return mock_plan
+
         if not self.model:
             return unavailable_ai_result("response_plan", "Gemini model is not configured")
 
@@ -410,7 +419,7 @@ class DecisionSupportService:
 
         return fallback_alerts
 
-    def generate_deep_tactical_dossier(self, event_data: Dict[str, Any], db_session=None) -> Dict[str, Any]:
+    def generate_deep_tactical_dossier(self, event_data: Dict[str, Any], use_mock: bool = False, db_session=None) -> Dict[str, Any]:
         """
         Tier 2 Deep Intelligence Dossier: Fuses multi-source telemetry from NASA, USGS,
         OpenWeather, and GDACS, sending a multi-variable military prompt to Google Cloud Vertex AI
@@ -418,6 +427,7 @@ class DecisionSupportService:
         
         Args:
             event_data: Incident data.
+            use_mock: If True, bypasses API and returns a rich fabricated demonstration dossier.
             db_session: Optional DB session for historical queries.
         """
         event_type = event_data.get("event_type", "Hazard")
@@ -441,6 +451,7 @@ class DecisionSupportService:
         pressure = weather_data.get("pressure_hpa", 1013)
         weather_desc = weather_data.get("description", "Active weather conditions")
 
+        from .mock_data_loader import MockDataLoader
         from .infrastructure import InfrastructureService
         from .evacuation_zones import EvacuationZoneService
         from backend.models.event import Event
@@ -539,6 +550,13 @@ class DecisionSupportService:
                 gis_injection += f"\n            - ROUTE {idx+1}: Heading {route['direction']}, Distance: {route['distance_km']}km, Est. Clearance: {route['estimated_time_hours']} hrs."
         else:
             gis_injection += "\n            - (No OSRM road network geometries retrieved. Rely on cardinal direction egress.)"
+
+        
+        # Rich demonstration dossier
+        if use_mock:
+            mock_dossier = MockDataLoader.load_mock_dossier()
+            logger.info(f"Returning rich mock demonstration dossier for {location}")
+            return mock_dossier
 
         if not self.model:
             logger.warning("Vertex AI model unconfigured. No dossier generated.")
