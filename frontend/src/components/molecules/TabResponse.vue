@@ -7,6 +7,9 @@
       </div>
     </div>
 
+    <!-- Preparedness Context from PREPARE phase -->
+    <PreparednessContextCard v-if="incidentId" />
+
     <!-- No crisis report yet: the REPORT PENDING card below is the state, and its button starts generation. -->
     <ResponsePlanPanel
       v-if="incidentId && deepDossier"
@@ -74,6 +77,7 @@
 import { computed, ref } from 'vue'
 import GenerationNotice from './GenerationNotice.vue'
 import ResponsePlanPanel from '@/components/molecules/ResponsePlanPanel.vue'
+import PreparednessContextCard from '@/components/molecules/PreparednessContextCard.vue'
 
 defineEmits(['launch'])
 

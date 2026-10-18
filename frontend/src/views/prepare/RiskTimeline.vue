@@ -219,6 +219,15 @@
                 </div>
               </div>
             </div>
+
+            <!-- PREPARE → RESPONSE Handoff Panel -->
+            <PreparednessHandoffPanel
+              v-if="selectedCity"
+              :city="selectedCity.city"
+              :country="selectedCity.country"
+              :hazard="selectedCity.hazard_type || undefined"
+              :risk="selectedCity.risk_level || undefined"
+            />
           </div>
         </div>
       </template>
@@ -231,6 +240,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
+import PreparednessHandoffPanel from '@/components/molecules/PreparednessHandoffPanel.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { RISK_RANK, cityKey, useCityRailFilter, weatherIcon, worstRisk } from '@/composables/usePrepareLookups'
 import { getCountryName as countryName } from '@/utils/countries'
