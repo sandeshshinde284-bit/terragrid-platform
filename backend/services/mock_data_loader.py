@@ -37,9 +37,19 @@ class MockDataLoader:
             logger.error(f"MockDataLoader: Failed to load {filename} from {sub_dir}: {str(e)}")
             return [] if sub_dir == "mocks" and not filename.startswith("demo_") else {}
 
+
+
     @classmethod
     def load_default_impact(cls) -> Dict[str, Any]:
         return cls._load_json("fallbacks", "default_impact.json", inject_fallback_flag=True)
+
+    @classmethod
+    def load_mock_plan(cls) -> Dict[str, Any]:
+        return cls._load_json("mocks", "demo_plan.json", inject_mock_flag=True)
+
+    @classmethod
+    def load_mock_dossier(cls) -> Dict[str, Any]:
+        return cls._load_json("mocks", "demo_dossier.json", inject_mock_flag=True)
 
     @classmethod
     def load_mock_incidents(cls, source: str) -> List[Dict[str, Any]]:
