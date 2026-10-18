@@ -19,7 +19,7 @@
       </div>
 
       <!-- Incident Selector -->
-      <div class="form-group">
+      <div v-if="incidents.length > 0" class="form-group">
         <label for="incident-select">Select Incident</label>
         <select
           id="incident-select"
@@ -32,7 +32,22 @@
             {{ inc.event_type }} @ {{ inc.location_name || `(${inc.latitude}, ${inc.longitude})` }}
           </option>
         </select>
-        <p v-if="incidents.length === 0 && !loadingIncidents" class="hint">No active incidents found.</p>
+      </div>
+
+      <!-- No Matching Incident State -->
+      <div v-else-if="!loadingIncidents" class="no-match-state">
+        <p class="no-match-message">
+          📋 No matching incident found — continue preparedness monitoring.
+        </p>
+        <p class="no-match-hint">
+          Your preparedness assessment can be linked to an incident when one becomes available.
+          <span v-if="enableSaveWithoutIncident" class="save-hint">You can save it now for later linking.</span>
+        </p>
+      </div>
+
+      <!-- Loading State -->
+      <div v-else class="loading-state">
+        <p>⏳ Loading incidents...</p>
       </div>
 
       <!-- Officer Name -->
@@ -57,14 +72,26 @@
         </label>
       </div>
 
-      <!-- Submit Button -->
+      <!-- Submit Button (with incident) -->
       <button
+        v-if="incidents.length > 0 && selectedIncidentId"
         class="handoff-button"
         :disabled="!canSubmit || loading"
         @click="submitHandoff"
       >
         <span v-if="loading">⏳ Linking...</span>
         <span v-else>→ Link to Incident & Open Response</span>
+      </button>
+
+      <!-- Save Assessment Button (no matching incident) -->
+      <button
+        v-else-if="incidents.length === 0 && enableSaveWithoutIncident && officerName"
+        class="handoff-button save-assessment-btn"
+        :disabled="loading"
+        @click="saveAssessmentWithoutIncident"
+      >
+        <span v-if="loading">⏳ Saving...</span>
+        <span v-else>💾 Save Assessment for Later</span>
       </button>
 
       <!-- Messages -->
@@ -97,6 +124,7 @@ const error = ref('')
 const success = ref(false)
 const confirmMismatch = ref(false)
 const incidents = ref<any[]>([])
+const enableSaveWithoutIncident = ref(true)  // Feature flag for Phase 2
 
 const selectedCity = computed(() => props.city)
 const selectedCountry = computed(() => props.country)
@@ -132,7 +160,7 @@ const loadIncidents = async () => {
   }
 }
 
-// Submit handoff
+// Submit handoff (with incident)
 const submitHandoff = async () => {
   if (!selectedIncidentId.value) return
 
@@ -166,6 +194,49 @@ const submitHandoff = async () => {
     }, 500)
   } catch (e: any) {
     error.value = e.response?.data?.detail || 'Failed to link preparedness context'
+  } finally {
+    loading.value = false
+  }
+}
+
+// Save assessment without incident (Phase 2: for later linking)
+const saveAssessmentWithoutIncident = async () => {
+  if (!officerName.value) return
+
+  loading.value = true
+  error.value = ''
+  success.value = false
+
+  try {
+    // POST to a new endpoint that supports null event_id
+    const response = await axios.post(
+      `/api/v1/preparedness-context/save-unlinked`,
+      {
+        city: selectedCity.value,
+        country: selectedCountry.value,
+        hazard_type: hazardType.value,
+        risk_level: riskLevel.value,
+        assessment_at: new Date().toISOString(),
+        snapshot_json: { /* checklist snapshot */ },
+        source_metadata_json: { /* source info */ },
+        initiated_by: officerName.value,
+      }
+    )
+
+    success.value = true
+    const contextId = response.data.id
+    error.value = ''
+
+    // Show confirmation message with ID
+    console.log(`✅ Assessment saved (ID: ${contextId}). Return to this city to link when an incident is available.`)
+
+    // Keep the form state so user can return
+    setTimeout(() => {
+      success.value = false
+    }, 3000)
+  } catch (e: any) {
+    error.value = e.response?.data?.detail || 'Failed to save assessment'
+    console.error('Save assessment error:', e)
   } finally {
     loading.value = false
   }
@@ -314,5 +385,46 @@ watch(() => props.city, () => {
   margin: 0;
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+.no-match-state {
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+}
+
+.no-match-message {
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.no-match-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.save-hint {
+  color: rgba(34, 211, 238, 0.8);
+  font-weight: 500;
+}
+
+.loading-state {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.save-assessment-btn {
+  background: rgba(34, 211, 238, 0.7) !important;
+}
+
+.save-assessment-btn:hover:not(:disabled) {
+  background: rgba(34, 211, 238, 0.9) !important;
 }
 </style>

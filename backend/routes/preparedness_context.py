@@ -30,7 +30,7 @@ class PreparednessContextCreate(BaseModel):
 class PreparednessContextResponse(BaseModel):
     """Saved preparedness context."""
     id: int
-    event_id: int
+    event_id: int | None
     city: str
     country: str
     hazard_type: str | None
@@ -41,6 +41,18 @@ class PreparednessContextResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UnlinkedPreparednessContextCreate(BaseModel):
+    """Request to save preparedness context WITHOUT an incident (Phase 2)."""
+    city: str
+    country: str
+    hazard_type: str | None = None
+    risk_level: str | None = None
+    assessment_at: datetime
+    snapshot_json: dict | None = None
+    source_metadata_json: dict | None = None
+    initiated_by: str
 
 
 @router.post("/{incident_id}/preparedness-context", response_model=PreparednessContextResponse)
@@ -127,9 +139,64 @@ def get_preparedness_context(
     incident = db.query(Event).filter(Event.id == incident_id).first()
     if not incident:
         raise HTTPException(status_code=404, detail=f"Incident {incident_id} not found")
-    
+
     context = db.query(IncidentPreparednessContext).filter(
         IncidentPreparednessContext.event_id == incident_id
     ).first()
-    
+
     return context
+
+
+@router.post("/preparedness-context/save-unlinked", response_model=PreparednessContextResponse)
+def save_unlinked_preparedness_context(
+    payload: UnlinkedPreparednessContextCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    Save a preparedness assessment WITHOUT linking to an incident (Phase 2).
+
+    Validates:
+    - Required fields present (422 if not)
+    - Stores with event_id=NULL for later linking
+
+    Use case: When no compatible incident exists yet, save the assessment
+    so officer can link it later when an incident becomes available.
+
+    Does NOT create response tasks. The context is reference data only.
+    """
+    # Validate required fields
+    if not payload.initiated_by:
+        raise HTTPException(status_code=422, detail="initiated_by is required")
+    if not payload.city or not payload.country:
+        raise HTTPException(status_code=422, detail="city and country are required")
+    if not payload.assessment_at:
+        raise HTTPException(status_code=422, detail="assessment_at is required")
+
+    try:
+        # Create unlinked context (event_id is NULL)
+        context = IncidentPreparednessContext(
+            event_id=None,  # KEY: No incident linked yet
+            city=payload.city,
+            country=payload.country,
+            hazard_type=payload.hazard_type,
+            risk_level=payload.risk_level,
+            assessment_at=payload.assessment_at,
+            snapshot_json=payload.snapshot_json,
+            source_metadata_json=payload.source_metadata_json,
+            initiated_by=payload.initiated_by,
+            compatibility_override_reason=None,
+        )
+        db.add(context)
+        db.commit()
+        db.refresh(context)
+
+        logger.info(
+            f"Saved unlinked preparedness context (ID: {context.id}) "
+            f"for {payload.city}, {payload.country} by {payload.initiated_by}"
+        )
+        return context
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error saving unlinked preparedness context: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to save unlinked assessment")

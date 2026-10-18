@@ -12,8 +12,8 @@ class IncidentPreparednessContext(BaseModel):
     """Snapshot of preparedness assessment linked to an incident."""
     __tablename__ = "incident_preparedness_contexts"
 
-    # Core link
-    event_id = Column(Integer, ForeignKey("events.id"), nullable=False, index=True)
+    # Core link (nullable for Phase 2: allows saving assessment without incident for later linking)
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=True, index=True)
     
     # Location & hazard from PREPARE
     city = Column(String(120), nullable=False)
