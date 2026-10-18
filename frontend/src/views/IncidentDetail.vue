@@ -8,39 +8,6 @@
     </div>
 
     <template v-else>
-      <!-- Tactical Neural Scanner HUD Overlay -->
-      <transition name="fade">
-        <div v-if="scannerActive" class="neural-scanner-overlay">
-          <div class="neural-scanner-modal glass-panel">
-            <div class="scanner-header">
-              <span class="scanner-radar-icon">📡</span>
-              <div class="scanner-titles">
-                <h4>Analyzing incident data and generating response plan</h4>
-                <small>Gathering data from multiple sources...</small>
-              </div>
-            </div>
-
-            <div class="scanner-body">
-              <div class="radar-scanline-bar">
-                <div class="scanline-glow"></div>
-              </div>
-
-              <div class="scanner-step-list">
-                <div 
-                  v-for="(step, sIdx) in analysisSteps" 
-                  :key="sIdx" 
-                  class="scanner-step-item"
-                  :class="{ active: currentStepIndex === sIdx, complete: currentStepIndex > sIdx }"
-                >
-                  <span class="step-indicator">{{ currentStepIndex > sIdx ? '✓' : (currentStepIndex === sIdx ? '⟳' : '○') }}</span>
-                  <span class="step-label">{{ step }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </transition>
-
       <header class="detail-header sticky-header">
         <nav class="header-navigation" aria-label="Breadcrumb">
           <button class="breadcrumb-back" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">← Back to Incidents</button>
@@ -81,7 +48,7 @@
             <span class="severity-badge" :class="`severity-${incident.severity}`">{{ incident.severity.toUpperCase() }} SEVERITY</span>
             <span class="status-badge" :class="`status-${incident.status}`">{{ formatStatus(incident.status) }}</span>
           </div>
-          <span v-if="lastUpdatedText" class="last-updated">Last updated: {{ lastUpdatedText }}</span>
+          <span v-if="lastUpdatedText" class="last-updated">Last ingest: {{ lastUpdatedText }}</span>
         </div>
       </section>
 
@@ -99,6 +66,8 @@
         </button>
       </nav>
 
+      <GenerationNotice v-if="isAnalyzingDossier && activeTab !== 'overview'" :startedAt="generationStartedAt" class="generation-bar" />
+
       <Transition name="tab-fade" mode="out-in">
         <section :key="activeTab" class="tab-content">
           <!-- OVERVIEW -->
@@ -109,6 +78,7 @@
             :details="incidentDetails"
             :report="deepDossier"
             :isGenerating="isAnalyzingDossier"
+            :generationStartedAt="generationStartedAt"
             :reportError="aiError"
             :exportingZip="isExportingZip"
             @generate="launchDeepAnalysis"
@@ -184,6 +154,8 @@
 </template>
 
 <script setup lang="ts">
+import GenerationNotice from '../components/molecules/GenerationNotice.vue'
+import { useDossierJobsStore } from '../stores/dossierJobs'
 import { displayIncidentId } from '@/utils/incidentId'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, ref, onMounted, watch } from 'vue'
@@ -233,7 +205,11 @@ const incident = computed<IncidentLevel1 | undefined>(() => eventsStore.allIncid
 
 // AI state. The saved crisis report is the single source of recommendations.
 // There is no separate plan request, so the overview, AI tab, and export always agree.
-const aiError = ref<string | null>(null)
+const jobs = useDossierJobsStore()
+const job = computed(() => jobs.jobFor(incidentId.value))
+const isAnalyzingDossier = computed(() => job.value?.state === 'running')
+const generationStartedAt = computed<number | null>(() => (job.value?.state === 'running' ? job.value.startedAt : null))
+const aiError = computed<string | null>(() => (job.value?.state === 'fallback' || job.value?.state === 'error' ? job.value.message : null))
 
 // Tier 2 Deep Tactical AI Dossier State
 interface DeepDossier {
@@ -279,7 +255,6 @@ interface DeepDossier {
 
 const deepDossier = ref<DeepDossier | null>(null)
 const incidentDetails = ref<any | null>(null)
-const isAnalyzingDossier = ref(false)
 
 // Everything that shows recommendations reads from the saved report.
 const aiPlan = computed<DeepDossier | null>(() => deepDossier.value)
@@ -287,51 +262,18 @@ const aiLoading = computed(() => isAnalyzingDossier.value)
 const aiInsights = computed<AIInsight[]>(() =>
   (deepDossier.value?.immediate_actions || []).map((action, idx) => ({ id: `ai-action-${idx}`, action }))
 )
-const scannerActive = ref(false)
-const currentStepIndex = ref(0)
-const analysisSteps = [
-  'Loading satellite imagery & weather data from multiple sources...',
-  'Identifying critical facilities within impact zone...',
-  'Forecasting event progression for 6, 12, and 24 hours ahead...',
-  'Generating evacuation strategy & resource allocation plan...'
-]
 
-async function launchDeepAnalysis() {
+// Apply a finished background job to this page. It runs on mount as well, so a
+// report that finished while the user was on another screen still appears.
+function applyDossier(data: any) {
+  deepDossier.value = { ...data.dossier, version: data.version ?? null, generated_at: new Date().toISOString() }
+}
+watch(() => job.value?.result, (result) => { if (result) applyDossier(result) }, { immediate: true })
+
+// Starts a background job. Nothing blocks: the user can switch tabs while it runs.
+function launchDeepAnalysis() {
   if (!incidentId.value) return
-  isAnalyzingDossier.value = true
-  scannerActive.value = true
-  currentStepIndex.value = 0
-  const stepInterval = setInterval(() => {
-    if (currentStepIndex.value < analysisSteps.length - 1) {
-      currentStepIndex.value++
-    }
-  }, 1100)
-
-  try {
-    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
-    const res = await fetch(`${host}/api/v1/incidents/${incidentId.value}/deep-analysis`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json()
-    if (data.status === 'fallback') {
-      // AI is offline: nothing was saved. Keep the last saved report on screen.
-      aiError.value = 'AI analysis is unavailable right now. The last saved report is still shown.'
-    } else if (data.dossier) {
-      aiError.value = null
-      deepDossier.value = { ...data.dossier, version: data.version ?? null, generated_at: new Date().toISOString() }
-    }
-  } catch (err) {
-    logError('Could not generate the deep AI dossier for this incident', err)
-  } finally {
-    clearInterval(stepInterval)
-    currentStepIndex.value = analysisSteps.length
-    setTimeout(() => {
-      isAnalyzingDossier.value = false
-      scannerActive.value = false
-    }, 600)
-  }
+  jobs.start(incidentId.value)
 }
 
 async function loadIncidentDetails() {
