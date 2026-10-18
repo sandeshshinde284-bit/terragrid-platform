@@ -73,6 +73,7 @@
     "title": "Incidents",
     "type": "Type",
     "status": "Status",
+    "location": "Location",
     "detectionTime": "Detected",
     "affectedArea": "Est. Area",
     "population": "Est. Pop.",
@@ -372,7 +373,11 @@
     "colAgency": "Assigned Agency",
     "colLocation": "Deployment Location",
     "colEta": "ETA",
-    "colPriority": "Priority"
+    "colPriority": "Priority",
+    "stepReviewApprove": "Review & Approve Plan",
+    "stepPlanReview": "Plan & Review",
+    "stepActivityLog": "Activity Log",
+    "stepPlanSummary": "Plan Summary"
   },
   "impactTab": {
     "sourceOsm": "OpenStreetMap",

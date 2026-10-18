@@ -66,6 +66,7 @@
     "title": "Incydenty",
     "type": "Typ",
     "status": "Status",
+    "location": "Lokalizacja",
     "detectionTime": "Wykryty",
     "affectedArea": "Szac. Obszar",
     "population": "Szac. Pop.",
@@ -364,7 +365,11 @@
     "colAgency": "Przypisana Agencja",
     "colLocation": "Miejsce Rozmieszczenia",
     "colEta": "ETA",
-    "colPriority": "Priorytet"
+    "colPriority": "Priorytet",
+    "stepReviewApprove": "Review & Approve Plan",
+    "stepPlanReview": "Plan & Review",
+    "stepActivityLog": "Activity Log",
+    "stepPlanSummary": "Plan Summary"
   },
   "impactTab": {
     "sourceOsm": "OpenStreetMap",

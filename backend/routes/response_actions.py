@@ -13,11 +13,11 @@ from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models.response import IncidentResponseLog, ResponseTask, ResponseAlert, IncidentReport, ResponsePlanDecision
+from backend.models.response import IncidentResponseLog, ResponseTask, ResponseAlert, IncidentReport, ResponsePlanDecision, ResponsePlan
 from backend.routes.incidents import find_incident_by_id
 from backend.services.notifications import notification_service
 
@@ -27,11 +27,20 @@ router = APIRouter(prefix="/api/v1/incidents", tags=["response"])
 
 INCIDENT_STATUSES = {"open", "investigating", "responding", "resolved"}
 TASK_STATUSES = {"open", "acknowledged", "in_progress", "blocked", "done"}
-PRIORITIES = {"high", "medium", "low"}
+PRIORITIES = {"critical", "high", "medium", "low"}  # stored lowercase; the officer picks one per approval
 
 
 class ActorBody(BaseModel):
     actor: str = Field(min_length=1, max_length=120)
+
+    @field_validator("actor")
+    @classmethod
+    def _actor_not_blank(cls, value: str) -> str:
+        # Typed name, recorded as given; surrounding spaces removed and blank names refused.
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("Enter the officer's name")
+        return cleaned
 
 
 class StatusBody(ActorBody):
@@ -104,7 +113,7 @@ def _serialize_state(db: Session, event_id: int) -> Dict[str, Any]:
     if status_rows:
         current_status = json.loads(status_rows[-1].detail or "{}").get("status", "open")
 
-    priority_rank = {"high": 0, "medium": 1, "low": 2}
+    priority_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3}
     tasks = sorted(
         db.query(ResponseTask).filter(ResponseTask.event_id == event_id).all(),
         key=lambda t: (priority_rank.get(t.priority, 1), t.due_at or datetime.max, t.id),
@@ -195,14 +204,15 @@ def set_incident_status(incident_id: str, body: StatusBody, db: Session = Depend
 @router.post("/{incident_id}/response/tasks")
 def create_task(incident_id: str, body: TaskCreateBody, db: Session = Depends(get_db)):
     event = _event_or_404(incident_id, db)
-    if body.priority not in PRIORITIES:
+    priority = body.priority.strip().lower()
+    if priority not in PRIORITIES:
         raise HTTPException(status_code=400, detail=f"Priority must be one of {sorted(PRIORITIES)}")
     task = ResponseTask(
         event_id=event.id,
         title=body.title.strip(),
         assignee=body.assignee.strip(),
         status="open",
-        priority=body.priority,
+        priority=priority,
         due_at=_to_utc_naive(body.due_at),
         created_by=body.actor,
     )
@@ -316,42 +326,153 @@ def reject_alert(incident_id: str, alert_id: int, body: AlertDecisionBody, db: S
 # report version and action it came from. Reports are never edited here.
 # ---------------------------------------------------------------------------
 
+class PlanDetailsBody(ActorBody):
+    name: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=2000)
+
+
+def _plan_details_out(row: Optional[ResponsePlan]) -> Optional[Dict[str, Any]]:
+    if row is None:
+        return None
+    return {
+        "name": row.name,
+        "description": row.description,
+        "created_by": row.created_by,
+        "created_at": row.created_at.isoformat() + "Z",
+        "updated_by": row.updated_by,
+        "updated_at": row.updated_at.isoformat() + "Z",
+    }
+
+
 class PlanDecisionBody(ActorBody):
     report_id: int
     action_index: int = Field(ge=0)
     decision: str  # approve | reject
     assignee: Optional[str] = Field(default=None, max_length=120)
-    priority: str = Field(default="medium")
+    priority: Optional[str] = Field(default=None, max_length=10)  # required to approve; ignored on reject
     due_at: Optional[datetime] = None
     reason: Optional[str] = Field(default=None, max_length=500)
 
 
+def _task_out(task: ResponseTask, report_version: Optional[int]) -> Dict[str, Any]:
+    return {
+        "id": task.id,
+        "title": task.title,
+        "assignee": task.assignee,
+        "status": task.status,
+        "priority": task.priority,
+        "due_at": task.due_at.isoformat() + "Z" if task.due_at else None,
+        "note": task.note,
+        "created_by": task.created_by,
+        "created_at": task.created_at.isoformat() + "Z",
+        # The report version the task came from. None for tasks created directly, not from a recommendation.
+        "report_version": report_version,
+    }
+
+
 @router.get("/{incident_id}/response/plan")
 def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
-    """The latest report's recommendations, with each one's decision so far."""
+    """
+    Plan state for the Response tab.
+    - actions: the latest report's recommendations, each with its AI values and its decision so far.
+    - tasks: every task for the incident, from all report versions, each with the version it came from.
+    - review: counts for the latest report's recommendations.
+    - task_summary: progress for tasks approved from any report version.
+    """
     from backend.services.report_versions import latest_report, report_payload
     event = _event_or_404(incident_id, db)
     report = latest_report(db, event.id)
-    if not report:
-        return {"report": None, "actions": [], "message": "Generate a crisis report first. Its recommendations appear here."}
 
-    decisions = {
-        d.action_index: d for d in
-        db.query(ResponsePlanDecision).filter(ResponsePlanDecision.report_id == report.id).all()
+    # Every decision for this incident, paired with the version of the report it belongs to.
+    all_decisions = (
+        db.query(ResponsePlanDecision, IncidentReport.version)
+        .join(IncidentReport, IncidentReport.id == ResponsePlanDecision.report_id)
+        .filter(ResponsePlanDecision.event_id == event.id)
+        .all()
+    )
+    version_by_task = {d.task_id: version for d, version in all_decisions if d.task_id is not None}
+    approved_task_ids = {d.task_id for d, _ in all_decisions if d.decision == "approved" and d.task_id is not None}
+
+    tasks = (
+        db.query(ResponseTask)
+        .filter(ResponseTask.event_id == event.id)
+        .order_by(ResponseTask.created_at.asc(), ResponseTask.id.asc())
+        .all()
+    )
+    tasks_by_id = {t.id: t for t in tasks}
+    tasks_out = [_task_out(t, version_by_task.get(t.id)) for t in tasks]
+
+    by_status = {status: 0 for status in sorted(TASK_STATUSES)}
+    approved_tasks = [tasks_by_id[tid] for tid in approved_task_ids if tid in tasks_by_id]
+    for t in approved_tasks:
+        by_status[t.status] = by_status.get(t.status, 0) + 1
+    task_summary = {
+        "approved": len(approved_tasks),
+        "done": by_status.get("done", 0),
+        "by_status": by_status,
     }
+
+    activity_rows = (
+        db.query(IncidentResponseLog)
+        .filter(IncidentResponseLog.event_id == event.id,
+                IncidentResponseLog.action.in_(["plan_approved", "plan_rejected", "task_updated", "plan_details_saved"]))
+        .order_by(IncidentResponseLog.created_at.desc(), IncidentResponseLog.id.desc())
+        .limit(30).all()
+    )
+    activity = [{"action": row.action, "actor": row.actor,
+                 "at": _iso(row.created_at),
+                 "detail": json.loads(row.detail) if row.detail else {}}
+                for row in activity_rows]
+    # The current report is always the latest. Older approved tasks remain visible.
+    previous_report_tasks = sum(1 for t in tasks_out if t["report_version"] is not None
+                                and report is not None and t["report_version"] < report.version)
+
+    plan_row = db.query(ResponsePlan).filter(ResponsePlan.event_id == event.id).first()
+    plan_details = _plan_details_out(plan_row)
+
+    if not report:
+        return {
+            "plan": plan_details,
+            "report": None,
+            "actions": [],
+            "review": {"total": 0, "approved": 0, "rejected": 0, "pending": 0},
+            "tasks": tasks_out,
+            "task_summary": task_summary,
+            "activity": activity,
+            "previous_report_tasks": previous_report_tasks,
+            "message": "Generate a crisis report first. Its recommendations appear here.",
+        }
+
+    decisions = {d.action_index: d for d, _ in all_decisions if d.report_id == report.id}
     dossier = report_payload(report)
+    priorities = dossier.get("immediate_action_priority") or []
+    categories = dossier.get("immediate_action_category") or []
+
     actions = []
     for i, text in enumerate(dossier.get("immediate_actions") or []):
         d = decisions.get(i)
+        # Reports saved before these fields existed have no value; None means "not in report".
+        payload_priority = priorities[i] if i < len(priorities) else None
+        payload_category = categories[i] if i < len(categories) else None
+        task = tasks_by_id.get(d.task_id) if d and d.task_id else None
         actions.append({
             "index": i,
             "text": text,
+            "priority": (d.ai_priority or payload_priority) if d else payload_priority,
+            "category": (d.ai_category or payload_category) if d else payload_category,
+            "officer_priority": d.officer_priority if d else None,
             "decision": d.decision if d else None,
             "decided_by": d.decided_by if d else None,
+            "decided_at": d.created_at.isoformat() + "Z" if d else None,
             "task_id": d.task_id if d else None,
+            "task": _task_out(task, version_by_task.get(task.id)) if task else None,
             "reason": d.reason if d else None,
         })
+
+    approved = sum(1 for a in actions if a["decision"] == "approved")
+    rejected = sum(1 for a in actions if a["decision"] == "rejected")
     return {
+        "plan": plan_details,
         "report": {
             "id": report.id,
             "version": report.version,
@@ -360,8 +481,39 @@ def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
             "is_ai_generated": True,
         },
         "actions": actions,
+        "review": {
+            "total": len(actions),
+            "approved": approved,
+            "rejected": rejected,
+            "pending": len(actions) - approved - rejected,
+        },
+        "tasks": tasks_out,
+        "task_summary": task_summary,
+            "activity": activity,
+            "previous_report_tasks": previous_report_tasks,
         "note": "AI recommendations. Each needs an officer's approval before it becomes a task.",
     }
+
+
+@router.post("/{incident_id}/response/plan/details")
+def save_plan_details(incident_id: str, body: PlanDetailsBody, db: Session = Depends(get_db)):
+    """Save the plan's name and description. The first save records who created the plan."""
+    event = _event_or_404(incident_id, db)
+    name = body.name.strip() if body.name and body.name.strip() else None
+    description = body.description.strip() if body.description and body.description.strip() else None
+    row = db.query(ResponsePlan).filter(ResponsePlan.event_id == event.id).first()
+    if row is None:
+        row = ResponsePlan(event_id=event.id, name=name, description=description,
+                           created_by=body.actor, updated_by=body.actor)
+        db.add(row)
+    else:
+        row.name = name
+        row.description = description
+        row.updated_by = body.actor
+    _log(db, event.id, "plan_details_saved", body.actor, {"name": name})
+    db.commit()
+    db.refresh(row)
+    return _plan_details_out(row)
 
 
 @router.post("/{incident_id}/response/plan/decide")
@@ -370,8 +522,10 @@ def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = D
     event = _event_or_404(incident_id, db)
     if body.decision not in {"approve", "reject"}:
         raise HTTPException(status_code=400, detail="decision must be approve or reject")
-    if body.priority not in PRIORITIES:
-        raise HTTPException(status_code=400, detail="Unknown priority")
+    # Priority is required only for approval. Reject records no priority.
+    priority = (body.priority or "").strip().lower() or None
+    if body.decision == "approve" and priority not in PRIORITIES:
+        raise HTTPException(status_code=400, detail=f"Choose a priority: {sorted(PRIORITIES)}")
 
     report = db.query(IncidentReport).filter(IncidentReport.id == body.report_id, IncidentReport.event_id == event.id).first()
     if not report:
@@ -380,10 +534,16 @@ def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = D
     if latest is None or latest.id != report.id:
         raise HTTPException(status_code=409, detail="This report has been superseded. Review the latest report's recommendations.")
 
-    actions = report_payload(report).get("immediate_actions") or []
+    payload = report_payload(report)
+    actions = payload.get("immediate_actions") or []
     if body.action_index >= len(actions):
         raise HTTPException(status_code=400, detail="No recommendation at that index")
     text = actions[body.action_index]
+    # AI values are copied from the saved report, never from the client.
+    priorities = payload.get("immediate_action_priority") or []
+    categories = payload.get("immediate_action_category") or []
+    ai_priority = priorities[body.action_index] if body.action_index < len(priorities) else None
+    ai_category = categories[body.action_index] if body.action_index < len(categories) else None
 
     if db.query(ResponsePlanDecision).filter(
         ResponsePlanDecision.report_id == report.id, ResponsePlanDecision.action_index == body.action_index
@@ -399,7 +559,7 @@ def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = D
             title=text[:250] + ("…" if len(text) > 250 else ""),
             assignee=body.assignee,
             status="open",
-            priority=body.priority,
+            priority=priority,
             due_at=_to_utc_naive(body.due_at),
             note=f"From AI report v{report.version}, recommendation {body.action_index + 1}. Full text: {text}",
             created_by=body.actor,
@@ -417,6 +577,9 @@ def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = D
         task_id=task_id,
         decided_by=body.actor,
         reason=body.reason,
+        ai_priority=ai_priority,
+        ai_category=ai_category,
+        officer_priority=priority if body.decision == "approve" else None,
     ))
     _log(db, event.id, "plan_" + ("approved" if body.decision == "approve" else "rejected"), body.actor, {
         "report_version": report.version,

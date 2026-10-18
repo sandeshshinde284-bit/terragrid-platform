@@ -80,6 +80,23 @@ def _int(desc, nullable=False):
     return {"type": "INTEGER", "description": desc, **({"nullable": True} if nullable else {})}
 
 
+def _enum(values, desc):
+    """A string that must be one of the listed values (Gemini enforces this)."""
+    return {"type": "STRING", "enum": list(values), "description": desc}
+
+
+ACTION_PRIORITY_VALUES = ["IMMEDIATE", "HIGH", "STAGED"]
+ACTION_CATEGORY_VALUES = [
+    "Command & Control", "Search & Rescue", "Medical", "Logistics",
+    "Evacuation", "Assessment", "Communications", "Infrastructure",
+]
+_ACTION_PRIORITY_DESC = (
+    "One entry per action, in the same order. IMMEDIATE if the input shows a life-safety risk, "
+    "HIGH if it shows significant impact, STAGED otherwise. Base it on the input only."
+)
+_ACTION_CATEGORY_DESC = "One entry per action, in the same order. The function that carries out the action."
+
+
 def _num(desc, nullable=False):
     return {"type": "NUMBER", "description": desc, **({"nullable": True} if nullable else {})}
 
@@ -106,6 +123,8 @@ RESPONSE_PLAN_GEMINI_SCHEMA = _obj({
     "historical_reference": _str("A past event, only if an input history record matches it. Otherwise null.", True),
     "immediate_actions": _arr(_str("One concrete action for this incident."), "Up to five actions. Each must rest on an input fact."),
     "immediate_action_evidence": _arr(_str("The input fact behind the matching action, or 'no supporting input'."), "One entry per action, in the same order."),
+    "immediate_action_priority": _arr(_enum(ACTION_PRIORITY_VALUES, "Priority of the matching action."), _ACTION_PRIORITY_DESC),
+    "immediate_action_category": _arr(_enum(ACTION_CATEGORY_VALUES, "Category of the matching action."), _ACTION_CATEGORY_DESC),
     "resource_allocation": _arr(_obj({
         "resource": _str("Resource type."),
         "quantity": _int("Number of units. null if the input does not justify a number.", True),
@@ -125,6 +144,8 @@ DEEP_DOSSIER_GEMINI_SCHEMA = _obj({
     "predicted_outcome": _str("What follows if the input trend continues. null if the input does not support a prediction.", True),
     "historical_reference": _str("A past event, only if an input history record matches it. Otherwise null.", True),
     "immediate_actions": _arr(_str("One concrete action for this incident."), "Up to five actions. Each must rest on an input fact."),
+    "immediate_action_priority": _arr(_enum(ACTION_PRIORITY_VALUES, "Priority of the matching action."), _ACTION_PRIORITY_DESC),
+    "immediate_action_category": _arr(_enum(ACTION_CATEGORY_VALUES, "Category of the matching action."), _ACTION_CATEGORY_DESC),
     "resource_matrix": _arr(_obj({
         "resource": _str("Resource type."),
         "quantity": _int("Number of units. null if the input does not justify a number.", True),

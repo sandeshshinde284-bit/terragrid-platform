@@ -18,13 +18,21 @@
   --glass-border: rgba(255, 255, 255, 0.15);
   --glass-blur: blur(10px);
   
-  /* Accents - one dominant accent (cyan) used for interactive/active
-     state everywhere; green and purple kept only for the few spots that
-     already relied on them (success state, one legacy badge) rather than
-     for general decoration. */
-  --accent-cyan: #00bcd4;
-  --accent-green: #1dd1a1;
-  --accent-purple: #9c27b0;
+  /* PRIMARY COLORS - Unified across all phases */
+  --color-primary: #22d3ee;        /* Cyan - main accent */
+  --color-primary-dark: #0891b2;   /* Dark Cyan */
+  --color-primary-light: #06b6d4;  /* Light Cyan */
+  --color-bg-primary: #0f172a;     /* Slate 900 */
+  --color-bg-secondary: #1e293b;   /* Slate 800 */
+
+  /* Legacy accents - kept for backward compatibility but phase colors should use primary above */
+  --accent-cyan: #22d3ee;          /* Updated to match primary */
+  --accent-green: #10b981;         /* Success state */
+  --accent-purple: #a855f7;        /* Alternative accent */
+
+  /* Deprecated - use --color-primary instead of these */
+  --color-warning: #f59e0b;        /* Amber - deprecated */
+  --color-info: #3b82f6;           /* Blue - deprecated */
 
   /* Hazard-type colors (RESPONSE phase incident cards/badges) - centralized
      here instead of scattered hex literals per component, and deliberately

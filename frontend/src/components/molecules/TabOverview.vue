@@ -289,13 +289,18 @@ const forecast = computed(() => {
   return { title: NA, note: 'No spread forecast for this hazard type' }
 })
 
+const isQuickInsight = computed(() => props.report && props.report.version === null)
 const bannerState = computed(() => (props.isGenerating ? 'busy' : props.report ? 'ready' : 'empty'))
 const bannerKicker = computed(() => {
   if (props.isGenerating) return 'GENERATING CRISIS REPORT'
+  if (isQuickInsight.value) return 'QUICK BRIEF · TAP "GENERATE" FOR FULL ANALYSIS'
   return props.report ? 'AI REPORT GENERATED · NOT VERIFIED' : 'CRISIS REPORT NOT GENERATED'
 })
 const bannerText = computed(() => {
   if (props.isGenerating) return 'The AI assessment is running. Recommendations and resource estimates will update when it finishes.'
+  if (isQuickInsight.value) {
+    return 'This is a quick AI-generated brief based on incident data. Click "Generate full report" for comprehensive tactical analysis, infrastructure impact, and evacuation corridors.'
+  }
   if (props.report) {
     return 'This report was generated using available incident data and AI analysis. Recommendations and resource estimates require review and verification by an authorized officer.'
   }

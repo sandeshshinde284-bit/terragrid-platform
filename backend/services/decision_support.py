@@ -21,13 +21,17 @@ def unavailable_ai_result(kind: str, reason: str) -> Dict[str, Any]:
 
 
 def _gemini_config(schema: Dict[str, Any], max_tokens: int):
-    """Structured-output settings: the service enforces the schema, with low temperature."""
+    """Structured-output settings: enforces JSON response with low temperature.
+    
+    Note: response_schema parameter was removed to maintain compatibility with 
+    Vertex AI Generative Models SDK. The schema is embedded in the prompt instead.
+    response_mime_type="application/json" ensures valid JSON output.
+    """
     from vertexai.generative_models import GenerationConfig
     return GenerationConfig(
         temperature=0.2,
         max_output_tokens=max_tokens,
         response_mime_type="application/json",
-        response_schema=schema,
     )
 
 

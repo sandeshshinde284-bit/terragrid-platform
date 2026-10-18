@@ -86,7 +86,7 @@
               <p>{{ actionsError }}</p>
             </div>
 
-            <div v-else-if="actionsPlan.is_fallback" class="empty-state glass-panel">
+            <div v-else-if="actionsPlan?.is_fallback" class="empty-state glass-panel">
 
               <div class="empty-icon">⚠️</div>
 
@@ -482,10 +482,13 @@ const fetchActionsForSelectedCity = async () => {
     const response = await fetchWithMockMode(`${host}/api/v1/prepare/actions?${params.toString()}`)
 
     if (!response.ok) {
-      throw new Error(`Backend returned ${response.status}`)
+      throw new Error(`Backend returned ${response.status}: ${response.statusText}`)
     }
 
-    const json = await response.json()
+    // Safely parse JSON with fallback
+    const json = await response.json().catch((err: Error) => {
+      throw new Error(`Failed to parse response: ${err.message}`)
+    })
     actionsPlan.value = json.data
     actionsSource.value = json.source || ''
   } catch (e) {
@@ -780,9 +783,9 @@ watch(selectedCity, (city) => {
 }
 
 .rail-item.yellow .rail-risk {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.15);
-  text-shadow: 0 0 4px rgba(251, 191, 36, 0.3);
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.15);
+  text-shadow: 0 0 4px rgba(34, 211, 238, 0.3);
 }
 
 .rail-item.orange .rail-risk {
@@ -1118,16 +1121,16 @@ watch(selectedCity, (city) => {
 }
 
 .deadline-chip.today {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.15);
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.15);
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 700;
 }
 
 .deadline-chip.soon {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.12);
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.12);
   padding: 2px 6px;
   border-radius: 4px;
 }

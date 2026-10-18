@@ -26,7 +26,7 @@ class ResponseTask(BaseModel):
     title = Column(String(255), nullable=False)
     assignee = Column(String(120), nullable=False)
     status = Column(String(20), nullable=False, default="open")  # open, acknowledged, in_progress, blocked, done
-    priority = Column(String(10), nullable=False, default="medium")  # high, medium, low
+    priority = Column(String(10), nullable=False, default="medium")  # critical, high, medium, low (lowercase)
     due_at = Column(DateTime, nullable=True)  # UTC, naive
     note = Column(Text, nullable=True)  # e.g. why a task is blocked
     created_by = Column(String(120), nullable=False)
@@ -80,3 +80,23 @@ class ResponsePlanDecision(BaseModel):
     task_id = Column(Integer, ForeignKey("response_tasks.id"), nullable=True)
     decided_by = Column(String(120), nullable=False)
     reason = Column(Text, nullable=True)
+    # Snapshot at decision time. ai_* come from the saved report (null for reports saved before
+    # these fields existed); officer_priority is set only for approvals. The decision time is created_at.
+    ai_priority = Column(String(12), nullable=True)  # IMMEDIATE, HIGH, STAGED
+    ai_category = Column(String(40), nullable=True)
+    officer_priority = Column(String(10), nullable=True)  # critical, high, medium, low (lowercase)
+
+
+class ResponsePlan(BaseModel):
+    """
+    The plan's name and description for an incident, saved by the officer.
+    One per incident. created_by and created_at record the first save.
+    """
+    __tablename__ = "response_plans"
+    __table_args__ = (UniqueConstraint("event_id", name="uq_response_plan_event"),)
+
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
+    name = Column(String(200), nullable=True)
+    description = Column(Text, nullable=True)
+    created_by = Column(String(120), nullable=False)
+    updated_by = Column(String(120), nullable=False)

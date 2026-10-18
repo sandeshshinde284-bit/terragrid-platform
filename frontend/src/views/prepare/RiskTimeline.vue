@@ -220,6 +220,17 @@
               </div>
             </div>
           </div>
+
+          <!-- PREPARE → RESPONSE Handoff Panel (Right Sidebar) -->
+          <div class="handoff-sidebar">
+            <PreparednessHandoffPanel
+              v-if="selectedCity"
+              :city="selectedCity.city"
+              :country="selectedCity.country"
+              :hazard="selectedCity.hazard_type || undefined"
+              :risk="selectedCity.risk_level || undefined"
+            />
+          </div>
         </div>
       </template>
     </div>
@@ -231,6 +242,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import Header from '@/components/organisms/Header.vue'
+import PreparednessHandoffPanel from '@/components/molecules/PreparednessHandoffPanel.vue'
 import { useMockMode } from '@/composables/useMockMode'
 import { RISK_RANK, cityKey, useCityRailFilter, weatherIcon, worstRisk } from '@/composables/usePrepareLookups'
 import { getCountryName as countryName } from '@/utils/countries'
@@ -694,6 +706,17 @@ watch(selectedKey, () => {
   align-items: flex-start;
 }
 
+.handoff-sidebar {
+  flex: 0 0 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 70vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary, #22d3ee) transparent;
+}
+
 .city-rail-wrap {
   flex: 0 0 260px;
   display: flex;
@@ -837,9 +860,9 @@ watch(selectedKey, () => {
 }
 
 .rail-item.yellow .rail-risk {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.15);
-  text-shadow: 0 0 4px rgba(251, 191, 36, 0.3);
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.15);
+  text-shadow: 0 0 4px rgba(34, 211, 238, 0.3);
 }
 
 .rail-item.orange .rail-risk {
@@ -1216,9 +1239,9 @@ watch(selectedKey, () => {
 }
 
 .node-risk-label.yellow {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.12);
-  text-shadow: 0 0 4px rgba(251, 191, 36, 0.3);
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.12);
+  text-shadow: 0 0 4px rgba(34, 211, 238, 0.3);
 }
 
 .node-risk-label.orange {

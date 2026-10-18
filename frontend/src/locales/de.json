@@ -66,6 +66,7 @@
     "title": "Zwischenfälle",
     "type": "Typ",
     "status": "Status",
+    "location": "Standort",
     "detectionTime": "Erkannt",
     "affectedArea": "Geschätzte Fläche",
     "population": "Geschätzte Bev.",
@@ -364,7 +365,11 @@
     "colAgency": "Zugewiesene Behörde",
     "colLocation": "Einsatzort",
     "colEta": "ETA",
-    "colPriority": "Priorität"
+    "colPriority": "Priorität",
+    "stepReviewApprove": "Review & Approve Plan",
+    "stepPlanReview": "Plan & Review",
+    "stepActivityLog": "Activity Log",
+    "stepPlanSummary": "Plan Summary"
   },
   "impactTab": {
     "sourceOsm": "OpenStreetMap",
