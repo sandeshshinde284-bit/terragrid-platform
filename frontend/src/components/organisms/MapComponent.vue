@@ -44,6 +44,7 @@ import { logFeature, logError } from '@/utils/logger'
 import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from 'vue'
 import { useEventsStore, useAppStore } from '@/stores'
 import { displayIncidentId } from '@/utils/incidentId'
+import { readSession, writeSession } from '@/utils/sessionState'
 import type { IncidentLevel1 } from '@/types'
 import * as mapboxgl from 'mapbox-gl/esm'
 import 'mapbox-gl/dist/mapbox-gl.css'
@@ -71,6 +72,15 @@ let markers: mapboxgl.Marker[] = []
 
 const DEFAULT_CENTER: [number, number] = [0, 20]
 const DEFAULT_ZOOM = 1.5
+
+// Camera from this tab's last session, if it is valid.
+const restoredCamera = (): { center: [number, number]; zoom: number } | null => {
+  const cam = readSession().mapCamera
+  if (!cam || !Array.isArray(cam.center) || typeof cam.zoom !== 'number') return null
+  const [lng, lat] = cam.center
+  if (!Number.isFinite(lng) || !Number.isFinite(lat) || !Number.isFinite(cam.zoom)) return null
+  return { center: [lng, lat], zoom: cam.zoom }
+}
 
 type MapMode = 'tactical' | 'satellite' | 'globe'
 const currentMode = ref<MapMode>('tactical')
@@ -167,12 +177,19 @@ const initMap = () => {
     accessToken: appStore.mapboxToken,
     container: mapContainer.value,
     style: MAP_STYLES.tactical,
-    center: DEFAULT_CENTER,
-    zoom: DEFAULT_ZOOM,
+    center: restoredCamera()?.center ?? DEFAULT_CENTER,
+    zoom: restoredCamera()?.zoom ?? DEFAULT_ZOOM,
     projection: { name: 'mercator' },
     minZoom: 1,
     maxZoom: 18,
     attributionControl: false
+  })
+
+  map.value.on('moveend', () => {
+    const m = map.value
+    if (!m) return
+    const c = m.getCenter()
+    writeSession({ mapCamera: { center: [c.lng, c.lat], zoom: m.getZoom() } })
   })
 
   map.value.on('load', () => {
