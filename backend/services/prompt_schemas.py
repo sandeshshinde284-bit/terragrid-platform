@@ -151,6 +151,7 @@ RESPONSE_PLAN_SCHEMA_TEXT = """
   "predicted_outcome": "string (e.g., 'Flash flooding at 4 PM')",
   "historical_reference": "string (e.g., 'Similar to Oct 2019 (500 displaced)')",
   "immediate_actions": ["string (Action 1)", "string (Action 2)", "string (Action 3)", "string (Action 4)", "string (Action 5)"],
+  "immediate_action_evidence": ["string: the input fact that supports Action 1 (source, threat score, facility name and distance, or route), or 'no supporting input'", "same for Action 2", "same for Action 3", "same for Action 4", "same for Action 5"],
   "resource_allocation": [
     {
       "resource": "string (enum: Helicopter, Ambulance, Fire Engine, Water Truck, Search Dog, Rescue Team, Mobile Hospital, Water Purification Unit)",

@@ -113,6 +113,7 @@
               :isLoading="isLoadingInsights"
               :error="null"
               :incidentId="selectedIncidentData.id"
+              :evidence="evidenceFor(selectedIncidentData)"
               @navigateToInsights="() => { /* Router link handles this */ }"
             />
 
@@ -132,7 +133,7 @@
                 </div>
                 <div class="profile-item align-right">
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
-                  <div class="threat-score-pill tooltip-container">
+                  <div class="threat-score-pill tooltip-container" tabindex="0" aria-label="Threat score details">
                     <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) ?? DASH }}</span>
                     <span class="threat-score-max">/100</span><span class="info-hint" aria-hidden="true">ⓘ</span>
 
@@ -208,6 +209,7 @@
               :isLoading="isLoadingInsights"
               :error="null"
               :incidentId="selectedIncidentData.id"
+              :evidence="evidenceFor(selectedIncidentData)"
               @navigateToInsights="() => { /* Router link handles this */ }"
             />
 
@@ -227,7 +229,7 @@
                 </div>
                 <div class="profile-item align-right">
                   <span class="card-section-label">{{ $t('incidents.threatScore') }}</span>
-                  <div class="threat-score-pill tooltip-container">
+                  <div class="threat-score-pill tooltip-container" tabindex="0" aria-label="Threat score details">
                     <span class="threat-score-num">{{ getThreatScore(selectedIncidentData) ?? DASH }}</span>
                     <span class="threat-score-max">/100</span><span class="info-hint" aria-hidden="true">ⓘ</span>
 
@@ -727,6 +729,16 @@ const previousPage = () => {
   if (currentPage.value > 1) {
     currentPage.value -= 1
   }
+}
+
+// What the action panel is based on, so the recommendation is shown next to its evidence.
+const evidenceFor = (inc: any): string[] => {
+  const lines: string[] = []
+  lines.push(`Source: ${inc.source || 'not recorded'}`)
+  lines.push(`Detected: ${inc.detectionTime ? new Date(inc.detectionTime).toLocaleString() : 'time not recorded'}`)
+  lines.push(`Threat score (model): ${getThreatScore(inc) ?? 'not scored'}`)
+  lines.push('Impact figures are model estimates')
+  return lines
 }
 
 const expandIncident = (id: string) => {
@@ -3883,6 +3895,7 @@ watch([sortBy, selectedCountry, selectedEventType], () => {
   pointer-events: none;
 }
 
+.tooltip-container:focus-within .tactical-tooltip,
 .tooltip-container:hover .tactical-tooltip {
   visibility: visible;
   opacity: 1;

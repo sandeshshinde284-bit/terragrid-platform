@@ -48,6 +48,22 @@
         <button v-if="topAction.length > shortAction.length" class="show-more" @click="expanded = !expanded">{{ expanded ? 'Show less' : 'Show full reasoning' }}</button>
       </div>
 
+      <!-- Each recommendation with the input that supports it, when the reasoning is expanded -->
+      <div v-if="expanded && allActions.length" class="all-actions">
+        <div v-for="(act, i) in allActions" :key="i" class="action-basis">
+          <strong>{{ i + 1 }}. {{ act.text }}</strong>
+          <span class="basis-line">Basis: {{ act.basis }}</span>
+        </div>
+      </div>
+
+      <!-- Evidence behind the recommendation, shown with it -->
+      <div v-if="evidence && evidence.length" class="evidence-box">
+        <span class="evidence-title">Evidence</span>
+        <ul class="evidence-list">
+          <li v-for="(line, i) in evidence" :key="i">{{ line }}</li>
+        </ul>
+      </div>
+
       <!-- Show count of remaining actions if > 1 -->
       <div v-if="remainingCount > 0" class="remaining-badge">
         +{{ remainingCount }} more action{{ remainingCount !== 1 ? 's' : '' }}
@@ -76,6 +92,7 @@ const props = defineProps<{
   isLoading: boolean
   error: string | null | undefined
   incidentId: string
+  evidence?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -91,6 +108,16 @@ const topAction = computed(() => {
 
 // Count remaining actions
 const expanded = ref(false)
+
+// Every recommendation paired with the input the model cited for it.
+const allActions = computed(() => {
+  const actions: string[] = props.aiPlan?.immediate_actions || []
+  const basis: string[] = props.aiPlan?.immediate_action_evidence || []
+  return actions.map((text, i) => ({
+    text,
+    basis: basis[i] && !/no supporting input/i.test(basis[i]) ? basis[i] : 'not cited by the model. Check before acting.',
+  }))
+})
 // Short summary for the panel; the full reasoning sits behind "Show full reasoning".
 const shortAction = computed(() => {
   const t = topAction.value || ''
@@ -317,6 +344,14 @@ const navigateToInsights = () => {
   flex-shrink: 0;
   padding-top: 2px;
 }
+
+.evidence-box { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 6px; background: rgba(15,23,42,0.5); }
+.evidence-title { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; color: #94a3b8; text-transform: uppercase; }
+.evidence-list { margin: 0; padding-left: 16px; font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 2px; }
+
+.all-actions { display: flex; flex-direction: column; gap: 8px; }
+.action-basis { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: #e2e8f0; }
+.basis-line { color: #94a3b8; font-size: 11px; }
 
 .show-more {
   margin-top: 4px;

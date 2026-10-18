@@ -240,6 +240,13 @@ const renderMarkers = () => {
 
     dot.innerHTML = `<span>${icon}</span>`
     el.appendChild(dot)
+    if (isSelected) {
+      // The selected incident keeps a label on the map at every zoom level.
+      const tag = document.createElement('div')
+      tag.className = 'marker-tag'
+      tag.textContent = `${displayIncidentId(incident)} · ${String(incident.type || '').toUpperCase()}`
+      el.appendChild(tag)
+    }
 
     // Handle clicks to open the dashboard sidebar
     el.addEventListener('click', (e) => {
@@ -456,6 +463,27 @@ onUnmounted(() => {
 
 .marker-dot.dimmed {
   opacity: 0.45;
+}
+
+.marker-dot.selected {
+  box-shadow: 0 0 0 3px #38bdf8, 0 0 14px rgba(56, 189, 248, 0.9);
+}
+
+.marker-tag {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -6px);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 4px;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #38bdf8;
+  pointer-events: none;
+  z-index: 40;
 }
 
 .marker-dot:hover, .marker-dot.selected {
