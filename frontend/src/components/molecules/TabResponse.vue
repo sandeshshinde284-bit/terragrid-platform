@@ -92,40 +92,6 @@
         </div>
       </div>
 
-      <div class="glass-panel-new" style="padding: 24px;">
-        <div style="margin-bottom: 20px;">
-          <h3 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 16px; font-weight: 700;">{{ $t('responseTab.assetDeployment') }}</h3>
-          <p style="margin: 0; color: var(--text-secondary); font-size: 13px;">{{ $t('responseTab.operationalLogistics') }}</p>
-        </div>
-        <div class="resource-matrix-table-wrapper" style="overflow-x: auto;">
-          <table class="ai-resource-table" style="width: 100%; border-collapse: collapse;">
-            <thead>
-              <tr style="border-bottom: 2px solid #334155; text-align: left; color: var(--text-secondary); font-size: 18px;">
-                <th style="padding: 12px 10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">{{ $t('responseTab.colResource') }}</th>
-                <th style="padding: 12px 10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">{{ $t('responseTab.colQuantity') }}</th>
-                <th style="padding: 12px 10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">{{ $t('responseTab.colAgency') }}</th>
-                <th style="padding: 12px 10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">{{ $t('responseTab.colLocation') }}</th>
-                <th style="padding: 12px 10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">{{ $t('responseTab.colEta') }}</th>
-                <th style="padding: 12px 10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase;">{{ $t('responseTab.colPriority') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(res, idx) in deepDossier.resource_matrix" :key="idx" style="border-bottom: 1px solid var(--glass-border); font-size: 18px;">
-                <td style="padding: 12px 10px; color: var(--text-primary); font-weight: 700;">{{ res.resource }}</td>
-                <td style="padding: 12px 10px; color: var(--accent-cyan); font-family: ui-monospace, monospace;">{{ res.quantity ?? 'Not in report' }} {{ res.quantity != null ? res.unit_measure : '' }}</td>
-                <td style="padding: 12px 10px; color: var(--text-secondary);">{{ res.assigned_agency }}</td>
-                <td style="padding: 12px 10px; color: var(--text-secondary);">{{ res.deployment_location }}</td>
-                <td style="padding: 12px 10px; color: #4ade80; font-family: ui-monospace, monospace;">{{ res.estimated_arrival_minutes != null ? res.estimated_arrival_minutes + ' min' : 'Not in report' }}</td>
-                <td style="padding: 12px 10px;">
-                  <span class="priority-tag" :class="getPriorityClass(res.priority)">
-                    {{ getPriorityLabel(res.priority) }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
     <div v-else-if="isAnalyzingDossier" class="deep-ai-tab-container">
