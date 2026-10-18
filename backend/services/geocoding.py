@@ -9,6 +9,16 @@ from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
 
+
+def _extract_json_object(text: str) -> str:
+    """Return the JSON object inside a model reply, ignoring any prose or code fence around it."""
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        return text.strip()
+    return text[start:end + 1]
+
+
 class GeocodingService:
     """
     Intelligent Reverse Geocoding Service powered by Gemini.
@@ -201,26 +211,33 @@ class GeocodingService:
                     "2. Identify the State, Province, or Region.\n"
                     "3. Identify the standard 2-letter ISO Country Code (e.g., US, IN, CN, NP, JP, PH).\n"
                     "Return a JSON object mapping the numeric string id to an exact string formatted as: 'City, State, CountryCode'.\n"
-                    "Example outputs: {\"0\": \"Apalachicola, Florida, US\", \"1\": \"Kathmandu, Bagmati, NP\", \"2\": \"Mumbai, Maharashtra, IN\"}\n\n"
+                    "Example outputs: {\"0\": \"Apalachicola, Florida, US\", \"1\": \"Kathmandu, Bagmati, NP\", \"2\": \"Mumbai, Maharashtra, IN\"}\n"
+                    "Return ONLY the JSON object. No sentences before or after it, and no code fence.\n\n"
                     f"INPUT LOCATIONS:\n{json.dumps(prompt_items)}"
+                )
+
+                from vertexai.generative_models import GenerationConfig
+                gen_config = GenerationConfig(
+                    temperature=0.2,
+                    max_output_tokens=2048,
+                    response_mime_type="application/json",
                 )
 
                 # Set 15-second timeout to prevent ingestion stalls
                 try:
-                    response = self.model.generate_content(prompt, request_options={"timeout": 15})
+                    response = self.model.generate_content(prompt, generation_config=gen_config, request_options={"timeout": 15})
                 except TypeError:
-                    response = self.model.generate_content(prompt)
-                    
+                    response = self.model.generate_content(prompt, generation_config=gen_config)
+
                 if response and response.text:
-                    log_raw_data("gemini", response.text, label="batch_geocoding", context={"batch_size": len(batch_items)})
-                    # Clean response text if wrapped in markdown
-                    cleaned_text = response.text.strip()
-                    if cleaned_text.startswith("```json"):
-                        cleaned_text = cleaned_text[7:]
-                    if cleaned_text.startswith("```"):
-                        cleaned_text = cleaned_text[3:]
-                    if cleaned_text.endswith("```"):
-                        cleaned_text = cleaned_text[:-3]
+                    # Log the input next to the output so every result can be checked against its coordinates.
+                    log_raw_data(
+                        "gemini",
+                        response.text,
+                        label="batch_geocoding",
+                        context={"batch_size": len(batch_items), "input": prompt_items},
+                    )
+                    cleaned_text = _extract_json_object(response.text)
 
                     parsed = json.loads(cleaned_text.strip())
                     new_cache_entries = []
