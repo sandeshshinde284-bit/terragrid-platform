@@ -326,36 +326,102 @@ class PlanDecisionBody(ActorBody):
     reason: Optional[str] = Field(default=None, max_length=500)
 
 
+def _task_out(task: ResponseTask, report_version: Optional[int]) -> Dict[str, Any]:
+    return {
+        "id": task.id,
+        "title": task.title,
+        "assignee": task.assignee,
+        "status": task.status,
+        "priority": task.priority,
+        "due_at": task.due_at.isoformat() + "Z" if task.due_at else None,
+        "note": task.note,
+        "created_by": task.created_by,
+        "created_at": task.created_at.isoformat() + "Z",
+        # The report version the task came from. None for tasks created directly, not from a recommendation.
+        "report_version": report_version,
+    }
+
+
 @router.get("/{incident_id}/response/plan")
 def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
-    """The latest report's recommendations, with each one's decision so far."""
+    """
+    Plan state for the Response tab.
+    - actions: the latest report's recommendations, each with its AI values and its decision so far.
+    - tasks: every task for the incident, from all report versions, each with the version it came from.
+    - review: counts for the latest report's recommendations.
+    - task_summary: progress for tasks approved from any report version.
+    """
     from backend.services.report_versions import latest_report, report_payload
     event = _event_or_404(incident_id, db)
     report = latest_report(db, event.id)
-    if not report:
-        return {"report": None, "actions": [], "message": "Generate a crisis report first. Its recommendations appear here."}
 
-    decisions = {
-        d.action_index: d for d in
-        db.query(ResponsePlanDecision).filter(ResponsePlanDecision.report_id == report.id).all()
+    # Every decision for this incident, paired with the version of the report it belongs to.
+    all_decisions = (
+        db.query(ResponsePlanDecision, IncidentReport.version)
+        .join(IncidentReport, IncidentReport.id == ResponsePlanDecision.report_id)
+        .filter(ResponsePlanDecision.event_id == event.id)
+        .all()
+    )
+    version_by_task = {d.task_id: version for d, version in all_decisions if d.task_id is not None}
+    approved_task_ids = {d.task_id for d, _ in all_decisions if d.decision == "approved" and d.task_id is not None}
+
+    tasks = (
+        db.query(ResponseTask)
+        .filter(ResponseTask.event_id == event.id)
+        .order_by(ResponseTask.created_at.asc(), ResponseTask.id.asc())
+        .all()
+    )
+    tasks_by_id = {t.id: t for t in tasks}
+    tasks_out = [_task_out(t, version_by_task.get(t.id)) for t in tasks]
+
+    by_status = {status: 0 for status in sorted(TASK_STATUSES)}
+    approved_tasks = [tasks_by_id[tid] for tid in approved_task_ids if tid in tasks_by_id]
+    for t in approved_tasks:
+        by_status[t.status] = by_status.get(t.status, 0) + 1
+    task_summary = {
+        "approved": len(approved_tasks),
+        "done": by_status.get("done", 0),
+        "by_status": by_status,
     }
+
+    if not report:
+        return {
+            "report": None,
+            "actions": [],
+            "review": {"total": 0, "approved": 0, "rejected": 0, "pending": 0},
+            "tasks": tasks_out,
+            "task_summary": task_summary,
+            "message": "Generate a crisis report first. Its recommendations appear here.",
+        }
+
+    decisions = {d.action_index: d for d, _ in all_decisions if d.report_id == report.id}
     dossier = report_payload(report)
-    actions = []
     priorities = dossier.get("immediate_action_priority") or []
     categories = dossier.get("immediate_action_category") or []
+
+    actions = []
     for i, text in enumerate(dossier.get("immediate_actions") or []):
         d = decisions.get(i)
+        # Reports saved before these fields existed have no value; None means "not in report".
+        payload_priority = priorities[i] if i < len(priorities) else None
+        payload_category = categories[i] if i < len(categories) else None
+        task = tasks_by_id.get(d.task_id) if d and d.task_id else None
         actions.append({
             "index": i,
             "text": text,
-            # Reports saved before these fields existed have no value; None means "not in report".
-            "priority": priorities[i] if i < len(priorities) else None,
-            "category": categories[i] if i < len(categories) else None,
+            "priority": (d.ai_priority or payload_priority) if d else payload_priority,
+            "category": (d.ai_category or payload_category) if d else payload_category,
+            "officer_priority": d.officer_priority if d else None,
             "decision": d.decision if d else None,
             "decided_by": d.decided_by if d else None,
+            "decided_at": d.created_at.isoformat() + "Z" if d else None,
             "task_id": d.task_id if d else None,
+            "task": _task_out(task, version_by_task.get(task.id)) if task else None,
             "reason": d.reason if d else None,
         })
+
+    approved = sum(1 for a in actions if a["decision"] == "approved")
+    rejected = sum(1 for a in actions if a["decision"] == "rejected")
     return {
         "report": {
             "id": report.id,
@@ -365,6 +431,14 @@ def get_response_plan(incident_id: str, db: Session = Depends(get_db)):
             "is_ai_generated": True,
         },
         "actions": actions,
+        "review": {
+            "total": len(actions),
+            "approved": approved,
+            "rejected": rejected,
+            "pending": len(actions) - approved - rejected,
+        },
+        "tasks": tasks_out,
+        "task_summary": task_summary,
         "note": "AI recommendations. Each needs an officer's approval before it becomes a task.",
     }
 

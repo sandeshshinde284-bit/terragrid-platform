@@ -47,6 +47,21 @@ Change this file if a decision changes; the code follows it.
 - `decided_at` was not added. `created_at` already records when the decision was saved, so a second timestamp would duplicate it.
 - Not yet tested: a real approval through the endpoint. That needs a saved Gemini report, and none exists in this environment.
 
+## Step 2: done
+
+`GET /response/plan` now returns:
+- `actions`: the latest report's recommendations. Each has its AI priority and category (the decision's snapshot if one exists, otherwise the saved report), `officer_priority`, `decision`, `decided_by`, `decided_at`, and the linked `task`.
+- `tasks`: every task for the incident, from all report versions. Each has `report_version`, which is null for tasks created directly.
+- `review`: counts for the latest report: total, approved, rejected, pending.
+- `task_summary`: counts for tasks approved from any report version: approved, done, and by status.
+
+Existing fields are unchanged, so `ResponsePlanPanel` keeps working.
+
+Tested:
+- Inside a transaction rolled back afterwards: two report versions with decisions. Results: the latest version is shown, decisions from the older version are not applied to it, the older version's approved task still appears with its version, and the counts are correct.
+- Over HTTP on a real event with no saved report: the endpoint returns the empty state.
+- Not tested: a real Gemini report, because none exists in this environment.
+
 ## Next
 
-- Step 2: extend `GET /response/plan` to return the AI values, decisions, linked tasks and counts.
+- Step 3: Create Response Plan screen (selection only, nothing saved). Frontend work.
