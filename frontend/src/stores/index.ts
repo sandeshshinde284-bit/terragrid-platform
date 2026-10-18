@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { readSession, writeSession } from '@/utils/sessionState'
 import { ref, computed } from 'vue'
 import type { IncidentLevel1, AIInsight, DashboardState } from '@/types'
 import { sumKnown } from '@/utils/impactMetrics'
@@ -170,11 +171,12 @@ export const usePrepareForecastStore = defineStore('prepareForecast', () => {
 export const useAppStore = defineStore('app', () => {
   // State
   const isDarkMode = ref<boolean>(true)
-  const viewMode = ref<'2d' | '3d'>('2d')
+  const saved = readSession()
+  const viewMode = ref<'2d' | '3d'>(saved.viewMode === '3d' ? '3d' : '2d')
   const isLoading = ref<boolean>(false)
   const demoMode = ref<boolean>(true)
-  const expandedIncident = ref<string | null>(null)
-  const selectedIncident = ref<string | null>(null)
+  const expandedIncident = ref<string | null>(saved.expandedIncident ?? null)
+  const selectedIncident = ref<string | null>(saved.selectedIncident ?? null)
   const isBackendMockModeEnabled = ref<boolean>(false)
   // Mirrors the backend's ENABLE_WHATSAPP flag (see backend/config.py) - off
   // by default since WhatsApp's unofficial/self-hosted-client compliance
@@ -202,6 +204,7 @@ export const useAppStore = defineStore('app', () => {
 
   const toggleViewMode = () => {
     viewMode.value = viewMode.value === '2d' ? '3d' : '2d'
+    writeSession({ viewMode: viewMode.value })
   }
 
   const setLoading = (value: boolean) => {
@@ -210,10 +213,12 @@ export const useAppStore = defineStore('app', () => {
 
   const setExpandedIncident = (id: string | null) => {
     expandedIncident.value = id
+    writeSession({ expandedIncident: id })
   }
 
   const setSelectedIncident = (id: string | null) => {
     selectedIncident.value = id
+    writeSession({ selectedIncident: id })
   }
 
   const toggleDemoMode = () => {

@@ -113,7 +113,7 @@
               :isLoading="isLoadingInsights"
               :error="null"
               :incidentId="selectedIncidentData.id"
-              :evidence="evidenceFor(selectedIncidentData)"
+              :basedOn="basedOnFor(selectedIncidentData)"
               @navigateToInsights="() => { /* Router link handles this */ }"
             />
 
@@ -209,7 +209,7 @@
               :isLoading="isLoadingInsights"
               :error="null"
               :incidentId="selectedIncidentData.id"
-              :evidence="evidenceFor(selectedIncidentData)"
+              :basedOn="basedOnFor(selectedIncidentData)"
               @navigateToInsights="() => { /* Router link handles this */ }"
             />
 
@@ -388,6 +388,7 @@
 
 <script setup lang="ts">
 import { displayIncidentId } from '@/utils/incidentId'
+import { readSession, writeSession, readCachedPlan, writeCachedPlan } from '@/utils/sessionState'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -413,11 +414,12 @@ const { isConnected, connect } = useWebSocket()
 
 const isLoading = ref(false)
 const apiError = ref<string | null>(null)
-const sortBy = ref<'threat' | 'area' | 'population' | 'time'>('threat')
+const savedSession = readSession()
+const sortBy = ref<'threat' | 'area' | 'population' | 'time'>(['threat', 'area', 'population', 'time'].includes(savedSession.sortBy) ? savedSession.sortBy : 'threat')
 const currentPage = ref(1)
 const cardsPerPage = ref(5) // 5-10 cards per page on mobile
-const selectedCountry = ref<string | null>(null)
-const selectedEventType = ref<string>('')
+const selectedCountry = ref<string | null>(savedSession.selectedCountry ?? null)
+const selectedEventType = ref<string>(savedSession.selectedEventType ?? '')
 const dashboardSearchQuery = ref('')
 
 const getThreatTooltipText = (score: number | null) => {
@@ -448,10 +450,17 @@ watch(
   async (newId) => {
     if (!newId) {
       aiPlan.value = null
-      if (loadingInterval) clearInterval(loadingInterval)
       return
     }
-    
+
+    // Reuse the plan already shown in this tab, so a reload does not change the analysis.
+    const cached = readCachedPlan(newId)
+    if (cached) {
+      aiPlan.value = cached
+      isLoadingInsights.value = false
+      return
+    }
+
     try {
       isLoadingInsights.value = true
       aiPlan.value = null
@@ -468,6 +477,8 @@ watch(
       if (response.ok) {
         const data = await response.json()
         aiPlan.value = data.plan
+        // Fallback plans mean Gemini was unavailable. Do not freeze that result for the tab.
+        if (data.plan && !data.plan.is_fallback) writeCachedPlan(newId, data.plan)
       }
     } catch (err) {
       logWarn('Could not fetch the AI insights plan', err)
@@ -476,6 +487,7 @@ watch(
       isLoadingInsights.value = false
     }
   }
+, { immediate: true }
 )
 
 // Stats for dashboard
@@ -616,6 +628,10 @@ const liveCriticalInsights = computed(() => {
 
 // Dashboard list = the first few of the filtered list, which is already sorted
 // by the sort dropdown (threat by default). The full list is on Incidents.
+watch([sortBy, selectedCountry, selectedEventType], ([sort, country, type]) => {
+  writeSession({ sortBy: sort, selectedCountry: country, selectedEventType: type })
+})
+
 // The selected incident moves to the top of the list, so the card the user is viewing is always first.
 const listWithSelectedFirst = computed(() => {
   const list = [...filteredIncidents.value]
@@ -731,14 +747,10 @@ const previousPage = () => {
   }
 }
 
-// What the action panel is based on, so the recommendation is shown next to its evidence.
-const evidenceFor = (inc: any): string[] => {
-  const lines: string[] = []
-  lines.push(`Source: ${inc.source || 'not recorded'}`)
-  lines.push(`Detected: ${inc.detectionTime ? new Date(inc.detectionTime).toLocaleString() : 'time not recorded'}`)
-  lines.push(`Threat score (model): ${getThreatScore(inc) ?? 'not scored'}`)
-  lines.push('Impact figures are model estimates')
-  return lines
+// One line under the suggestion: where the data came from and when it was detected.
+const basedOnFor = (inc: any): string => {
+  const when = inc.detectionTime ? new Date(inc.detectionTime).toLocaleString() : 'time not recorded'
+  return `${inc.source || 'source not recorded'}, detected ${when}`
 }
 
 const expandIncident = (id: string) => {
