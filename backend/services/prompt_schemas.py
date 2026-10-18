@@ -3,6 +3,8 @@ Structured prompt schemas for Gemini AI responses.
 Ensures consistent JSON output with numeric constraints and enums.
 """
 
+import json
+
 RESOURCE_ITEM = {
     "resource": "string (enum: Helicopter, Ambulance, Fire Engine, Water Truck, Search Dog, Rescue Team, Mobile Hospital, Water Purification Unit)",
     "quantity": "integer (exact number, not range)",
@@ -60,113 +62,137 @@ EVACUATION_CORRIDORS = {
     "safe_assembly_zones": [SAFE_ASSEMBLY_ZONE]
 }
 
-DEEP_DOSSIER_SCHEMA_TEXT = """
-{
-  "country_context": "string (jurisdiction from the input data only; 'Not in input data' if absent)",
-  "severity_assessment": "string (2-3 sentence tactical overview in sentence case)",
-  "trigger_event": "string (one sentence drawn from the input telemetry)",
-  "infrastructure_factors": [
-    "string (e.g., 'Dam drainage capacity only 80mm/h')",
-    "string (e.g., 'Upstream gates opened at emergency flow rate')"
-  ],
-  "predicted_outcome": "string (e.g., 'Flash flooding at 4 PM')",
-  "historical_reference": "string (e.g., 'Similar to Oct 2019 (500 displaced)')",
-  "immediate_actions": ["string (Action 1)", "string (Action 2)", "string (Action 3)", "string (Action 4)", "string (Action 5)"],
-  "resource_matrix": [
-    {
-      "resource": "string (enum: Helicopter, Ambulance, Fire Engine, Water Truck, Search Dog, Rescue Team, Mobile Hospital, Water Purification Unit)",
-      "quantity": "integer",
-      "unit_measure": "string (enum: Units, Personnel, Vehicles, Teams)",
-      "assigned_agency": "string (full agency name with jurisdiction)",
-      "deployment_location": "string (real street/location)",
-      "estimated_arrival_minutes": "integer (0-480)",
-      "priority": "integer (1=IMMEDIATE, 2=HIGH, 3=STAGED)",
-      "confidence": "integer (0-100)",
-      "purpose": "string (one short line: what this resource does in this incident, e.g. 'Aerial damage assessment of collapsed routes')"
-    }
-  ],
-  "cascade_predictions": [
-    {
-      "timeframe_hours": "integer (1, 3, 6, 12, 24, or 48 only)",
-      "perimeter_delta_km2": "float",
-      "spread_polygon": "[[lat, lon], [lat, lon], [lat, lon], [lat, lon], ...]",
-      "wind_influence_percent": "integer (0-100)",
-      "color_code": "string (RED, ORANGE, YELLOW, or GREEN only)",
-      "primary_risks": [
-        {
-          "facility_type": "string",
-          "count_affected": "integer",
-          "names": ["string", "string"]
-        }
-      ]
-    }
-  ],
-  "critical_infrastructure": [
-    {
-      "facility_name": "string (real name)",
-      "facility_type": "string",
-      "distance_km": "float",
-      "risk_level": "string (CRITICAL, HIGH, or MODERATE)",
-      "action_required": "string",
-      "entry_time_hours": "integer (0, 3, 6, 12, 24, or 48)",
-      "confidence": "integer (0-100)"
-    }
-  ],
-  "evacuation_corridors": {
-    "primary_corridor": "string (highway name)",
-    "capacity_vehicles_per_hour": "integer",
-    "estimated_clearance_hours": "float",
-    "choke_points": [
-      {
-        "location": "string",
-        "impact": "string (CRITICAL, HIGH, or MODERATE)",
-        "width_meters": "integer"
-      }
-    ],
-    "safe_assembly_zones": [
-      {
-        "name": "string",
-        "latitude": "float",
-        "longitude": "float",
-        "capacity_people": "integer"
-      }
-    ]
-  },
-  "vulnerable_demographics": {
-    "facilities_at_risk": ["string"],
-    "estimated_displaced_citizens": "integer",
-    "special_needs_assistance_required": "string"
-  }
-}
-"""
+# ---------------------------------------------------------------------------
+# Incident output schemas (Gemini structured output).
+#
+# The same dict is (a) sent to Gemini as response_schema, so the service
+# enforces the shape, and (b) rendered into the prompt text, so the prompt and
+# the enforced schema cannot drift apart. A field marked nullable is returned as
+# null when the input does not support it. The model is never asked to invent a
+# name, number or time just to fill a slot.
+# ---------------------------------------------------------------------------
 
-RESPONSE_PLAN_SCHEMA_TEXT = """
-{
-  "country_context": "string (jurisdiction from the input data only; 'Not in input data' if absent)",
-  "severity_assessment": "string (2-sentence tactical overview in sentence case)",
-  "trigger_event": "string (one sentence drawn from the input telemetry)",
-  "infrastructure_factors": [
-    "string (e.g., 'Dam drainage capacity only 80mm/h')",
-    "string (e.g., 'Upstream gates opened at emergency flow rate')"
-  ],
-  "predicted_outcome": "string (e.g., 'Flash flooding at 4 PM')",
-  "historical_reference": "string (e.g., 'Similar to Oct 2019 (500 displaced)')",
-  "immediate_actions": ["string (Action 1)", "string (Action 2)", "string (Action 3)", "string (Action 4)", "string (Action 5)"],
-  "immediate_action_evidence": ["string: the input fact that supports Action 1 (source, threat score, facility name and distance, or route), or 'no supporting input'", "same for Action 2", "same for Action 3", "same for Action 4", "same for Action 5"],
-  "resource_allocation": [
-    {
-      "resource": "string (enum: Helicopter, Ambulance, Fire Engine, Water Truck, Search Dog, Rescue Team, Mobile Hospital, Water Purification Unit)",
-      "quantity": "integer",
-      "unit_measure": "string (enum: Units, Personnel, Vehicles, Teams)",
-      "assigned_agency": "string (full agency name)",
-      "estimated_arrival_minutes": "integer",
-      "priority": "integer (1=IMMEDIATE, 2=HIGH, 3=STAGED)",
-      "confidence": "integer (0-100)"
-    }
-  ],
-  "evacuation_guidance": "string (Specific highway corridors, choke-point warnings, designated shelters)"
-}
-"""
+def _str(desc, nullable=False):
+    return {"type": "STRING", "description": desc, **({"nullable": True} if nullable else {})}
+
+
+def _int(desc, nullable=False):
+    return {"type": "INTEGER", "description": desc, **({"nullable": True} if nullable else {})}
+
+
+def _num(desc, nullable=False):
+    return {"type": "NUMBER", "description": desc, **({"nullable": True} if nullable else {})}
+
+
+def _arr(items, desc, nullable=False):
+    return {"type": "ARRAY", "items": items, "description": desc, **({"nullable": True} if nullable else {})}
+
+
+def _obj(props, desc, required=None):
+    node = {"type": "OBJECT", "description": desc, "properties": props}
+    if required:
+        node["required"] = required
+    return node
+
+
+_NULL_IF_NOT_IN_INPUT = "null if the input does not contain it."
+
+RESPONSE_PLAN_GEMINI_SCHEMA = _obj({
+    "country_context": _str("Jurisdiction, taken only from the input. " + _NULL_IF_NOT_IN_INPUT, True),
+    "severity_assessment": _str("Two sentences, sentence case, based only on the input. null if the input is insufficient.", True),
+    "trigger_event": _str("One sentence on the cause, from the input telemetry only. " + _NULL_IF_NOT_IN_INPUT, True),
+    "infrastructure_factors": _arr(_str("A fact from the input."), "Systems or capacities under pressure, from the input only. Empty list if none."),
+    "predicted_outcome": _str("What follows if the input trend continues. null if the input does not support a prediction.", True),
+    "historical_reference": _str("A past event, only if an input history record matches it. Otherwise null.", True),
+    "immediate_actions": _arr(_str("One concrete action for this incident."), "Up to five actions. Each must rest on an input fact."),
+    "immediate_action_evidence": _arr(_str("The input fact behind the matching action, or 'no supporting input'."), "One entry per action, in the same order."),
+    "resource_allocation": _arr(_obj({
+        "resource": _str("Resource type."),
+        "quantity": _int("Number of units. null if the input does not justify a number.", True),
+        "unit_measure": _str("Units, Personnel, Vehicles or Teams."),
+        "assigned_agency": _str("Agency name from the input only. " + _NULL_IF_NOT_IN_INPUT, True),
+        "estimated_arrival_minutes": _int("Only if the input gives a distance or route to base it on. Otherwise null.", True),
+        "priority": _int("1 = IMMEDIATE, 2 = HIGH, 3 = STAGED."),
+    }, "One resource need.", ["resource", "priority"]), "Resource needs. Empty list if none is supported."),
+    "evacuation_guidance": _str("Corridors and shelters named in the input only. " + _NULL_IF_NOT_IN_INPUT, True),
+}, "Crisis response plan for one incident.", ["immediate_actions", "immediate_action_evidence"])
+
+DEEP_DOSSIER_GEMINI_SCHEMA = _obj({
+    "country_context": _str("Jurisdiction, taken only from the input. " + _NULL_IF_NOT_IN_INPUT, True),
+    "severity_assessment": _str("Two to three sentences, sentence case, based only on the input.", True),
+    "trigger_event": _str("One sentence on the cause, from the input telemetry only. " + _NULL_IF_NOT_IN_INPUT, True),
+    "infrastructure_factors": _arr(_str("A fact from the input."), "Systems or capacities under pressure, from the input only. Empty list if none."),
+    "predicted_outcome": _str("What follows if the input trend continues. null if the input does not support a prediction.", True),
+    "historical_reference": _str("A past event, only if an input history record matches it. Otherwise null.", True),
+    "immediate_actions": _arr(_str("One concrete action for this incident."), "Up to five actions. Each must rest on an input fact."),
+    "resource_matrix": _arr(_obj({
+        "resource": _str("Resource type."),
+        "quantity": _int("Number of units. null if the input does not justify a number.", True),
+        "unit_measure": _str("Units, Personnel, Vehicles or Teams."),
+        "assigned_agency": _str("Agency name from the input only. " + _NULL_IF_NOT_IN_INPUT, True),
+        "deployment_location": _str("Location from the input only. " + _NULL_IF_NOT_IN_INPUT, True),
+        "estimated_arrival_minutes": _int("Only if the input gives a distance or route to base it on. Otherwise null.", True),
+        "priority": _int("1 = IMMEDIATE, 2 = HIGH, 3 = STAGED."),
+        "purpose": _str("One short line on what the resource does in this incident.", True),
+    }, "One resource need.", ["resource", "priority"]), "Resource needs. Empty list if none is supported."),
+    "cascade_predictions": _arr(_obj({
+        "timeframe_hours": _int("One of 1, 3, 6, 12, 24, 48."),
+        "perimeter_delta_km2": _num("Expansion area. null unless the input supports it.", True),
+        "spread_polygon": _arr(_arr(_num("Latitude or longitude."), "[lat, lon] pair."), "Closed outline. null unless the input supports a spread model.", True),
+        "wind_influence_percent": _int("0-100. null unless the input wind data supports it.", True),
+        "color_code": _str("RED, ORANGE, YELLOW or GREEN."),
+        "primary_risks": _arr(_obj({
+            "facility_type": _str("Facility category."),
+            "count_affected": _int("Number of facilities of this type in the input. null if none.", True),
+            "names": _arr(_str("A facility name from the input."), "Facility names from the input only."),
+        }, "One risk group."), "Risks by facility type. Empty list if none."),
+    }, "One time-step projection."), "Projections. Empty list if the input does not support any."),
+    "critical_infrastructure": _arr(_obj({
+        "facility_name": _str("Exact facility name from the input. Never invent a name."),
+        "facility_type": _str("Facility category."),
+        "distance_km": _num("Distance from the input. " + _NULL_IF_NOT_IN_INPUT, True),
+        "risk_level": _str("CRITICAL, HIGH or MODERATE."),
+        "action_required": _str("Specific tactical action."),
+        "entry_time_hours": _int("0, 3, 6, 12, 24 or 48. null if not supported.", True),
+    }, "One facility from the input.", ["facility_name", "risk_level"]), "Facilities named in the input. Empty list if none."),
+    "evacuation_corridors": _obj({
+        "primary_corridor": _str("Route name from the input only. " + _NULL_IF_NOT_IN_INPUT, True),
+        "capacity_vehicles_per_hour": _int("null unless the input gives a capacity.", True),
+        "estimated_clearance_hours": _num("null unless the input gives a basis for it.", True),
+        "choke_points": _arr(_obj({
+            "location": _str("Location from the input."),
+            "impact": _str("CRITICAL, HIGH or MODERATE."),
+            "width_meters": _int("null unless the input gives a width.", True),
+        }, "One choke point."), "Choke points from the input. Empty list if none."),
+        "safe_assembly_zones": _arr(_obj({
+            "name": _str("Site name from the input."),
+            "latitude": _num("From the input. null if absent.", True),
+            "longitude": _num("From the input. null if absent.", True),
+            "capacity_people": _int("null unless the input gives a capacity.", True),
+        }, "One assembly zone."), "Assembly zones from the input. Empty list if none."),
+    }, "Evacuation corridors from the input."),
+    "vulnerable_demographics": _obj({
+        "facilities_at_risk": _arr(_str("Facility name from the input."), "Facilities from the input only."),
+        "estimated_displaced_citizens": _int("null unless the input gives a basis for it.", True),
+        "special_needs_assistance_required": _str("Specific need from the input. " + _NULL_IF_NOT_IN_INPUT, True),
+    }, "Vulnerable population from the input."),
+}, "Crisis intelligence dossier for one incident.", ["immediate_actions"])
+
+
+def _for_prompt(node):
+    """Render a schema node as readable text for the prompt body."""
+    kind = node["type"]
+    if kind == "OBJECT":
+        return {k: _for_prompt(v) for k, v in node["properties"].items()}
+    if kind == "ARRAY":
+        return [_for_prompt(node["items"])]
+    base = {"STRING": "string", "INTEGER": "integer", "NUMBER": "number"}[kind]
+    suffix = " or null" if node.get("nullable") else ""
+    return f"{base}{suffix}: {node.get('description', '')}"
+
+
+RESPONSE_PLAN_SCHEMA_TEXT = json.dumps(_for_prompt(RESPONSE_PLAN_GEMINI_SCHEMA), indent=2)
+DEEP_DOSSIER_SCHEMA_TEXT = json.dumps(_for_prompt(DEEP_DOSSIER_GEMINI_SCHEMA), indent=2)
 
 PREPAREDNESS_ACTIONS_SCHEMA_TEXT = """
 {

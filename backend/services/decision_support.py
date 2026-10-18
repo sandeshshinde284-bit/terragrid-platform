@@ -5,7 +5,7 @@ import math
 import logging
 from typing import Dict, Any, List, Optional
 
-from .prompt_schemas import DEEP_DOSSIER_SCHEMA_TEXT, RESPONSE_PLAN_SCHEMA_TEXT, PREPAREDNESS_ACTIONS_SCHEMA_TEXT, AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT
+from .prompt_schemas import DEEP_DOSSIER_SCHEMA_TEXT, RESPONSE_PLAN_SCHEMA_TEXT, PREPAREDNESS_ACTIONS_SCHEMA_TEXT, AGENCY_ALERT_TEMPLATES_SCHEMA_TEXT, DEEP_DOSSIER_GEMINI_SCHEMA, RESPONSE_PLAN_GEMINI_SCHEMA
 from backend.utils.data_logger import log_raw_data
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,37 @@ def unavailable_ai_result(kind: str, reason: str) -> Dict[str, Any]:
     elif kind == "agency_alerts":
         result.update(risk_context="", alerts=[])
     return result
+
+
+def _gemini_config(schema: Dict[str, Any], max_tokens: int):
+    """Structured-output settings: the service enforces the schema, with low temperature."""
+    from vertexai.generative_models import GenerationConfig
+    return GenerationConfig(
+        temperature=0.2,
+        max_output_tokens=max_tokens,
+        response_mime_type="application/json",
+        response_schema=schema,
+    )
+
+
+def _ground_dossier(dossier: Dict[str, Any], known_facility_names: List[str]) -> Dict[str, Any]:
+    """Keep only facility names that the GIS lookup returned for this incident.
+
+    The model may still name a facility it recalls from training. Such entries
+    are dropped rather than shown as if they were in the input.
+    """
+    known = {str(name).strip().lower() for name in known_facility_names if name}
+
+    infra = dossier.get("critical_infrastructure") or []
+    kept = [item for item in infra if str(item.get("facility_name", "")).strip().lower() in known]
+    if len(kept) != len(infra):
+        logger.warning(f"[GROUNDING] Dropped {len(infra) - len(kept)} critical_infrastructure entries not in the input facility list")
+    dossier["critical_infrastructure"] = kept
+
+    for cascade in dossier.get("cascade_predictions") or []:
+        for risk in cascade.get("primary_risks") or []:
+            risk["names"] = [n for n in (risk.get("names") or []) if str(n).strip().lower() in known]
+    return dossier
 
 
 class DecisionSupportService:
@@ -156,7 +187,6 @@ class DecisionSupportService:
             6. "quantity" MUST be an INTEGER ONLY (e.g., 5, NOT "4-6")
             7. "priority" MUST be 1 (IMMEDIATE), 2 (HIGH), or 3 (STAGED) ONLY
             8. "estimated_arrival_minutes" MUST be INTEGER ONLY
-            9. "confidence" MUST be 0-100 INTEGER ONLY
             10. Return a clean JSON object matching THIS EXACT schema:
             {RESPONSE_PLAN_SCHEMA_TEXT}
             
@@ -166,7 +196,7 @@ class DecisionSupportService:
             #logger.info(f"[GEMINI PROMPT - Response Plan] Location: {location}, Event: {event_type}, IMD Available: {has_imd_data}")
             logger.debug(f"[GEMINI PROMPT FULL]\n{prompt}")
 
-            response = self.model.generate_content(prompt)
+            response = self.model.generate_content(prompt, generation_config=_gemini_config(RESPONSE_PLAN_GEMINI_SCHEMA, 4096))
             if response and response.text:
                 logger.info(f"[GEMINI RESPONSE - Response Plan] Received response from Vertex AI")
                 log_raw_data("gemini", response.text, label="response_plan", context={"location": location, "event_type": event_type})
@@ -528,10 +558,16 @@ class DecisionSupportService:
             osrm_future = executor.submit(EvacuationZoneService.get_safe_routes, {"latitude": lat, "longitude": lon, "event_type": event_type}) if has_coords else None
             history_future = executor.submit(_fetch_historical_context)
 
-            osm_facilities = osm_future.result() if osm_future else {}
-            osrm_routing = osrm_future.result() if osrm_future else None
+            osm_facilities = osm_future.result() if osm_future else {"hospitals": [], "fire_stations": [], "shelters": [], "critical_infrastructure": []}
+            osrm_routing = osrm_future.result() if osrm_future else {"routes": []}
             history_injection = history_future.result()
 
+        known_facility_names = [
+            item["name"]
+            for key in ("hospitals", "fire_stations", "shelters", "critical_infrastructure")
+            for item in (osm_facilities.get(key) or [])
+            if item.get("name")
+        ]
         osm_hit = any([osm_facilities.get("hospitals"), osm_facilities.get("fire_stations"), osm_facilities.get("critical_infrastructure"), osm_facilities.get("shelters")])
         osrm_route_count = len(osrm_routing.get("routes") or [])
         rag_used = "RAG-RETRIEVED" in history_injection and "unavailable" not in history_injection and "bypassed" not in history_injection
@@ -618,7 +654,6 @@ class DecisionSupportService:
             1. "quantity" MUST be INTEGER ONLY (e.g., 5, NOT "4-6")
             2. "priority" MUST be 1 (IMMEDIATE), 2 (HIGH), or 3 (STAGED) ONLY
             3. "estimated_arrival_minutes" MUST be INTEGER ONLY
-            4. "confidence" MUST be 0-100 INTEGER ONLY
             5. "timeframe_hours" MUST be INTEGER (1, 3, 6, 12, 24, or 48 only)
             6. "spread_polygon" MUST be array of [lat, lon] pairs forming a closed shape
             7. "color_code" MUST be RED, ORANGE, YELLOW, or GREEN ONLY
@@ -633,7 +668,7 @@ class DecisionSupportService:
             logger.info(f"[GEMINI PROMPT - Dossier] Location: {location}, Event: {event_type}, Threat: {threat_score}/100")
             logger.debug(f"[GEMINI PROMPT FULL]\n{prompt}")
 
-            response = self.model.generate_content(prompt)
+            response = self.model.generate_content(prompt, generation_config=_gemini_config(DEEP_DOSSIER_GEMINI_SCHEMA, 8192))
             if response and response.text:
                 logger.info(f"[GEMINI RESPONSE - Dossier] Received response from Vertex AI")
                 log_raw_data("gemini", response.text, label="deep_dossier", context={"location": location, "event_type": event_type, "threat_score": threat_score})
@@ -664,6 +699,7 @@ class DecisionSupportService:
                         for item in (osm_facilities.get(key) or [])
                         if item.get("name")
                     ]
+                dossier = _ground_dossier(dossier, known_facility_names)
                 logger.info(f"[FEATURE_HEALTH] feature=gemini_deep_dossier status=success location={location} cascades={len(dossier.get('cascade_predictions', []))} resources={len(dossier.get('resource_matrix', []))} infrastructure={len(dossier.get('infrastructure_impact', []))}")
                 return dossier
 

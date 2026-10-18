@@ -273,7 +273,8 @@ const resources = computed(() => {
   const groups = new Map<string, { quantity: number; unit: string; priority: number | null; location: string | null; purpose: string | null }>()
   for (const r of rows) {
     const name = String(r.resource || '')
-    const qty = Number(r.quantity)
+    // A null quantity means the input does not support a number. It is left out, not counted as 0.
+    const qty = r.quantity === null || r.quantity === undefined ? NaN : Number(r.quantity)
     if (!name || Number.isNaN(qty)) continue
     const g = groups.get(name) || { quantity: 0, unit: r.unit_measure || '', priority: null, location: r.deployment_location || null, purpose: null }
     // Purpose comes from the report only. Older reports do not include it, so nothing is shown.
