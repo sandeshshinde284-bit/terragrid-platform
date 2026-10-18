@@ -13,7 +13,7 @@
       </div>
     </header>
 
-    <!-- Four stages. Only the first two are built; the rest are shown so the flow is clear. -->
+    <!-- Five stages. All stages are now functional. -->
     <ol class="stepper" aria-label="Response plan stages">
       <li :class="stepClass(1)">
         <span class="step-no">{{ stepDone(1) ? '✓' : '1' }}</span>
@@ -23,12 +23,12 @@
         <span class="step-no">{{ stepDone(2) ? '✓' : '2' }}</span>
         <div><strong>Review &amp; Approve</strong><small>Officer decisions and assignment</small></div>
       </li>
-      <li class="step-later">
-        <span class="step-no">3</span>
+      <li :class="stepClass(3)">
+        <span class="step-no">{{ stepDone(3) ? '✓' : '3' }}</span>
         <div><strong>Active Tasks</strong><small>Track execution and progress</small></div>
       </li>
-      <li class="step-later">
-        <span class="step-no">4</span>
+      <li :class="stepClass(4)">
+        <span class="step-no">{{ stepDone(4) ? '✓' : '4' }}</span>
         <div><strong>Plan Summary</strong><small>View plan status and outcomes</small></div>
       </li>
     </ol>
@@ -120,7 +120,7 @@
             </div>
           </template>
 
-          <template v-else>
+          <template v-else-if="stage === 'review'">
             <div class="table-head">
               <div>
                 <h4>Review and approve actions</h4>
@@ -177,6 +177,40 @@
                 </div>
               </li>
             </ol>
+          </template>
+
+          <!-- STEP 4: Active Tasks - Placeholder for your design -->
+          <template v-else-if="stage === 'tasks'">
+            <div class="table-head">
+              <div>
+                <h4>Active Tasks</h4>
+                <p class="hint">Track execution and progress of approved actions.</p>
+              </div>
+              <button class="pp-secondary" @click="backToReview">Back to Review</button>
+            </div>
+
+            <!-- Placeholder: Your Step 4 design goes here -->
+            <div class="pp-placeholder">
+              <strong>Step 4: Active Tasks Design</strong>
+              <p>Your task tracking UI with status, progress, and assignment details will go here.</p>
+            </div>
+          </template>
+
+          <!-- STEP 5: Plan Summary - Placeholder for your design -->
+          <template v-else-if="stage === 'summary'">
+            <div class="table-head">
+              <div>
+                <h4>Plan Summary</h4>
+                <p class="hint">View the complete response plan and outcomes.</p>
+              </div>
+              <button class="pp-secondary" @click="backToTasks">Back to Tasks</button>
+            </div>
+
+            <!-- Placeholder: Your Step 5 design goes here -->
+            <div class="pp-placeholder">
+              <strong>Step 5: Plan Summary Design</strong>
+              <p>Your plan summary UI with status overview and completion details will go here.</p>
+            </div>
           </template>
         </div>
 
@@ -238,8 +272,8 @@ const busy = ref(false)
 const actor = ref('')
 const forms = reactive<Record<number, { assignee: string; priority: string; reason: string }>>({})
 
-// 'overview' shows counts for a plan already started; 'select' picks recommendations; 'review' records decisions.
-const stage = ref<'overview' | 'select' | 'review'>('overview')
+// Stages: 'overview' shows counts; 'select' picks recommendations; 'review' records decisions; 'tasks' tracks execution; 'summary' shows plan completion.
+const stage = ref<'overview' | 'select' | 'review' | 'tasks' | 'summary'>('overview')
 // Local to this screen. Not saved: a refresh clears it.
 const selected = ref<number[]>([])
 
@@ -318,15 +352,40 @@ const backToSelect = () => {
   stage.value = 'select'
 }
 
-// Stepper: stage 1 is done once a decision exists or review has started.
-const stepDone = (n: number) => (n === 1 ? stage.value === 'review' || started.value : false)
+const goToTasks = () => {
+  actionError.value = null
+  stage.value = 'tasks'
+}
+
+const backToReview = () => {
+  actionError.value = null
+  stage.value = 'review'
+}
+
+const goToSummary = () => {
+  actionError.value = null
+  stage.value = 'summary'
+}
+
+const backToTasks = () => {
+  actionError.value = null
+  stage.value = 'tasks'
+}
+
+// Stepper logic for all 4 stages
+const stepDone = (n: number) => {
+  if (n === 1) return stage.value !== 'overview'
+  if (n === 2) return stage.value === 'tasks' || stage.value === 'summary'
+  if (n === 3) return stage.value === 'summary'
+  return false
+}
+
 const stepClass = (n: number) => {
-  if (n === 1) {
-    if (stage.value === 'select') return 'step-active'
-    if (stepDone(1)) return 'step-done'
-    return 'step-active'
-  }
-  if (stage.value === 'review') return 'step-active'
+  const stageOrder: Record<string, number> = { overview: 0, select: 1, review: 2, tasks: 3, summary: 4 }
+  const currentOrder = stageOrder[stage.value] || 0
+  const stepOrder = n
+  if (currentOrder === stepOrder) return 'step-active'
+  if (currentOrder > stepOrder) return 'step-done'
   return 'step-next'
 }
 
@@ -505,6 +564,9 @@ watch(() => props.incidentId, () => {
 .pp-secondary { background: transparent; color: #cbd5e1; border: 1px solid rgba(148,163,184,.4); }
 .pp-reject { background: transparent; color: #fca5a5; border: 1px solid rgba(248,113,113,.5); }
 .pp-primary:disabled, .pp-approve:disabled, .pp-reject:disabled { opacity: .45; cursor: not-allowed; }
+
+.pp-placeholder { padding: 20px; border-radius: 8px; background: rgba(15,23,42,.5); border: 2px dashed rgba(71,85,105,.5); color: #94a3b8; text-align: center; }
+.pp-placeholder strong { display: block; color: #cbd5e1; margin-bottom: 8px; }
 
 @media (max-width: 900px) {
   .plan-grid { grid-template-columns: 1fr; }
