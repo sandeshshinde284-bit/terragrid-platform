@@ -7,9 +7,6 @@
       </div>
     </div>
 
-    <EvidenceStatus v-if="incident" :incident="incident" :deepDossier="deepDossier" />
-
-    <ResponseActions v-if="incidentId" :incident-id="incidentId" />
     <ResponsePlanPanel v-if="incidentId" :incident-id="incidentId" />
 
     <div class="ai-review-banner" role="note">
@@ -138,9 +135,7 @@
 
 <script setup lang="ts">
 import GenerationNotice from './GenerationNotice.vue'
-import ResponseActions from '@/components/molecules/ResponseActions.vue'
 import ResponsePlanPanel from '@/components/molecules/ResponsePlanPanel.vue'
-import EvidenceStatus from '@/components/molecules/EvidenceStatus.vue'
 
 defineProps<{
   deepDossier: any
