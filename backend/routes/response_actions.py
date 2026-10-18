@@ -27,7 +27,7 @@ router = APIRouter(prefix="/api/v1/incidents", tags=["response"])
 
 INCIDENT_STATUSES = {"open", "investigating", "responding", "resolved"}
 TASK_STATUSES = {"open", "acknowledged", "in_progress", "blocked", "done"}
-PRIORITIES = {"high", "medium", "low"}
+PRIORITIES = {"critical", "high", "medium", "low"}  # stored lowercase; the officer picks one per approval
 
 
 class ActorBody(BaseModel):
@@ -104,7 +104,7 @@ def _serialize_state(db: Session, event_id: int) -> Dict[str, Any]:
     if status_rows:
         current_status = json.loads(status_rows[-1].detail or "{}").get("status", "open")
 
-    priority_rank = {"high": 0, "medium": 1, "low": 2}
+    priority_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3}
     tasks = sorted(
         db.query(ResponseTask).filter(ResponseTask.event_id == event_id).all(),
         key=lambda t: (priority_rank.get(t.priority, 1), t.due_at or datetime.max, t.id),
@@ -195,14 +195,15 @@ def set_incident_status(incident_id: str, body: StatusBody, db: Session = Depend
 @router.post("/{incident_id}/response/tasks")
 def create_task(incident_id: str, body: TaskCreateBody, db: Session = Depends(get_db)):
     event = _event_or_404(incident_id, db)
-    if body.priority not in PRIORITIES:
+    priority = body.priority.strip().lower()
+    if priority not in PRIORITIES:
         raise HTTPException(status_code=400, detail=f"Priority must be one of {sorted(PRIORITIES)}")
     task = ResponseTask(
         event_id=event.id,
         title=body.title.strip(),
         assignee=body.assignee.strip(),
         status="open",
-        priority=body.priority,
+        priority=priority,
         due_at=_to_utc_naive(body.due_at),
         created_by=body.actor,
     )
@@ -321,7 +322,7 @@ class PlanDecisionBody(ActorBody):
     action_index: int = Field(ge=0)
     decision: str  # approve | reject
     assignee: Optional[str] = Field(default=None, max_length=120)
-    priority: str = Field(default="medium")
+    priority: Optional[str] = Field(default=None, max_length=10)  # required to approve; ignored on reject
     due_at: Optional[datetime] = None
     reason: Optional[str] = Field(default=None, max_length=500)
 
@@ -449,8 +450,10 @@ def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = D
     event = _event_or_404(incident_id, db)
     if body.decision not in {"approve", "reject"}:
         raise HTTPException(status_code=400, detail="decision must be approve or reject")
-    if body.priority not in PRIORITIES:
-        raise HTTPException(status_code=400, detail="Unknown priority")
+    # Priority is required only for approval. Reject records no priority.
+    priority = (body.priority or "").strip().lower() or None
+    if body.decision == "approve" and priority not in PRIORITIES:
+        raise HTTPException(status_code=400, detail=f"Choose a priority: {sorted(PRIORITIES)}")
 
     report = db.query(IncidentReport).filter(IncidentReport.id == body.report_id, IncidentReport.event_id == event.id).first()
     if not report:
@@ -484,7 +487,7 @@ def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = D
             title=text[:250] + ("…" if len(text) > 250 else ""),
             assignee=body.assignee,
             status="open",
-            priority=body.priority,
+            priority=priority,
             due_at=_to_utc_naive(body.due_at),
             note=f"From AI report v{report.version}, recommendation {body.action_index + 1}. Full text: {text}",
             created_by=body.actor,
@@ -504,7 +507,7 @@ def decide_plan_action(incident_id: str, body: PlanDecisionBody, db: Session = D
         reason=body.reason,
         ai_priority=ai_priority,
         ai_category=ai_category,
-        officer_priority=body.priority if body.decision == "approve" else None,
+        officer_priority=priority if body.decision == "approve" else None,
     ))
     _log(db, event.id, "plan_" + ("approved" if body.decision == "approve" else "rejected"), body.actor, {
         "report_version": report.version,

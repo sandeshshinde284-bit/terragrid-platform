@@ -26,7 +26,7 @@ class ResponseTask(BaseModel):
     title = Column(String(255), nullable=False)
     assignee = Column(String(120), nullable=False)
     status = Column(String(20), nullable=False, default="open")  # open, acknowledged, in_progress, blocked, done
-    priority = Column(String(10), nullable=False, default="medium")  # high, medium, low
+    priority = Column(String(10), nullable=False, default="medium")  # critical, high, medium, low (lowercase)
     due_at = Column(DateTime, nullable=True)  # UTC, naive
     note = Column(Text, nullable=True)  # e.g. why a task is blocked
     created_by = Column(String(120), nullable=False)
@@ -84,4 +84,4 @@ class ResponsePlanDecision(BaseModel):
     # these fields existed); officer_priority is set only for approvals. The decision time is created_at.
     ai_priority = Column(String(12), nullable=True)  # IMMEDIATE, HIGH, STAGED
     ai_category = Column(String(40), nullable=True)
-    officer_priority = Column(String(10), nullable=True)  # high, medium, low
+    officer_priority = Column(String(10), nullable=True)  # critical, high, medium, low (lowercase)
