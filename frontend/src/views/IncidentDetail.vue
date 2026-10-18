@@ -307,6 +307,35 @@ async function checkExistingDossier() {
   }
 }
 
+async function loadQuickInsights() {
+  if (!incidentId.value) return
+  try {
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const res = await fetch(`${host}/api/v1/incidents/${incidentId.value}/insights`)
+    if (res.ok) {
+      const data = await res.json()
+      if (data.plan && !deepDossier.value) {
+        // Only use quick insights if we don't already have a deep dossier
+        deepDossier.value = {
+          immediate_actions: data.plan.immediate_actions || [],
+          situational_assessment: data.plan.situational_assessment || 'Quick assessment loading...',
+          threat_level: data.plan.threat_level || 'Unknown',
+          predictive_cascade: data.plan.predictive_cascade || [],
+          critical_infrastructure: data.plan.critical_infrastructure || [],
+          evacuation_corridors: data.plan.evacuation_corridors || [],
+          resource_matrix: data.plan.resource_matrix || [],
+          vulnerable_demographics: data.plan.vulnerable_demographics || {},
+          version: null,
+          generated_at: new Date().toISOString(),
+        }
+        logWarn('Quick insight loaded - full deep analysis not yet available')
+      }
+    }
+  } catch (e) {
+    logWarn('Could not load quick insights', e)
+  }
+}
+
 const tabs = computed<Tab[]>(() => [
   { id: 'overview', label: t('detail.innerTabs.overview'), icon: '◈' }, 
   { id: 'impact', label: t('detail.innerTabs.impact'), icon: '▦' },
@@ -614,6 +643,8 @@ onMounted(async () => {
   if (incidentId.value) {
     checkExistingDossier()
     loadIncidentDetails()
+    // Load quick insights as fallback if deep dossier doesn't exist
+    loadQuickInsights()
   }
 
   // Handle query parameter to switch to AI Insights tab
