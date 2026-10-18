@@ -102,7 +102,7 @@
               <p>{{ alertsError }}</p>
             </div>
 
-            <div v-else-if="alertsPlan.is_fallback" class="empty-state glass-panel">
+            <div v-else-if="alertsPlan?.is_fallback" class="empty-state glass-panel">
 
               <div class="empty-icon">⚠️</div>
 
