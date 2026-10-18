@@ -51,7 +51,7 @@
             <select v-model="filterCountry" class="filter-select">
               <option value="">🌎 {{ $t('incidents.filterByCountry') }} - All</option>
               <option v-for="country in availableCountries" :key="country" :value="country">
-                {{ country }}
+                {{ getCountryName(country) }}
               </option>
             </select>
           </div>
@@ -66,10 +66,6 @@
               <th @click="handleSort('type')" class="sortable">
                 {{ $t('incidents.hazardType') }}
                 <span v-if="sortBy === 'type'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
-              </th>
-              <th @click="handleSort('location')" class="sortable">
-                {{ $t('incidents.location') }}
-                <span v-if="sortBy === 'location'" class="sort-indicator">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
               </th>
               <th @click="handleSort('country')" class="sortable">
                 {{ $t('incidents.country') }}
@@ -105,13 +101,15 @@
           </thead>
           <tbody>
             <tr v-for="incident in filteredIncidents" :key="incident.id" :data-incident-id="incident.id" class="incident-row" :class="{ expanded: expandedIncidentId === incident.id }" @click="toggleExpanded(incident.id)">
-              <td class="type-cell">
-                <span class="type-icon">{{ getIcon(incident.type, incident.location) }}</span>
-                <span class="type-name">{{ formatType(incident.type, incident.location) }}</span>
-                <span class="incident-id">{{ displayIncidentId(incident) }}</span>
-              </td>
-              <td class="location-cell">
-                <span class="location-text">{{ cleanLocation(incident.location) }}</span>
+              <td class="incident-main-cell">
+                <div class="incident-icon-wrapper">
+                  <span class="type-icon">{{ getIcon(incident.type, incident.location) }}</span>
+                </div>
+                <div class="incident-info-stack">
+                  <span class="type-name">{{ formatType(incident.type, incident.location) }}</span>
+                  <span class="incident-id-text">{{ displayIncidentId(incident) }}</span>
+                  <span class="location-text">{{ cleanLocation(incident.location) }}</span>
+                </div>
               </td>
               <td class="country-cell">
                 <span class="country-name">{{ resolveCountry(incident.location, incident.countryCode).name }}</span>
@@ -119,17 +117,23 @@
               <td class="status-cell">
                 <span class="status-badge" :class="incident.status">{{ incident.status.toUpperCase() }}</span>
               </td>
-              <td class="threat-cell">{{ incident.threatScore != null ? `${incident.threatScore}/100` : DASH }}</td>
-              <td class="area-cell">{{ fmtFixed(incident.affectedArea, 1, ' km²') }}</td>
-              <td class="population-cell">{{ fmtThousands(incident.affectedPopulation) }}</td>
-              <td class="trend-cell">{{ fmtSigned(incident.trend, 1, ' km²/h') }}</td>
-              <td class="time-cell">{{ formatDate(incident.detectionTime) }}</td>
+              <td class="threat-cell">
+                <strong v-if="incident.threatScore != null" class="threat-large">{{ incident.threatScore }}/100</strong>
+                <span v-else class="threat-large" style="color: var(--text-muted);">{{ DASH }}</span>
+              </td>
+              <td class="area-cell">{{ formatArea(incident.affectedArea) }}</td>
+              <td class="population-cell">{{ formatPopulation(incident.affectedPopulation) }}</td>
+              <td class="trend-cell">{{ formatTrend(incident.trend, incident.type) }}</td>
+              <td class="time-cell" v-html="formatDateMultiLine(incident.detectionTime)"></td>
               <td class="action-cell">
-                <span class="action-badge">{{ getRecommendedAction(incident) }}</span>
+                <div class="action-badge-new">
+                  <span class="action-title">{{ getRecommendedActionTitle(incident) }}</span>
+                  <span class="action-subtitle">{{ getRecommendedActionSubtitle(incident) }}</span>
+                </div>
               </td>
               <td class="view-cell">
                 <button class="view-btn" @click="viewIncident(incident.id)">
-                  View Details
+                  {{ $t('incidents.viewDetails') }}
                 </button>
               </td>
             </tr>
@@ -451,6 +455,47 @@ const getRecommendedAction = (incident: IncidentLevel1): string => {
   }
 }
 
+
+const formatArea = (area) => {
+  if (area == null) return DASH;
+  return '~' + Math.round(area) + ' km²';
+};
+
+const formatPopulation = (pop) => {
+  if (pop == null) return DASH;
+  return '~' + fmtThousands(pop);
+};
+
+const formatTrend = (trend, type) => {
+  if (trend == null) return 'N/A';
+  const t = (type || '').toLowerCase();
+  if (t.includes('earthquake') || t.includes('seismic')) return 'N/A';
+  const sign = trend > 0 ? '+' : '';
+  return sign + trend.toFixed(1) + ' km²/h';
+};
+
+const formatDateMultiLine = (date) => {
+  const d = date.toLocaleString('en-GB', { day: '2-digit', timeZone: 'UTC' });
+  const m = date.toLocaleString('en-GB', { month: 'short', timeZone: 'UTC' });
+  const t = date.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+  return `<span title="Coordinated Universal Time" style="white-space: nowrap;">${d} ${m} &middot; ${t} <small style="color: #94a3b8; font-size: 11px;">UTC</small></span>`;
+};
+
+const getRecommendedActionTitle = (incident) => {
+  const threat = incident.threatScore;
+  const t = (incident.type || '').toLowerCase();
+  
+  if (threat == null) return 'Awaiting assessment';
+  if (threat >= 84) return 'Assess evacuation needs';
+  if (t.includes('wind')) return 'Verify wind impact';
+  if (t.includes('flood')) return 'Assess shelter readiness';
+  return 'Review response readiness';
+};
+
+const getRecommendedActionSubtitle = (incident) => {
+  return 'Review required';
+};
+
 const viewIncident = (id: string) => {
   router.push(`/incident/${id}`)
 }
@@ -721,7 +766,7 @@ onMounted(async () => {
   color: #ffffff;
   white-space: nowrap;
   text-transform: uppercase;
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: 0.5px;
   background: #0f172a;
   position: sticky;
@@ -746,100 +791,144 @@ onMounted(async () => {
   font-size: 14px;
 }
 
-/* Specific Column Widths */
+/* Specific Column Widths (10 Columns Total) */
+/* Column 1: Merged Incident (Icon, Type, ID, Location) */
 .incidents-table th:nth-child(1),
 .incidents-table td:nth-child(1) {
-  width: 12%;
-  min-width: 130px;
+  width: 22%;
+  min-width: 220px;
   text-align: left;
 }
 
-.type-cell {
+.incident-main-cell {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.incident-icon-wrapper {
+  margin-top: 2px;
 }
 
 .type-icon {
-  font-size: 16px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 
+.incident-info-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .type-name {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
 
+.incident-id-text {
+  font-size: 13px;
+  color: #94a3b8;
+  font-family: ui-monospace, monospace;
+}
+
+.location-text {
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+/* Column 2: Country */
 .incidents-table th:nth-child(2),
 .incidents-table td:nth-child(2) {
-  width: 15%;
-  min-width: 140px;
-}
-
-/* Column 3: Country */
-.incidents-table th:nth-child(3),
-.incidents-table td:nth-child(3) {
-  width: 12%;
-  min-width: 110px;
-}
-
-/* Column 4: Status */
-.incidents-table th:nth-child(4),
-.incidents-table td:nth-child(4) {
-  width: 10%;
-  min-width: 90px;
-}
-
-/* Column 5: Threat Score */
-.incidents-table th:nth-child(5),
-.incidents-table td:nth-child(5) {
-  width: 10%;
-  min-width: 95px;
-}
-
-/* Column 6: Affected Area */
-.incidents-table th:nth-child(6),
-.incidents-table td:nth-child(6) {
-  width: 10%;
-  min-width: 110px;
-}
-
-/* Column 7: Population */
-.incidents-table th:nth-child(7),
-.incidents-table td:nth-child(7) {
   width: 10%;
   min-width: 100px;
 }
 
-/* Column 8: Trend */
+/* Column 3: Status */
+.incidents-table th:nth-child(3),
+.incidents-table td:nth-child(3) {
+  width: 8%;
+  min-width: 80px;
+}
+
+/* Column 4: Threat Score */
+.incidents-table th:nth-child(4),
+.incidents-table td:nth-child(4) {
+  width: 9%;
+  min-width: 90px;
+}
+
+.threat-large {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* Column 5: Affected Area */
+.incidents-table th:nth-child(5),
+.incidents-table td:nth-child(5) {
+  width: 9%;
+  min-width: 90px;
+}
+
+/* Column 6: Population */
+.incidents-table th:nth-child(6),
+.incidents-table td:nth-child(6) {
+  width: 9%;
+  min-width: 90px;
+}
+
+/* Column 7: Trend */
+.incidents-table th:nth-child(7),
+.incidents-table td:nth-child(7) {
+  width: 9%;
+  min-width: 90px;
+}
+
+/* Column 8: Detection Time */
 .incidents-table th:nth-child(8),
 .incidents-table td:nth-child(8) {
   width: 10%;
   min-width: 110px;
 }
 
-/* Column 9: Detection Time */
+/* Column 9: Recommended Action */
 .incidents-table th:nth-child(9),
 .incidents-table td:nth-child(9) {
-  width: 11%;
-  min-width: 130px;
+  width: 16%;
+  min-width: 200px;
 }
 
-/* Column 10: Recommended Action */
+.action-badge-new {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.05);
+  border-radius: 6px;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.action-title {
+  color: #fde047;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.action-subtitle {
+  color: #fbbf24;
+  font-size: 12px;
+}
+
+/* Column 10: Analysis (View Button) */
 .incidents-table th:nth-child(10),
 .incidents-table td:nth-child(10) {
-  width: 12%;
-  min-width: 180px;
-}
-
-/* Column 11: Analysis (View Button) */
-.incidents-table th:nth-child(11),
-.incidents-table td:nth-child(11) {
-  width: 12%;
-  min-width: 120px;
+  width: 8%;
+  min-width: 100px;
   text-align: center;
   white-space: nowrap;
 }
@@ -856,10 +945,11 @@ onMounted(async () => {
 .country-name {
   color: #cbd5e1;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .incidents-table td {
+  font-size: 15px;
   padding: 12px 10px;
   border-bottom: 1px solid rgba(30, 64, 175, 0.2);
   color: #ffffff;
@@ -1394,7 +1484,7 @@ onMounted(async () => {
     font-size: 13px;
   }
 
-  /* Mobile: Clean Incident Cards Layout (Replaces Table) */
+  
   .incidents-table-wrapper {
     background: transparent !important;
     border: none !important;
@@ -1418,13 +1508,13 @@ onMounted(async () => {
     width: 100%;
   }
 
-  /* Each table row becomes a sleek, high-tech Mobile Card */
+  
   .incident-row {
     display: grid !important;
     grid-template-columns: 1fr auto !important;
     grid-template-areas: 
       "header status"
-      "location location" !important;
+      "header header" !important;
     row-gap: 6px !important;
     column-gap: 8px !important;
     padding: 14px 16px !important;
@@ -1451,8 +1541,8 @@ onMounted(async () => {
     box-shadow: 0 10px 32px rgba(14, 165, 233, 0.25) !important;
   }
 
-  /* 1. Header Area: Hazard Type on Left with chevron */
-  .incident-row .type-cell {
+  
+  .incident-row .incident-main-cell {
     grid-area: header !important;
     display: flex !important;
     align-items: center !important;
@@ -1475,7 +1565,7 @@ onMounted(async () => {
     text-transform: uppercase !important;
   }
 
-  /* 2. Status & Threat Badges on Right */
+  
   .incident-row .status-cell {
     grid-area: status !important;
     display: flex !important;
@@ -1495,7 +1585,7 @@ onMounted(async () => {
     letter-spacing: 0.5px !important;
   }
 
-  /* Expand chevron */
+  
   .incident-row .status-cell::after {
     content: '▾';
     font-size: 16px;
@@ -1508,8 +1598,8 @@ onMounted(async () => {
     transform: rotate(180deg);
   }
 
-  /* 3. Location Row */
-  .incident-row .location-cell {
+  
+  .incident-row .location-cell { display: none !important; 
     grid-area: location !important;
     display: block !important;
     padding: 2px 0 4px 0 !important;
@@ -1525,7 +1615,7 @@ onMounted(async () => {
     max-width: unset !important;
   }
 
-  /* 4. HIDDEN IN COLLAPSED STATE */
+  
   .incident-row .threat-cell,
   .incident-row .area-cell,
   .incident-row .population-cell,
@@ -1536,12 +1626,12 @@ onMounted(async () => {
     display: none !important;
   }
 
-  /* 5. EXPANDED BODY: Compact 2x2 Grid + Action + Button */
+  
   .incident-row.expanded {
     grid-template-columns: 1fr 1fr !important;
     grid-template-areas: 
       "header status"
-      "location location" !important;
+      "header header" !important;
   }
 
   .incident-row.expanded .threat-cell,
@@ -1576,7 +1666,7 @@ onMounted(async () => {
 
   .incident-row.expanded .threat-cell::before { content: 'THREAT SCORE'; font-size: 10px; font-weight: 700; color: #94a3b8; }
 
-  /* 2x2 Metric Tiles */
+  
   .incident-row.expanded .area-cell,
   .incident-row.expanded .population-cell,
   .incident-row.expanded .trend-cell,
@@ -1658,7 +1748,7 @@ onMounted(async () => {
     background: #26c6da !important;
   }
 
-  /* Hide redundant bottom stats footer on mobile to keep view uncluttered */
+  
   .stats-footer {
     display: none !important;
   }
