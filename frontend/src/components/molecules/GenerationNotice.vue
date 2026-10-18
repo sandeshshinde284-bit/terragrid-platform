@@ -2,8 +2,8 @@
   <div class="generation-notice" role="status" aria-live="polite">
     <span class="spin" aria-hidden="true">⟳</span>
     <div class="notice-copy">
-      <strong class="notice-title">Generating crisis report with Gemini · {{ elapsed }}s</strong>
-      <span class="notice-text">You can switch tabs. This keeps running in the background and the results appear here when ready.</span>
+      <strong class="notice-title">{{ $t('generation.generating', { seconds: elapsed }) }}</strong>
+      <span class="notice-text">{{ $t('generation.background') }}</span>
     </div>
   </div>
 </template>
