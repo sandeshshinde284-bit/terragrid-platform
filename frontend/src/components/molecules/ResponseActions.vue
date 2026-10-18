@@ -11,6 +11,8 @@
         <span class="chip" :class="acknowledged ? 'ok' : 'todo'">{{ acknowledged ? 'Acknowledged' : 'Not acknowledged' }}</span>
         <span class="chip">Status: {{ statusLabel }}</span>
         <span class="chip">Tasks open: {{ openTaskCount }} of {{ tasks.length }}</span>
+        <span v-if="blockedCount" class="chip bad">Blocked: {{ blockedCount }}</span>
+        <span v-if="overdueCount" class="chip bad">Overdue: {{ overdueCount }}</span>
         <span class="chip">Alerts delivered: {{ deliveredAlertCount }}</span>
       </div>
     </header>
@@ -51,14 +53,34 @@
       <div class="row">
         <input v-model="taskTitle" class="ra-input grow" maxlength="255" placeholder="Task, e.g. Verify road access to hospital" />
         <input v-model="taskAssignee" class="ra-input" maxlength="120" placeholder="Assignee" />
+        <select v-model="taskPriority" class="ra-input" aria-label="Priority">
+          <option value="high">High priority</option>
+          <option value="medium">Medium priority</option>
+          <option value="low">Low priority</option>
+        </select>
+        <input v-model="taskDue" type="datetime-local" class="ra-input" aria-label="Deadline (optional)" />
         <button class="ra-btn" :disabled="!canAct || !taskTitle.trim() || !taskAssignee.trim()" @click="addTask">Add task</button>
       </div>
-      <ul v-if="tasks.length" class="ra-list">
-        <li v-for="t in tasks" :key="t.id">
-          <span class="grow">{{ t.title }} <span class="muted">→ {{ t.assignee }}</span></span>
-          <select class="ra-input" :value="t.status" :disabled="!canAct" @change="setTask(t.id, ($event.target as HTMLSelectElement).value)">
+      <ul v-if="tasks.length" class="ra-list tasks">
+        <li v-for="t in tasks" :key="t.id" :class="['task', t.status, { overdue: isOverdue(t) }]">
+          <div class="task-main grow">
+            <div>
+              <span class="pill" :class="'prio-' + t.priority">{{ t.priority }}</span>
+              <strong>{{ t.title }}</strong>
+              <span class="muted">→ {{ t.assignee }}</span>
+            </div>
+            <div class="muted small">
+              <span v-if="t.due_at">Deadline {{ fmtTime(t.due_at) }}<span v-if="isOverdue(t)" class="overdue-text"> · overdue</span></span>
+              <span v-else>No deadline</span>
+              · added by {{ t.created_by }}
+            </div>
+            <div v-if="t.note" class="small blocked-note">Blocked: {{ t.note }}</div>
+          </div>
+          <select class="ra-input" :value="t.status" :disabled="!canAct" aria-label="Task status" @change="changeTaskStatus(t, ($event.target as HTMLSelectElement).value)">
             <option value="open">Open</option>
+            <option value="acknowledged">Acknowledged</option>
             <option value="in_progress">In progress</option>
+            <option value="blocked">Blocked</option>
             <option value="done">Done</option>
           </select>
         </li>
@@ -73,6 +95,10 @@
       <p v-else-if="!emailRecipients.length" class="hint warn">No email recipients are configured. Add them in Settings first.</p>
 
       <form class="draft-form" @submit.prevent="draftAlert">
+        <select v-model="draftTaskId" class="ra-input" aria-label="Linked task (optional)">
+          <option :value="null">Not linked to a task</option>
+          <option v-for="t in tasks" :key="t.id" :value="t.id">Task: {{ t.title }} ({{ t.assignee }})</option>
+        </select>
         <input v-model="draftSubject" class="ra-input" maxlength="255" placeholder="Subject" />
         <textarea v-model="draftBody" class="ra-input" rows="4" maxlength="5000" placeholder="Message, reviewed by the operator before approval"></textarea>
         <div class="recipients">
@@ -90,6 +116,7 @@
             <strong>{{ a.subject }}</strong>
             <span class="pill" :class="a.status">{{ alertStatusLabel(a.status) }}</span>
           </div>
+          <div v-if="a.task_id" class="muted small">Linked to task: {{ linkedTaskName(a.task_id) }}</div>
           <div class="muted small">Drafted by {{ a.created_by }} at {{ fmtTime(a.created_at) }}<span v-if="a.decided_by"> · decided by {{ a.decided_by }}</span></div>
           <div class="muted small">To: {{ a.recipients.join(', ') }}</div>
           <p class="alert-body">{{ a.body }}</p>
@@ -140,6 +167,9 @@ const newStatus = ref('investigating')
 const statusNote = ref('')
 const taskTitle = ref('')
 const taskAssignee = ref('')
+const taskPriority = ref('medium')
+const taskDue = ref('')
+const draftTaskId = ref<number | null>(null)
 const draftSubject = ref('')
 const draftBody = ref('')
 const draftRecipients = ref<string[]>([])
@@ -151,6 +181,19 @@ const alerts = computed<any[]>(() => state.value.alerts || [])
 const log = computed<any[]>(() => state.value.log || [])
 const openTaskCount = computed(() => tasks.value.filter(t => t.status !== 'done').length)
 const deliveredAlertCount = computed(() => alerts.value.filter(a => a.status === 'sent').length)
+const blockedCount = computed(() => tasks.value.filter(t => t.status === 'blocked').length)
+const overdueCount = computed(() => tasks.value.filter(t => isOverdue(t)).length)
+
+function isOverdue(t: any): boolean {
+  if (!t.due_at || t.status === 'done') return false
+  const d = new Date(t.due_at.endsWith('Z') || t.due_at.includes('+') ? t.due_at : `${t.due_at}Z`)
+  return !isNaN(d.getTime()) && d.getTime() < Date.now()
+}
+
+function linkedTaskName(id: number): string {
+  const t = tasks.value.find(x => x.id === id)
+  return t ? t.title : `task #${id}`
+}
 
 const STATUS_LABELS: Record<string, string> = {
   open: 'Open',
@@ -242,22 +285,40 @@ async function setStatus() {
 }
 
 async function addTask() {
-  const data = await call('/tasks', 'POST', { actor: actorName(), title: taskTitle.value.trim(), assignee: taskAssignee.value.trim() })
+  const due = taskDue.value ? new Date(taskDue.value) : null
+  const data = await call('/tasks', 'POST', {
+    actor: actorName(),
+    title: taskTitle.value.trim(),
+    assignee: taskAssignee.value.trim(),
+    priority: taskPriority.value,
+    due_at: due && !isNaN(due.getTime()) ? due.toISOString() : null,
+  })
   if (data) {
     state.value = data
     taskTitle.value = ''
     taskAssignee.value = ''
+    taskDue.value = ''
+    taskPriority.value = 'medium'
   }
 }
 
-async function setTask(taskId: number, status: string) {
-  const data = await call(`/tasks/${taskId}/status`, 'POST', { actor: actorName(), status })
+async function changeTaskStatus(t: any, status: string) {
+  let note: string | null = null
+  if (status === 'blocked') {
+    note = (window.prompt('What is blocking this task? (required)') || '').trim()
+    if (!note) {
+      error.value = 'A blocked task needs a reason.'
+      return
+    }
+  }
+  const data = await call(`/tasks/${t.id}/status`, 'POST', { actor: actorName(), status, note })
   if (data) state.value = data
 }
 
 async function draftAlert() {
   const data = await call('/alerts', 'POST', {
     actor: actorName(),
+    task_id: draftTaskId.value,
     subject: draftSubject.value.trim(),
     body: draftBody.value.trim(),
     recipients: draftRecipients.value,
@@ -267,6 +328,7 @@ async function draftAlert() {
     draftSubject.value = ''
     draftBody.value = ''
     draftRecipients.value = []
+    draftTaskId.value = null
   }
 }
 
@@ -329,4 +391,15 @@ textarea.ra-input { width: 100%; box-sizing: border-box; }
 .delivery { list-style: none; padding: 0; margin: 4px 0 0; font-size: 13px; }
 .delivery li.ok { color: #4ade80; }
 .delivery li.bad { color: #fca5a5; }
+.chip.bad { color: #fca5a5; background: rgba(239,68,68,0.15); }
+.ra-list.tasks li.task { background: rgba(15,23,42,0.5); border-radius: 8px; padding: 10px; align-items: flex-start; border-left: 3px solid #64748b; }
+.ra-list.tasks li.task.done { opacity: 0.6; }
+.ra-list.tasks li.task.blocked { border-left-color: #f87171; }
+.ra-list.tasks li.task.overdue { border-left-color: #fb923c; }
+.task-main { display: flex; flex-direction: column; gap: 4px; }
+.overdue-text { color: #fdba74; font-weight: 700; }
+.blocked-note { color: #fca5a5; }
+.pill.prio-high { color: #fca5a5; background: rgba(239,68,68,0.15); }
+.pill.prio-medium { color: #fde68a; background: rgba(251,191,36,0.12); }
+.pill.prio-low { color: #94a3b8; background: rgba(148,163,184,0.12); }
 </style>

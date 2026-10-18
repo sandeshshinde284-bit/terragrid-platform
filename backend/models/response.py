@@ -4,7 +4,7 @@ operator-approved alert drafts. Every row names the operator who acted,
 as typed on screen. There is no login yet, so these names are
 self-declared, not authenticated.
 """
-from sqlalchemy import Column, String, Integer, ForeignKey, Text
+from sqlalchemy import Column, String, Integer, ForeignKey, Text, DateTime
 from .base import BaseModel
 
 
@@ -25,7 +25,10 @@ class ResponseTask(BaseModel):
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False, index=True)
     title = Column(String(255), nullable=False)
     assignee = Column(String(120), nullable=False)
-    status = Column(String(20), nullable=False, default="open")  # open, in_progress, done
+    status = Column(String(20), nullable=False, default="open")  # open, acknowledged, in_progress, blocked, done
+    priority = Column(String(10), nullable=False, default="medium")  # high, medium, low
+    due_at = Column(DateTime, nullable=True)  # UTC, naive
+    note = Column(Text, nullable=True)  # e.g. why a task is blocked
     created_by = Column(String(120), nullable=False)
 
 
@@ -34,6 +37,7 @@ class ResponseAlert(BaseModel):
     __tablename__ = "response_alerts"
 
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False, index=True)
+    task_id = Column(Integer, ForeignKey("response_tasks.id"), nullable=True)  # the task this alert concerns, if any
     subject = Column(String(255), nullable=False)
     body = Column(Text, nullable=False)
     recipients = Column(Text, nullable=False)  # JSON list of email addresses

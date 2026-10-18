@@ -9,7 +9,7 @@ recorded as given. Treat it as a label, not authenticated identity.
 """
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/incidents", tags=["response"])
 
 INCIDENT_STATUSES = {"open", "investigating", "responding", "resolved"}
-TASK_STATUSES = {"open", "in_progress", "done"}
+TASK_STATUSES = {"open", "acknowledged", "in_progress", "blocked", "done"}
+PRIORITIES = {"high", "medium", "low"}
 
 
 class ActorBody(BaseModel):
@@ -41,13 +42,17 @@ class StatusBody(ActorBody):
 class TaskCreateBody(ActorBody):
     title: str = Field(min_length=1, max_length=255)
     assignee: str = Field(min_length=1, max_length=120)
+    priority: str = Field(default="medium")
+    due_at: Optional[datetime] = None
 
 
 class TaskUpdateBody(ActorBody):
     status: str
+    note: Optional[str] = Field(default=None, max_length=500)
 
 
 class AlertDraftBody(ActorBody):
+    task_id: Optional[int] = None
     subject: str = Field(min_length=1, max_length=255)
     body: str = Field(min_length=1, max_length=5000)
     recipients: List[str] = Field(min_length=1, max_length=20)
@@ -77,6 +82,15 @@ def _iso(dt: Optional[datetime]) -> Optional[str]:
     return dt.isoformat() if dt else None
 
 
+def _to_utc_naive(dt: Optional[datetime]) -> Optional[datetime]:
+    """Store deadlines as naive UTC, like the rest of the tables."""
+    if dt is None:
+        return None
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
+
 def _serialize_state(db: Session, event_id: int) -> Dict[str, Any]:
     logs = (
         db.query(IncidentResponseLog)
@@ -90,11 +104,10 @@ def _serialize_state(db: Session, event_id: int) -> Dict[str, Any]:
     if status_rows:
         current_status = json.loads(status_rows[-1].detail or "{}").get("status", "open")
 
-    tasks = (
-        db.query(ResponseTask)
-        .filter(ResponseTask.event_id == event_id)
-        .order_by(ResponseTask.created_at.asc(), ResponseTask.id.asc())
-        .all()
+    priority_rank = {"high": 0, "medium": 1, "low": 2}
+    tasks = sorted(
+        db.query(ResponseTask).filter(ResponseTask.event_id == event_id).all(),
+        key=lambda t: (priority_rank.get(t.priority, 1), t.due_at or datetime.max, t.id),
     )
     alerts = (
         db.query(ResponseAlert)
@@ -113,6 +126,9 @@ def _serialize_state(db: Session, event_id: int) -> Dict[str, Any]:
                 "title": t.title,
                 "assignee": t.assignee,
                 "status": t.status,
+                "priority": t.priority,
+                "due_at": _iso(t.due_at),
+                "note": t.note,
                 "created_by": t.created_by,
                 "created_at": _iso(t.created_at),
             }
@@ -121,6 +137,7 @@ def _serialize_state(db: Session, event_id: int) -> Dict[str, Any]:
         "alerts": [
             {
                 "id": a.id,
+                "task_id": a.task_id,
                 "subject": a.subject,
                 "body": a.body,
                 "recipients": json.loads(a.recipients or "[]"),
@@ -178,11 +195,15 @@ def set_incident_status(incident_id: str, body: StatusBody, db: Session = Depend
 @router.post("/{incident_id}/response/tasks")
 def create_task(incident_id: str, body: TaskCreateBody, db: Session = Depends(get_db)):
     event = _event_or_404(incident_id, db)
+    if body.priority not in PRIORITIES:
+        raise HTTPException(status_code=400, detail=f"Priority must be one of {sorted(PRIORITIES)}")
     task = ResponseTask(
         event_id=event.id,
         title=body.title.strip(),
         assignee=body.assignee.strip(),
         status="open",
+        priority=body.priority,
+        due_at=_to_utc_naive(body.due_at),
         created_by=body.actor,
     )
     db.add(task)
@@ -200,8 +221,11 @@ def update_task_status(incident_id: str, task_id: int, body: TaskUpdateBody, db:
     task = db.query(ResponseTask).filter(ResponseTask.id == task_id, ResponseTask.event_id == event.id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    if body.status == "blocked" and not (body.note and body.note.strip()):
+        raise HTTPException(status_code=400, detail="Say why the task is blocked")
     task.status = body.status
-    _log(db, event.id, "task_updated", body.actor, {"task_id": task.id, "status": body.status})
+    task.note = body.note.strip() if body.note and body.note.strip() else None
+    _log(db, event.id, "task_updated", body.actor, {"task_id": task.id, "status": body.status, "note": task.note})
     db.commit()
     return _serialize_state(db, event.id)
 
@@ -210,6 +234,10 @@ def update_task_status(incident_id: str, task_id: int, body: TaskUpdateBody, db:
 def draft_alert(incident_id: str, body: AlertDraftBody, db: Session = Depends(get_db)):
     """Create an alert draft. Nothing is sent until it is approved."""
     event = _event_or_404(incident_id, db)
+    if body.task_id is not None:
+        task = db.query(ResponseTask).filter(ResponseTask.id == body.task_id, ResponseTask.event_id == event.id).first()
+        if not task:
+            raise HTTPException(status_code=400, detail="That task does not belong to this incident")
     allowed = {r["email"] for r in notification_service.get_alert_email_recipients(db)}
     unknown = [r for r in body.recipients if r not in allowed]
     if unknown:
@@ -219,6 +247,7 @@ def draft_alert(incident_id: str, body: AlertDraftBody, db: Session = Depends(ge
         )
     alert = ResponseAlert(
         event_id=event.id,
+        task_id=body.task_id,
         subject=body.subject.strip(),
         body=body.body,
         recipients=json.dumps(sorted(set(body.recipients))),

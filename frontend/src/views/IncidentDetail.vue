@@ -685,13 +685,13 @@ async function exportSitRepZip() {
         '-----------------------------------------------------------------',
         'TASKS:',
         ...(state.tasks.length
-          ? state.tasks.map((t: any) => `  [${t.status}] ${t.title} -> ${t.assignee} (created by ${t.created_by})`)
+          ? state.tasks.map((t: any) => `  [${String(t.priority || 'medium').toUpperCase()}] [${t.status}] ${t.title} -> ${t.assignee}${t.due_at ? ` | deadline ${t.due_at} (UTC)` : ' | no deadline'}${t.note ? ` | blocked: ${t.note}` : ''} | added by ${t.created_by}`)
           : ['  None recorded']),
         '-----------------------------------------------------------------',
         'ALERTS (sent only after approval):',
         ...(state.alerts.length
           ? state.alerts.flatMap((a: any) => [
-              `  [${a.status}] ${a.subject}`,
+              `  [${a.status}] ${a.subject}${a.task_id ? ` (linked to task #${a.task_id})` : ''}`,
               `    To: ${a.recipients.join(', ')}`,
               `    Drafted by ${a.created_by}; decided by ${a.decided_by || 'n/a'}`,
               ...(a.delivery_results || []).map((d: any) => `    - ${d.recipient}: ${d.success ? 'delivered' : 'NOT delivered'}${d.detail ? ` (${d.detail})` : ''}`),
