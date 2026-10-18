@@ -93,7 +93,7 @@
                     <th>Recommendation</th>
                     <th>AI priority</th>
                     <th>Category</th>
-                    <th>Plan</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,7 +112,7 @@
                       <span v-else class="muted small">Not in report</span>
                     </td>
                     <td>
-                      <span class="inc-pill" :class="isSelected(a.index) ? 'in' : 'out'">{{ isSelected(a.index) ? 'Included' : 'Not selected' }}</span>
+                      <span class="inc-pill" :class="statusClass(a)">{{ statusLabel(a) }}</span>
                     </td>
                   </tr>
                 </tbody>
@@ -199,8 +199,9 @@
             <strong>Selection Summary</strong>
             <div class="summary-tiles">
               <div><span>Total recommendations</span><strong>{{ plan.actions.length }}</strong></div>
-              <div><span>Selected for plan</span><strong>{{ selected.length }}</strong></div>
-              <div><span>Not selected</span><strong>{{ plan.actions.length - selected.length }}</strong></div>
+              <div><span>Selected for plan</span><strong>{{ selected.length }}</strong><small>Local until review</small></div>
+              <div><span>Converted to tasks</span><strong>{{ plan.review.approved }}</strong></div>
+              <div><span>Rejected</span><strong>{{ plan.review.rejected }}</strong></div>
             </div>
           </div>
 
@@ -269,6 +270,18 @@ const reviewActions = computed(() =>
 )
 
 const isSelected = (index: number) => selected.value.includes(index)
+
+// Status is derived from saved decisions first, then from the local selection.
+const statusLabel = (a: any) => {
+  if (a.decision === 'approved') return 'Approved'
+  if (a.decision === 'rejected') return 'Rejected'
+  return isSelected(a.index) ? 'Selected' : 'Not selected'
+}
+const statusClass = (a: any) => {
+  if (a.decision === 'approved') return 'approved'
+  if (a.decision === 'rejected') return 'rejected'
+  return isSelected(a.index) ? 'in' : 'out'
+}
 
 const toggle = (index: number) => {
   selected.value = isSelected(index)
@@ -445,7 +458,10 @@ watch(() => props.incidentId, () => {
 .details div { display: flex; flex-direction: column; gap: 2px; }
 .details dt { font-size: 12px; color: #94a3b8; }
 .details dd { margin: 0; font-size: 13px; color: #e2e8f0; }
-.summary-tiles { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.summary-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.summary-tiles small { font-size: 11px; color: #64748b; }
+.inc-pill.approved { background: rgba(34,197,94,.18); color: #86efac; }
+.inc-pill.rejected { background: rgba(248,113,113,.18); color: #fca5a5; }
 
 .table-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: flex-start; }
 .table-head h4 { margin: 0 0 4px; font-size: 15px; color: #e2e8f0; }
