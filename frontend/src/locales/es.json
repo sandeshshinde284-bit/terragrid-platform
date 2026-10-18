@@ -66,6 +66,7 @@
     "title": "Incidentes",
     "type": "Tipo",
     "status": "Estado",
+    "location": "Ubicación",
     "detectionTime": "Detectado",
     "affectedArea": "Área Est.",
     "population": "Pob. Est.",

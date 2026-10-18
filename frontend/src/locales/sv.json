@@ -66,6 +66,7 @@
     "title": "Incidenter",
     "type": "Typ",
     "status": "Status",
+    "location": "Plats",
     "detectionTime": "Upptäckt",
     "affectedArea": "Uppskattad Yta",
     "population": "Uppskattad Bef.",

@@ -66,6 +66,7 @@
     "title": "Incydenty",
     "type": "Typ",
     "status": "Status",
+    "location": "Lokalizacja",
     "detectionTime": "Wykryty",
     "affectedArea": "Szac. Obszar",
     "population": "Szac. Pop.",
