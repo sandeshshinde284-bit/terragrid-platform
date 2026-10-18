@@ -518,9 +518,15 @@ const allSelected = computed(() =>
 )
 
 // Actions shown during review: the ones selected on this screen, plus any already decided.
-const reviewActions = computed(() =>
-  (plan.value?.actions || []).filter((a: any) => a.decision || isSelected(a.index))
-)
+// IMPORTANT: Keep showing actions even after approval so user can see the full workflow
+const reviewActions = computed(() => {
+  if (stage.value !== 'review') {
+    // On selection stage, only show selected actions
+    return (plan.value?.actions || []).filter((a: any) => isSelected(a.index))
+  }
+  // On review stage, show selected PLUS any with existing decisions
+  return (plan.value?.actions || []).filter((a: any) => a.decision || isSelected(a.index))
+})
 
 const statusCount = (status: string): number => Number(plan.value?.task_summary?.by_status?.[status] ?? 0)
 const executionPercent = computed(() => { const total = Number(plan.value?.task_summary?.approved ?? 0); return total ? Math.round(Number(plan.value?.task_summary?.done ?? 0) / total * 100) : 0 })
