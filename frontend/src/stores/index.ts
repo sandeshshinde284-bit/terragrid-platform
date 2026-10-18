@@ -204,6 +204,7 @@ export const useAppStore = defineStore('app', () => {
 
   const toggleViewMode = () => {
     viewMode.value = viewMode.value === '2d' ? '3d' : '2d'
+    writeSession({ viewMode: viewMode.value })
   }
 
   const setLoading = (value: boolean) => {

@@ -388,7 +388,7 @@
 
 <script setup lang="ts">
 import { displayIncidentId } from '@/utils/incidentId'
-import { readSession, writeSession } from '@/utils/sessionState'
+import { readSession, writeSession, readCachedPlan, writeCachedPlan } from '@/utils/sessionState'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -450,10 +450,17 @@ watch(
   async (newId) => {
     if (!newId) {
       aiPlan.value = null
-      if (loadingInterval) clearInterval(loadingInterval)
       return
     }
-    
+
+    // Reuse the plan already shown in this tab, so a reload does not change the analysis.
+    const cached = readCachedPlan(newId)
+    if (cached) {
+      aiPlan.value = cached
+      isLoadingInsights.value = false
+      return
+    }
+
     try {
       isLoadingInsights.value = true
       aiPlan.value = null
@@ -470,6 +477,8 @@ watch(
       if (response.ok) {
         const data = await response.json()
         aiPlan.value = data.plan
+        // Fallback plans mean Gemini was unavailable. Do not freeze that result for the tab.
+        if (data.plan && !data.plan.is_fallback) writeCachedPlan(newId, data.plan)
       }
     } catch (err) {
       logWarn('Could not fetch the AI insights plan', err)
