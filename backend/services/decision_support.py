@@ -70,10 +70,12 @@ class DecisionSupportService:
         """
         from .mock_data_loader import MockDataLoader
         
-        location = incident.get("location_name", "Unknown Region")
-        event_type = incident.get("event_type", "disaster").upper()
-        threat_score = incident.get("threatScore") or incident.get("impact", {}).get("risk_score", 50)
-        pop_at_risk = zone_data.get("total_population_affected") if zone_data else (incident.get("affectedPopulation") or 10000)
+        location = incident.get("location_name") or "Not available"
+        event_type = (incident.get("event_type") or "Not available").upper()
+        threat_score = incident.get("threatScore") or (incident.get("impact") or {}).get("risk_score")
+        pop_at_risk = zone_data.get("total_population_affected") if zone_data else incident.get("affectedPopulation")
+        threat_txt = f"{threat_score} / 100" if threat_score is not None else "Not available"
+        pop_txt = f"{pop_at_risk:,} civilians" if pop_at_risk is not None else "Not available"
 
 
         # Use mock data for demonstration mode
@@ -95,7 +97,7 @@ class DecisionSupportService:
             # has_imd_data = IMDWeatherService.is_india_location(latitude, longitude)
             
             # Build data sources list
-            data_sources = ["NASA EONET", "GDACS", "USGS", "OpenWeather", "NOAA"]
+            data_sources = [incident.get("source") or "Not available"]
             # if has_imd_data:
             #     data_sources.insert(0, "IMD (India Meteorological Department)")
             
@@ -124,11 +126,11 @@ class DecisionSupportService:
             You are analyzing a live disaster incident for the TerraGrid Emergency Response System.
             Generate a comprehensive, location-specific emergency response plan based on the following incident data.
 
-            INCIDENT PARAMETERS:
+            INCIDENT PARAMETERS ("Not available" means the value is missing; do not estimate it):
             - Disaster Type: {event_type}
             - Location / Jurisdiction: {location}
-            - Calculated Threat Score: {threat_score} / 100
-            - Estimated Population at Risk: {pop_at_risk:,} civilians
+            - Calculated Threat Score: {threat_txt}
+            - Estimated Population at Risk: {pop_txt}
 
             DATA SOURCES INTEGRATED:
             {', '.join(data_sources)}
@@ -433,26 +435,39 @@ class DecisionSupportService:
             use_mock: If True, bypasses API and returns a rich fabricated demonstration dossier.
             db_session: Optional DB session for historical queries.
         """
-        event_type = event_data.get("event_type", "Hazard")
-        location = event_data.get("location_name", "Target Sector")
-        lat = event_data.get("latitude", 0.0)
-        lon = event_data.get("longitude", 0.0)
-        source = event_data.get("source", "TerraGrid Global Ingestion Network")
+        event_type = event_data.get("event_type") or "Not available"
+        location = event_data.get("location_name") or "Not available"
+        lat = event_data.get("latitude")
+        lon = event_data.get("longitude")
+        source = event_data.get("source") or "Not available"
 
         impact = event_data.get("impact") or {}
-        threat_score = impact.get("risk_score", 50.0)
-        area_km2 = impact.get("affected_area_km2", 50.0)
-        pop_at_risk = impact.get("affected_population", 10000)
+        threat_score = impact.get("risk_score")
+        area_km2 = impact.get("affected_area_km2")
+        pop_at_risk = impact.get("affected_population")
 
-        # Extract atmospheric telemetry if present (OpenWeather)
+        # Atmospheric telemetry only if the source stored it. Missing means missing.
         raw_data = event_data.get("data") or {}
         weather_data = raw_data.get("data") or raw_data
-        wind_speed = weather_data.get("wind_speed_ms", 5.2)
-        wind_gust = weather_data.get("wind_gust_ms", 8.4)
-        humidity = weather_data.get("humidity_percent", 65)
-        temperature = weather_data.get("temperature_c", 22.0)
-        pressure = weather_data.get("pressure_hpa", 1013)
-        weather_desc = weather_data.get("description", "Active weather conditions")
+        wind_speed = weather_data.get("wind_speed_ms")
+        wind_gust = weather_data.get("wind_gust_ms")
+        humidity = weather_data.get("humidity_percent")
+        temperature = weather_data.get("temperature_c")
+        pressure = weather_data.get("pressure_hpa")
+        weather_desc = weather_data.get("description") or "Not available"
+
+        def _na(value, unit=""):
+            return "Not available" if value is None else f"{value}{unit}"
+
+        threat_txt = f"{threat_score} / 100" if threat_score is not None else "Not available"
+        area_txt = _na(area_km2, " km²")
+        pop_txt = f"{pop_at_risk:,} citizens" if pop_at_risk is not None else "Not available"
+        coords_txt = f"Lat {lat}, Lon {lon}" if lat is not None and lon is not None else "Not available"
+        wind_txt = _na(wind_speed, " m/s")
+        gust_txt = _na(wind_gust, " m/s")
+        humidity_txt = _na(humidity, "%")
+        temp_txt = _na(temperature, " °C")
+        pressure_txt = _na(pressure, " hPa")
 
         from .mock_data_loader import MockDataLoader
         from .infrastructure import InfrastructureService
@@ -504,14 +519,17 @@ class DecisionSupportService:
         # internal try/except + fallback (see infrastructure.py, evacuation_zones.py,
         # vector_rag_engine.py), so parallelizing them changes nothing about
         # what data comes back - only how long we wait for it.
-        radius = math.sqrt(area_km2 / math.pi) if area_km2 > 0 else 10.0
+        # Without coordinates there is nothing to look up, so the GIS calls are skipped.
+        # The 10 km search radius is a query setting used only when the area is unknown.
+        has_coords = lat is not None and lon is not None
+        radius = math.sqrt(area_km2 / math.pi) if (area_km2 or 0) > 0 else 10.0
         with ThreadPoolExecutor(max_workers=3) as executor:
-            osm_future = executor.submit(InfrastructureService.get_nearby_facilities, lat, lon, radius)
-            osrm_future = executor.submit(EvacuationZoneService.get_safe_routes, {"latitude": lat, "longitude": lon, "event_type": event_type})
+            osm_future = executor.submit(InfrastructureService.get_nearby_facilities, lat, lon, radius) if has_coords else None
+            osrm_future = executor.submit(EvacuationZoneService.get_safe_routes, {"latitude": lat, "longitude": lon, "event_type": event_type}) if has_coords else None
             history_future = executor.submit(_fetch_historical_context)
 
-            osm_facilities = osm_future.result()
-            osrm_routing = osrm_future.result()
+            osm_facilities = osm_future.result() if osm_future else {}
+            osrm_routing = osrm_future.result() if osrm_future else None
             history_injection = history_future.result()
 
         osm_hit = any([osm_facilities.get("hospitals"), osm_facilities.get("fire_stations"), osm_facilities.get("critical_infrastructure"), osm_facilities.get("shelters")])
@@ -570,17 +588,17 @@ class DecisionSupportService:
             prompt = f"""
             Generate a detailed intelligence dossier for this live disaster incident using integrated sensor telemetry and geospatial analysis.
 
-            GROUND TRUTH SENSOR TELEMETRY:
+            GROUND TRUTH SENSOR TELEMETRY ("Not available" means the value is missing; do not estimate it):
             - Incident Type: {event_type}
             - Location / Jurisdiction: {location}
-            - Coordinates: Lat {lat}, Lon {lon}
-            - Calculated Threat Score: {threat_score} / 100
-            - Impacted Area: {area_km2} kmÂ²
-            - Population at Immediate Risk: {pop_at_risk:,} citizens
+            - Coordinates: {coords_txt}
+            - Calculated Threat Score: {threat_txt}
+            - Impacted Area: {area_txt}
+            - Population at Immediate Risk: {pop_txt}
             - Atmospheric Telemetry (OpenWeather):
-              â€¢ Surface Wind Speed: {wind_speed} m/s | Wind Gusts: {wind_gust} m/s
-              â€¢ Relative Humidity: {humidity}% | Ambient Temp: {temperature}Â°C
-              â€¢ Barometric Pressure: {pressure} hPa | Weather: {weather_desc}
+              â€¢ Surface Wind Speed: {wind_txt} | Wind Gusts: {gust_txt}
+              â€¢ Relative Humidity: {humidity_txt} | Ambient Temp: {temp_txt}
+              â€¢ Barometric Pressure: {pressure_txt} | Weather: {weather_desc}
             - Source Telemetry: {source}
 
             NO LOCATION DATABASE: Do not name agencies, facilities, staging areas or response times unless they appear in the input above.
