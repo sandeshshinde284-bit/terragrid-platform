@@ -86,6 +86,14 @@
               <p>{{ actionsError }}</p>
             </div>
 
+            <div v-else-if="actionsPlan.is_fallback" class="empty-state glass-panel">
+
+              <div class="empty-icon">⚠️</div>
+
+              <p>AI analysis is unavailable right now. No checklist is shown.</p>
+
+            </div>
+
             <template v-else-if="actionsPlan">
               <div class="risk-context glass-panel" :class="selectedToneClass">
                 <span class="context-icon">{{ selectedToneIcon }}</span>
@@ -288,7 +296,7 @@ const sourceBadgeClass = computed(() => {
 const sourceLabelSimple = computed(() => {
   switch (sourceBadgeClass.value) {
     case 'mock': return 'Demo data'
-    case 'fallback': return 'Backup wording (AI unavailable)'
+    case 'fallback': return 'AI unavailable'
     default: return 'AI-drafted'
   }
 })

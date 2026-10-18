@@ -101,10 +101,10 @@
             <tbody>
               <tr v-for="(res, idx) in deepDossier.resource_matrix" :key="idx" style="border-bottom: 1px solid var(--glass-border); font-size: 18px;">
                 <td style="padding: 12px 10px; color: var(--text-primary); font-weight: 700;">{{ res.resource }}</td>
-                <td style="padding: 12px 10px; color: var(--accent-cyan); font-family: ui-monospace, monospace;">{{ res.quantity }} {{ res.unit_measure }}</td>
+                <td style="padding: 12px 10px; color: var(--accent-cyan); font-family: ui-monospace, monospace;">{{ res.quantity ?? 'Not in report' }} {{ res.quantity != null ? res.unit_measure : '' }}</td>
                 <td style="padding: 12px 10px; color: var(--text-secondary);">{{ res.assigned_agency }}</td>
                 <td style="padding: 12px 10px; color: var(--text-secondary);">{{ res.deployment_location }}</td>
-                <td style="padding: 12px 10px; color: #4ade80; font-family: ui-monospace, monospace;">{{ res.estimated_arrival_minutes }} min</td>
+                <td style="padding: 12px 10px; color: #4ade80; font-family: ui-monospace, monospace;">{{ res.estimated_arrival_minutes != null ? res.estimated_arrival_minutes + ' min' : 'Not in report' }}</td>
                 <td style="padding: 12px 10px;">
                   <span class="priority-tag" :class="getPriorityClass(res.priority)">
                     {{ getPriorityLabel(res.priority) }}
@@ -118,15 +118,18 @@
       </article>
     </div>
 
+    <div v-else-if="isAnalyzingDossier" class="phase2-center-container">
+      <GenerationNotice variant="full" :startedAt="generationStartedAt ?? null" />
+    </div>
+
     <div v-else-if="!isBackendMockModeEnabled" class="phase2-center-container">
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🚑</div>
         <div class="phase2-tag">REPORT PENDING</div>
         <h2 style="font-size:20px; font-weight:700; color: var(--text-primary); margin-bottom:12px;">Multi-Agency Resource Matrix</h2>
         <p style="color: var(--text-secondary); font-size: 16px; margin-bottom:18px;">Generate specialized equipment counts, first-responder squad deployment, and medical logistics matrices.</p>
-        <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
-          <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
-          {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Generate Full Crisis Report' }}
+        <button v-if="!isAnalyzingDossier" class="primary-button recon-trigger-btn" @click="$emit('launch')">
+          {{ '⚡ Generate Full Crisis Report' }}
         </button>
       </div>
     </div>
@@ -134,6 +137,7 @@
 </template>
 
 <script setup lang="ts">
+import GenerationNotice from './GenerationNotice.vue'
 import ResponseActions from '@/components/molecules/ResponseActions.vue'
 import ResponsePlanPanel from '@/components/molecules/ResponsePlanPanel.vue'
 import EvidenceStatus from '@/components/molecules/EvidenceStatus.vue'
@@ -141,6 +145,7 @@ import EvidenceStatus from '@/components/molecules/EvidenceStatus.vue'
 defineProps<{
   deepDossier: any
   isAnalyzingDossier: boolean
+  generationStartedAt?: number | null
   isBackendMockModeEnabled: boolean
   incidentId?: string
   incident?: any

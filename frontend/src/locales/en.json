@@ -540,5 +540,16 @@
     "webSocket": "WebSocket Live Updates",
     "aiDisasterBrief": "AI Disaster Brief",
     "mapInteraction": "Interactive Map Features"
+  },
+  "generation": {
+    "generating": "Generating crisis report with Gemini · {seconds}s",
+    "step1": "Reading the incident telemetry and weather inputs",
+    "step2": "Looking up hospitals, fire stations, shelters and routes near the incident",
+    "step3": "Checking facility names against the lookup results",
+    "step4": "Writing the crisis report with Gemini",
+    "background": "You can switch tabs. This keeps running in the background and the results appear here when ready.",
+    "unavailable": "AI analysis is unavailable right now. The last saved report is still shown.",
+    "noReport": "The AI response contained no report. The last saved report is still shown.",
+    "failed": "Could not generate the report. The last saved report is still shown."
   }
 }

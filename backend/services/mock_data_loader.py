@@ -37,13 +37,7 @@ class MockDataLoader:
             logger.error(f"MockDataLoader: Failed to load {filename} from {sub_dir}: {str(e)}")
             return [] if sub_dir == "mocks" and not filename.startswith("demo_") else {}
 
-    @classmethod
-    def load_fallback_ai_plan(cls) -> Dict[str, Any]:
-        return cls._load_json("fallbacks", "ai_offline_plan.json", inject_fallback_flag=True)
 
-    @classmethod
-    def load_fallback_dossier(cls) -> Dict[str, Any]:
-        return cls._load_json("fallbacks", "ai_offline_dossier.json", inject_fallback_flag=True)
 
     @classmethod
     def load_default_impact(cls) -> Dict[str, Any]:
@@ -67,15 +61,9 @@ class MockDataLoader:
         filename = "demo_preparedness_actions_routine.json" if routine else "demo_preparedness_actions.json"
         return cls._load_json("mocks", filename, inject_mock_flag=True)
 
-    @classmethod
-    def load_fallback_preparedness_actions(cls) -> Dict[str, Any]:
-        return cls._load_json("fallbacks", "ai_offline_preparedness_actions.json", inject_fallback_flag=True)
 
     @classmethod
     def load_mock_agency_alerts(cls, routine: bool = False) -> Dict[str, Any]:
         filename = "demo_agency_alerts_routine.json" if routine else "demo_agency_alerts.json"
         return cls._load_json("mocks", filename, inject_mock_flag=True)
 
-    @classmethod
-    def load_fallback_agency_alerts(cls) -> Dict[str, Any]:
-        return cls._load_json("fallbacks", "ai_offline_agency_alerts.json", inject_fallback_flag=True)

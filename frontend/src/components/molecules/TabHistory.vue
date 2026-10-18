@@ -49,15 +49,18 @@
       </div>
     </div>
 
+    <div v-else-if="isAnalyzingDossier" class="phase2-center-container">
+      <GenerationNotice variant="full" :startedAt="generationStartedAt ?? null" />
+    </div>
+
     <div v-else-if="!isBackendMockModeEnabled" class="phase2-center-container">
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🔮</div>
         <div class="phase2-tag">{{ $t('historyTab.aiPending') }}</div>
         <h2 style="font-size:20px; font-weight:700; color: var(--text-primary); margin-bottom:12px;">{{ $t('historyTab.predictiveSimulation') }}</h2>
         <p style="color: var(--text-secondary); font-size: 16px; margin-bottom:18px;">{{ $t('historyTab.simulationDesc') }}</p>
-        <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
-          <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
-          {{ isAnalyzingDossier ? $t('historyTab.synthesizing') : $t('historyTab.launchRecon') }}
+        <button v-if="!isAnalyzingDossier" class="primary-button recon-trigger-btn" @click="$emit('launch')">
+          {{ $t('historyTab.launchRecon') }}
         </button>
       </div>
     </div>
@@ -65,9 +68,11 @@
 </template>
 
 <script setup lang="ts">
+import GenerationNotice from './GenerationNotice.vue'
 defineProps<{
   deepDossier: any
   isAnalyzingDossier: boolean
+  generationStartedAt?: number | null
   isBackendMockModeEnabled: boolean
 }>()
 

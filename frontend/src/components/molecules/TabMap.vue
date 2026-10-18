@@ -122,15 +122,18 @@
       </div>
     </div>
 
+    <div v-else-if="isAnalyzingDossier" class="phase2-center-container">
+      <GenerationNotice variant="full" :startedAt="generationStartedAt ?? null" />
+    </div>
+
     <div v-else-if="!isBackendMockModeEnabled" class="phase2-center-container">
       <div class="phase2-card glass-panel">
         <div class="phase2-icon">🗺️</div>
         <div class="phase2-tag">AI RECONNAISSANCE PENDING</div>
         <h2 style="font-size: 22px; font-weight: 700; color: #ffffff; margin: 0 0 12px 0;">Evacuation Corridor Routing</h2>
         <p style="font-size: 16px; line-height: 1.6; color: #cbd5e1; margin: 0 0 18px 0;">Generate primary transit routing, bridge bottleneck warnings, and safe assembly staging areas.</p>
-        <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
-          <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
-          {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Launch Tactical AI Reconnaissance' }}
+        <button v-if="!isAnalyzingDossier" class="primary-button recon-trigger-btn" @click="$emit('launch')">
+          {{ '⚡ Launch Tactical AI Reconnaissance' }}
         </button>
       </div>
     </div>
@@ -138,9 +141,11 @@
 </template>
 
 <script setup lang="ts">
+import GenerationNotice from './GenerationNotice.vue'
 defineProps<{
   deepDossier: any
   isAnalyzingDossier: boolean
+  generationStartedAt?: number | null
   isBackendMockModeEnabled: boolean
 }>()
 

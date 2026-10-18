@@ -116,14 +116,19 @@ class USGSEarthquakeService:
                 "location_name": location_name,
                 "source": "USGS_EARTHQUAKES",
                 "event_timestamp": event_timestamp,
-                "confidence": 0.98,  # USGS data is highly reliable
-                "is_verified": True,
+                "confidence": None,  # USGS does not report a per-event confidence
+                "is_verified": properties.get("status") == "reviewed",
                 "data": {
-                    "usgs_id": properties.get("id"),
+                    "usgs_id": feature.get("id"),
+                    "usgs_status": properties.get("status"),
+                    "significance": properties.get("sig"),
+                    "station_count": properties.get("nst"),
+                    "azimuthal_gap": properties.get("gap"),
+                    "rms": properties.get("rms"),
                     "magnitude": magnitude,
                     "depth_km": float(coordinates[2]) if len(coordinates) > 2 else 0,
                     "tsunami": properties.get("tsunami", False),
-                    "alert_level": properties.get("alert", "none"),
+                    "alert_level": properties.get("alert"),
                     "url": properties.get("url", ""),
                     "felt_reports": properties.get("felt"),
                     "type": properties.get("type", "earthquake"),
