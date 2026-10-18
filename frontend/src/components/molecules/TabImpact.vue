@@ -74,9 +74,8 @@
         <div class="phase2-tag">{{ $t('impactTab.aiPending') }}</div>
         <h2 style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 12px 0;">{{ $t('impactTab.predictiveImpact') }}</h2>
         <p style="font-size: 16px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 18px 0;">{{ $t('impactTab.impactDesc') }}</p>
-        <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
-          <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
-          {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Launch Tactical AI Reconnaissance' }}
+        <button v-if="!isAnalyzingDossier" class="primary-button recon-trigger-btn" @click="$emit('launch')">
+          {{ '⚡ Launch Tactical AI Reconnaissance' }}
         </button>
       </div>
     </div>

@@ -124,9 +124,8 @@
         <div class="phase2-tag">REPORT PENDING</div>
         <h2 style="font-size:20px; font-weight:700; color: var(--text-primary); margin-bottom:12px;">Multi-Agency Resource Matrix</h2>
         <p style="color: var(--text-secondary); font-size: 16px; margin-bottom:18px;">Generate specialized equipment counts, first-responder squad deployment, and medical logistics matrices.</p>
-        <button class="primary-button recon-trigger-btn" @click="$emit('launch')" :disabled="isAnalyzingDossier">
-          <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
-          {{ isAnalyzingDossier ? 'Synthesizing...' : '⚡ Generate Full Crisis Report' }}
+        <button v-if="!isAnalyzingDossier" class="primary-button recon-trigger-btn" @click="$emit('launch')">
+          {{ '⚡ Generate Full Crisis Report' }}
         </button>
       </div>
     </div>
