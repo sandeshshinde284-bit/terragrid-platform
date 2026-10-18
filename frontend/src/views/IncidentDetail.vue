@@ -42,15 +42,11 @@
       </transition>
 
       <header class="detail-header sticky-header">
-        <div class="header-navigation">
-          <span class="phase-indicator-badge">{{ $t('header.phases.response') }}</span>
-          <button class="primary-back-btn" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">
-            <span class="back-arrow">←</span>
-            <span class="back-text">{{ $t('detail.activeIncidents') }}</span>
-          </button>
+        <nav class="header-navigation" aria-label="Breadcrumb">
+          <button class="breadcrumb-back" type="button" aria-label="Back to incidents" @click="goTo('/incidents')">← Back to Incidents</button>
           <span class="breadcrumb-separator">/</span>
-          <span class="breadcrumb-current">{{ incident.location }}</span>
-        </div>
+          <span class="breadcrumb-current">Incident: <strong class="breadcrumb-id">{{ displayIncidentId(incident) }}</strong></span>
+        </nav>
         <div class="header-actions">
           <button class="ghost-button" type="button" @click="goTo('/')">{{ $t('detail.dashboardBtn') }}</button>
           <button class="ghost-button" type="button" @click="goTo('/map')">{{ $t('detail.liveMapBtn') }}</button>
@@ -76,14 +72,16 @@
 
       <section class="incident-hero">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="live-dot"></span> {{ $t('detail.incident') }} {{ displayIncidentId(incident) }}</div>
-          <h1>{{ incidentLabel }}</h1>
-          <p class="hero-location"><span>⌖</span> {{ incident.location }} · {{ $t('detail.detected') }} {{ formatDate(incident.detectionTime) }}</p>
+          <h1><svg class="hazard-icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="2,12 6,12 9,4 13,20 16,12 22,12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></svg>{{ incidentLabel }}</h1>
+          <p class="hero-location">{{ incident.location }} · Detected {{ formatDetected(incident.detectionTime) }}</p>
         </div>
         <div class="hero-status">
-          <span class="type-badge" :class="`type-${incident.type}`">{{ formatIncidentType(incident.type) }}</span>
-          <span class="severity-badge" :class="`severity-${incident.severity}`">{{ incident.severity.toUpperCase() }} {{ $t('detail.severityLabel') }}</span>
-          <span class="status-badge" :class="`status-${incident.status}`">{{ formatStatus(incident.status) }}</span>
+          <div class="hero-badges">
+            <span class="type-badge" :class="`type-${incident.type}`">{{ formatIncidentType(incident.type) }}</span>
+            <span class="severity-badge" :class="`severity-${incident.severity}`">{{ incident.severity.toUpperCase() }} SEVERITY</span>
+            <span class="status-badge" :class="`status-${incident.status}`">{{ formatStatus(incident.status) }}</span>
+          </div>
+          <span v-if="lastUpdatedText" class="last-updated">Last updated: {{ lastUpdatedText }}</span>
         </div>
       </section>
 
@@ -395,6 +393,21 @@ const summaryText = computed(() => {
 })
 
 function goTo(path: string) { router.push(path) }
+// Detected time with its UTC offset, e.g. "Oct 17, 2026, 05:06 AM UTC+5".
+function formatDetected(value: Date | string | null | undefined): string {
+  const d = value ? new Date(value) : null
+  if (!d || isNaN(d.getTime())) return 'time not recorded'
+  const parts = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'shortOffset' }).formatToParts(d)
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? ''
+  const offset = (get('timeZoneName') || 'GMT').replace('GMT', 'UTC')
+  return `${get('month')} ${get('day')}, ${get('year')}, ${get('hour')}:${get('minute')} ${get('dayPeriod')} ${offset}`.replace(/\s+/g, ' ').trim()
+}
+const lastUpdatedText = computed(() => {
+  const raw = incidentDetails.value?.ingested_at
+  if (!raw) return ''
+  const d = new Date(/(Z|[+-]\d{2}:?\d{2})$/.test(raw) ? raw : `${raw}Z`)
+  return isNaN(d.getTime()) ? '' : formatDetected(d)
+})
 function formatDate(value: Date) { return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)) }
 function relativeTime(value: Date) { const minutes = Math.max(1, Math.round((Date.now() - new Date(value).getTime()) / 60000)); return minutes < 60 ? `${minutes}m ago` : `${Math.round(minutes / 60)}h ago` }
 function formatIncidentType(type: Event['type']) { return type.charAt(0).toUpperCase() + type.slice(1) }
@@ -1919,6 +1932,21 @@ body { background: var(--detail-bg) !important; }
   color: #cbd5e1;
   background: rgba(148, 163, 184, 0.15);
   vertical-align: middle;
+}
+
+/* Header and hero, matching the approved reference */
+.breadcrumb-back { background: none; border: none; padding: 0; color: #94a3b8; font-size: 14px; cursor: pointer; }
+.breadcrumb-back:hover { color: #e2e8f0; }
+.breadcrumb-id { color: #22d3ee; font-weight: 700; }
+.hero-copy h1 { display: flex; align-items: center; gap: 10px; }
+.hazard-icon { width: 28px; height: 28px; color: #ef4444; flex-shrink: 0; }
+.hero-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.hero-badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.last-updated { font-size: 12px; color: #64748b; }
+@media (max-width: 720px) {
+  .incident-hero { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .hero-status { align-items: flex-start; }
+  .hero-badges { justify-content: flex-start; }
 }
 </style>
 
