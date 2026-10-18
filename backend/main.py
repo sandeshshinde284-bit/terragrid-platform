@@ -97,6 +97,7 @@ try:
     from .routes.prepare import router as prepare_router
     from .routes.client_logs import router as client_logs_router
     from .routes.response_actions import router as response_router
+    from .routes.preparedness_context import router as preparedness_router
 except (ImportError, ValueError):
     from backend.routes.disaster_data import router as disaster_router
     from backend.routes.polling import router as polling_router
@@ -107,6 +108,7 @@ except (ImportError, ValueError):
     from backend.routes.prepare import router as prepare_router
     from backend.routes.client_logs import router as client_logs_router
     from backend.routes.response_actions import router as response_router
+    from backend.routes.preparedness_context import router as preparedness_router
 
 # Load .env from project root
 load_dotenv(root_dir / ".env")
@@ -172,6 +174,7 @@ app.include_router(incidents_router)
 app.include_router(response_router)
 app.include_router(lineage_router)
 app.include_router(prepare_router)
+app.include_router(preparedness_router)
 app.include_router(client_logs_router)
 
 @app.get("/")

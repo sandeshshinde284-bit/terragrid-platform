@@ -8,6 +8,7 @@ from .embedding_cache import EmbeddingCache
 from .lineage import RawEvent, ValidationLog, EnrichmentLog, LineageChain
 from .recipient import AlertRecipient
 from .response import IncidentResponseLog, ResponseTask, ResponseAlert, IncidentReport, ResponsePlanDecision
+from .preparedness_context import IncidentPreparednessContext
 
 __all__ = [
     "BaseModel",
@@ -25,4 +26,5 @@ __all__ = [
     "ResponseAlert",
     "IncidentReport",
     "ResponsePlanDecision",
+    "IncidentPreparednessContext",
 ]
