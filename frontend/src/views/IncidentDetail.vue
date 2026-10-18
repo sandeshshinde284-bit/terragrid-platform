@@ -104,154 +104,19 @@
       <Transition name="tab-fade" mode="out-in">
         <section :key="activeTab" class="tab-content">
           <!-- OVERVIEW -->
-          <div v-if="activeTab === 'overview'" class="overview-tab">
-            <!-- Operational Command Action Bar -->
-            <div class="operational-command-bar glass-panel">
-              <div class="toolbar-title">
-                <span class="command-dot"></span>
-                <span>{{ $t('overviewTab.operationalCommand') }}</span>
-              </div>
-              <div class="toolbar-actions">
-                <button class="cmd-btn primary" @click="exportSitRepZip" :disabled="isExportingZip">
-                  <span v-if="isExportingZip" class="spinner">⟳</span>
-                  <span>{{ isExportingZip ? $t('overviewTab.compilingZip') : $t('overviewTab.exportSitRep') }}</span>
-                </button>
-                <button class="cmd-btn secondary" @click="goTo(`/map?fromIncident=${incident.id}&location=${encodeURIComponent(incident.location)}`)">
-                  <span>{{ $t('overviewTab.viewIncidentMap') }}</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Hero Tactical Incident Report Banner -->
-            <div class="glass-panel ai-recon-hero-card">
-              <div class="recon-info">
-                <div class="recon-status-badge" :class="{ 'analyzed': !!deepDossier }">
-                  <span class="status-pulse-dot"></span>
-                  {{ deepDossier ? $t('overviewTab.verifiedReportActive') : $t('overviewTab.fullCrisisReady') }}
-                </div>
-                <h2>{{ $t('overviewTab.crisisAssessmentTitle') }}</h2>
-                <p>
-                  {{ deepDossier 
-                    ? deepDossier.situational_assessment 
-                    : $t('overviewTab.crisisAssessmentDesc') 
-                  }}
-                </p>
-                <!-- Report summary: the first decisions. Full detail stays in the Impact, Map, Response and History tabs. -->
-                <div v-if="deepDossier && deepDossier.resource_matrix && deepDossier.resource_matrix.length" class="dossier-top-resources">
-                  <strong>{{ $t('overviewTab.topResources') }}</strong>
-                  <ul>
-                    <li v-for="r in deepDossier.resource_matrix.slice(0, 3)" :key="r.resource">
-                      {{ r.resource }} · {{ r.quantity }} · {{ r.assigned_agency }}
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              <button 
-                class="recon-launch-button" 
-                :disabled="isAnalyzingDossier" 
-                @click="launchDeepAnalysis"
-              >
-                <span v-if="isAnalyzingDossier" class="spinner">⟳</span>
-                {{ isAnalyzingDossier ? $t('overviewTab.synthesizingReport') : (deepDossier ? $t('overviewTab.updateReport') : $t('overviewTab.generateReport')) }}
-              </button>
-            </div>
-
-            <!-- Live Environmental Telemetry Gauge Strip -->
-            <div class="environmental-gauge-strip">
-              <div class="env-gauge-tile glass-panel">
-                <span class="gauge-icon mono-icon">☴</span>
-                <div class="gauge-info">
-                  <span class="gauge-label">{{ $t('overviewTab.detectionConfidence') }}</span>
-                  <strong class="gauge-value">{{ confidenceText }}</strong>
-                  <small class="gauge-desc">{{ $t('overviewTab.detectionConfidenceDesc') }}</small>
-                </div>
-              </div>
-              <div class="env-gauge-tile glass-panel">
-                <span class="gauge-icon mono-icon">🌡</span>
-                <div class="gauge-info">
-                  <span class="gauge-label">{{ $t('overviewTab.dataSource') }}</span>
-                  <strong class="gauge-value">{{ incident.source || DASH }}</strong>
-                  <small class="gauge-desc">{{ lastIngestedText }}</small>
-                </div>
-              </div>
-              <div class="env-gauge-tile glass-panel">
-                <span class="gauge-icon mono-icon">⚑</span>
-                <div class="gauge-info">
-                  <span class="gauge-label">{{ $t('overviewTab.exposedPopulation') }}</span>
-                  <strong class="gauge-value">{{ fmtCount(incident.affectedPopulation) }}</strong>
-                  <small class="gauge-desc">{{ $t('overviewTab.estimatedResidents') }}</small>
-                </div>
-              </div>
-              <div class="env-gauge-tile glass-panel">
-                <span class="gauge-icon mono-icon">◱</span>
-                <div class="gauge-info">
-                  <span class="gauge-label">{{ $t('overviewTab.perimeterGrowth') }}</span>
-                  <strong class="gauge-value">{{ fmtSigned(incident.trend, 1, ' km²/h') }}</strong>
-                  <small class="gauge-desc">6h {{ $t('overviewTab.projected') }} {{ fmtSigned(incident.forecast6h, 0, ' km²') }}</small>
-                </div>
-              </div>
-            </div>
-
-            <div class="metric-grid">
-              <article class="metric-card glass-panel threat-card">
-                <span class="metric-label">{{ $t('overviewTab.threatScore') }}</span>
-                <strong class="metric-value threat-value">{{ threatScore ?? DASH }}<small v-if="threatScore !== null">/100</small></strong>
-                <span class="metric-footnote">{{ threatLevel }} · {{ threatRationale }}</span>
-                <div class="progress-track"><span class="progress-fill threat-fill" :style="{ width: `${threatScore ?? 0}%` }"></span></div>
-              </article>
-              <article class="metric-card glass-panel">
-                <span class="metric-label">{{ $t('overviewTab.location') }}</span>
-                <strong class="metric-value compact-value">{{ incident.location }}</strong>
-                <span class="metric-footnote">{{ $t('overviewTab.affectedFootprint') }} {{ fmtFixed(incident.affectedArea, 0, ' km²') }}</span>
-              </article>
-              <article class="metric-card glass-panel">
-                <span class="metric-label">{{ $t('overviewTab.populationAtRisk') }}</span>
-                <strong class="metric-value">{{ fmtCount(incident.affectedPopulation) }}</strong>
-                <span class="metric-footnote">{{ $t('overviewTab.estimatedResidents') }}</span>
-              </article>
-              
-              
-              <article class="metric-card glass-panel">
-                <span class="metric-label">Current status</span>
-                <strong class="metric-value compact-value status-text">{{ formatStatus(incident.status) }}</strong>
-                <span class="metric-footnote">{{ $t('overviewTab.detectedAgo', { time: relativeTime(incident.detectionTime) }) }}</span>
-              </article>
-            </div>
-
-            <div class="content-grid two-columns">
-              <article class="glass-panel">
-                <div class="panel-heading"><div><span class="section-kicker">COMMAND BRIEF</span><h2>Situation summary</h2></div><span class="panel-code">OV-01</span></div>
-                <p class="long-copy">{{ summaryText }}</p>
-                <div class="summary-facts">
-                  <div><span>Incident class</span><strong>{{ formatIncidentType(incident.type) }}</strong></div>
-                  <div><span>Operational posture</span><strong>{{ operationalPosture }}</strong></div>
-                  <div><span>Last ingested</span><strong>{{ lastIngestedText }}</strong></div>
-                </div>
-              </article>
-              <article class="glass-panel action-panel">
-                <div class="panel-heading"><div><span class="section-kicker">DECISION SUPPORT</span><h2>AI recommendations</h2></div><span class="ai-chip">NEEDS OFFICER APPROVAL</span></div>
-                <div v-if="aiLoading" class="loading-state">
-                  <span class="loading-spinner"></span>
-                  <p>Generating the crisis report...</p>
-                </div>
-                <div v-else-if="aiError" class="error-state">
-                  <span class="error-icon">⚠</span>
-                  <p>{{ aiError }}</p>
-                </div>
-                <p v-else-if="!deepDossier" class="long-copy">No crisis report yet. Generate the report above to see AI recommendations.</p>
-                <template v-else>
-                  <p class="long-copy" style="font-size: 14px; margin-bottom: 10px;">
-                    From AI report v{{ deepDossier.version ?? 'latest' }}{{ deepDossier.generated_at ? ', ' + new Date(deepDossier.generated_at).toLocaleString() : '' }}. These are proposals. Nothing is authorized until an officer approves it in the Response tab.
-                  </p>
-                  <ol class="action-list">
-                    <li v-for="(action, index) in aiInsights" :key="action.id">
-                      <span class="action-number">0{{ Number(index) + 1 }}</span><div><strong>{{ action.action }}</strong></div>
-                    </li>
-                  </ol>
-                </template>
-              </article>
-            </div>
-          </div>
+          <!-- OVERVIEW -->
+          <TabOverview
+            v-if="activeTab === 'overview'"
+            :incident="incident"
+            :details="incidentDetails"
+            :report="deepDossier"
+            :isGenerating="isAnalyzingDossier"
+            :reportError="aiError"
+            :exportingZip="isExportingZip"
+            @generate="launchDeepAnalysis"
+            @exportZip="exportSitRepZip"
+            @reviewRecommendations="activeTab = 'response'"
+          />
 
           <!-- IMPACT ANALYSIS -->
           <TabImpact 
@@ -337,6 +202,7 @@ import TabImpact from '@/components/molecules/TabImpact.vue'
 import TabMap from '@/components/molecules/TabMap.vue'
 import TabAiInsights from '@/components/molecules/TabAiInsights.vue'
 import TabAlerts from '@/components/molecules/TabAlerts.vue'
+import TabOverview from '@/components/molecules/TabOverview.vue'
 
 // AI Insights data structure
 
@@ -414,6 +280,7 @@ interface DeepDossier {
 }
 
 const deepDossier = ref<DeepDossier | null>(null)
+const incidentDetails = ref<any | null>(null)
 const isAnalyzingDossier = ref(false)
 
 // Everything that shows recommendations reads from the saved report.
@@ -469,6 +336,17 @@ async function launchDeepAnalysis() {
   }
 }
 
+async function loadIncidentDetails() {
+  if (!incidentId.value) return
+  try {
+    const host = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin)
+    const res = await fetch(`${host}/api/v1/incidents/${incidentId.value}`)
+    if (res.ok) incidentDetails.value = await res.json()
+  } catch (err) {
+    logWarn('Could not load raw incident details', err)
+  }
+}
+
 async function checkExistingDossier() {
   if (!incidentId.value) return
   try {
@@ -505,17 +383,6 @@ const threatLevel = computed(() => {
   if (s === null) return t('overviewTab.notScored')
   return s >= 80 ? 'Critical exposure' : s >= 60 ? 'Elevated exposure' : 'Moderate exposure'
 })
-const threatRationale = computed(() => threatScore.value === null ? t('overviewTab.noScoreYet') : t('overviewTab.fromImpactAnalysis'))
-const confidenceText = computed(() => {
-  const c = incident.value?.confidence
-  return typeof c === 'number' && c > 0 ? `${Math.round(c * 100)}%` : DASH
-})
-const lastIngestedText = computed(() => {
-  const raw = incident.value?.data?.ingested_at
-  if (!raw) return t('overviewTab.ingestTimeUnavailable')
-  return `${t('overviewTab.lastIngested')} ${relativeTime(new Date(raw))}`
-})
-const operationalPosture = computed(() => incident.value?.status === 'active' ? 'Full response' : incident.value?.status === 'monitoring' ? 'Enhanced monitoring' : 'Recovery')
 const summaryText = computed(() => {
   const inc = incident.value
   if (!inc) return ''
@@ -787,6 +654,7 @@ onMounted(async () => {
 
   if (incidentId.value) {
     checkExistingDossier()
+    loadIncidentDetails()
   }
 
   // Handle query parameter to switch to AI Insights tab

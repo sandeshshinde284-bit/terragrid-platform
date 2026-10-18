@@ -292,6 +292,8 @@ async def get_all_incidents(
             response_dict['event_type'] = incident.event_type
             response_dict['source'] = incident.source or 'unknown'
             response_dict['timestamp'] = incident.event_timestamp.isoformat() if incident.event_timestamp else None
+            # Stored as naive UTC. Send it with a UTC marker, and under the name the frontend maps from.
+            response_dict['event_timestamp'] = (incident.event_timestamp.isoformat() + 'Z') if incident.event_timestamp else None
             
             # Provide defaults for optional fields
             response_dict['affectedArea'] = response_dict.get('affectedArea')
@@ -338,6 +340,7 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
         response['latitude'] = incident.latitude
         response['longitude'] = incident.longitude
         response['timestamp'] = incident.event_timestamp.isoformat() if incident.event_timestamp else None
+        response['event_timestamp'] = (incident.event_timestamp.isoformat() + 'Z') if incident.event_timestamp else None
         
         return response
     except HTTPException:
