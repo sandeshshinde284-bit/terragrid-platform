@@ -134,7 +134,7 @@
             <span class="badge">AI estimated</span>
           </div>
           <span class="resource-type">{{ r.label }}</span>
-          <strong class="resource-qty">{{ r.quantity }} <small>{{ r.unit }}</small></strong>
+          <strong class="resource-qty">{{ r.quantity }} <small v-if="r.unit">{{ r.unit }}</small></strong>
           <span class="resource-note">{{ r.priorityLabel }}<template v-if="r.location"> · {{ r.location }}</template></span>
         </article>
       </div>
@@ -271,7 +271,7 @@ const resources = computed(() => {
     const name = String(r.resource || '')
     const qty = Number(r.quantity)
     if (!name || Number.isNaN(qty)) continue
-    const g = groups.get(name) || { quantity: 0, unit: r.unit_measure || 'units', priority: null, location: r.deployment_location || null }
+    const g = groups.get(name) || { quantity: 0, unit: r.unit_measure || '', priority: null, location: r.deployment_location || null }
     g.quantity += qty
     const p = Number(r.priority)
     if (!Number.isNaN(p) && (g.priority === null || p < g.priority)) g.priority = p
