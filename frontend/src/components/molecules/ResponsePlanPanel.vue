@@ -332,7 +332,11 @@
                         <div class="action-number-circle" :class="getPriorityClass(a, a.index)">{{ a.index + 1 }}</div>
                       </td>
                       <td class="rec-text">
-                        {{ a.text }}<br/>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span>{{ a.text }}</span>
+                          <span v-if="!a.decision && isSelected(a.index)" style="background: #10b981; color: white; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700;">NEW</span>
+                          <span v-else-if="a.decision" style="background: rgba(148, 163, 184, 0.3); color: #cbd5e1; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 700;">DECIDED</span>
+                        </div>
                         <span class="sub-link">View details &darr;</span>
                       </td>
 
@@ -680,13 +684,18 @@ async function load() {
   loadError.value = null
   try {
     const res = await fetch(`${host}/api/v1/incidents/${props.incidentId}/response/plan`)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    plan.value = await res.json()
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+
+    // Safely parse JSON with error handling
+    plan.value = await res.json().catch(err => {
+      throw new Error(`Failed to parse response: ${err.message}`)
+    })
     ;(plan.value.actions || []).forEach((a: any) => ensureForm(a.index))
 
-    if (selected.value.length === 0 && plan.value?.actions?.length) {
-      selectAll()
-    }
+    // Don't auto-select: let user decide via "Create Response Plan" button
+    // if (selected.value.length === 0 && plan.value?.actions?.length) {
+    //   selectAll()
+    // }
 
     // Load saved plan details
     if (plan.value?.plan) {
@@ -742,11 +751,38 @@ async function decide(index: number, decision: 'approve' | 'reject') {
   }
 }
 
-onMounted(load)
+// Persist selections to localStorage when they change
+const getStorageKey = () => `response-selections-${props.incidentId}`
+const saveSelections = () => {
+  if (props.incidentId && selected.value.length > 0) {
+    localStorage.setItem(getStorageKey(), JSON.stringify(selected.value))
+  }
+}
+const loadSelections = () => {
+  if (!props.incidentId) return
+  const stored = localStorage.getItem(getStorageKey())
+  if (stored) {
+    try {
+      selected.value = JSON.parse(stored)
+    } catch (e) {
+      // Ignore parse errors
+    }
+  }
+}
+
+onMounted(() => {
+  load()
+  loadSelections()
+})
+
+// Watch for selection changes and persist
+watch(() => selected.value, saveSelections, { deep: true })
+
 watch(() => props.incidentId, () => {
   stage.value = 'overview'
   selected.value = []
   load()
+  loadSelections()
 })
 </script>
 

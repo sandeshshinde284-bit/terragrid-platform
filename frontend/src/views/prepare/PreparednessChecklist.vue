@@ -482,10 +482,13 @@ const fetchActionsForSelectedCity = async () => {
     const response = await fetchWithMockMode(`${host}/api/v1/prepare/actions?${params.toString()}`)
 
     if (!response.ok) {
-      throw new Error(`Backend returned ${response.status}`)
+      throw new Error(`Backend returned ${response.status}: ${response.statusText}`)
     }
 
-    const json = await response.json()
+    // Safely parse JSON with fallback
+    const json = await response.json().catch((err: Error) => {
+      throw new Error(`Failed to parse response: ${err.message}`)
+    })
     actionsPlan.value = json.data
     actionsSource.value = json.source || ''
   } catch (e) {
