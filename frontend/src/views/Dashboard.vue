@@ -388,6 +388,7 @@
 
 <script setup lang="ts">
 import { displayIncidentId } from '@/utils/incidentId'
+import { readSession, writeSession } from '@/utils/sessionState'
 import { impactMetricsFrom, fmtFixed, fmtCount, fmtThousands, fmtSigned, sumKnown, DASH } from '@/utils/impactMetrics'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -413,11 +414,12 @@ const { isConnected, connect } = useWebSocket()
 
 const isLoading = ref(false)
 const apiError = ref<string | null>(null)
-const sortBy = ref<'threat' | 'area' | 'population' | 'time'>('threat')
+const savedSession = readSession()
+const sortBy = ref<'threat' | 'area' | 'population' | 'time'>(['threat', 'area', 'population', 'time'].includes(savedSession.sortBy) ? savedSession.sortBy : 'threat')
 const currentPage = ref(1)
 const cardsPerPage = ref(5) // 5-10 cards per page on mobile
-const selectedCountry = ref<string | null>(null)
-const selectedEventType = ref<string>('')
+const selectedCountry = ref<string | null>(savedSession.selectedCountry ?? null)
+const selectedEventType = ref<string>(savedSession.selectedEventType ?? '')
 const dashboardSearchQuery = ref('')
 
 const getThreatTooltipText = (score: number | null) => {
@@ -476,6 +478,7 @@ watch(
       isLoadingInsights.value = false
     }
   }
+, { immediate: true }
 )
 
 // Stats for dashboard
@@ -616,6 +619,10 @@ const liveCriticalInsights = computed(() => {
 
 // Dashboard list = the first few of the filtered list, which is already sorted
 // by the sort dropdown (threat by default). The full list is on Incidents.
+watch([sortBy, selectedCountry, selectedEventType], ([sort, country, type]) => {
+  writeSession({ sortBy: sort, selectedCountry: country, selectedEventType: type })
+})
+
 // The selected incident moves to the top of the list, so the card the user is viewing is always first.
 const listWithSelectedFirst = computed(() => {
   const list = [...filteredIncidents.value]
