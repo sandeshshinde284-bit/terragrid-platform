@@ -7,8 +7,9 @@
       </div>
     </div>
 
+    <!-- No crisis report yet: the REPORT PENDING card below is the state, and its button starts generation. -->
     <ResponsePlanPanel
-      v-if="incidentId"
+      v-if="incidentId && deepDossier"
       :incident-id="incidentId"
       :incident-type="incident?.event_type ?? null"
       :incident-location="incident?.location_name ?? null"
