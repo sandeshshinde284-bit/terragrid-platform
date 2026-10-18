@@ -7,13 +7,12 @@
       </div>
     </div>
 
-    <ResponsePlanPanel v-if="incidentId" :incident-id="incidentId" />
-
-    <div class="ai-review-banner" role="note">
-      <strong>AI recommendations, not decisions.</strong>
-      Nothing below has been done. An authorized officer must review and approve each action.
-      Routes and facilities are unverified until a field team confirms them.
-    </div>
+    <ResponsePlanPanel
+      v-if="incidentId"
+      :incident-id="incidentId"
+      :incident-type="incident?.event_type ?? null"
+      :incident-location="incident?.location_name ?? null"
+    />
 
     <div v-if="deepDossier" class="deep-ai-tab-container">
       
