@@ -72,8 +72,13 @@
 
     <!-- Empty State -->
     <div v-else class="teaser-empty">
-      <span class="empty-icon">📋</span>
-      <span class="empty-text">No AI report yet. Generate it on the incident page.</span>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <span class="empty-icon">📋</span>
+        <span class="empty-text">No AI report yet. Generate it on the incident page.</span>
+      </div>
+      <button class="view-full-btn" @click="navigateToInsights">
+        Open incident brief →
+      </button>
     </div>
   </div>
 </template>
